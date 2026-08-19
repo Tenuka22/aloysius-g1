@@ -1,0 +1,61 @@
+import { useEffect, useMemo, useState } from "react";
+import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { LocateFixed, MapPin, Search, TriangleAlert } from "lucide-react";
+import "leaflet/dist/leaflet.css";
+
+type LocationValue = { label: string; address: string; latitude: number | null; longitude: number | null; source: "manual" | "device" | "map" | "" };
+
+const DEFAULT_CENTER: [number, number] = [7.8731, 80.7718];
+
+function MapSync({ point, onSelect }: { point: [number, number] | null; onSelect: (lat: number, lng: number) => void }) {
+  const map = useMap();
+  useEffect(() => { if (point) map.flyTo(point, Math.max(map.getZoom(), 13), { duration: 0.6 }); }, [map, point]);
+  useMapEvents({ click: (event) => onSelect(event.latlng.lat, event.latlng.lng) });
+  return point ? <CircleMarker center={point} radius={10} pathOptions={{ color: "#087f5b", fillColor: "#13b77e", fillOpacity: 0.9, weight: 3 }} /> : null;
+}
+
+export function LocationStep({ value, onChange }: { value: LocationValue; onChange: (value: LocationValue) => void }) {
+  const [query, setQuery] = useState(value.address || value.label);
+  const [status, setStatus] = useState("");
+  const point = useMemo<[number, number] | null>(() => value.latitude !== null && value.longitude !== null ? [value.latitude, value.longitude] : null, [value.latitude, value.longitude]);
+
+  const reverseGeocode = async (latitude: number, longitude: number, source: LocationValue["source"]) => {
+    onChange({ ...value, latitude, longitude, source, label: "Selected location", address: value.address });
+    setStatus("Finding the nearest address…");
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`, { headers: { Accept: "application/json" } });
+      const result = await response.json();
+      const address = result.display_name || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+      setQuery(address);
+      onChange({ ...value, latitude, longitude, source, label: result.name || "Selected location", address });
+      setStatus("Location selected");
+    } catch { setStatus("The map point is saved. Address lookup is unavailable right now."); }
+  };
+
+  const useDeviceLocation = () => {
+    if (!navigator.geolocation) { setStatus("Location is not available in this browser. Enter an address or choose on the map."); return; }
+    setStatus("Requesting your device location…");
+    navigator.geolocation.getCurrentPosition(({ coords }) => reverseGeocode(coords.latitude, coords.longitude, "device"), () => setStatus("Location permission was not granted. You can still choose a point on the map."), { enableHighAccuracy: true, timeout: 10000 });
+  };
+
+  return <div className="location-layout">
+    <div className="form-panel">
+      <div className="field-group">
+        <label htmlFor="location-search">Where does the applicant live?</label>
+        <p className="field-help">Choose the applicant’s home location. This is used to help determine the nearest school.</p>
+        <div className="input-with-icon"><Search size={18} /><input id="location-search" value={query} onChange={(event) => { setQuery(event.target.value); onChange({ ...value, address: event.target.value, source: "manual" }); }} placeholder="Enter an address or landmark" /></div>
+      </div>
+      <button type="button" className="secondary-button full-button" onClick={useDeviceLocation}><LocateFixed size={17} /> Use my current device location</button>
+      {status && <p className="status-line" role="status">{status}</p>}
+      <div className="location-note"><MapPin size={17} /><span>We only use your location for this draft. It is not sent to the server in collection mode.</span></div>
+      {value.latitude === null && <p className="error-line"><TriangleAlert size={16} /> Select a point on the map or use your device location to continue.</p>}
+    </div>
+    <div className="map-frame" aria-label="OpenStreetMap location picker">
+      <MapContainer center={point ?? DEFAULT_CENTER} zoom={point ? 13 : 7} scrollWheelZoom className="application-map">
+        <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <MapSync point={point} onSelect={(lat, lng) => void reverseGeocode(lat, lng, "map")} />
+      </MapContainer>
+      <div className="map-caption">Click the map to place the location pin</div>
+    </div>
+  </div>;
+}
