@@ -3,7 +3,7 @@ import { Toaster } from "@aloysius-g1/ui/components/sonner";
 import { createORPCClient } from "@orpc/client";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { HeadContent, Link, Outlet, createRootRouteWithContext, useNavigate } from "@tanstack/react-router";
+import { HeadContent, Link, Outlet, createRootRouteWithContext, useLocation, useNavigate } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useState } from "react";
 
@@ -44,13 +44,15 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 function RootComponent() {
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));
   const navigate = useNavigate();
+  const location = useLocation();
+  const showHeader = location.pathname !== "/" && !location.pathname.startsWith("/auth");
 
   return (
     <>
       <HeadContent />
       <ThemeProvider
         attribute="class"
-        defaultTheme="dark"
+        defaultTheme="light"
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
@@ -59,8 +61,8 @@ function RootComponent() {
           navigate={navigate}
           Link={({ href, ...props }) => <Link to={href} {...props} />}
         >
-          <div className="grid grid-rows-[auto_1fr] h-svh">
-            <Header />
+          <div className={showHeader ? "grid grid-rows-[auto_1fr] h-svh" : "min-h-svh"}>
+            {showHeader && <Header />}
             <Outlet />
           </div>
           <Toaster richColors />

@@ -12,7 +12,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **oRPC** - End-to-end type-safe APIs with OpenAPI integration
 - **Bun** - Runtime environment
 - **Drizzle** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
+- **SQLite** - File-based database engine
 - **Authentication** - Better-Auth
 - **Nx** - Smart monorepo task orchestration and caching
 
@@ -26,12 +26,21 @@ bun install
 
 ## Database Setup
 
-This project uses PostgreSQL with Drizzle ORM.
+This project uses SQLite with Drizzle ORM. The database file is stored at `data/local.db` and is ignored by Git.
 
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/server/.env` file with your PostgreSQL connection details.
+1. Install the dependencies:
 
-3. Apply the schema to your database:
+```bash
+bun install
+```
+
+2. Generate or update the Better Auth Drizzle schema when auth fields or plugins change:
+
+```bash
+bun run db:auth
+```
+
+3. Apply the schema to the SQLite file:
 
 ```bash
 bun run db:push
@@ -87,7 +96,7 @@ Environment variables are read from each app's `.env` file (baked into web build
 
 ### Docker Compose side by side
 
-The Docker stack is kept in `packages/docker/docker-compose.yml`. It uses ports `3100` (server), `3101` (web), and `5433` (Postgres), so it can run alongside the Podman stack. Run it with `bun --cwd packages/docker run up` or the root `docker:up` script.
+The Docker stack is kept in `packages/docker/docker-compose.yml`. It uses ports `3100` (server) and `3101` (web), so it can run alongside the Podman stack. The SQLite file is persisted through the repository’s `data/` directory. Run it with `bun --cwd packages/docker run up` or the root `docker:up` script.
 
 For more details, see the guide on [Deploying with Docker Compose](https://www.better-t-stack.dev/docs/guides/docker).
 
@@ -113,6 +122,7 @@ aloysius-g1/
 - `bun run dev:server`: Start only the server
 - `bun run check-types`: Check TypeScript types across all apps
 - `bun run db:push`: Push schema changes to database
+- `bun run db:auth`: Generate the Better Auth Drizzle schema
 - `bun run db:generate`: Generate database client/types
 - `bun run db:migrate`: Run database migrations
 - `bun run db:studio`: Open database studio UI

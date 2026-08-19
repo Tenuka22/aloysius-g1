@@ -15,7 +15,7 @@ export function createAuth() {
 
   return betterAuth({
     database: drizzleAdapter(db, {
-      provider: "pg",
+      provider: "sqlite",
 
       schema: schema,
     }),

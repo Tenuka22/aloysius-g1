@@ -36,7 +36,7 @@ services:
         required: false
     environment:
       CORS_ORIGIN: http://localhost:3001
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/aloysius-g1
+      DATABASE_URL: ../../data/local.db
     healthcheck:
       test:
         [
@@ -49,28 +49,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
-
-  postgres:
-    image: postgres:18
-    container_name: aloysius-g1-podman-postgres
-    environment:
-      POSTGRES_DB: aloysius-g1
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-    ports:
-      - "5432:5432"
     volumes:
-      - aloysius-g1_podman_postgres_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-volumes:
-  aloysius-g1_podman_postgres_data:
+      - ./data:/app/data

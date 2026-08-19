@@ -1,6 +1,6 @@
 import { createContext } from "@aloysius-g1/api/context";
 import { appRouter } from "@aloysius-g1/api/routers/index";
-import { auth, ensureSiteAdmin } from "@aloysius-g1/auth";
+import { createAuth, ensureSiteAdmin } from "@aloysius-g1/auth";
 import { env } from "@aloysius-g1/env/server";
 import { cors } from "@elysiajs/cors";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
@@ -30,7 +30,8 @@ const apiHandler = new OpenAPIHandler(appRouter, {
   ],
 });
 
-await ensureSiteAdmin();
+const auth = createAuth();
+await ensureSiteAdmin(auth);
 
 new Elysia()
   .use(
