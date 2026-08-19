@@ -1,8 +1,14 @@
+import { eq } from "drizzle-orm";
 import { createDb } from "@aloysius-g1/db";
 import * as schema from "@aloysius-g1/db/schema/auth";
 import { env } from "@aloysius-g1/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { hashPassword } from "better-auth/crypto";
+import { admin } from "better-auth/plugins";
+
+const SITE_ADMIN_EMAIL = "admin@aloysiuscollege.lk";
+const SITE_ADMIN_PASSWORD = "12345678";
 
 export function createAuth() {
   const db = createDb();
@@ -26,8 +32,59 @@ export function createAuth() {
         httpOnly: true,
       },
     },
-    plugins: [],
+    plugins: [admin()],
   });
 }
 
 export const auth = createAuth();
+
+export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth> = auth) {
+  const db = createDb();
+  const existing = await db
+    .select()
+    .from(schema.user)
+    .where(eq(schema.user.email, SITE_ADMIN_EMAIL))
+    .limit(1);
+  const user = existing[0];
+
+  if (!user) {
+    await authInstance.api.createUser({
+      body: {
+        email: SITE_ADMIN_EMAIL,
+        password: SITE_ADMIN_PASSWORD,
+        name: "Site Admin",
+      },
+    });
+    console.log(`[auth] Created site admin: ${SITE_ADMIN_EMAIL}`);
+    return;
+  }
+
+  const password = await hashPassword(SITE_ADMIN_PASSWORD);
+  const credentialAccount = await db
+    .select()
+    .from(schema.account)
+    .where(eq(schema.account.userId, user.id))
+    .limit(10);
+  const existingCredential = credentialAccount.find(
+    (account) => account.providerId === "credential",
+  );
+
+  if (existingCredential) {
+    await db
+      .update(schema.account)
+      .set({ password })
+      .where(eq(schema.account.id, existingCredential.id));
+  } else {
+    await db.insert(schema.account).values({
+      id: crypto.randomUUID(),
+      accountId: user.id,
+      providerId: "credential",
+      userId: user.id,
+      password,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
+  console.log(`[auth] Ensured site admin: ${SITE_ADMIN_EMAIL}`);
+}

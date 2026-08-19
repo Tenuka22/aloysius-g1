@@ -1,4 +1,4 @@
-name: aloysius-g1
+name: aloysius-g1-podman
 
 services:
   web:
@@ -56,7 +56,7 @@ services:
 
   postgres:
     image: postgres:18
-    container_name: aloysius-g1-postgres
+    container_name: aloysius-g1-podman-postgres
     environment:
       POSTGRES_DB: aloysius-g1
       POSTGRES_USER: postgres
@@ -64,7 +64,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - aloysius-g1_postgres_data:/var/lib/postgresql
+      - aloysius-g1_podman_postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -73,4 +73,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  aloysius-g1_postgres_data:
+  aloysius-g1_podman_postgres_data:

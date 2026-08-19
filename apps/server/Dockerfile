@@ -16,4 +16,4 @@ COPY --from=builder /app /app
 EXPOSE 3000
 
 WORKDIR /app/apps/server
-CMD ["bun", "dist/index.mjs"]
+CMD ["sh", "-c", "bun --cwd /app/packages/db run db:migrate && bun dist/index.mjs"]

@@ -74,16 +74,20 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 ## Deployment
 
-### Docker Compose
+### Podman Compose
 
 - Target: web + server
-- Config: `docker-compose.yml` (app Dockerfiles live in `apps/*/Dockerfile`)
-- Build images: bun run docker:build
-- Start: bun run docker:up
-- Logs: bun run docker:logs
-- Stop: bun run docker:down
+- Config: `docker-compose.yml` (used with Podman; app Dockerfiles live in `apps/*/Dockerfile`)
+- Build images: `bun run podman:build`
+- Start: `bun run podman:up`
+- Logs: `bun run podman:logs`
+- Stop: `bun run podman:down`
 
-Environment variables are read from each app's `.env` file (baked into web builds for public variables) and overridden in `docker-compose.yml` for container networking.
+Environment variables are read from each app's `.env` file (baked into web builds for public variables) and overridden in `docker-compose.yml` for container networking. The server applies Drizzle migrations before it starts.
+
+### Docker Compose side by side
+
+The Docker stack is kept in `packages/docker/docker-compose.yml`. It uses ports `3100` (server), `3101` (web), and `5433` (Postgres), so it can run alongside the Podman stack. Run it with `bun --cwd packages/docker run up` or the root `docker:up` script.
 
 For more details, see the guide on [Deploying with Docker Compose](https://www.better-t-stack.dev/docs/guides/docker).
 
@@ -112,7 +116,8 @@ aloysius-g1/
 - `bun run db:generate`: Generate database client/types
 - `bun run db:migrate`: Run database migrations
 - `bun run db:studio`: Open database studio UI
-- `bun run docker:build`: Build the Docker Compose images
-- `bun run docker:up`: Build and start the Docker Compose stack
-- `bun run docker:logs`: Tail logs from the Docker Compose stack
-- `bun run docker:down`: Stop the Docker Compose stack
+- `bun run podman:build`: Build the Podman Compose images
+- `bun run podman:up`: Build and start the Podman Compose stack
+- `bun run podman:logs`: Tail logs from the Podman Compose stack
+- `bun run podman:down`: Stop the Podman Compose stack
+- `bun run docker:up`: Build and start the side-by-side Docker Compose stack
