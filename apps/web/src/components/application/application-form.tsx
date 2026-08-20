@@ -29,7 +29,7 @@ function PhoneField({ form, name, label }: { form: any; name: string; label: str
 }
 
 function NicField({ form }: { form: any }) {
-  return <form.Field name="guardian.nic">{(field: any) => { const value = String(field.state.value || "").trim().toUpperCase(); const valid = !value || /^\d{12}$/.test(value) || /^\d{9}[VX]$/.test(value); return <div className="field-group"><label htmlFor="guardian.nic">NIC number</label><Input id="guardian.nic" name="guardian.nic" value={field.state.value} placeholder="e.g. 123456789V or 200012345678" maxLength={12} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value.toUpperCase())} />{!valid && <p className="error-line">Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12 digits.</p>}</div>; }}</form.Field>;
+  return <form.Field name="guardian.nic">{(field: any) => { const value = String(field.state.value || "").trim().toUpperCase(); const valid = !value || /^\d{12}$/.test(value) || /^\d{9}[VX]$/.test(value); return <div className="field-group"><label htmlFor="guardian.nic">NIC number</label><Input id="guardian.nic" name="guardian.nic" value={field.state.value} placeholder="e.g. 123456789V or 200012345678" maxLength={12} autoCapitalize="characters" spellCheck={false} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value.toUpperCase())} />{!valid && <p className="error-line">Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12 digits.</p>}</div>; }}</form.Field>;
 }
 
 const G1_DOB_CUTOFF = "2022-01-31";
