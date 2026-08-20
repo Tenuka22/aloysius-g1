@@ -6,7 +6,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
 import { applicationAccessRequests, applicationSettings, applications } from "@aloysius-g1/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { env } from "@aloysius-g1/env/server";
 
 const db = createDb();
@@ -93,7 +93,7 @@ export const appRouter = {
     }),
     checkBirthCertificate: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1) })).handler(async ({ input }) => {
       const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
-      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
+      const row = await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get();
       return { exists: Boolean(row) };
     }),
     requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().min(1), guardianName: z.string().trim().optional(), contactEmail: z.email().optional(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal"]).default("access") }).superRefine((input, context) => {
@@ -119,6 +119,8 @@ export const appRouter = {
         if (guardianRow && guardianRow.id !== keyRow.id) throw new Error("The supplied guardian NIC belongs to a different application than this access key");
       }
       if (!row) throw new Error("No application was found for this birth certificate number");
+      const submittedApplication = await db.select({ submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, row.id)).get();
+      if (!submittedApplication?.submittedAt) throw new Error("Access recovery is available only for submitted applications");
       const resolvedBirthCertificateNumber = row.birthCertificateNumber;
       if (!resolvedBirthCertificateNumber) throw new Error("This application does not have a birth certificate number yet");
       const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(and(eq(applicationAccessRequests.applicationId, row.id), eq(applicationAccessRequests.requestType, input.requestType))).get();
