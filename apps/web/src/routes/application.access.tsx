@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
 import { Input } from "@aloysius-g1/ui/components/input";
@@ -10,25 +10,41 @@ export const Route = createFileRoute("/application/access")({ component: AccessP
 
 function AccessPage() {
   const navigate = useNavigate();
-  const search = Route.useSearch() as { key?: string };
+  const search = Route.useSearch() as { key?: string; code?: string };
   const updateDraft = useApplicationStore((state) => state.updateDraft);
   const [key, setKey] = useState(search.key ?? "");
+  const [sessionCode, setSessionCode] = useState(search.code ?? localStorage.getItem("aloysius-g1-application-session-code") ?? "");
+  const [foundApplication, setFoundApplication] = useState<{ applicantName: string; status: string } | null>(null);
   const [error, setError] = useState("");
+
+  const lookup = async () => {
+    setError("");
+    try {
+      const result = await client.application.lookup({ sessionCode: sessionCode.trim().toUpperCase() });
+      setSessionCode(result.sessionCode);
+      setFoundApplication({ applicantName: result.applicantName, status: result.status });
+      localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
+    } catch { setFoundApplication(null); setError("That session code was not found."); }
+  };
+
+  useEffect(() => { if (/^\d{2}[A-Z]{3}\d{3}$/.test(sessionCode)) void lookup(); }, []);
 
   const load = async () => {
     setError("");
     try {
       const normalized = key.trim();
+      const normalizedCode = sessionCode.trim().toUpperCase();
+      if (!/^\d{2}[A-Z]{3}\d{3}$/.test(normalizedCode)) throw new Error("Enter the session code first");
       const result = await client.application.get({ accessKey: normalized });
-      const keys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[];
-      localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([normalized, ...keys])]));
+      if (result.sessionCode !== normalizedCode) throw new Error("That access key does not match this session code");
       localStorage.setItem("aloysius-g1-application-key", normalized);
+      localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
       updateDraft(normalizeDraft(result.data as any));
-      await navigate({ to: "/application" });
-    } catch {
-      setError("That application key was not found. Check it and try again.");
+      await navigate({ to: "/application", search: { code: result.sessionCode, key: normalized } as never });
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "That application key was not found. Check it and try again.");
     }
   };
 
-  return <main className="access-page"><Dialog open><DialogContent showCloseButton={false} className="access-dialog"><DialogHeader><DialogTitle>Load an application</DialogTitle><DialogDescription>Enter the private key for the child’s application. We verify it before opening the form.</DialogDescription></DialogHeader><Input className="access-key-input" value={key} onChange={(event) => setKey(event.target.value)} placeholder="ALY-…" autoComplete="off" autoFocus /><AccessKeyQrImporter onKey={setKey} />{error && <p className="error-line">{error}</p>}<div className="dialog-actions"><button className="secondary-button" type="button" onClick={() => void navigate({ to: "/" })}>Cancel</button><button className="primary-button" type="button" disabled={!key.trim()} onClick={() => void load()}>Verify and load</button></div></DialogContent></Dialog></main>;
+  return <main className="access-page"><Dialog open><DialogContent showCloseButton={false} className="access-dialog"><DialogHeader><DialogTitle>Load an application</DialogTitle><DialogDescription>Find the child&apos;s application with the session code, then verify it with the private access key or QR code.</DialogDescription></DialogHeader><div className="access-code-row"><Input className="access-key-input" value={sessionCode} onChange={(event) => { setSessionCode(event.target.value.toUpperCase()); setFoundApplication(null); }} placeholder="26ABC123" autoComplete="off" /><button className="secondary-button" type="button" disabled={!sessionCode.trim()} onClick={() => void lookup()}>Find application</button></div>{foundApplication && <p className="field-help">{foundApplication.applicantName} · {foundApplication.status}. Enter the matching access key below.</p>}<Input className="access-key-input" value={key} onChange={(event) => setKey(event.target.value)} placeholder="Private access key" autoComplete="off" autoFocus /><AccessKeyQrImporter onKey={setKey} />{error && <p className="error-line">{error}</p>}<div className="dialog-actions"><button className="secondary-button" type="button" onClick={() => void navigate({ to: "/" })}>Cancel</button><button className="primary-button" type="button" disabled={!key.trim() || !foundApplication} onClick={() => void load()}>Verify and load</button></div></DialogContent></Dialog></main>;
 }

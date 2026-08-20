@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
 
 export type LocationDraft = {
   label: string;
@@ -76,19 +75,9 @@ type ApplicationStore = ApplicationDraft & {
   reset: () => void;
 };
 
-export const useApplicationStore = create<ApplicationStore>()(
-  persist(
-    (set) => ({
+export const useApplicationStore = create<ApplicationStore>()((set) => ({
       ...emptyDraft,
       updateDraft: (patch) => set({ ...patch, lastSavedAt: new Date().toISOString() }),
       setStep: (currentStep) => set({ currentStep }),
       reset: () => set(emptyDraft),
-    }),
-    {
-      name: "aloysius-g1-2026-application-draft",
-      version: 1,
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ ...state, updateDraft: undefined, setStep: undefined, reset: undefined }),
-    },
-  ),
-);
+    }));

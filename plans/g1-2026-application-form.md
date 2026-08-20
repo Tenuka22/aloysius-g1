@@ -71,6 +71,26 @@ The application has four distinct state layers: route state (the active key and 
 
 Remaining architectural risks are document storage/metadata, payload integrity signing, and cross-device key recovery. Those require a defined storage and trust model before implementation.
 
+## Database-first draft sessions and cross-device recovery
+
+The application must create its server record before requesting browser location or collecting form fields. The database is the source of truth for draft contents; browser storage may retain only the current session code and private access key.
+
+- Starting a new application creates an empty server draft immediately and returns two credentials: a private access key for opening/editing the record and a memorable year-scoped session code in the form `26ABC123` (the intake year, three uppercase letters, and three digits).
+- The session code is unique, indexed, and searchable. It identifies the draft/application record without exposing the access key. A public lookup may return only safe identifying metadata such as applicant name/status and whether an access key is still required.
+- The access key remains the authorization token and is never stored in plaintext in the database. It may be entered manually or imported through the existing QR flow. The session code helps the applicant find the correct child/application before presenting the access key.
+- Every meaningful form change and step transition saves to the database first. The user advances only after the save succeeds. Optional fields may remain empty and do not prevent a draft save; server-side validation is enforced when submitting.
+- Reloading or changing devices uses the session code plus the access key/QR import to retrieve the latest server draft. Local storage contains only those two credentials, never a second copy of the draft or a registry of stale records.
+- Draft creation and updates remain available outside the submission window. Submission is allowed only inside the configured published window. Editing a submitted application is allowed only within the configured edit window; outside it, the record is readable but locked.
+- The home and access pages provide session-code lookup and access-key/QR recovery. The UI must make the distinction clear: the session code finds the record, while the access key authorizes access.
+
+### Database/API changes
+
+- Add a unique `session_code` column to `applications` and generate collision-safe `26ABC123` values server-side.
+- Add `application.start`, `application.lookup`, and update `application.create/get/update` contracts so drafts can be created without a birth certificate and returned with their session code.
+- Return the session code with authorized loads and show it in the application header; never return access-key hashes.
+- Remove browser-local draft persistence; retain only the active session code and access key for resuming the server record.
+- Keep the configured open/publish window separate from draft persistence and enforce read/edit/submit policy on the server.
+
 ## Implementation structure
 
 - `apps/web/src/routes/index.tsx`: home page, saved-key list, live count, and deletion dialogs.

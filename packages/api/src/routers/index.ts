@@ -18,6 +18,15 @@ const withoutSchoolPreferences = (data: Record<string, unknown>) => {
 const keySchema = z.string().min(32).max(128);
 const hashKey = (key: string) => createHash("sha256").update(key).digest("hex");
 const createAccessKey = () => `ALY-${randomBytes(32).toString("base64url")}`;
+const createSessionCode = () => `26${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
+const uniqueSessionCode = async () => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const sessionCode = createSessionCode();
+    const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.sessionCode, sessionCode)).get();
+    if (!existing) return sessionCode;
+  }
+  throw new Error("Could not allocate an application session code");
+};
 const defaultOpensAt = new Date("2026-09-09T00:00:00+05:30");
 const defaultClosesAt = new Date("2026-09-12T00:00:00+05:30");
 const getApplicationWindow = async () => {
@@ -49,24 +58,30 @@ const applicationRecord = (row: typeof applications.$inferSelect) => {
 
 export const appRouter = {
   application: {
-    create: publicProcedure.input(z.object({ data: draftSchema })).handler(async ({ input }) => {
+    create: publicProcedure.input(z.object({ data: draftSchema.default({}) })).handler(async ({ input }) => {
       const accessKey = createAccessKey();
+      const sessionCode = await uniqueSessionCode();
       const now = new Date();
       const birthCertificateNumber = typeof input.data.applicant === "object" && input.data.applicant !== null && "birthCertificateNumber" in input.data.applicant
         ? String((input.data.applicant as { birthCertificateNumber?: unknown }).birthCertificateNumber ?? "").trim().toUpperCase()
         : "";
-      if (!birthCertificateNumber) throw new Error("Birth certificate number is required");
-      const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
-      if (existing) throw new Error("An application already exists for this birth certificate number");
       const data = withoutSchoolPreferences(input.data);
-      await db.insert(applications).values({ id: randomUUID(), accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), birthCertificateNumber, data, createdAt: now, updatedAt: now });
+      const existing = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null;
+      if (existing) throw new Error("An application already exists for this birth certificate number");
+      await db.insert(applications).values({ id: randomUUID(), sessionCode, accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), birthCertificateNumber: birthCertificateNumber || null, data, createdAt: now, updatedAt: now });
       await publishApplicationChange();
-      return { accessKey, data };
+      return { accessKey, sessionCode, data };
+    }),
+    lookup: publicProcedure.input(z.object({ sessionCode: z.string().regex(/^\d{2}[A-Z]{3}\d{3}$/) })).handler(async ({ input }) => {
+      const row = await db.select({ sessionCode: applications.sessionCode, data: applications.data, submittedAt: applications.submittedAt, updatedAt: applications.updatedAt }).from(applications).where(eq(applications.sessionCode, input.sessionCode.toUpperCase())).get();
+      if (!row) throw new Error("Application session not found");
+      const data = row.data as { applicant?: { fullName?: string } };
+      return { sessionCode: row.sessionCode, applicantName: data.applicant?.fullName || "Unnamed applicant", status: row.submittedAt ? "submitted" : "draft", updatedAt: row.updatedAt };
     }),
     get: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db.select().from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new Error("Application key not found");
-      return { data: withoutSchoolPreferences(row.data as Record<string, unknown>), updatedAt: row.updatedAt, accessKeyHint: row.accessKeyHint };
+      return { data: withoutSchoolPreferences(row.data as Record<string, unknown>), updatedAt: row.updatedAt, accessKeyHint: row.accessKeyHint, sessionCode: row.sessionCode, submittedAt: row.submittedAt };
     }),
     checkBirthCertificate: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1) })).handler(async ({ input }) => {
       const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
@@ -79,6 +94,7 @@ export const appRouter = {
       const row = keyRow ?? (birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null);
       if (!row) throw new Error("No application was found for this birth certificate number");
       const resolvedBirthCertificateNumber = row.birthCertificateNumber;
+      if (!resolvedBirthCertificateNumber) throw new Error("This application does not have a birth certificate number yet");
       const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(eq(applicationAccessRequests.applicationId, row.id)).get();
       if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName.trim(), contactEmail: input.contactEmail.trim().toLowerCase(), ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), status: "open", createdAt: new Date(), resolvedAt: null });
       return { submitted: true };
@@ -100,7 +116,6 @@ export const appRouter = {
       const birthCertificateNumber = typeof input.data.applicant === "object" && input.data.applicant !== null && "birthCertificateNumber" in input.data.applicant
         ? String((input.data.applicant as { birthCertificateNumber?: unknown }).birthCertificateNumber ?? "").trim().toUpperCase()
         : "";
-      if (!birthCertificateNumber) throw new Error("Birth certificate number is required");
       const current = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!current) throw new Error("Application key not found");
       const currentRecord = await db.select({ submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, current.id)).get();
@@ -108,7 +123,7 @@ export const appRouter = {
       if (currentRecord?.submittedAt && updatedAt >= window.closesAt) throw new Error("Updates are closed for this form");
       const duplicate = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
       if (duplicate && duplicate.id !== current?.id) throw new Error("An application already exists for this birth certificate number");
-      await db.update(applications).set({ birthCertificateNumber, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).run();
+      await db.update(applications).set({ birthCertificateNumber: birthCertificateNumber || null, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).run();
       await publishApplicationChange();
       return { updatedAt };
     }),
@@ -168,14 +183,16 @@ export const appRouter = {
         if (!birthCertificateNumber) throw new Error("Birth certificate number is required");
         const duplicate = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
         if (duplicate && duplicate.id !== input.id) throw new Error("An application already exists for this birth certificate number");
-        const changed = await db.update(applications).set({ birthCertificateNumber, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.id, input.id)).run();
-        if (!changed.changes) throw new Error("Application not found");
+        const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.id, input.id)).get();
+        if (!existing) throw new Error("Application not found");
+        await db.update(applications).set({ birthCertificateNumber, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.id, input.id)).run();
         await publishApplicationChange();
         return { updatedAt };
       }),
       remove: adminProcedure.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
-        const deleted = await db.delete(applications).where(eq(applications.id, input.id)).run();
-        if (!deleted.changes) throw new Error("Application not found");
+        const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.id, input.id)).get();
+        if (!existing) throw new Error("Application not found");
+        await db.delete(applications).where(eq(applications.id, input.id)).run();
         await publishApplicationChange();
         return { deleted: true };
       }),

@@ -2,6 +2,7 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const applications = sqliteTable("applications", {
   id: text("id").primaryKey(),
+  sessionCode: text("session_code").notNull().unique(),
   accessKeyHash: text("access_key_hash").notNull().unique(),
   accessKeyHint: text("access_key_hint").notNull(),
   birthCertificateNumber: text("birth_certificate_number").unique(),

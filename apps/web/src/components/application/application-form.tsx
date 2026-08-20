@@ -181,7 +181,8 @@ function ResidenceStep({ form, draft, setSection }: { form: any; draft: Applicat
 export function ApplicationForm({ adminApplicationId, readOnly = false }: { adminApplicationId?: string; readOnly?: boolean }) {
   const draft = useApplicationStore();
   const [hydrated, setHydrated] = useState(false);
-  const [accessKey, setAccessKey] = useState(() => localStorage.getItem("aloysius-g1-application-key") ?? "");
+  const [accessKey, setAccessKey] = useState(() => new URLSearchParams(window.location.search).get("key") ?? localStorage.getItem("aloysius-g1-application-key") ?? "");
+  const [sessionCode, setSessionCode] = useState(() => new URLSearchParams(window.location.search).get("code") ?? localStorage.getItem("aloysius-g1-application-session-code") ?? "");
   const [saveStatus, setSaveStatus] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -198,7 +199,7 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
   useEffect(() => {
     let cancelled = false;
     const restore = async () => {
-      const key = localStorage.getItem("aloysius-g1-application-key");
+      const key = accessKey;
       try {
         if (adminApplicationId) {
           const result = await client.admin.application.get({ id: adminApplicationId });
@@ -210,6 +211,22 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
           const result = await client.application.get({ accessKey: key });
           if (!cancelled) {
             const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
+            setSessionCode(result.sessionCode);
+            localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
+            draft.updateDraft(latest);
+            form.reset(latest);
+            setSavedSnapshot(JSON.stringify(latest));
+          }
+        }
+        else if (!adminApplicationId && !readOnly) {
+          const result = await client.application.create({ data: {} });
+          if (!cancelled) {
+            setAccessKey(result.accessKey);
+            setSessionCode(result.sessionCode);
+            localStorage.setItem("aloysius-g1-application-key", result.accessKey);
+            localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
+            window.history.replaceState({}, "", `/application?code=${encodeURIComponent(result.sessionCode)}&key=${encodeURIComponent(result.accessKey)}`);
+            const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
             draft.updateDraft(latest);
             form.reset(latest);
             setSavedSnapshot(JSON.stringify(latest));
@@ -219,9 +236,11 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
         if (!cancelled) { setCollectionOnly(status.submissionLocked); setSubmissionOpensAt(status.submissionOpensAt); setSubmissionClosesAt(status.submissionClosesAt); }
       } catch {
         if (!cancelled) {
-          localStorage.removeItem("aloysius-g1-application-key");
           draft.reset();
           setAccessKey("");
+          setSessionCode("");
+          localStorage.removeItem("aloysius-g1-application-key");
+          localStorage.removeItem("aloysius-g1-application-session-code");
           setCollectionOnly(import.meta.env.PROD);
         }
       } finally {
@@ -259,14 +278,8 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
     const operation = saveQueue.current.then(async () => {
     const data = normalizeDraft({ ...(form.state.values as ApplicationDraft), ...draft });
     setSaveStatus("Saving…");
-    if (!adminApplicationId && !accessKey && !data.applicant.birthCertificateNumber.trim()) {
-      setSavedSnapshot(JSON.stringify(data));
-      setSaveStatus("Saved locally");
-      return;
-    }
     if (adminApplicationId) await client.admin.application.update({ id: adminApplicationId, data });
     else if (accessKey) await client.application.update({ accessKey, data });
-    else { const result = await client.application.create({ data }); localStorage.setItem("aloysius-g1-application-key", result.accessKey); const keys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[]; localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([result.accessKey, ...keys])])); setAccessKey(result.accessKey); }
     setSavedSnapshot(JSON.stringify(data));
     setSaveStatus("Saved securely");
     });
@@ -292,8 +305,8 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
     }
   };
   const hasUnsavedChanges = !accessKey || JSON.stringify(form.state.values) !== savedSnapshot;
-  const submitApplication = async () => { try { setSubmitError(""); let key = accessKey; if (!key || hasUnsavedChanges) { await saveToServer(); key = localStorage.getItem("aloysius-g1-application-key") ?? ""; } if (!key) return; setSaveStatus("Submitting…"); await client.application.submit({ accessKey: key }); setSaveStatus("Submitted"); setSubmitted(true); } catch (error) { setSaveStatus(""); setSubmitError(error instanceof Error ? error.message : "Could not submit the application. Please try again."); } };
-  const startAnotherApplication = () => { localStorage.removeItem("aloysius-g1-application-key"); draft.reset(); window.location.assign("/application"); };
+  const submitApplication = async () => { try { setSubmitError(""); if (hasUnsavedChanges) await saveToServer(); if (!accessKey) return; setSaveStatus("Submitting…"); await client.application.submit({ accessKey }); setSaveStatus("Submitted"); setSubmitted(true); } catch (error) { setSaveStatus(""); setSubmitError(error instanceof Error ? error.message : "Could not submit the application. Please try again."); } };
+  const startAnotherApplication = () => { localStorage.removeItem("aloysius-g1-application-key"); localStorage.removeItem("aloysius-g1-application-session-code"); draft.reset(); window.location.assign("/application"); };
   const back = () => draft.setStep(Math.max(current - 1, 0));
 
   const reviewSections = useMemo(() => [
@@ -320,7 +333,7 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
 
   if (!hydrated) return <div className="loading-state">Restoring your draft…</div>;
   return <main className="application-shell">
-    <section className="application-intro"><div><p className="form-kicker">G1 2026 intake</p><h1>Applicant information</h1><p>Complete the details at your own pace. Your progress is saved securely and can be reopened with your application key.</p>{accessKey && <p className="application-key"><strong>Application key:</strong> <code>{accessKey}</code><br /><span>Do not lose this key. It is required to update and view your application.</span></p>}</div><div className="draft-badge"><ShieldCheck size={17} /> {accessKey ? "Saved to database" : "Draft saved locally"}</div></section>
+    <section className="application-intro"><div><p className="form-kicker">G1 2026 intake</p><h1>Applicant information</h1><p>Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.</p>{sessionCode && <p className="application-key"><strong>Session code:</strong> <code>{sessionCode}</code><br /><span>Memorise this code to find this child&apos;s application on another device.</span></p>}{accessKey && <p className="application-key"><strong>Access key:</strong> <code>{accessKey}</code><br /><span>Keep this private. It authorizes access to the application.</span></p>}</div><div className="draft-badge"><ShieldCheck size={17} /> {accessKey ? "Saved to database" : "Connecting to database"}</div></section>
     <section className="wizard-card" aria-label="Application form">
       <div className="progress-header"><div><p className="step-count">Step {current + 1} of {steps.length}</p><h2>{steps[current]}</h2></div><span>{progress}% complete</span></div>
       <div className="progress-track"><div style={{ width: `${Math.max(progress, 8)}%` }} /></div>
