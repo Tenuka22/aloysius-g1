@@ -10,5 +10,5 @@ function normalizeSriLankanMobile(value: string) {
 }
 
 export function PhoneInput({ value, onChange, placeholder = "Contact phone number" }: { value: string; onChange: (value: string) => void; placeholder?: string }) {
-  return <div className="phone-input-field"><PhoneInputPrimitive className="reui-phone-input" defaultCountry="LK" international flags={flags} value={value || undefined} onChange={(next) => onChange(normalizeSriLankanMobile(next ?? ""))} placeholder={placeholder} /><p className="field-help">Saved as +94 70 191 1350</p></div>;
+  return <div className="phone-input-field"><PhoneInputPrimitive className="reui-phone-input" defaultCountry="LK" international flags={flags} value={value || undefined} onChange={(next) => onChange(normalizeSriLankanMobile(next ?? ""))} placeholder={placeholder} />{value && <p className="field-help">Saved as {value}</p>}</div>;
 }
