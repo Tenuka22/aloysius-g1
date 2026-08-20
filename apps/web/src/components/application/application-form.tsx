@@ -211,8 +211,11 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
           const result = await client.application.get({ accessKey: key });
           if (!cancelled) {
             const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
-            setSessionCode(result.sessionCode);
-            localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
+            const restoredSessionCode = result.sessionCode || new URLSearchParams(window.location.search).get("code") || localStorage.getItem("aloysius-g1-application-session-code") || "";
+            if (restoredSessionCode) {
+              setSessionCode(restoredSessionCode);
+              localStorage.setItem("aloysius-g1-application-session-code", restoredSessionCode);
+            }
             draft.updateDraft(latest);
             form.reset(latest);
             setSavedSnapshot(JSON.stringify(latest));
