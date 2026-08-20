@@ -1,0 +1,2 @@
+ALTER TABLE `applications` ADD `birth_certificate_number` text;--> statement-breakpoint
+CREATE UNIQUE INDEX `applications_birth_certificate_number_unique` ON `applications` (`birth_certificate_number`);

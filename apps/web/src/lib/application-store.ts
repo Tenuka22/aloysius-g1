@@ -12,6 +12,8 @@ export type LocationDraft = {
 export type ApplicationDraft = {
   currentStep: number;
   location: LocationDraft;
+  defaultLocation: LocationDraft;
+  selectedLocation: LocationDraft;
   applicant: {
     fullName: string;
     sinhalaName: string;
@@ -19,6 +21,7 @@ export type ApplicationDraft = {
     religion: string;
     educationMedium: string;
     dateOfBirth: string;
+    birthCertificateNumber: string;
   };
   guardian: {
     relationship: string;
@@ -45,7 +48,9 @@ export type ApplicationDraft = {
 export const emptyDraft: ApplicationDraft = {
   currentStep: 0,
   location: { label: "", address: "", latitude: null, longitude: null, source: "" },
-  applicant: { fullName: "", sinhalaName: "", gender: "", religion: "", educationMedium: "", dateOfBirth: "" },
+  defaultLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
+  selectedLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
+  applicant: { fullName: "", sinhalaName: "", gender: "", religion: "", educationMedium: "", dateOfBirth: "", birthCertificateNumber: "" },
   guardian: { relationship: "", fullName: "", nic: "", phone: "", whatsappPhone: "", email: "" },
   residence: { permanentAddress: "", currentAddress: "", sameAsPermanent: false, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "" },
   schools: { firstChoice: "", secondChoice: "", acceptNearby: "" },

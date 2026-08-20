@@ -6,6 +6,8 @@ import { mkdirSync } from "node:fs";
 
 import * as schema from "./schema";
 
+export { applications } from "./schema/applications";
+
 export function createDb() {
   const configuredPath = env.DATABASE_URL.replace(/^file:/, "");
   const databasePath = isAbsolute(configuredPath)
