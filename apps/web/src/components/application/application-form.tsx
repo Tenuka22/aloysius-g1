@@ -65,6 +65,15 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
   const [contactPhone, setContactPhone] = useState("");
   const [requestState, setRequestState] = useState("");
   const checkTimer = useRef<number | undefined>(undefined);
+  const existingApplicantName = String(form.state.values.applicant?.fullName ?? "");
+  const existingGuardianName = String(form.state.values.guardian?.fullName ?? "");
+  const existingContactPhone = String(form.state.values.guardian?.phone ?? "");
+
+  useEffect(() => {
+    if (existingApplicantName) setApplicantName((current) => current || existingApplicantName);
+    if (existingGuardianName) setGuardianName((current) => current || existingGuardianName);
+    if (existingContactPhone) setContactPhone((current) => current || existingContactPhone);
+  }, [existingApplicantName, existingGuardianName, existingContactPhone]);
 
   const check = async (value: string, reveal = true) => {
     const number = value.trim();
