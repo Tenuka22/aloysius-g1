@@ -11,7 +11,7 @@ import { Input } from "@aloysius-g1/ui/components/input";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
 import { useQuery } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@aloysius-g1/ui/components/dialog";
 import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
 import { PhoneInput } from "@/components/application/phone-input";
 
@@ -107,9 +107,9 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
   return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group">
     <label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label>
     <Input className={duplicate ? "duplicate-input-error" : undefined} id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setLocalKeyFound(false); setRequestState(""); }} onBlur={() => { field.handleBlur(); void check(field.state.value); }} />
-    {duplicate && <button className="duplicate-open-button" type="button" onClick={() => setDialogOpen(true)}>View existing application options</button>}
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>{duplicate && <DialogTrigger className="duplicate-open-button">View existing application options</DialogTrigger>}
     {field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}><DialogContent className="duplicate-dialog">
+    <DialogContent className="duplicate-dialog">
       <DialogHeader><DialogTitle>Existing application found</DialogTitle><DialogDescription>An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.</DialogDescription></DialogHeader>
       <div className="duplicate-dialog-body">
         {localKeyFound ? <div className="duplicate-local-key"><p>A saved key for this student was found on this device.</p><button className="secondary-button" type="button" onClick={() => void navigate({ to: "/application/access", search: { key: accessKey } })}><KeyRound size={16} /> Open existing profile</button></div> : <>
