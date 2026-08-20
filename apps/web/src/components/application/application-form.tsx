@@ -12,12 +12,19 @@ import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
+import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
+import { PhoneInput } from "@/components/application/phone-input";
 
 const steps = ["Location", "Applicant", "Parent / guardian", "Residence", "Declaration", "Review"];
 
 function Field({ label, name, type = "text", placeholder, form, disabled = false, onDuplicateChange }: { label: string; name: string; type?: string; placeholder?: string; form: any; disabled?: boolean; onDuplicateChange?: (duplicate: boolean) => void }) {
   if (name === "applicant.birthCertificateNumber") return <BirthCertificateFieldDialogV2 form={form} onDuplicateChange={onDuplicateChange} />;
+  if (name === "guardian.phone" || name === "guardian.whatsappPhone") return <PhoneField form={form} name={name} label={label} />;
   return <form.Field name={name}>{(field: any) => <div className="field-group"><label htmlFor={name}>{label}</label><Input id={name} name={name} type={type} value={field.state.value} placeholder={placeholder} disabled={disabled} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} />{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}</div>}</form.Field>;
+}
+
+function PhoneField({ form, name, label }: { form: any; name: string; label: string }) {
+  return <form.Field name={name}>{(field: any) => <div className="field-group"><label htmlFor={name}>{label}</label><PhoneInput value={field.state.value || ""} onChange={field.handleChange} /></div>}</form.Field>;
 }
 
 const G1_DOB_CUTOFF = "2022-01-31";
@@ -48,6 +55,7 @@ function BirthCertificateFieldDialog({ form }: { form: any }) {
 function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any; onDuplicateChange?: (duplicate: boolean) => void }) {
   const navigate = useNavigate();
   const [duplicate, setDuplicate] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [localKeyFound, setLocalKeyFound] = useState(false);
   const [accessKey, setAccessKey] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -60,6 +68,7 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
     try {
       const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number });
       setDuplicate(result.exists);
+      setDialogOpen(result.exists);
       onDuplicateChange?.(result.exists);
       setLocalKeyFound(false);
       if (!result.exists) return;
@@ -79,6 +88,7 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
       setLocalKeyFound(Boolean(matchingKey));
     } catch {
       setDuplicate(false);
+      setDialogOpen(false);
       onDuplicateChange?.(false);
       setLocalKeyFound(false);
     }
@@ -97,12 +107,13 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
   return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group">
     <label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label>
     <Input className={duplicate ? "duplicate-input-error" : undefined} id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setLocalKeyFound(false); setRequestState(""); }} onBlur={() => { field.handleBlur(); void check(field.state.value); }} />
+    {duplicate && <button className="duplicate-open-button" type="button" onClick={() => setDialogOpen(true)}>View existing application options</button>}
     {field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}
-    <Dialog open={duplicate} onOpenChange={setDuplicate}><DialogContent className="duplicate-dialog">
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}><DialogContent className="duplicate-dialog">
       <DialogHeader><DialogTitle>Existing application found</DialogTitle><DialogDescription>An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.</DialogDescription></DialogHeader>
       <div className="duplicate-dialog-body">
         {localKeyFound ? <div className="duplicate-local-key"><p>A saved key for this student was found on this device.</p><button className="secondary-button" type="button" onClick={() => void navigate({ to: "/application/access", search: { key: accessKey } })}><KeyRound size={16} /> Open existing profile</button></div> : <>
-          <div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div>
+          <div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div><AccessKeyQrImporter onKey={setAccessKey} />
           <div className="duplicate-request"><p>Don’t have the key? Send an admin request for recovery.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Contact email" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)} onClick={() => void requestAccess(field.state.value)}>Request access</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</div>
         </>}
       </div>

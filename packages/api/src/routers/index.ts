@@ -73,12 +73,14 @@ export const appRouter = {
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
       return { exists: Boolean(row) };
     }),
-    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1), applicantName: z.string().trim().min(1), contactEmail: z.email() })).handler(async ({ input }) => {
-      const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
-      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
+    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), applicantName: z.string().trim().min(1), contactEmail: z.email(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional() }).refine((input) => Boolean(input.birthCertificateNumber || input.accessKey), "A birth certificate number or access key is required")).handler(async ({ input }) => {
+      const keyRow = input.accessKey ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get() : null;
+      const birthCertificateNumber = input.birthCertificateNumber?.trim().toUpperCase() || keyRow?.birthCertificateNumber;
+      const row = keyRow ?? (birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null);
       if (!row) throw new Error("No application was found for this birth certificate number");
+      const resolvedBirthCertificateNumber = row.birthCertificateNumber;
       const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(eq(applicationAccessRequests.applicationId, row.id)).get();
-      if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber, applicantName: input.applicantName.trim(), contactEmail: input.contactEmail.trim().toLowerCase(), status: "open", createdAt: new Date(), resolvedAt: null });
+      if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName.trim(), contactEmail: input.contactEmail.trim().toLowerCase(), ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), status: "open", createdAt: new Date(), resolvedAt: null });
       return { submitted: true };
     }),
     remove: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {

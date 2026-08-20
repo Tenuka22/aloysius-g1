@@ -1,0 +1,1 @@
+ALTER TABLE `application_access_requests` ADD `contact_phone` text;
