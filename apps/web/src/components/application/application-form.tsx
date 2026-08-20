@@ -58,45 +58,22 @@ function BirthCertificateFieldDialog({ form }: { form: any }) {
 }
 
 function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any; onDuplicateChange?: (duplicate: boolean) => void }) {
-  const navigate = useNavigate();
   const [duplicate, setDuplicate] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [localKeyFound, setLocalKeyFound] = useState(false);
-  const [accessKeyValid, setAccessKeyValid] = useState(false);
-  const [accessKeyMessage, setAccessKeyMessage] = useState("");
-  const [accessKey, setAccessKey] = useState("");
   const [applicantName, setApplicantName] = useState("");
   const [guardianName, setGuardianName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [requestState, setRequestState] = useState("");
+  const checkTimer = useRef<number | undefined>(undefined);
 
   const check = async (value: string) => {
     const number = value.trim();
-    if (!number) return;
+    if (!number) { setDuplicate(false); setDialogOpen(false); onDuplicateChange?.(false); return; }
     try {
       const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number });
       setDuplicate(result.exists);
       setDialogOpen(result.exists);
       onDuplicateChange?.(result.exists);
-      setLocalKeyFound(false);
-      setAccessKeyValid(false);
-      setAccessKeyMessage("");
-      if (!result.exists) return;
-      const savedKeys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[];
-      const legacyKey = localStorage.getItem("aloysius-g1-application-key");
-      const keys = [...new Set(legacyKey ? [legacyKey, ...savedKeys] : savedKeys)];
-      const matchingKey = (await Promise.all(keys.map(async (key) => {
-        try {
-          const record = await client.application.get({ accessKey: key });
-          const data = record.data as { applicant?: { birthCertificateNumber?: string } };
-          return data.applicant?.birthCertificateNumber?.trim().toUpperCase() === number.toUpperCase() ? key : null;
-        } catch {
-          return null;
-        }
-      }))).find(Boolean);
-      setAccessKey(matchingKey ?? "");
-      setAccessKeyValid(Boolean(matchingKey));
-      setLocalKeyFound(Boolean(matchingKey));
     } catch {
       setDuplicate(false);
       setDialogOpen(false);
@@ -105,21 +82,7 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
     }
   };
 
-  const verifyAccessKey = async (key: string, birthCertificateNumber: string) => {
-    setAccessKey(key);
-    setLocalKeyFound(false);
-    setAccessKeyValid(false);
-    setAccessKeyMessage("");
-    if (!key.trim()) return;
-    try {
-      const record = await client.application.get({ accessKey: key.trim() });
-      const data = record.data as { applicant?: { birthCertificateNumber?: string } };
-      if (data.applicant?.birthCertificateNumber?.trim().toUpperCase() !== birthCertificateNumber.trim().toUpperCase()) throw new Error("This access key belongs to another application.");
-      setAccessKeyValid(true);
-    } catch (error) {
-      setAccessKeyMessage(error instanceof Error ? error.message : "This access key could not be verified.");
-    }
-  };
+  const scheduleCheck = (value: string) => { if (checkTimer.current) window.clearTimeout(checkTimer.current); checkTimer.current = window.setTimeout(() => void check(value), 250); };
 
   const requestRemoval = async (birthCertificateNumber: string) => {
     try {
@@ -132,14 +95,13 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
   };
 
   return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group">
-    <label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label>
-    <Input className={duplicate ? "duplicate-input-error" : undefined} id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setLocalKeyFound(false); setAccessKeyValid(false); setAccessKeyMessage(""); setRequestState(""); }} onBlur={() => { field.handleBlur(); void check(field.state.value); }} />
+    <div className="field-label-row"><label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label><button className="field-refresh-button" type="button" title="Check this birth certificate number again" onClick={() => void check(field.state.value)}><RotateCcw size={14} /> Refresh</button></div>
+    <Input className={duplicate ? "duplicate-input-error" : undefined} id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setRequestState(""); scheduleCheck(event.target.value); }} onBlur={() => { field.handleBlur(); void check(field.state.value); }} />
     <Drawer open={dialogOpen} onOpenChange={setDialogOpen}>{duplicate && <DrawerTrigger className="duplicate-open-button">View existing application options</DrawerTrigger>}
     {field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}
     <DrawerContent className="duplicate-drawer"><DrawerHeader><DrawerTitle>Existing application found</DrawerTitle><DrawerDescription>An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.</DrawerDescription></DrawerHeader>
       <div className="duplicate-dialog-body">
-        <section className="duplicate-access-option"><h3>Update the existing application</h3><p>Use the access key or QR code that belongs to this child to view and edit the record.</p>{localKeyFound && <p className="field-help">A saved access key for this child was verified on this device.</p>}{accessKeyMessage && <p className="error-line">{accessKeyMessage}</p>}<div className="duplicate-actions"><Input value={accessKey} onChange={(event) => { setAccessKey(event.target.value); setAccessKeyValid(false); setAccessKeyMessage(""); }} onBlur={() => void verifyAccessKey(accessKey, field.state.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKeyValid} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div><AccessKeyQrImporter onKey={(key) => void verifyAccessKey(key, field.state.value)} /></section>
-        <section className="duplicate-request"><h3>Ask the school to remove this record</h3><p>Only the school can approve removal after checking the record and contacting the family.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input value={guardianName} onChange={(event) => setGuardianName(event.target.value)} placeholder="Guardian name" /><Input type="tel" value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} placeholder="Contact number" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !guardianName.trim() || !contactPhone.trim()} onClick={() => void requestRemoval(field.state.value)}>Request record removal</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</section>
+        <section className="duplicate-request"><h3>Ask the school to remove this record</h3><p>Only the school can approve removal after checking the record and contacting the family.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input value={guardianName} onChange={(event) => setGuardianName(event.target.value)} placeholder="Guardian name" /><PhoneInput value={contactPhone} onChange={setContactPhone} /><button className="primary-button" type="button" disabled={!applicantName.trim() || !guardianName.trim() || !contactPhone.trim()} onClick={() => void requestRemoval(field.state.value)}>Request record removal</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</section>
       </div>
     </DrawerContent></Drawer>
   </div>}</form.Field>;
