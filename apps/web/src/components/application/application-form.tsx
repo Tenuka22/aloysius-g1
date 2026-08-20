@@ -296,6 +296,7 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
   }, [accessKey, hydrated, savedSnapshot, JSON.stringify(form.state.values)]);
   const next = async () => {
     if (current === 1 && duplicateBirthCertificate) return;
+    if (current === 4 && (!draft.declaration.confirmed || !draft.declaration.consent)) return;
     const locationReady = draft.location.latitude !== null && draft.location.longitude !== null;
     if (current === 0 && !locationCanProceed && !locationReady) return;
     try {
