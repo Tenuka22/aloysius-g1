@@ -98,6 +98,7 @@ export const appRouter = {
     }),
     requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().optional(), guardianName: z.string().trim().optional(), contactEmail: z.email().optional(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal"]).default("access") }).superRefine((input, context) => {
       if (!input.birthCertificateNumber && !input.sessionCode && !input.guardianNic && !input.accessKey) context.addIssue({ code: "custom", message: "A birth certificate number, session code, guardian NIC, or access key is required" });
+      if (input.requestType === "access" && !input.contactPhone) context.addIssue({ code: "custom", path: ["contactPhone"], message: "A mobile number is required for access recovery" });
       if (input.requestType === "removal" && (!input.applicantName || !input.guardianName || !input.contactPhone)) context.addIssue({ code: "custom", message: "Applicant name, guardian name, and contact number are required for removal requests" });
       if (input.requestType === "access" && input.guardianNic && !input.applicantName) context.addIssue({ code: "custom", message: "Applicant name is required when using guardian NIC recovery" });
     })).handler(async ({ input }) => {
