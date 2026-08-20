@@ -4,13 +4,12 @@ import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw,
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { emptyDraft, normalizeDraft, useApplicationStore, type ApplicationDraft } from "@/lib/application-store";
-import type { AdministrativeData } from "@/lib/administrative-data";
+import { DISTRICTS, DIVISIONAL_SECRETARIATS, ELECTORAL_CONSTITUENCIES, GN_DIVISIONS } from "@/lib/divisions";
 import { client } from "@/utils/orpc";
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@aloysius-g1/ui/components/combobox";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
-import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@aloysius-g1/ui/components/dialog";
 import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
 import { PhoneInput } from "@/components/application/phone-input";
@@ -139,23 +138,24 @@ function ResidenceCombobox({ form, name, label, options, onChange, onInputValueC
 }
 
 
-function ResidenceStep({ form, draft, setSection, administrativeData }: { form: any; draft: ApplicationDraft; setSection: (section: keyof ApplicationDraft, value: unknown) => void; administrativeData: AdministrativeData }) {
+function ResidenceStep({ form, draft, setSection }: { form: any; draft: ApplicationDraft; setSection: (section: keyof ApplicationDraft, value: unknown) => void }) {
   const [sameAsPermanent, setSameAsPermanent] = useState(draft.residence.sameAsPermanent);
   useEffect(() => { setSameAsPermanent(draft.residence.sameAsPermanent); }, [draft.residence.sameAsPermanent]);
   const [districtSearch, setDistrictSearch] = useState("");
   const [dsSearch, setDsSearch] = useState("");
   const [gnSearch, setGnSearch] = useState("");
   const [electoralSearch, setElectoralSearch] = useState("");
-  const filterOptions = (values: string[], search: string) => values.filter((value) => value.toLowerCase().includes(search.toLowerCase())).slice(0, 8);
-  const districtQuery = useQuery({ queryKey: ["administrative", "districts", districtSearch.toLowerCase()], queryFn: async () => filterOptions(administrativeData.districts, districtSearch), enabled: districtSearch.trim().length >= 2, staleTime: 24 * 60 * 60 * 1000 });
-  const dsQuery = useQuery({ queryKey: ["administrative", "ds-divisions", dsSearch.toLowerCase()], queryFn: async () => filterOptions(administrativeData.dsDivisions, dsSearch), enabled: dsSearch.trim().length >= 2, staleTime: 24 * 60 * 60 * 1000 });
-  const gnQuery = useQuery({
-    queryKey: ["administrative", "gn-divisions", gnSearch.toLowerCase()],
-    queryFn: async () => administrativeData.gnDivisions.filter((value) => value.toLowerCase().includes(gnSearch.toLowerCase())).slice(0, 8),
-    enabled: gnSearch.trim().length >= 2,
-    staleTime: 24 * 60 * 60 * 1000,
-  });
-  const electoralQuery = useQuery({ queryKey: ["administrative", "electoral-districts", electoralSearch.toLowerCase()], queryFn: async () => filterOptions(administrativeData.districts, electoralSearch), enabled: electoralSearch.trim().length >= 2, staleTime: 24 * 60 * 60 * 1000 });
+  const normalize = (value: string) => value.trim().toLocaleLowerCase();
+  const filterOptions = (values: string[], search: string) => {
+    const query = normalize(search);
+    return values.filter((value) => !query || normalize(value).includes(query)).slice(0, 12);
+  };
+  const selectedDistrict = DISTRICTS.find((district) => district.en === draft.residence.district || district.id === draft.residence.district);
+  const selectedDs = DIVISIONAL_SECRETARIATS.find((division) => division.en === draft.residence.dsDivision || division.id === draft.residence.dsDivision);
+  const districtOptions = useMemo(() => filterOptions(DISTRICTS.map((district) => district.en), districtSearch), [districtSearch]);
+  const dsOptions = useMemo(() => filterOptions(DIVISIONAL_SECRETARIATS.filter((division) => !selectedDistrict || division.districtId === selectedDistrict.id).map((division) => division.en), dsSearch), [dsSearch, selectedDistrict?.id]);
+  const gnOptions = useMemo(() => filterOptions(GN_DIVISIONS.filter((division) => !selectedDs || division.dsId === selectedDs.id).map((division) => division.en), gnSearch), [gnSearch, selectedDs?.id]);
+  const electoralOptions = useMemo(() => filterOptions(ELECTORAL_CONSTITUENCIES.map((constituency) => constituency.en), electoralSearch), [electoralSearch]);
 
   const copyPermanent = (checked: boolean) => {
     setSameAsPermanent(checked);
@@ -171,14 +171,14 @@ function ResidenceStep({ form, draft, setSection, administrativeData }: { form: 
     <Field form={form} name="residence.permanentAddress" label="Permanent address" placeholder="House number, street, town" />
     <Field form={form} name="residence.currentAddress" label="Current address" placeholder="Current address" disabled={sameAsPermanent} />
     <div className="field-group full-span"><label className="check-row"><Checkbox className="size-5" checked={sameAsPermanent} onCheckedChange={(checked) => copyPermanent(checked === true)} /> Current address is the same as permanent address</label></div>
-    <ResidenceCombobox form={form} name="residence.district" label="District" options={districtQuery.data ?? []} onInputValueChange={setDistrictSearch} onChange={(value) => form.setFieldValue("residence.electoralDistrict", value)} />
-    <ResidenceCombobox form={form} name="residence.dsDivision" label="Divisional Secretariat division" options={dsQuery.data ?? []} onInputValueChange={setDsSearch} />
-    <ResidenceCombobox form={form} name="residence.gnDivision" label="Grama Niladhari division" options={gnQuery.data ?? []} onInputValueChange={setGnSearch} />
-    <ResidenceCombobox form={form} name="residence.electoralDistrict" label="Electoral district" options={electoralQuery.data ?? []} onInputValueChange={setElectoralSearch} />
+    <ResidenceCombobox form={form} name="residence.district" label="District" options={districtOptions} onInputValueChange={setDistrictSearch} onChange={() => { form.setFieldValue("residence.dsDivision", ""); form.setFieldValue("residence.gnDivision", ""); }} />
+    <ResidenceCombobox form={form} name="residence.dsDivision" label="Divisional Secretariat division" options={dsOptions} onInputValueChange={setDsSearch} onChange={() => form.setFieldValue("residence.gnDivision", "")} />
+    <ResidenceCombobox form={form} name="residence.gnDivision" label="Grama Niladhari division" options={gnOptions} onInputValueChange={setGnSearch} />
+    <ResidenceCombobox form={form} name="residence.electoralDistrict" label="Electoral district" options={electoralOptions} onInputValueChange={setElectoralSearch} />
   </div>;
 }
 
-export function ApplicationForm({ administrativeData, adminApplicationId, readOnly = false }: { administrativeData: AdministrativeData; adminApplicationId?: string; readOnly?: boolean }) {
+export function ApplicationForm({ adminApplicationId, readOnly = false }: { adminApplicationId?: string; readOnly?: boolean }) {
   const draft = useApplicationStore();
   const [hydrated, setHydrated] = useState(false);
   const [accessKey, setAccessKey] = useState(() => localStorage.getItem("aloysius-g1-application-key") ?? "");
@@ -329,7 +329,7 @@ export function ApplicationForm({ administrativeData, adminApplicationId, readOn
         {current === 0 && <><div className="step-copy"><h3>Start with the home location</h3><p>Your true browser location is saved first. You may then replace the selected application location with another point.</p></div><LocationStep readOnly={readOnly} value={draft.location ?? emptyDraft.location} defaultValue={draft.defaultLocation ?? emptyDraft.defaultLocation} onAvailabilityChange={setLocationCanProceed} onChange={(value, defaultValue) => { if (readOnly) return; setSection("location", value); setSection("selectedLocation", value); if (defaultValue) setSection("defaultLocation", defaultValue); }} /></>}
         {current === 1 && <div className="fields-grid"><div className="step-copy full-span"><h3>Tell us about the applicant</h3><p>Use the name shown on the applicant’s birth certificate.</p></div><Field form={form} name="applicant.fullName" label="Full name" placeholder="Enter full name" /><SinhalaNameField form={form} /><SelectField form={form} name="applicant.gender" label="Gender" options={["Select gender", "Female", "Male"]} onChange={(value) => setSection("applicant", { ...draft.applicant, gender: value })} />{draft.applicant.gender === "Female" && <p className="error-line full-span">This is a boys’ school, so female applicants cannot continue with this application.</p>}<SelectField form={form} name="applicant.religion" label="Religion" options={["Select religion", "Catholic", "Christian", "Buddhist", "Islam"]} onChange={(value) => setSection("applicant", { ...draft.applicant, religion: value })} />{draft.applicant.religion === "Christian" && <p className="error-line full-span">This intake is not available to Christian applicants.</p>}<SelectField form={form} name="applicant.educationMedium" label="Education medium" options={["Select medium", "Sinhala", "Tamil"]} onChange={(value) => setSection("applicant", { ...draft.applicant, educationMedium: value })} /><DateOfBirthField form={form} /><Field form={form} name="applicant.birthCertificateNumber" label="Birth certificate number" placeholder="Enter birth certificate number" /></div>}
         {current === 2 && <div className="fields-grid"><div className="step-copy full-span"><h3>Parent or guardian details</h3><p>We’ll use these details only to contact the family about this intake.</p></div><SelectField form={form} name="guardian.relationship" label="Relationship to applicant" options={["Select relationship", "Mother", "Father", "Guardian"]} /><Field form={form} name="guardian.fullName" label="Full name" /><Field form={form} name="guardian.nic" label="NIC number" /><Field form={form} name="guardian.phone" label="Phone number" type="tel" /><Field form={form} name="guardian.email" label="Email address" type="email" /></div>}
-        {current === 3 && <ResidenceStep form={form} draft={draft} setSection={setSection} administrativeData={administrativeData} />}
+        {current === 3 && <ResidenceStep form={form} draft={draft} setSection={setSection} />}
         {current === 4 && <div className="declaration-panel"><div className="step-copy"><h3>Confirm before review</h3><p>This is a collection draft. Nothing will be submitted while collection mode is active.</p></div><label className="check-row"><Checkbox className="size-5" checked={draft.declaration.confirmed} onCheckedChange={(checked) => setSection("declaration", { ...draft.declaration, confirmed: checked === true })} /> I confirm that the information I provide is accurate to the best of my knowledge.</label><label className="check-row"><Checkbox className="size-5" checked={draft.declaration.consent} onCheckedChange={(checked) => setSection("declaration", { ...draft.declaration, consent: checked === true })} /> I consent to this information being used to prepare the G1 2026 intake application.</label></div>}
         {current === 5 && <div className="review-list"><div className="step-copy"><h3>Review your draft</h3><p>Check all collected information before the application submission step becomes available.</p></div>{reviewSections.map(([label, value, step]) => <div className="review-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><button type="button" onClick={() => draft.setStep(Number(step))}>Edit</button></div>)}</div>}
       </div>
