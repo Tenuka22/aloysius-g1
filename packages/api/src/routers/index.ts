@@ -1,3 +1,4 @@
+import { EventPublisher, eventIterator } from "@orpc/server";
 import type { RouterClient } from "@orpc/server";
 
 import { protectedProcedure, publicProcedure } from "../index";
@@ -16,6 +17,8 @@ const createAccessKey = () => `ALY-${randomBytes(32).toString("base64url")}`;
 const submissionOpensAt = new Date("2026-09-09T00:00:00+05:30");
 const updatesCloseAt = new Date("2026-09-12T00:00:00+05:30");
 const submissionLocked = () => env.NODE_ENV === "production" && new Date() < submissionOpensAt;
+const applicationEvents = new EventPublisher<{ "application-count": { count: number } }>();
+const applicationCount = async () => (await db.select({ id: applications.id }).from(applications).all()).length;
 
 export const appRouter = {
   application: {
@@ -29,12 +32,24 @@ export const appRouter = {
       const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
       if (existing) throw new Error("An application already exists for this birth certificate number");
       await db.insert(applications).values({ id: randomUUID(), accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), birthCertificateNumber, data: input.data, createdAt: now, updatedAt: now });
+      await applicationEvents.publish("application-count", { count: await applicationCount() });
       return { accessKey, data: input.data };
     }),
     get: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db.select().from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new Error("Application key not found");
       return { data: row.data, updatedAt: row.updatedAt, accessKeyHint: row.accessKeyHint };
+    }),
+    remove: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
+      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
+      if (!row) throw new Error("Application key not found");
+      await db.delete(applications).where(eq(applications.id, row.id)).run();
+      await applicationEvents.publish("application-count", { count: await applicationCount() });
+      return { deleted: true };
+    }),
+    liveCount: publicProcedure.output(eventIterator(z.object({ count: z.number() }))).handler(async function* ({ signal }) {
+      yield { count: await applicationCount() };
+      for await (const payload of applicationEvents.subscribe("application-count", { signal })) yield payload;
     }),
     update: publicProcedure.input(z.object({ accessKey: keySchema, data: draftSchema })).handler(async ({ input }) => {
       const updatedAt = new Date();

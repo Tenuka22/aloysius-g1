@@ -127,6 +127,11 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
     setSavedSnapshot(JSON.stringify(data));
     setSaveStatus("Saved securely");
   };
+  useEffect(() => {
+    if (!hydrated || !accessKey || !savedSnapshot || JSON.stringify(form.state.values) === savedSnapshot) return;
+    const timer = window.setTimeout(() => { void saveToServer(); }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [accessKey, hydrated, savedSnapshot, JSON.stringify(form.state.values)]);
   const next = async () => { if (current === 0 && !locationCanProceed) return; await form.handleSubmit(); await saveToServer(); draft.setStep(Math.min(current + 1, steps.length - 1)); };
   const hasUnsavedChanges = !accessKey || JSON.stringify(form.state.values) !== savedSnapshot;
   const submitApplication = async () => { try { setSubmitError(""); let key = accessKey; if (!key || hasUnsavedChanges) { await saveToServer(); key = localStorage.getItem("aloysius-g1-application-key") ?? ""; } if (!key) return; setSaveStatus("Submitting…"); await client.application.submit({ accessKey: key }); setSaveStatus("Submitted"); setSubmitted(true); } catch (error) { setSaveStatus(""); setSubmitError(error instanceof Error ? error.message : "Could not submit the application. Please try again."); } };
