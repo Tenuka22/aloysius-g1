@@ -68,6 +68,8 @@ export const appRouter = {
       const accessKey = createAccessKey();
       const sessionCode = await uniqueSessionCode();
       const now = new Date();
+      const window = await getApplicationWindow();
+      if (submissionLocked(window)) throw new Error("New applications can only be created during the configured form window");
       const birthCertificateNumber = typeof input.data.applicant === "object" && input.data.applicant !== null && "birthCertificateNumber" in input.data.applicant
         ? String((input.data.applicant as { birthCertificateNumber?: unknown }).birthCertificateNumber ?? "").trim().toUpperCase()
         : "";
@@ -124,9 +126,8 @@ export const appRouter = {
         : "";
       const current = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!current) throw new Error("Application key not found");
-      const currentRecord = await db.select({ submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, current.id)).get();
       const window = await getApplicationWindow();
-      if (currentRecord?.submittedAt && updatedAt >= window.closesAt) throw new Error("Updates are closed for this form");
+      if (submissionLocked(window)) throw new Error("Applications can only be updated during the configured form window");
       const duplicate = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
       if (duplicate && duplicate.id !== current?.id) throw new Error("An application already exists for this birth certificate number");
       await db.update(applications).set({ birthCertificateNumber: birthCertificateNumber || null, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).run();
