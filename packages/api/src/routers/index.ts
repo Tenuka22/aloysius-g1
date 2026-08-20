@@ -27,6 +27,12 @@ const uniqueSessionCode = async () => {
   }
   throw new Error("Could not allocate an application session code");
 };
+const ensureSessionCode = async (row: typeof applications.$inferSelect) => {
+  if (row.sessionCode) return row.sessionCode;
+  const sessionCode = await uniqueSessionCode();
+  await db.update(applications).set({ sessionCode }).where(eq(applications.id, row.id)).run();
+  return sessionCode;
+};
 const defaultOpensAt = new Date("2026-09-09T00:00:00+05:30");
 const defaultClosesAt = new Date("2026-09-12T00:00:00+05:30");
 const getApplicationWindow = async () => {
@@ -81,7 +87,7 @@ export const appRouter = {
     get: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db.select().from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new Error("Application key not found");
-      return { data: withoutSchoolPreferences(row.data as Record<string, unknown>), updatedAt: row.updatedAt, accessKeyHint: row.accessKeyHint, sessionCode: row.sessionCode, submittedAt: row.submittedAt };
+      return { data: withoutSchoolPreferences(row.data as Record<string, unknown>), updatedAt: row.updatedAt, accessKeyHint: row.accessKeyHint, sessionCode: await ensureSessionCode(row), submittedAt: row.submittedAt };
     }),
     checkBirthCertificate: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1) })).handler(async ({ input }) => {
       const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
@@ -174,7 +180,7 @@ export const appRouter = {
       get: adminProcedure.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
         const row = await db.select().from(applications).where(eq(applications.id, input.id)).get();
         if (!row) throw new Error("Application not found");
-        return { id: row.id, sessionCode: row.sessionCode, data: withoutSchoolPreferences(row.data as Record<string, unknown>), createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt };
+        return { id: row.id, sessionCode: await ensureSessionCode(row), data: withoutSchoolPreferences(row.data as Record<string, unknown>), createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt };
       }),
       update: adminProcedure.input(z.object({ id: z.string().uuid(), data: draftSchema })).handler(async ({ input }) => {
         const updatedAt = new Date();
