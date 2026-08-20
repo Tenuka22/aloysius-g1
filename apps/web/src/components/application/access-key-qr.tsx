@@ -14,7 +14,6 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
   const [cameraError, setCameraError] = useState("");
   const [cameraStarting, setCameraStarting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const scannerRef = useRef<QrScanner | null>(null);
   const readFile = async (file?: File) => {
     if (!file) return;
     try {
@@ -32,19 +31,34 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
     setError("");
     setCameraError("");
     setCameraStarting(true);
-    const scanner = new QrScanner(videoRef.current, (result) => {
-      const value = typeof result === "string" ? result : result.data;
-      const key = cleanKey(value);
-      if (!key) return;
-      onKey(key);
-      setCameraOpen(false);
-    }, { returnDetailedScanResult: true, highlightScanRegion: true, highlightCodeOutline: true });
-    scannerRef.current = scanner;
-    void scanner.start().then(() => setCameraStarting(false)).catch(() => { setCameraStarting(false); setCameraError("Camera access was unavailable. Check the browser permission, then try again or import a QR image instead."); });
+    let stream: MediaStream | null = null;
+    let scanTimer: number | undefined;
+    const startCamera = async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera access is not supported by this browser.");
+        stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+        if (!videoRef.current) throw new Error("Camera preview could not be created.");
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setCameraStarting(false);
+        scanTimer = window.setInterval(() => {
+          if (!videoRef.current || videoRef.current.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+          void QrScanner.scanImage(videoRef.current, { returnDetailedScanResult: true }).then((result) => {
+            const value = typeof result === "string" ? result : result.data;
+            const key = cleanKey(value);
+            if (key) { onKey(key); setCameraOpen(false); }
+          }).catch(() => undefined);
+        }, 250);
+      } catch (cameraStartError) {
+        setCameraStarting(false);
+        setCameraError(cameraStartError instanceof Error ? cameraStartError.message : "Camera access was unavailable. Check the browser permission, then try again or import a QR image instead.");
+      }
+    };
+    void startCamera();
     return () => {
-      scanner.stop();
-      scanner.destroy();
-      scannerRef.current = null;
+      if (scanTimer !== undefined) window.clearInterval(scanTimer);
+      stream?.getTracks().forEach((track) => track.stop());
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
   }, [cameraOpen, onKey]);
 
