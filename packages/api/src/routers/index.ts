@@ -53,7 +53,7 @@ const applicationRecord = (row: typeof applications.$inferSelect) => {
     email && !/^\S+@\S+\.\S+$/.test(email) && "invalid_email",
     (data.location?.latitude == null || data.location?.longitude == null) && "missing_location",
   ].filter(Boolean) as string[];
-  return { id: row.id, applicantName: data.applicant?.fullName || "Unnamed applicant", status: row.submittedAt ? "submitted" : "draft", createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt, accessKeyHint: row.accessKeyHint, validationErrors: errors };
+  return { id: row.id, sessionCode: row.sessionCode, applicantName: data.applicant?.fullName || "Unnamed applicant", status: row.submittedAt ? "submitted" : "draft", createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt, accessKeyHint: row.accessKeyHint, validationErrors: errors };
 };
 
 export const appRouter = {
@@ -166,7 +166,7 @@ export const appRouter = {
       return { total: records.length, drafts: records.filter((record) => record.status === "draft").length, submitted: records.filter((record) => record.status === "submitted").length, invalidEmail: records.filter((record) => record.validationErrors.includes("invalid_email")).length, incomplete: records.filter((record) => record.validationErrors.length > 0).length, recent: records.slice().sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()).slice(0, 10) };
     }),
     applications: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
-      const all = (await db.select().from(applications).all()).map(applicationRecord).filter((record) => record.applicantName.toLowerCase().includes(input.query.toLowerCase()) || record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase()));
+      const all = (await db.select().from(applications).all()).map(applicationRecord).filter((record) => record.applicantName.toLowerCase().includes(input.query.toLowerCase()) || record.sessionCode.toLowerCase().includes(input.query.toLowerCase()) || record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase()));
       const start = (input.page - 1) * input.pageSize;
       return { total: all.length, page: input.page, pageSize: input.pageSize, items: all.slice(start, start + input.pageSize) };
     }),
@@ -174,7 +174,7 @@ export const appRouter = {
       get: adminProcedure.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
         const row = await db.select().from(applications).where(eq(applications.id, input.id)).get();
         if (!row) throw new Error("Application not found");
-        return { id: row.id, data: withoutSchoolPreferences(row.data as Record<string, unknown>), createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt };
+        return { id: row.id, sessionCode: row.sessionCode, data: withoutSchoolPreferences(row.data as Record<string, unknown>), createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt };
       }),
       update: adminProcedure.input(z.object({ id: z.string().uuid(), data: draftSchema })).handler(async ({ input }) => {
         const updatedAt = new Date();
