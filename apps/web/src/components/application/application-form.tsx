@@ -66,23 +66,28 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
   const [requestState, setRequestState] = useState("");
   const checkTimer = useRef<number | undefined>(undefined);
 
-  const check = async (value: string) => {
+  const check = async (value: string, reveal = true) => {
     const number = value.trim();
     if (!number) { setDuplicate(false); setDialogOpen(false); onDuplicateChange?.(false); return; }
     try {
       const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number });
       setDuplicate(result.exists);
-      setDialogOpen(result.exists);
+      if (reveal) setDialogOpen(result.exists);
       onDuplicateChange?.(result.exists);
     } catch {
       setDuplicate(false);
       setDialogOpen(false);
       onDuplicateChange?.(false);
-      setLocalKeyFound(false);
     }
   };
 
   const scheduleCheck = (value: string) => { if (checkTimer.current) window.clearTimeout(checkTimer.current); checkTimer.current = window.setTimeout(() => void check(value), 250); };
+  const watchedBirthCertificateNumber = String(form.state.values.applicant?.birthCertificateNumber ?? "");
+  useEffect(() => {
+    scheduleCheck(watchedBirthCertificateNumber);
+    const watcher = window.setInterval(() => void check(watchedBirthCertificateNumber, false), 3000);
+    return () => { window.clearInterval(watcher); if (checkTimer.current) window.clearTimeout(checkTimer.current); };
+  }, [watchedBirthCertificateNumber]);
 
   const requestRemoval = async (birthCertificateNumber: string) => {
     try {
