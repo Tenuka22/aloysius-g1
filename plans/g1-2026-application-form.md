@@ -203,6 +203,17 @@ The admin panel must include a separate appeals queue for applicants who cannot 
 - Deleting an application must also revoke its active key and publish the application-count update.
 - A key rotation must invalidate the previous key immediately and update all local-session guidance after the applicant loads the replacement key.
 
+### Implemented duplicate birth-certificate and lost-key recovery
+
+- Birth-certificate numbers are checked against existing database records before a new application is created.
+- A matching number shows an existing-application notice instead of allowing a second student record.
+- Applicants with their key can open the existing profile through the verified access-key route.
+- Applicants without a key can submit a recovery request with their name and contact email.
+- Admins can review open recovery requests, generate a replacement key once, or dismiss the request.
+- Replacement keys rotate the stored hash so the previous key is immediately invalid.
+- A saved matching key is detected locally and offers a direct profile-open action.
+- Admins can display a generated replacement key as a QR code, and applicants can import that QR from `/` or `/application`.
+
 ### Acceptance criteria
 
 - An applicant can submit a lost-key or wrong-record appeal without learning whether another person’s record exists.

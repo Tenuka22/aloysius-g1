@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { emptyDraft, normalizeDraft, useApplicationStore, type ApplicationDraft } from "@/lib/application-store";
@@ -11,10 +11,12 @@ import { Input } from "@aloysius-g1/ui/components/input";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
 import { useQuery } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
 
 const steps = ["Location", "Applicant", "Parent / guardian", "Residence", "Declaration", "Review"];
 
-function Field({ label, name, type = "text", placeholder, form, disabled = false }: { label: string; name: string; type?: string; placeholder?: string; form: any; disabled?: boolean }) {
+function Field({ label, name, type = "text", placeholder, form, disabled = false, onDuplicateChange }: { label: string; name: string; type?: string; placeholder?: string; form: any; disabled?: boolean; onDuplicateChange?: (duplicate: boolean) => void }) {
+  if (name === "applicant.birthCertificateNumber") return <BirthCertificateFieldDialogV2 form={form} onDuplicateChange={onDuplicateChange} />;
   return <form.Field name={name}>{(field: any) => <div className="field-group"><label htmlFor={name}>{label}</label><Input id={name} name={name} type={type} value={field.state.value} placeholder={placeholder} disabled={disabled} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} />{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}</div>}</form.Field>;
 }
 
@@ -25,6 +27,87 @@ function DateOfBirthField({ form, onChange }: { form: any; onChange?: (value: st
 
 function SinhalaNameField({ form }: { form: any }) {
   return <form.Field name="applicant.sinhalaName">{(field: any) => <div className="field-group"><label htmlFor="applicant.sinhalaName">Name in Sinhala</label><Input id="applicant.sinhalaName" name="applicant.sinhalaName" value={field.state.value} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} /><a className="keyboard-help-link" href="https://www.helakuru.lk/keyboard" target="_blank" rel="noreferrer">Need a Sinhala phonetic keyboard? Open Helakuru</a>{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}</div>}</form.Field>;
+}
+
+function BirthCertificateField({ form }: { form: any }) {
+  const navigate = useNavigate();
+  const [duplicate, setDuplicate] = useState(false); const [accessKey, setAccessKey] = useState(""); const [contactEmail, setContactEmail] = useState(""); const [applicantName, setApplicantName] = useState(""); const [requestState, setRequestState] = useState("");
+  const check = async (value: string) => { const number = value.trim(); if (!number) return; try { const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number }); setDuplicate(result.exists); } catch { setDuplicate(false); } };
+  const requestAccess = async (birthCertificateNumber: string) => { try { setRequestState("Sending request…"); await client.application.requestAccess({ birthCertificateNumber, applicantName, contactEmail }); setRequestState("Request sent. An administrator will review it."); } catch (error) { setRequestState(error instanceof Error ? error.message : "Could not send the request"); } };
+  return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group"><label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label><Input id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setDuplicate(false); setRequestState(""); }} onBlur={() => { field.handleBlur(); void check(field.state.value); }} />{duplicate && <div className="duplicate-application-notice"><strong>An application already exists for this birth certificate number.</strong><p>Open the existing student profile with its access key. Do not create another application for the same student.</p><div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div><div className="duplicate-request"><p>Don’t have the key? Send an admin request for recovery.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Contact email" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)} onClick={() => void requestAccess(field.state.value)}>Request access</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</div></div>}{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}</div>}</form.Field>;
+}
+
+function BirthCertificateFieldDialog({ form }: { form: any }) {
+  const navigate = useNavigate();
+  const [duplicate, setDuplicate] = useState(false); const [accessKey, setAccessKey] = useState(""); const [contactEmail, setContactEmail] = useState(""); const [applicantName, setApplicantName] = useState(""); const [requestState, setRequestState] = useState("");
+  const check = async (value: string) => { const number = value.trim(); if (!number) return; try { const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number }); setDuplicate(result.exists); if (result.exists) { const savedKeys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[]; const legacyKey = localStorage.getItem("aloysius-g1-application-key"); const keys = [...new Set(legacyKey ? [legacyKey, ...savedKeys] : savedKeys)]; const matchingKey = (await Promise.all(keys.map(async (key) => { try { const record = await client.application.get({ accessKey: key }); const data = record.data as { applicant?: { birthCertificateNumber?: string } }; return data.applicant?.birthCertificateNumber?.trim().toUpperCase() === number.toUpperCase() ? key : null; } catch { return null; } }))).find(Boolean); setAccessKey(matchingKey ?? ""); } } catch { setDuplicate(false); } };
+  const requestAccess = async (birthCertificateNumber: string) => { try { setRequestState("Sending request…"); await client.application.requestAccess({ birthCertificateNumber, applicantName, contactEmail }); setRequestState("Request sent. An administrator will review it."); } catch (error) { setRequestState(error instanceof Error ? error.message : "Could not send the request"); } };
+  return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group"><label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label><Input className={duplicate ? "duplicate-input-error" : undefined} id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setDuplicate(false); setRequestState(""); }} onBlur={() => { field.handleBlur(); void check(field.state.value); }} />{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}<Dialog open={duplicate} onOpenChange={setDuplicate}><DialogContent className="duplicate-dialog"><DialogHeader><DialogTitle>Existing application found</DialogTitle><DialogDescription>An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.</DialogDescription></DialogHeader><div className="duplicate-dialog-body"><div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div><div className="duplicate-request"><p>Don’t have the key? Send an admin request for recovery.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Contact email" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)} onClick={() => void requestAccess(field.state.value)}>Request access</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</div></div></DialogContent></Dialog></div>}</form.Field>;
+}
+
+function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any; onDuplicateChange?: (duplicate: boolean) => void }) {
+  const navigate = useNavigate();
+  const [duplicate, setDuplicate] = useState(false);
+  const [localKeyFound, setLocalKeyFound] = useState(false);
+  const [accessKey, setAccessKey] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [applicantName, setApplicantName] = useState("");
+  const [requestState, setRequestState] = useState("");
+
+  const check = async (value: string) => {
+    const number = value.trim();
+    if (!number) return;
+    try {
+      const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number });
+      setDuplicate(result.exists);
+      onDuplicateChange?.(result.exists);
+      setLocalKeyFound(false);
+      if (!result.exists) return;
+      const savedKeys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[];
+      const legacyKey = localStorage.getItem("aloysius-g1-application-key");
+      const keys = [...new Set(legacyKey ? [legacyKey, ...savedKeys] : savedKeys)];
+      const matchingKey = (await Promise.all(keys.map(async (key) => {
+        try {
+          const record = await client.application.get({ accessKey: key });
+          const data = record.data as { applicant?: { birthCertificateNumber?: string } };
+          return data.applicant?.birthCertificateNumber?.trim().toUpperCase() === number.toUpperCase() ? key : null;
+        } catch {
+          return null;
+        }
+      }))).find(Boolean);
+      setAccessKey(matchingKey ?? "");
+      setLocalKeyFound(Boolean(matchingKey));
+    } catch {
+      setDuplicate(false);
+      onDuplicateChange?.(false);
+      setLocalKeyFound(false);
+    }
+  };
+
+  const requestAccess = async (birthCertificateNumber: string) => {
+    try {
+      setRequestState("Sending request…");
+      await client.application.requestAccess({ birthCertificateNumber, applicantName, contactEmail });
+      setRequestState("Request sent. An administrator will review it.");
+    } catch (error) {
+      setRequestState(error instanceof Error ? error.message : "Could not send the request");
+    }
+  };
+
+  return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group">
+    <label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label>
+    <Input className={duplicate ? "duplicate-input-error" : undefined} id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setLocalKeyFound(false); setRequestState(""); }} onBlur={() => { field.handleBlur(); void check(field.state.value); }} />
+    {field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}
+    <Dialog open={duplicate} onOpenChange={setDuplicate}><DialogContent className="duplicate-dialog">
+      <DialogHeader><DialogTitle>Existing application found</DialogTitle><DialogDescription>An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.</DialogDescription></DialogHeader>
+      <div className="duplicate-dialog-body">
+        {localKeyFound ? <div className="duplicate-local-key"><p>A saved key for this student was found on this device.</p><button className="secondary-button" type="button" onClick={() => void navigate({ to: "/application/access", search: { key: accessKey } })}><KeyRound size={16} /> Open existing profile</button></div> : <>
+          <div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div>
+          <div className="duplicate-request"><p>Don’t have the key? Send an admin request for recovery.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Contact email" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)} onClick={() => void requestAccess(field.state.value)}>Request access</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</div>
+        </>}
+      </div>
+    </DialogContent></Dialog>
+  </div>}</form.Field>;
 }
 
 const boysSchools = ["Select a boys’ school", "Ananda College", "Nalanda College", "Royal College", "D. S. Senanayake College"];
@@ -86,12 +169,15 @@ export function ApplicationForm({ administrativeData, adminApplicationId, readOn
   const [saveStatus, setSaveStatus] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submissionOpensAt, setSubmissionOpensAt] = useState("");
+  const [submissionClosesAt, setSubmissionClosesAt] = useState("");
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [locationCanProceed, setLocationCanProceed] = useState(false);
+  const [duplicateBirthCertificate, setDuplicateBirthCertificate] = useState(false);
   const saveQueue = useRef(Promise.resolve());
   const navigate = useNavigate();
   const [collectionOnly, setCollectionOnly] = useState(import.meta.env.PROD);
-  const form = useForm({ defaultValues: draft, onSubmit: ({ value }) => draft.updateDraft(value as Partial<ApplicationDraft>) });
+  const form = useForm({ defaultValues: draft as ApplicationDraft, onSubmit: ({ value }) => draft.updateDraft(value as Partial<ApplicationDraft>) });
   useEffect(() => {
     let cancelled = false;
     const restore = async () => {
@@ -113,7 +199,7 @@ export function ApplicationForm({ administrativeData, adminApplicationId, readOn
           }
         }
         const status = await client.application.status();
-        if (!cancelled) setCollectionOnly(status.submissionLocked);
+        if (!cancelled) { setCollectionOnly(status.submissionLocked); setSubmissionOpensAt(status.submissionOpensAt); setSubmissionClosesAt(status.submissionClosesAt); }
       } catch {
         if (!cancelled) {
           localStorage.removeItem("aloysius-g1-application-key");
@@ -130,12 +216,33 @@ export function ApplicationForm({ administrativeData, adminApplicationId, readOn
   }, []);
   const progress = Math.round((draft.currentStep / (steps.length - 1)) * 100);
   const current = draft.currentStep;
+  const birthCertificateNumber = String(form.state.values.applicant.birthCertificateNumber ?? "").trim();
+  useEffect(() => {
+    if (current !== 1 || !birthCertificateNumber) {
+      setDuplicateBirthCertificate(false);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void client.application.checkBirthCertificate({ birthCertificateNumber }).then((result) => {
+        if (!cancelled) setDuplicateBirthCertificate(result.exists);
+      }).catch(() => {
+        if (!cancelled) setDuplicateBirthCertificate(false);
+      });
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [birthCertificateNumber, current]);
 
   const setSection = (section: keyof ApplicationDraft, value: unknown) => draft.updateDraft({ [section]: value } as Partial<ApplicationDraft>);
   const saveToServer = async () => {
     const operation = saveQueue.current.then(async () => {
     const data = normalizeDraft({ ...(form.state.values as ApplicationDraft), ...draft });
     setSaveStatus("Saving…");
+    if (!adminApplicationId && !accessKey && !data.applicant.birthCertificateNumber.trim()) {
+      setSavedSnapshot(JSON.stringify(data));
+      setSaveStatus("Saved locally");
+      return;
+    }
     if (adminApplicationId) await client.admin.application.update({ id: adminApplicationId, data });
     else if (accessKey) await client.application.update({ accessKey, data });
     else { const result = await client.application.create({ data }); localStorage.setItem("aloysius-g1-application-key", result.accessKey); const keys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[]; localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([result.accessKey, ...keys])])); setAccessKey(result.accessKey); }
@@ -150,7 +257,19 @@ export function ApplicationForm({ administrativeData, adminApplicationId, readOn
     const timer = window.setTimeout(() => { void saveToServer(); }, 1500);
     return () => window.clearTimeout(timer);
   }, [accessKey, hydrated, savedSnapshot, JSON.stringify(form.state.values)]);
-  const next = async () => { if (current === 0 && !locationCanProceed) return; await form.handleSubmit(); await saveToServer(); draft.setStep(Math.min(current + 1, steps.length - 1)); };
+  const next = async () => {
+    if (current === 1 && duplicateBirthCertificate) return;
+    const locationReady = draft.location.latitude !== null && draft.location.longitude !== null;
+    if (current === 0 && !locationCanProceed && !locationReady) return;
+    try {
+      setSubmitError("");
+      await form.handleSubmit();
+      await saveToServer();
+      draft.setStep(Math.min(current + 1, steps.length - 1));
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Could not save this step. Please try again.");
+    }
+  };
   const hasUnsavedChanges = !accessKey || JSON.stringify(form.state.values) !== savedSnapshot;
   const submitApplication = async () => { try { setSubmitError(""); let key = accessKey; if (!key || hasUnsavedChanges) { await saveToServer(); key = localStorage.getItem("aloysius-g1-application-key") ?? ""; } if (!key) return; setSaveStatus("Submitting…"); await client.application.submit({ accessKey: key }); setSaveStatus("Submitted"); setSubmitted(true); } catch (error) { setSaveStatus(""); setSubmitError(error instanceof Error ? error.message : "Could not submit the application. Please try again."); } };
   const startAnotherApplication = () => { localStorage.removeItem("aloysius-g1-application-key"); draft.reset(); window.location.assign("/application"); };
@@ -195,7 +314,7 @@ export function ApplicationForm({ administrativeData, adminApplicationId, readOn
         {current === 5 && <div className="review-list"><div className="step-copy"><h3>Review your draft</h3><p>Check all collected information before the application submission step becomes available.</p></div>{reviewSections.map(([label, value, step]) => <div className="review-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><button type="button" onClick={() => draft.setStep(Number(step))}>Edit</button></div>)}</div>}
       </div>
       <div className="wizard-footer">{submitError && <p className="error-line submit-error">{submitError}</p>}{submitted ? <div className="submission-actions"><strong>Application submitted successfully.</strong><div className="key-success"><span>Keep this application key safe. You need it to view or update this child’s application.</span><code>{accessKey}</code><button type="button" className="secondary-button" onClick={() => void navigator.clipboard?.writeText(accessKey)}><Copy size={16} /> Copy key</button></div><div className="footer-actions"><button type="button" className="secondary-button" onClick={() => void navigate({ to: "/" })}><House size={17} /> Back to home</button><button type="button" className="primary-button" onClick={startAnotherApplication}><UserPlus size={17} /> Apply for another child</button></div></div> : <>{draft.lastSavedAt && <span className="saved-time"><Check size={15} /> Saved locally</span>}<div className="footer-actions">{current > 0 && <button type="button" className="secondary-button" onClick={back}><ArrowLeft size={17} /> Back</button>}{current < steps.length - 1 ? <button type="button" className="primary-button" disabled={current === 1 && (draft.applicant.gender === "Female" || ["Catholic", "Christian"].includes(draft.applicant.religion) || !form.state.values.applicant.dateOfBirth || form.state.values.applicant.dateOfBirth > G1_DOB_CUTOFF || !form.state.values.applicant.birthCertificateNumber)} onClick={next}>Continue <ArrowRight size={17} /></button> : <button type="button" className="primary-button" disabled={collectionOnly || !draft.declaration.confirmed || !draft.declaration.consent || !hasUnsavedChanges} onClick={() => void submitApplication()}>{collectionOnly ? <><Clock3 size={17} /> Submission opens 9 Sep 2026</> : accessKey ? "Update application" : "Submit application"}</button>}</div></>}</div>
-      {collectionOnly && <div className="collection-banner"><Clock3 size={18} /><div><strong>Collection mode is active</strong><span>Your draft is saved locally and synchronized with the server. Submission opens on 9 September 2026.</span></div><button type="button" className="reset-button" onClick={() => draft.reset()}><RotateCcw size={15} /> Clear draft</button></div>}
+      {collectionOnly && <div className="collection-banner"><Clock3 size={18} /><div><strong>Form submission is outside the open window</strong><span>Your draft is saved locally and synchronized with the server. The form window is {submissionOpensAt ? new Date(submissionOpensAt).toLocaleString() : "not yet configured"} to {submissionClosesAt ? new Date(submissionClosesAt).toLocaleString() : "not configured"}.</span></div><button type="button" className="reset-button" onClick={() => draft.reset()}><RotateCcw size={15} /> Clear draft</button></div>}
     </section>
   </main>;
 }

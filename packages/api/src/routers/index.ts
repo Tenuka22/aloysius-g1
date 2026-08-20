@@ -5,7 +5,7 @@ import { adminProcedure, protectedProcedure, publicProcedure } from "../index";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
-import { applications } from "@aloysius-g1/db";
+import { applicationAccessRequests, applicationSettings, applications } from "@aloysius-g1/db";
 import { eq } from "drizzle-orm";
 import { env } from "@aloysius-g1/env/server";
 
@@ -18,9 +18,17 @@ const withoutSchoolPreferences = (data: Record<string, unknown>) => {
 const keySchema = z.string().min(32).max(128);
 const hashKey = (key: string) => createHash("sha256").update(key).digest("hex");
 const createAccessKey = () => `ALY-${randomBytes(32).toString("base64url")}`;
-const submissionOpensAt = new Date("2026-09-09T00:00:00+05:30");
-const updatesCloseAt = new Date("2026-09-12T00:00:00+05:30");
-const submissionLocked = () => env.NODE_ENV === "production" && new Date() < submissionOpensAt;
+const defaultOpensAt = new Date("2026-09-09T00:00:00+05:30");
+const defaultClosesAt = new Date("2026-09-12T00:00:00+05:30");
+const getApplicationWindow = async () => {
+  const existing = await db.select().from(applicationSettings).where(eq(applicationSettings.id, "default")).get();
+  if (existing) return existing;
+  const now = new Date();
+  const defaults = { id: "default", opensAt: defaultOpensAt, closesAt: defaultClosesAt, updatedAt: now };
+  await db.insert(applicationSettings).values(defaults).onConflictDoNothing();
+  return (await db.select().from(applicationSettings).where(eq(applicationSettings.id, "default")).get()) ?? defaults;
+};
+const submissionLocked = (window: { opensAt: Date; closesAt: Date }) => new Date() < window.opensAt || new Date() > window.closesAt;
 const applicationEvents = new EventPublisher<{ "application-count": { count: number } }>();
 const applicationCount = async () => (await db.select({ id: applications.id }).from(applications).all()).length;
 const publishApplicationChange = async () => applicationEvents.publish("application-count", { count: await applicationCount() });
@@ -60,6 +68,19 @@ export const appRouter = {
       if (!row) throw new Error("Application key not found");
       return { data: withoutSchoolPreferences(row.data as Record<string, unknown>), updatedAt: row.updatedAt, accessKeyHint: row.accessKeyHint };
     }),
+    checkBirthCertificate: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1) })).handler(async ({ input }) => {
+      const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
+      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
+      return { exists: Boolean(row) };
+    }),
+    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1), applicantName: z.string().trim().min(1), contactEmail: z.email() })).handler(async ({ input }) => {
+      const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
+      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
+      if (!row) throw new Error("No application was found for this birth certificate number");
+      const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(eq(applicationAccessRequests.applicationId, row.id)).get();
+      if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber, applicantName: input.applicantName.trim(), contactEmail: input.contactEmail.trim().toLowerCase(), status: "open", createdAt: new Date(), resolvedAt: null });
+      return { submitted: true };
+    }),
     remove: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new Error("Application key not found");
@@ -81,16 +102,18 @@ export const appRouter = {
       const current = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!current) throw new Error("Application key not found");
       const currentRecord = await db.select({ submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, current.id)).get();
-      if (currentRecord?.submittedAt && updatedAt >= updatesCloseAt) throw new Error("Updates closed on 11 September 2026");
+      const window = await getApplicationWindow();
+      if (currentRecord?.submittedAt && updatedAt >= window.closesAt) throw new Error("Updates are closed for this form");
       const duplicate = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
       if (duplicate && duplicate.id !== current?.id) throw new Error("An application already exists for this birth certificate number");
       await db.update(applications).set({ birthCertificateNumber, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).run();
       await publishApplicationChange();
       return { updatedAt };
     }),
-    status: publicProcedure.handler(() => ({ submissionLocked: submissionLocked(), submissionOpensAt: submissionOpensAt.toISOString(), environment: env.NODE_ENV })),
+    status: publicProcedure.handler(async () => { const window = await getApplicationWindow(); return { submissionLocked: submissionLocked(window), submissionOpensAt: window.opensAt.toISOString(), submissionClosesAt: window.closesAt.toISOString(), environment: env.NODE_ENV }; }),
     submit: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
-      if (submissionLocked()) throw new Error("Submissions open on 9 September 2026");
+      const window = await getApplicationWindow();
+      if (submissionLocked(window)) throw new Error("Submissions are outside the configured form window");
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new Error("Application key not found");
       await db.update(applications).set({ submittedAt: new Date(), updatedAt: new Date() }).where(eq(applications.id, row.id)).run();
@@ -99,6 +122,27 @@ export const appRouter = {
     }),
   },
   admin: {
+    accessRequests: {
+      query: adminProcedure.handler(async () => db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.status, "open")).all()),
+      rotateKey: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
+        const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
+        if (!request) throw new Error("Access request not found");
+        const accessKey = createAccessKey();
+        await db.update(applications).set({ accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
+        await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
+        return { accessKey, applicationId: request.applicationId };
+      }),
+      dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => { await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, input.requestId)).run(); return { dismissed: true }; }),
+    },
+    settings: {
+      get: adminProcedure.handler(async () => { const window = await getApplicationWindow(); return { opensAt: window.opensAt, closesAt: window.closesAt, updatedAt: window.updatedAt }; }),
+      update: adminProcedure.input(z.object({ opensAt: z.coerce.date(), closesAt: z.coerce.date() })).handler(async ({ input }) => {
+        if (input.closesAt <= input.opensAt) throw new Error("The closing time must be after the opening time");
+        const updatedAt = new Date();
+        await db.insert(applicationSettings).values({ id: "default", opensAt: input.opensAt, closesAt: input.closesAt, updatedAt }).onConflictDoUpdate({ target: applicationSettings.id, set: { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt } });
+        return { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt };
+      }),
+    },
     overview: adminProcedure.handler(async () => {
       const rows = await db.select().from(applications).all();
       const records = rows.map(applicationRecord);

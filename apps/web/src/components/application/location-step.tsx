@@ -52,8 +52,6 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         <input id="location-search" value={query} onChange={(event) => { setQuery(event.target.value); onChange({ ...value, address: event.target.value, source: "manual" }); }} placeholder="Enter an address or landmark" />
       </div>
       {!readOnly && <button type="button" className="secondary-button full-button" onClick={() => useDeviceLocation(false)}><LocateFixed size={17} /> Use my current device location</button>}
-      {defaultValue.latitude !== null && <p className="field-help">Default browser location saved. The selected location can be changed below.</p>}
-      {defaultValue.latitude !== null && <div className="location-detail-list"><span><strong>True/device location</strong>{defaultValue.address || `${defaultValue.latitude}, ${defaultValue.longitude}`}</span><span><strong>User-picked location</strong>{value.address || `${value.latitude ?? "Not selected"}, ${value.longitude ?? ""}`}</span></div>}
       {deviceLocationAvailable && defaultValue.latitude === null && <p className="error-line"><TriangleAlert size={16} /> Browser location permission is required to continue.</p>}
       {status && <p className="status-line" role="status">{status}</p>}
       {value.latitude === null && <p className="error-line"><TriangleAlert size={16} /> Select a point on the map or use your device location to continue.</p>}
