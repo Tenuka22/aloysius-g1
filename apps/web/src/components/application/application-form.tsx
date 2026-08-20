@@ -99,11 +99,11 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
     }
   };
 
-  const requestAccess = async (birthCertificateNumber: string) => {
+  const requestRemoval = async (birthCertificateNumber: string) => {
     try {
-      setRequestState("Sending request…");
-      await client.application.requestAccess({ birthCertificateNumber, applicantName, contactEmail });
-      setRequestState("Request sent. An administrator will review it.");
+      setRequestState("Sending removal request…");
+      await client.application.requestAccess({ birthCertificateNumber, applicantName, contactEmail, requestType: "removal" });
+      setRequestState("Removal request sent. The school will review it and contact you before taking action.");
     } catch (error) {
       setRequestState(error instanceof Error ? error.message : "Could not send the request");
     }
@@ -116,10 +116,8 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
     {field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}
     <DrawerContent className="duplicate-drawer"><DrawerHeader><DrawerTitle>Existing application found</DrawerTitle><DrawerDescription>An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.</DrawerDescription></DrawerHeader>
       <div className="duplicate-dialog-body">
-        {localKeyFound ? <div className="duplicate-local-key"><p>A saved key for this student was found on this device.</p><button className="secondary-button" type="button" onClick={() => void navigate({ to: "/application/access", search: { key: accessKey } })}><KeyRound size={16} /> Open existing profile</button></div> : <>
-          <div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div><AccessKeyQrImporter onKey={setAccessKey} />
-          <div className="duplicate-request"><p>Don’t have the key? Send an admin request for recovery.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Contact email" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)} onClick={() => void requestAccess(field.state.value)}>Request access</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</div>
-        </>}
+        <section className="duplicate-access-option"><h3>Update the existing application</h3><p>Use the existing access key or its QR code to view and edit this record.</p>{localKeyFound && <p className="field-help">A saved access key for this student was found on this device.</p>}<div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div><AccessKeyQrImporter onKey={setAccessKey} /></section>
+        <section className="duplicate-request"><h3>Ask the school to remove this record</h3><p>If this record should not exist, send a removal request. The school will verify it, contact you, and decide whether it can be deleted.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Contact email" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)} onClick={() => void requestRemoval(field.state.value)}>Request record removal</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</section>
       </div>
     </DrawerContent></Drawer>
   </div>}</form.Field>;
@@ -227,6 +225,8 @@ export function ApplicationForm({ adminApplicationId, readOnly = false }: { admi
             setAccessKey(result.accessKey);
             setSessionCode(result.sessionCode);
             localStorage.setItem("aloysius-g1-application-key", result.accessKey);
+            const savedKeys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as unknown;
+            localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([...(Array.isArray(savedKeys) ? savedKeys : []), result.accessKey])]));
             localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
             window.history.replaceState({}, "", `/application?code=${encodeURIComponent(result.sessionCode)}&key=${encodeURIComponent(result.accessKey)}`);
             const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);

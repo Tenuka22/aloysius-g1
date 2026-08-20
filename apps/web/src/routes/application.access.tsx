@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@aloysius-g1/ui/components/drawer";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
 import { normalizeDraft, useApplicationStore } from "@/lib/application-store";
@@ -38,6 +38,8 @@ function AccessPage() {
       const result = await client.application.get({ accessKey: normalized });
       if (result.sessionCode !== normalizedCode) throw new Error("That access key does not match this session code");
       localStorage.setItem("aloysius-g1-application-key", normalized);
+      const savedKeys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as unknown;
+      localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([...(Array.isArray(savedKeys) ? savedKeys : []), normalized])]));
       localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
       updateDraft(normalizeDraft(result.data as any));
       await navigate({ to: "/application", search: { code: result.sessionCode, key: normalized } as never });
@@ -46,5 +48,5 @@ function AccessPage() {
     }
   };
 
-  return <main className="access-page"><Dialog open><DialogContent showCloseButton={false} className="access-dialog"><DialogHeader><DialogTitle>Load an application</DialogTitle><DialogDescription>Find the child&apos;s application with the session code, then verify it with the private access key or QR code.</DialogDescription></DialogHeader><div className="access-code-row"><Input className="access-key-input" value={sessionCode} onChange={(event) => { setSessionCode(event.target.value.toUpperCase()); setFoundApplication(null); }} placeholder="26ABC123" autoComplete="off" /><button className="secondary-button" type="button" disabled={!sessionCode.trim()} onClick={() => void lookup()}>Find application</button></div>{foundApplication && <p className="field-help">{foundApplication.applicantName} · {foundApplication.status}. Enter the matching access key below.</p>}<Input className="access-key-input" value={key} onChange={(event) => setKey(event.target.value)} placeholder="Private access key" autoComplete="off" autoFocus /><AccessKeyQrImporter onKey={setKey} />{error && <p className="error-line">{error}</p>}<div className="dialog-actions"><button className="secondary-button" type="button" onClick={() => void navigate({ to: "/" })}>Cancel</button><button className="primary-button" type="button" disabled={!key.trim() || !foundApplication} onClick={() => void load()}>Verify and load</button></div></DialogContent></Dialog></main>;
+  return <main className="access-page"><Drawer open><DrawerContent showCloseButton={false} className="access-dialog"><DrawerHeader><DrawerTitle>Load an application</DrawerTitle><DrawerDescription>Find the child&apos;s application with the session code, then verify it with the private access key or QR code.</DrawerDescription></DrawerHeader><div className="access-code-row"><Input className="access-key-input" value={sessionCode} onChange={(event) => { setSessionCode(event.target.value.toUpperCase()); setFoundApplication(null); }} placeholder="26ABC123" autoComplete="off" /><button className="secondary-button" type="button" disabled={!sessionCode.trim()} onClick={() => void lookup()}>Find application</button></div>{foundApplication && <p className="field-help">{foundApplication.applicantName} · {foundApplication.status}. Enter the matching access key below.</p>}<Input className="access-key-input" value={key} onChange={(event) => setKey(event.target.value)} placeholder="Private access key" autoComplete="off" autoFocus /><AccessKeyQrImporter onKey={setKey} />{error && <p className="error-line">{error}</p>}<div className="dialog-actions"><button className="secondary-button" type="button" onClick={() => void navigate({ to: "/" })}>Cancel</button><button className="primary-button" type="button" disabled={!key.trim() || !foundApplication} onClick={() => void load()}>Verify and load</button></div></DrawerContent></Drawer></main>;
 }

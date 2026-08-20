@@ -241,3 +241,11 @@ The admin panel must include a separate appeals queue for applicants who cannot 
 - A birth-certificate conflict cannot be solved by simply overwriting another application.
 - Lost-key recovery produces a new secret rather than exposing the old one.
 - Appeal and recovery actions are visible in admin activity reporting.
+
+## Duplicate birth certificate and record removal
+
+- A matching birth certificate number must stop creation of a second application.
+- The existing access key or QR code is only for opening and editing the existing application.
+- A user who believes the existing record should be removed submits a separate record-removal request with their name and contact email. This request is never an automatic deletion or a key-recovery request.
+- The school/admin reviews the request, contacts the user, and deletes the application only after confirming that removal is legally and operationally appropriate. The request is then marked resolved.
+- Access-key requests and record-removal requests are stored with separate types so an admin cannot generate a replacement key for a removal request or delete a record from an access request.

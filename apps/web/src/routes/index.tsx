@@ -11,15 +11,15 @@ import { AccessRecoveryDialog } from "@/components/application/access-recovery-d
 export const Route = createFileRoute("/")({ component: HomeComponent });
 
 function getSavedKeys() {
-  const key = localStorage.getItem("aloysius-g1-application-key");
-  return key ? [key] : [];
+  const stored = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as unknown;
+  const legacy = localStorage.getItem("aloysius-g1-application-key");
+  return [...new Set([...(Array.isArray(stored) ? stored.filter((value): value is string => typeof value === "string") : []), ...(legacy ? [legacy] : [])])];
 }
 
 function HomeComponent() {
   const [keys, setKeys] = useState(getSavedKeys);
   const [records, setRecords] = useState<Record<string, { name: string; birthCertificateNumber: string; documents: number; sessionCode?: string; updatedAt?: string; error?: string }>>({});
   const [removeKey, setRemoveKey] = useState<string | null>(null);
-  const [removeError, setRemoveError] = useState(false);
   const [applicationCount, setApplicationCount] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
@@ -28,19 +28,12 @@ function HomeComponent() {
     localStorage.removeItem("aloysius-g1-application-session-code");
     window.location.assign("/application");
   };
-  const removeApplication = async (key: string) => {
-    const removeLocally = () => {
-      const remaining = keys.filter((savedKey) => savedKey !== key);
+  const removeApplication = (key: string) => {
+    const remaining = keys.filter((savedKey) => savedKey !== key);
+    localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(remaining));
     if (localStorage.getItem("aloysius-g1-application-key") === key) localStorage.removeItem("aloysius-g1-application-key");
-    if (localStorage.getItem("aloysius-g1-application-session-code")) localStorage.removeItem("aloysius-g1-application-session-code");
-      setKeys(remaining);
-      if (localStorage.getItem("aloysius-g1-application-key") === key) localStorage.removeItem("aloysius-g1-application-key");
-    };
-    try {
-      await client.application.remove({ accessKey: key });
-      removeLocally();
-      window.location.reload();
-    } catch { removeLocally(); setRemoveError(true); window.setTimeout(() => window.location.reload(), 1400); }
+    setKeys(remaining);
+    setRemoveKey(null);
   };
   useEffect(() => {
     let cancelled = false;
@@ -52,8 +45,7 @@ function HomeComponent() {
       } catch (error) {
         if (error instanceof Error && error.message.toLowerCase().includes("not found")) {
           const remaining = getSavedKeys().filter((savedKey) => savedKey !== key);
-          localStorage.removeItem("aloysius-g1-application-key");
-          localStorage.removeItem("aloysius-g1-application-session-code");
+          localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(getSavedKeys().filter((savedKey) => savedKey !== key)));
           if (localStorage.getItem("aloysius-g1-application-key") === key) localStorage.removeItem("aloysius-g1-application-key");
           setKeys(remaining);
         return [key, { name: "Removed locally", birthCertificateNumber: "", documents: 0, error: "No longer exists on the server" }] as const;
@@ -75,10 +67,9 @@ function HomeComponent() {
     <h1>Start or continue an application</h1>
     <div className="application-count" aria-live="polite">{applicationCount === null ? "Checking application count…" : `${applicationCount} application${applicationCount === 1 ? "" : "s"} stored on the server`}</div>
     <p>Each child has a separate private application key. Keep each key safe so you can return and update that child’s application.</p>
-    <div className="landing-actions"><button className="primary-button" type="button" onClick={createNewApplication}><Plus size={17} /> New application</button><Link className="secondary-button" to="/application/access"><KeyRound size={17} /> Load with a key</Link>{isAdmin && <Link className="secondary-button" to="/admin"><ShieldCheck size={17} /> Go to admin panel</Link>}<AccessKeyQrImporter onKey={(importedKey) => window.location.assign(`/application/access?key=${encodeURIComponent(importedKey)}`)} />{keys[0] && <button className="secondary-button" type="button" onClick={() => setRecoveryKey(keys[0])}><KeyRound size={17} /> Forget saved key</button>}</div>
-    {keys.length > 0 && <section className="saved-applications"><h2>Your saved application</h2><p>The latest details are refreshed from the database.</p>{keys.map((key) => { const record = records[key]; return <div className="saved-application" key={key}><Link className="saved-application-link" to="/application/access" search={{ key }}><span><KeyRound size={16} /><span><strong>{record?.name || "Loading application…"}</strong><small>{record?.sessionCode ? `Session code ${record.sessionCode} · ` : ""}{record?.documents ?? 0} documents · {record?.error || "Database synced"}</small></span></span><ArrowRight size={16} /></Link><button className="remove-application" type="button" onClick={() => setRemoveKey(key)}><Trash2 size={16} /> Remove</button></div>; })}</section>}
-    <AccessRecoveryDialog accessKey={recoveryKey ?? ""} applicantName={recoveryKey ? records[recoveryKey]?.name : undefined} open={Boolean(recoveryKey)} onOpenChange={(open) => { if (!open) setRecoveryKey(null); }} onForgot={() => { if (!recoveryKey) return; const forgottenKey = recoveryKey; const remaining = keys.filter((key) => key !== forgottenKey); localStorage.removeItem("aloysius-g1-application-key"); localStorage.removeItem("aloysius-g1-application-session-code"); setKeys(remaining); setRecoveryKey(null); }} />
-    <AlertDialog open={removeKey !== null} onOpenChange={(open) => { if (!open) setRemoveKey(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Remove this application?</AlertDialogTitle><AlertDialogDescription>This permanently removes the application from the database and this device. This cannot be undone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (removeKey) void removeApplication(removeKey); setRemoveKey(null); }}>Remove application</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-    <AlertDialog open={removeError} onOpenChange={setRemoveError}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Removed from this device</AlertDialogTitle><AlertDialogDescription>The server could not remove the application, so it was removed from local storage only. The server copy may still exist.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Close</AlertDialogCancel></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <div className="landing-actions"><button className="primary-button" type="button" onClick={createNewApplication}><Plus size={17} /> New application</button><Link className="secondary-button" to="/application/access"><KeyRound size={17} /> Load with a key</Link>{isAdmin && <Link className="secondary-button" to="/admin"><ShieldCheck size={17} /> Go to admin panel</Link>}<AccessKeyQrImporter onKey={(importedKey) => window.location.assign(`/application/access?key=${encodeURIComponent(importedKey)}`)} />{keys[0] && <button className="secondary-button" type="button" onClick={() => setRecoveryKey(keys[0])}><KeyRound size={17} /> Forget this key</button>}</div>
+    {keys.length > 0 && <section className="saved-applications"><h2>Your saved applications</h2><p>The latest details are refreshed from the database. Choose an application to continue editing it.</p>{keys.map((key) => { const record = records[key]; return <div className="saved-application" key={key}><Link className="saved-application-link" to="/application/access" search={{ key, code: record?.sessionCode }}><span><KeyRound size={16} /><span><strong>{record?.name || "Loading application…"}</strong><small>{record?.sessionCode ? `Session code ${record.sessionCode} · ` : ""}{record?.documents ?? 0} documents · {record?.error || "Database synced"}</small></span></span><ArrowRight size={16} /></Link><button className="remove-application" type="button" onClick={() => setRemoveKey(key)}><Trash2 size={16} /> Forget key</button></div>; })}</section>}
+    <AccessRecoveryDialog accessKey={recoveryKey ?? ""} applicantName={recoveryKey ? records[recoveryKey]?.name : undefined} open={Boolean(recoveryKey)} onOpenChange={(open) => { if (!open) setRecoveryKey(null); }} onForgot={() => { if (!recoveryKey) return; const forgottenKey = recoveryKey; const remaining = keys.filter((key) => key !== forgottenKey); localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(remaining)); if (localStorage.getItem("aloysius-g1-application-key") === forgottenKey) localStorage.removeItem("aloysius-g1-application-key"); setKeys(remaining); setRecoveryKey(null); }} />
+    <AlertDialog open={removeKey !== null} onOpenChange={(open) => { if (!open) setRemoveKey(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Forget this application key?</AlertDialogTitle><AlertDialogDescription>This removes the key from this device only. The application remains safely stored in the database and can be loaded again with its session code and access key.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (removeKey) removeApplication(removeKey); }}>Forget key</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </main>;
 }

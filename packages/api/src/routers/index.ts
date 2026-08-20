@@ -6,7 +6,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
 import { applicationAccessRequests, applicationSettings, applications } from "@aloysius-g1/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { env } from "@aloysius-g1/env/server";
 
 const db = createDb();
@@ -96,23 +96,22 @@ export const appRouter = {
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
       return { exists: Boolean(row) };
     }),
-    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), applicantName: z.string().trim().min(1), contactEmail: z.email(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional() }).refine((input) => Boolean(input.birthCertificateNumber || input.accessKey), "A birth certificate number or access key is required")).handler(async ({ input }) => {
+    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().min(1), contactEmail: z.email(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal"]).default("access") }).refine((input) => Boolean(input.birthCertificateNumber || input.sessionCode || input.guardianNic || input.accessKey), "A birth certificate number, session code, guardian NIC, or access key is required")).handler(async ({ input }) => {
       const keyRow = input.accessKey ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get() : null;
-      const birthCertificateNumber = input.birthCertificateNumber?.trim().toUpperCase() || keyRow?.birthCertificateNumber;
-      const row = keyRow ?? (birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null);
+      const codeRow = input.sessionCode ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.sessionCode, input.sessionCode.trim().toUpperCase())).get() : null;
+      const birthCertificateNumber = input.birthCertificateNumber?.trim().toUpperCase() || keyRow?.birthCertificateNumber || codeRow?.birthCertificateNumber;
+      let row = keyRow ?? codeRow ?? (birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null);
+      if (!row && input.guardianNic) {
+        const normalizedNic = input.guardianNic.trim().toUpperCase();
+        const candidates = await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber, data: applications.data }).from(applications).all();
+        row = candidates.find((candidate) => String((candidate.data as { guardian?: { nic?: string } }).guardian?.nic ?? "").trim().toUpperCase() === normalizedNic) ?? null;
+      }
       if (!row) throw new Error("No application was found for this birth certificate number");
       const resolvedBirthCertificateNumber = row.birthCertificateNumber;
       if (!resolvedBirthCertificateNumber) throw new Error("This application does not have a birth certificate number yet");
-      const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(eq(applicationAccessRequests.applicationId, row.id)).get();
-      if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName.trim(), contactEmail: input.contactEmail.trim().toLowerCase(), ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), status: "open", createdAt: new Date(), resolvedAt: null });
+      const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(and(eq(applicationAccessRequests.applicationId, row.id), eq(applicationAccessRequests.requestType, input.requestType))).get();
+      if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName.trim(), contactEmail: input.contactEmail.trim().toLowerCase(), ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), requestType: input.requestType, status: "open", createdAt: new Date(), resolvedAt: null });
       return { submitted: true };
-    }),
-    remove: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
-      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
-      if (!row) throw new Error("Application key not found");
-      await db.delete(applications).where(eq(applications.id, row.id)).run();
-      await publishApplicationChange();
-      return { deleted: true };
     }),
     liveCount: publicProcedure.output(eventIterator(z.object({ count: z.number() }))).handler(async function* ({ signal }) {
       yield { count: await applicationCount() };
@@ -151,10 +150,20 @@ export const appRouter = {
       rotateKey: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
         if (!request) throw new Error("Access request not found");
+        if (request.requestType !== "access") throw new Error("Only access requests can generate a replacement key");
         const accessKey = createAccessKey();
         await db.update(applications).set({ accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
         await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
         return { accessKey, applicationId: request.applicationId };
+      }),
+      deleteAfterRemovalRequest: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
+        const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
+        if (!request) throw new Error("Removal request not found");
+        if (request.requestType !== "removal") throw new Error("Only removal requests can delete an application");
+        await db.delete(applications).where(eq(applications.id, request.applicationId)).run();
+        await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
+        await publishApplicationChange();
+        return { deleted: true };
       }),
       dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => { await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, input.requestId)).run(); return { dismissed: true }; }),
     },
