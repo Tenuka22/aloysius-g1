@@ -1,64 +1,77 @@
-# G1 2026 Applicant Collection Form
+# G1 2026 Application Flow
 
 ## Purpose
 
-Build the first applicant-facing collection flow on the web app home page. It collects the information represented by Appendix 01 of `g1 2026 circular.md` without submitting an application to the server yet.
+Provide a persistent G1 2026 application flow for multiple children. Each child has a separate long-lived application key that can reopen, update, submit, or remove that child’s record.
 
-## Guardrails
+## Current implementation
 
-- The flow is collection-only. No API mutation, server save, or push action is wired in this phase.
-- The final action is disabled until **9 September 2026**. The date gate is evaluated in the browser and is visible to applicants.
-- Draft progress is allowed locally through Zustand `persist`, so a refresh or return visit can resume the form.
-- Location is requested only after the applicant chooses the location step action. Browser permission denial must not block manual entry.
-- Location data is stored as an explicit draft field (`latitude`, `longitude`, label/address, source), not inferred from an IP address.
+- The home page supports creating a new application, loading an application by key, and selecting any key saved on the device.
+- Application records are stored in SQLite through `@api` and Drizzle.
+- Access keys are generated with cryptographically secure random bytes; only their SHA-256 hashes are stored in the database.
+- Drafts and application keys persist in `localStorage`.
+- Opening an application refreshes its latest data from the database before displaying the form.
+- Form changes are automatically synchronized to the database for an active key, with step navigation also saving explicitly.
+- The home page displays the latest applicant status for each saved key and the live number of server-stored applications.
+- Application removal uses shared alert dialogs. If the server cannot remove a record, its local key is still removed and the user is told that the server copy may remain. Keys already missing on the server are automatically pruned from local storage.
 
 ## Form sequence
 
-1. **Application location** — Search/manual location, map click/tap, and “use my location” using the browser Geolocation API. Show the selected point on OpenStreetMap tiles and reverse-geocode with Nominatim when available.
-2. **Applicant** — Full name, name in Sinhala, gender, religion, medium of education, date of birth, and age at 31 January 2027.
-3. **Parent or guardian** — Guardian role, full name, NIC, address, phone, and email.
-4. **Residence** — Permanent and current addresses, telephone numbers, GN division, DS division, district, province, and electoral details.
-5. **School preferences** — Requested schools in priority order and whether a nearer school could be accepted.
-6. **Declaration** — Applicant/guardian declaration acknowledgement and consent to use the collected information for this intake.
-7. **Review** — Read-only summary with edit links. The primary action remains blocked before the release date and is clearly labelled as unavailable during collection mode.
+1. **Application location** — Browser geolocation is requested automatically when available. Permission is required before continuing when the browser supports geolocation. If geolocation is unavailable, manual address or map selection is allowed. The true device location and user-selected location are stored separately.
+2. **Applicant** — Full name, Sinhala name, gender, religion, education medium, date of birth, and birth certificate number.
+3. **Parent or guardian** — Mother, Father, or Guardian; full name, NIC, phone, WhatsApp phone, and email.
+4. **Residence** — Permanent/current addresses, same-address synchronization, district, DS division, GN division, and electoral district comboboxes backed by cached administrative data.
+5. **Declaration** — Accuracy confirmation and consent.
+6. **Review** — Complete read-only summary with working edit actions.
 
-## State model
+School preferences are intentionally excluded because this is a boys’ school and the school-selection step is not required.
+
+## Validation and policy rules
+
+- Female applicants cannot continue for this boys’ school.
+- Catholic and Christian applicants cannot continue.
+- Education medium is Sinhala or Tamil only.
+- G1 date-of-birth validation uses the circular’s requirement: the child must be at least five years old by 31 January 2027.
+- Birth certificate numbers are required and unique in the database.
+- Submissions are locked in production until 9 September 2026.
+- Submitted applications can be updated until 11 September 2026.
+- Review shows `Submit application` for a new record and `Update application` for a saved record; the update action is disabled when no data changed.
+
+## State and synchronization model
 
 ```text
-Draft = {
-  currentStep: 0..6,
-  location: { label, address, latitude, longitude, source },
-  applicant: {...},
-  guardian: {...},
-  residence: {...},
-  schools: [{ name, priority }],
-  declaration: {...},
-  lastSavedAt: string | null
+ApplicationDraft = {
+  currentStep,
+  location,
+  defaultLocation,
+  selectedLocation,
+  applicant,
+  guardian,
+  residence,
+  declaration,
+  lastSavedAt
 }
 ```
 
-Zustand owns the draft and current step. TanStack Form owns field registration, validation, and step-local submission. On step advance, the valid step values are copied into the persisted draft. The persist key is namespaced for this circular and versioned for future schema changes.
+Zustand owns the persisted local draft. TanStack Form owns field state. The active access key identifies the server record. Database refreshes replace the local draft with the latest server copy; debounced edits and step transitions sync local changes back to the server.
 
-## Validation and interaction
-
-- Required fields are validated before advancing; errors are shown beside the relevant field and the first invalid field receives focus.
-- Back navigation never discards values.
-- Refresh restores the last step and values after hydration.
-- Map selection is valid only when latitude and longitude are present; manual address text alone is not enough.
-- Geolocation loading, permission denial, reverse-geocoding failure, and unavailable map tiles each have an inline recovery message.
-- Keyboard users can operate every field and map action; the map has a text/manual fallback.
+The home-page application count uses an oRPC `EventPublisher` and event iterator, publishing after application creation and deletion and consuming the stream as an SSE-style live update.
 
 ## Implementation structure
 
-- `apps/web/src/routes/index.tsx`: route shell and form entry point.
-- `apps/web/src/components/application/application-form.tsx`: wizard orchestration, TanStack Form, validation, and step rendering.
-- `apps/web/src/components/application/location-step.tsx`: geolocation, OpenStreetMap display, marker selection, and reverse geocoding.
+- `apps/web/src/routes/index.tsx`: home page, saved-key list, live count, and deletion dialogs.
+- `apps/web/src/routes/application.tsx`: application route and administrative-data loader.
+- `apps/web/src/routes/application.access.tsx`: verified application-key dialog and database load.
+- `apps/web/src/components/application/application-form.tsx`: wizard, persistence, validation, synchronization, and review.
+- `apps/web/src/components/application/location-step.tsx`: browser geolocation, map selection, true/selected location handling, and reverse geocoding.
 - `apps/web/src/lib/application-store.ts`: typed Zustand persisted draft.
-- `apps/web/src/index.css`: application surface styling and responsive map/form layout.
+- `packages/api/src/routers/index.ts`: create/get/update/submit/remove/status procedures and live application-count event iterator.
+- `packages/db/src/schema/applications.ts`: application record schema.
+- `packages/db/src/migrations/`: application, birth-certificate uniqueness, and submission-state migrations.
 
 ## Deferred work
 
-- Server/API persistence and applicant identity binding.
-- Document uploads and supporting evidence.
-- Official school directory lookup and postal/electoral validation.
-- Final submission, confirmation number, and administrator workflow.
+- Document upload/storage and displaying actual uploaded documents; the home page currently displays document metadata/count when present in the saved record.
+- Cryptographic signing/integrity protection for the JSON payload beyond access-key authorization.
+- Official school directory lookup and final electoral validation.
+- Administrator review and notification workflow.
