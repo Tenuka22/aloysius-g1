@@ -11,6 +11,8 @@ function cleanKey(value: string) {
 export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void }) {
   const [error, setError] = useState("");
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [cameraStarting, setCameraStarting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<QrScanner | null>(null);
   const readFile = async (file?: File) => {
@@ -28,6 +30,8 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
   useEffect(() => {
     if (!cameraOpen || !videoRef.current) return;
     setError("");
+    setCameraError("");
+    setCameraStarting(true);
     const scanner = new QrScanner(videoRef.current, (result) => {
       const value = typeof result === "string" ? result : result.data;
       const key = cleanKey(value);
@@ -36,7 +40,7 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
       setCameraOpen(false);
     }, { returnDetailedScanResult: true, highlightScanRegion: true, highlightCodeOutline: true });
     scannerRef.current = scanner;
-    void scanner.start().catch(() => setError("Camera access was unavailable. You can import a QR image instead."));
+    void scanner.start().then(() => setCameraStarting(false)).catch(() => { setCameraStarting(false); setCameraError("Camera access was unavailable. Check the browser permission, then try again or import a QR image instead."); });
     return () => {
       scanner.stop();
       scanner.destroy();
@@ -44,7 +48,7 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
     };
   }, [cameraOpen, onKey]);
 
-  return <div className="qr-import-control"><div className="qr-import-actions"><button className="secondary-button" type="button" onClick={() => setCameraOpen(true)}><Camera size={16} /> Scan with camera</button><label className="secondary-button qr-import-button"><Upload size={16} /> Import QR image<input type="file" accept="image/*" onChange={(event) => void readFile(event.target.files?.[0])} /></label></div>{error && <p className="error-line">{error}</p>}<Dialog open={cameraOpen} onOpenChange={setCameraOpen}><DialogContent className="qr-camera-dialog"><DialogHeader><DialogTitle>Scan access key</DialogTitle><DialogDescription>Allow camera access and hold the application QR code inside the frame.</DialogDescription></DialogHeader><div className="qr-camera-preview"><video ref={videoRef} muted playsInline /><span>Point your camera at the QR code</span></div></DialogContent></Dialog></div>;
+  return <div className="qr-import-control"><div className="qr-import-actions"><button className="secondary-button" type="button" onClick={() => setCameraOpen(true)}><Camera size={16} /> Scan with camera</button><label className="secondary-button qr-import-button"><Upload size={16} /> Import QR image<input type="file" accept="image/*" onChange={(event) => void readFile(event.target.files?.[0])} /></label></div>{error && <p className="error-line">{error}</p>}<Dialog open={cameraOpen} onOpenChange={setCameraOpen}><DialogContent className="qr-camera-dialog"><DialogHeader><DialogTitle>Scan access key</DialogTitle><DialogDescription>Allow camera access and hold the application QR code inside the frame.</DialogDescription></DialogHeader><div className="qr-camera-preview"><video ref={videoRef} muted playsInline />{cameraStarting && <span className="qr-camera-status">Starting camera…</span>}{cameraError && <span className="qr-camera-error">{cameraError}</span>} {!cameraStarting && !cameraError && <span>Point your camera at the QR code</span>}</div></DialogContent></Dialog></div>;
 }
 
 export function AccessKeyQrDialog({ accessKey, open, onOpenChange }: { accessKey: string; open: boolean; onOpenChange: (open: boolean) => void }) {
