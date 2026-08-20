@@ -57,6 +57,20 @@ Zustand owns the persisted local draft. TanStack Form owns field state. The acti
 
 The home-page application count uses an oRPC `EventPublisher` and event iterator, publishing after application creation and deletion and consuming the stream as an SSE-style live update.
 
+## State audit and invariants
+
+The application has four distinct state layers: route state (the active key and route), Zustand state (the persisted local draft), TanStack Form state (field editing), and server/database state (the authoritative saved record). The following invariants are now enforced:
+
+- A database load is normalized before entering either Zustand or TanStack Form, so older records cannot leave missing nested fields or crash location/session UI.
+- An invalid or deleted active key clears the active key and resets the local draft instead of silently showing another child’s stale data.
+- Server saves merge the current TanStack Form values with the current Zustand draft, preserving location, declaration, selected/default location, and other non-form state.
+- Autosave is debounced and only runs for an active server key; step transitions still await an explicit save before changing steps.
+- The active key is separate from the list of saved keys, so creating another child cannot overwrite the current child’s session.
+- A local removal fallback is explicit: the local key is removed even if the server is unavailable, and the user is told which copy may remain.
+- Production submission locking is separate from draft persistence; collection mode no longer claims that server synchronization is disabled.
+
+Remaining architectural risks are document storage/metadata, payload integrity signing, and cross-device key recovery. Those require a defined storage and trust model before implementation.
+
 ## Implementation structure
 
 - `apps/web/src/routes/index.tsx`: home page, saved-key list, live count, and deletion dialogs.

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
-import { emptyDraft, useApplicationStore, type ApplicationDraft } from "@/lib/application-store";
+import { emptyDraft, normalizeDraft, useApplicationStore, type ApplicationDraft } from "@/lib/application-store";
 import type { AdministrativeData } from "@/lib/administrative-data";
 import { client } from "@/utils/orpc";
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@aloysius-g1/ui/components/combobox";
@@ -42,6 +42,7 @@ function ResidenceCombobox({ form, name, label, options, onChange, onInputValueC
 
 function ResidenceStep({ form, draft, setSection, administrativeData }: { form: any; draft: ApplicationDraft; setSection: (section: keyof ApplicationDraft, value: unknown) => void; administrativeData: AdministrativeData }) {
   const [sameAsPermanent, setSameAsPermanent] = useState(draft.residence.sameAsPermanent);
+  useEffect(() => { setSameAsPermanent(draft.residence.sameAsPermanent); }, [draft.residence.sameAsPermanent]);
   const [districtSearch, setDistrictSearch] = useState("");
   const [dsSearch, setDsSearch] = useState("");
   const [gnSearch, setGnSearch] = useState("");
@@ -87,6 +88,7 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
   const [submitted, setSubmitted] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [locationCanProceed, setLocationCanProceed] = useState(false);
+  const saveQueue = useRef(Promise.resolve());
   const navigate = useNavigate();
   const [collectionOnly, setCollectionOnly] = useState(import.meta.env.PROD);
   const form = useForm({ defaultValues: draft, onSubmit: ({ value }) => draft.updateDraft(value as Partial<ApplicationDraft>) });
@@ -98,7 +100,7 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
         if (key) {
           const result = await client.application.get({ accessKey: key });
           if (!cancelled) {
-            const latest = result.data as ApplicationDraft;
+            const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
             draft.updateDraft(latest);
             form.reset(latest);
             setSavedSnapshot(JSON.stringify(latest));
@@ -107,7 +109,12 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
         const status = await client.application.status();
         if (!cancelled) setCollectionOnly(status.submissionLocked);
       } catch {
-        if (!cancelled) setCollectionOnly(import.meta.env.PROD);
+        if (!cancelled) {
+          localStorage.removeItem("aloysius-g1-application-key");
+          draft.reset();
+          setAccessKey("");
+          setCollectionOnly(import.meta.env.PROD);
+        }
       } finally {
         if (!cancelled) setHydrated(true);
       }
@@ -120,12 +127,16 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
 
   const setSection = (section: keyof ApplicationDraft, value: unknown) => draft.updateDraft({ [section]: value } as Partial<ApplicationDraft>);
   const saveToServer = async () => {
-    const data = form.state.values as ApplicationDraft;
+    const operation = saveQueue.current.then(async () => {
+    const data = normalizeDraft({ ...(form.state.values as ApplicationDraft), ...draft });
     setSaveStatus("Saving…");
     if (accessKey) await client.application.update({ accessKey, data });
     else { const result = await client.application.create({ data }); localStorage.setItem("aloysius-g1-application-key", result.accessKey); const keys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[]; localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([result.accessKey, ...keys])])); setAccessKey(result.accessKey); }
     setSavedSnapshot(JSON.stringify(data));
     setSaveStatus("Saved securely");
+    });
+    saveQueue.current = operation.catch(() => undefined);
+    return operation;
   };
   useEffect(() => {
     if (!hydrated || !accessKey || !savedSnapshot || JSON.stringify(form.state.values) === savedSnapshot) return;
@@ -177,7 +188,7 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
         {current === 5 && <div className="review-list"><div className="step-copy"><h3>Review your draft</h3><p>Check all collected information before the application submission step becomes available.</p></div>{reviewSections.map(([label, value, step]) => <div className="review-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><button type="button" onClick={() => draft.setStep(Number(step))}>Edit</button></div>)}</div>}
       </div>
       <div className="wizard-footer">{submitError && <p className="error-line submit-error">{submitError}</p>}{submitted ? <div className="submission-actions"><strong>Application submitted successfully.</strong><div className="key-success"><span>Keep this application key safe. You need it to view or update this child’s application.</span><code>{accessKey}</code><button type="button" className="secondary-button" onClick={() => void navigator.clipboard?.writeText(accessKey)}><Copy size={16} /> Copy key</button></div><div className="footer-actions"><button type="button" className="secondary-button" onClick={() => void navigate({ to: "/" })}><House size={17} /> Back to home</button><button type="button" className="primary-button" onClick={startAnotherApplication}><UserPlus size={17} /> Apply for another child</button></div></div> : <>{draft.lastSavedAt && <span className="saved-time"><Check size={15} /> Saved locally</span>}<div className="footer-actions">{current > 0 && <button type="button" className="secondary-button" onClick={back}><ArrowLeft size={17} /> Back</button>}{current < steps.length - 1 ? <button type="button" className="primary-button" disabled={current === 1 && (draft.applicant.gender === "Female" || ["Catholic", "Christian"].includes(draft.applicant.religion) || !form.state.values.applicant.dateOfBirth || form.state.values.applicant.dateOfBirth > G1_DOB_CUTOFF || !form.state.values.applicant.birthCertificateNumber)} onClick={next}>Continue <ArrowRight size={17} /></button> : <button type="button" className="primary-button" disabled={collectionOnly || !draft.declaration.confirmed || !draft.declaration.consent || !hasUnsavedChanges} onClick={() => void submitApplication()}>{collectionOnly ? <><Clock3 size={17} /> Submission opens 9 Sep 2026</> : accessKey ? "Update application" : "Submit application"}</button>}</div></>}</div>
-      {collectionOnly && <div className="collection-banner"><Clock3 size={18} /><div><strong>Collection mode is active</strong><span>Your draft stays on this device. Submission and server saving are disabled until 9 September 2026.</span></div><button type="button" className="reset-button" onClick={() => draft.reset()}><RotateCcw size={15} /> Clear draft</button></div>}
+      {collectionOnly && <div className="collection-banner"><Clock3 size={18} /><div><strong>Collection mode is active</strong><span>Your draft is saved locally and synchronized with the server. Submission opens on 9 September 2026.</span></div><button type="button" className="reset-button" onClick={() => draft.reset()}><RotateCcw size={15} /> Clear draft</button></div>}
     </section>
   </main>;
 }

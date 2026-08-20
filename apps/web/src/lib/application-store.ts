@@ -58,6 +58,21 @@ export const emptyDraft: ApplicationDraft = {
   lastSavedAt: null,
 };
 
+export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefined): ApplicationDraft {
+  return {
+    ...emptyDraft,
+    ...input,
+    location: { ...emptyDraft.location, ...input?.location },
+    defaultLocation: { ...emptyDraft.defaultLocation, ...input?.defaultLocation },
+    selectedLocation: { ...emptyDraft.selectedLocation, ...input?.selectedLocation },
+    applicant: { ...emptyDraft.applicant, ...input?.applicant },
+    guardian: { ...emptyDraft.guardian, ...input?.guardian },
+    residence: { ...emptyDraft.residence, ...input?.residence },
+    schools: { ...emptyDraft.schools, ...input?.schools },
+    declaration: { ...emptyDraft.declaration, ...input?.declaration },
+  };
+}
+
 type ApplicationStore = ApplicationDraft & {
   updateDraft: (patch: Partial<ApplicationDraft>) => void;
   setStep: (currentStep: number) => void;
