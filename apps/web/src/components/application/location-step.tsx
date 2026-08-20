@@ -14,7 +14,7 @@ function MapSync({ point, onSelect }: { point: [number, number] | null; onSelect
   return point ? <CircleMarker center={point} radius={10} pathOptions={{ color: "#087f5b", fillColor: "#13b77e", fillOpacity: 0.9, weight: 3 }} /> : null;
 }
 
-export function LocationStep({ value, defaultValue, onChange, onAvailabilityChange }: { value: LocationValue; defaultValue: LocationValue; onChange: (value: LocationValue, defaultValue?: LocationValue) => void; onAvailabilityChange?: (canProceed: boolean) => void }) {
+export function LocationStep({ value, defaultValue, onChange, onAvailabilityChange, readOnly = false }: { value: LocationValue; defaultValue: LocationValue; onChange: (value: LocationValue, defaultValue?: LocationValue) => void; onAvailabilityChange?: (canProceed: boolean) => void; readOnly?: boolean }) {
   const [query, setQuery] = useState(value.address || value.label);
   const [status, setStatus] = useState("");
   const [deviceLocationAvailable, setDeviceLocationAvailable] = useState(true);
@@ -42,7 +42,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
     navigator.geolocation.getCurrentPosition(({ coords }) => { onAvailabilityChange?.(true); void reverseGeocode(coords.latitude, coords.longitude, "device", isDefault); }, () => { onAvailabilityChange?.(false); setStatus("Please allow location access in your browser to continue. If this device does not support location, use a different device."); }, { enableHighAccuracy: true, timeout: 10000 });
   };
 
-  useEffect(() => { if (!navigator.geolocation) { setDeviceLocationAvailable(false); onAvailabilityChange?.(true); } else if (defaultValue.latitude === null && value.latitude === null) useDeviceLocation(true); else onAvailabilityChange?.(true); }, []);
+  useEffect(() => { if (readOnly) { setDeviceLocationAvailable(false); onAvailabilityChange?.(true); return; } if (!navigator.geolocation) { setDeviceLocationAvailable(false); onAvailabilityChange?.(true); } else if (defaultValue.latitude === null && value.latitude === null) useDeviceLocation(true); else onAvailabilityChange?.(true); }, []);
 
   return <div className="location-layout">
     <div className="form-panel">
@@ -51,8 +51,9 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         <p className="field-help">Choose the applicant’s home location. This is used to help determine the nearest school.</p>
         <input id="location-search" value={query} onChange={(event) => { setQuery(event.target.value); onChange({ ...value, address: event.target.value, source: "manual" }); }} placeholder="Enter an address or landmark" />
       </div>
-      <button type="button" className="secondary-button full-button" onClick={() => useDeviceLocation(false)}><LocateFixed size={17} /> Use my current device location</button>
+      {!readOnly && <button type="button" className="secondary-button full-button" onClick={() => useDeviceLocation(false)}><LocateFixed size={17} /> Use my current device location</button>}
       {defaultValue.latitude !== null && <p className="field-help">Default browser location saved. The selected location can be changed below.</p>}
+      {defaultValue.latitude !== null && <div className="location-detail-list"><span><strong>True/device location</strong>{defaultValue.address || `${defaultValue.latitude}, ${defaultValue.longitude}`}</span><span><strong>User-picked location</strong>{value.address || `${value.latitude ?? "Not selected"}, ${value.longitude ?? ""}`}</span></div>}
       {deviceLocationAvailable && defaultValue.latitude === null && <p className="error-line"><TriangleAlert size={16} /> Browser location permission is required to continue.</p>}
       {status && <p className="status-line" role="status">{status}</p>}
       {value.latitude === null && <p className="error-line"><TriangleAlert size={16} /> Select a point on the map or use your device location to continue.</p>}
@@ -60,7 +61,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
     <div className="map-frame" aria-label="OpenStreetMap location picker">
       <MapContainer center={point ?? DEFAULT_CENTER} zoom={point ? 13 : 7} scrollWheelZoom className="application-map">
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <MapSync point={point} onSelect={(lat, lng) => void reverseGeocode(lat, lng, "map")} />
+        {!readOnly && <MapSync point={point} onSelect={(lat, lng) => void reverseGeocode(lat, lng, "map")} />}
       </MapContainer>
       <div className="map-caption">Click the map to place the location pin</div>
     </div>

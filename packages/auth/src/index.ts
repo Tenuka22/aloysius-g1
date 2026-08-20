@@ -9,6 +9,9 @@ import { admin } from "better-auth/plugins";
 
 const SITE_ADMIN_EMAIL = "admin@aloysiuscollege.lk";
 const SITE_ADMIN_PASSWORD = "12345678";
+const EMAIL_ROLES: Record<string, string> = {
+  [SITE_ADMIN_EMAIL]: "admin",
+};
 
 export function createAuth() {
   const db = createDb();
@@ -20,6 +23,32 @@ export function createAuth() {
       schema: schema,
     }),
     trustedOrigins: [env.CORS_ORIGIN],
+    user: {
+      additionalFields: {
+        role: {
+          type: "string",
+          required: false,
+          defaultValue: "user",
+          input: false,
+        },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            const role = EMAIL_ROLES[user.email?.toLowerCase() ?? ""];
+            return { data: { ...user, role: role ?? user.role ?? "user" } };
+          },
+        },
+        update: {
+          before: async (user) => {
+            const role = EMAIL_ROLES[user.email?.toLowerCase() ?? ""];
+            return role ? { data: { ...user, role } } : { data: user };
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
     },
@@ -53,6 +82,7 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
         email: SITE_ADMIN_EMAIL,
         password: SITE_ADMIN_PASSWORD,
         name: "Site Admin",
+        role: "admin",
       },
     });
     console.log(`[auth] Created site admin: ${SITE_ADMIN_EMAIL}`);
@@ -86,6 +116,11 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
       updatedAt: new Date(),
     });
   }
+
+  await db
+    .update(schema.user)
+    .set({ role: "admin" })
+    .where(eq(schema.user.id, user.id));
 
   console.log(`[auth] Ensured site admin: ${SITE_ADMIN_EMAIL}`);
 }

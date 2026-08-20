@@ -1,0 +1,20 @@
+import { useEffect } from "react";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, FileWarning, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { consumeEventIterator } from "@orpc/client";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from "@aloysius-g1/ui/components/sidebar";
+import { client, orpc } from "@/utils/orpc";
+
+export const Route = createFileRoute("/_auth/admin")({ component: AdminPage });
+
+function AdminPage() {
+  const { session } = Route.useRouteContext();
+  const location = useLocation();
+  const overview = useQuery(orpc.admin.overview.queryOptions());
+  const applications = useQuery(orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "" } }));
+  useEffect(() => { if (session.data?.user.role !== "admin") return; const controller = new AbortController(); const cancel = consumeEventIterator(client.application.liveCount(undefined, { signal: controller.signal }), { onEvent: () => { void overview.refetch(); void applications.refetch(); }, onError: () => undefined }); return () => { controller.abort(); cancel(); }; }, [session.data?.user.role]);
+  if (session.data?.user.role !== "admin") return <main className="admin-shell admin-denied-shell"><section className="admin-card admin-denied-card"><div className="admin-denied-icon"><ShieldCheck size={28} /></div><h1>Admin access required</h1><p>Your account is signed in, but it does not have permission to view the operations dashboard.</p><Link className="primary-button" to="/dashboard"><ArrowLeft size={17} /> Back to dashboard</Link></section></main>;
+  const metrics = [["Applications", overview.data?.total ?? "—", ShieldCheck], ["Drafts", overview.data?.drafts ?? "—", FileWarning], ["Submitted", overview.data?.submitted ?? "—", CheckCircle2], ["Incomplete", overview.data?.incomplete ?? "—", AlertTriangle], ["Invalid emails", overview.data?.invalidEmail ?? "—", AlertTriangle]] as const;
+  return <SidebarProvider><Sidebar><SidebarHeader><div className="admin-brand"><div className="admin-brand-mark"><ShieldCheck size={19} /></div><div><strong>G1 Intake</strong><span>Admin console</span></div></div></SidebarHeader><SidebarContent><SidebarGroup><SidebarGroupLabel>Workspace</SidebarGroupLabel><SidebarMenu><SidebarMenuItem><SidebarMenuButton href="/admin" active={location.pathname === "/admin"}><LayoutDashboard size={17} /> Overview</SidebarMenuButton></SidebarMenuItem><SidebarMenuItem><SidebarMenuButton href="/admin/applications" active={location.pathname === "/admin/applications"}><BarChart3 size={17} /> Applications</SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroup></SidebarContent><SidebarFooter><Link className="admin-sidebar-back" to="/dashboard"><ArrowLeft size={16} /> Back to dashboard</Link></SidebarFooter></Sidebar>{location.pathname === "/admin" && <main className="admin-shell"><div className="admin-topbar"><div><p className="form-kicker">Operations</p><h1>G1 application control room</h1><p>Monitor saved applications, data quality, and submission progress.</p></div><span className="admin-live-status"><span /> Live via SSE</span></div>{overview.error && <div className="admin-card admin-error"><AlertTriangle size={18} /> Could not load admin metrics: {overview.error.message}</div>}<div className="admin-metrics">{metrics.map(([label, value, Icon]) => <div className="admin-metric" key={label}><Icon size={18} /><span>{label}</span><strong>{value}</strong></div>)}</div><section className="admin-card"><h2>Recent activity</h2><div className="admin-activity">{overview.data?.recent.map((item) => <div key={item.id}><span>{item.applicantName}</span><small>{item.status} · updated {new Date(item.updatedAt).toLocaleString()}</small></div>)}</div></section></main>}<Outlet /></SidebarProvider>;
+}

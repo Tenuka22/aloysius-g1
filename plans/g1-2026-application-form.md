@@ -89,3 +89,124 @@ Remaining architectural risks are document storage/metadata, payload integrity s
 - Cryptographic signing/integrity protection for the JSON payload beyond access-key authorization.
 - Official school directory lookup and final electoral validation.
 - Administrator review and notification workflow.
+
+## Admin panel observability plan
+
+The authenticated admin area provides an operational view of the G1 application system. It is separate from the applicant flow and is restricted to the Better Auth admin role.
+
+### Access and roles
+
+- Add a dedicated admin route under the authenticated route group.
+- Restrict the route and all admin procedures to users with the Better Auth admin role; an authenticated user without the admin role must receive `FORBIDDEN`.
+- Keep applicant access-key procedures separate from authenticated admin procedures. Admins should not need or see applicants’ plaintext access keys.
+- Use the existing site-admin bootstrap and Better Auth session as the source of identity and authorization.
+
+### Admin overview
+
+The overview should show:
+
+- Total application records currently stored.
+- Draft, submitted, and recently updated counts.
+- Applications created and updated over time.
+- Applications with incomplete required fields.
+- Duplicate or rejected birth-certificate attempts, where safely measurable.
+- Validation/error trends, such as invalid email addresses, missing phone numbers, invalid DOB, disallowed gender/religion, and missing location.
+- Synchronization health: local-only activity cannot be observed by the server, while server saves, updates, submissions, and deletions can be counted and timestamped.
+
+### Application inspection
+
+- Show a searchable, paginated table of applications using safe metadata: record ID, applicant name, birth-certificate hint or masked value, status, created time, updated time, submitted time, and validation state.
+- Never show plaintext access keys, passwords, or unnecessary private secrets.
+- Open a detail view with the saved application sections, default/true location, selected location, and document metadata when documents exist.
+- Record an audit trail for admin reads, edits, exports, and deletes if those actions are introduced.
+
+### API and data integration
+
+- Add authenticated admin-only API procedures for summary metrics, paginated application lists, application detail, and validation/error reports.
+- Derive metrics from the `applications` table and structured application data rather than duplicating counts in the browser.
+- Add explicit status/validation fields or a server-side validation result model if querying JSON data becomes too fragile.
+- Publish admin metrics updates through the existing oRPC event-iterator pattern when application records are created, updated, submitted, or deleted.
+- Keep the applicant event stream and admin event stream separate so application-count data is not accidentally exposed with private application details.
+
+### Validation and data-quality reporting
+
+- Validate email, phone, NIC, DOB, birth-certificate number, residence fields, location, and eligibility rules on the server as well as in the browser.
+- Store normalized validation results and error codes, not raw invalid secrets or full request payloads.
+- Make it clear whether an issue was detected during draft save, update, or submission.
+- Treat a missing local key as a client synchronization issue; it must not be reported as an applicant validation failure.
+
+### Admin UI structure
+
+- `/_auth/admin`: protected admin shell and navigation.
+- `/_auth/admin/index`: summary cards, trends, synchronization status, and recent activity.
+- `/_auth/admin/applications`: searchable, sortable, filterable application list with view, edit, and delete actions.
+- `/_auth/admin/applications/$id`: safe application detail and validation report.
+- Shared admin loading, empty, error, and permission-denied states should use the existing UI components.
+
+### Acceptance criteria
+
+- A non-admin cannot access admin routes or admin procedures.
+- An admin can see the number of applications and reconcile it with database state.
+- An admin can identify incomplete applications and common invalid-email/data-quality issues without seeing access keys.
+- Updates, submissions, deletions, and synchronization failures are distinguishable in the activity view.
+- The admin view remains useful when there are zero applications, stale client keys, failed saves, or partially completed drafts.
+
+### Implemented admin slice
+
+- Added `adminProcedure`, requiring an authenticated Better Auth user with `role === "admin"`.
+- Added admin overview and paginated/searchable application procedures.
+- Added `/_auth/admin` with total, draft, submitted, incomplete, and invalid-email metrics.
+- Added safe application metadata and validation issue counts without exposing plaintext access keys.
+- Added recent activity and SSE live updates for create, update, submit, and delete events.
+- Added responsive admin dashboard styling and permission-denied UI.
+- Added the `/admin/applications` child route and rendered nested admin routes through the admin shell outlet.
+- Added admin detail inspection for complete saved data, including default/device and user-selected locations.
+- Added confirmation-protected admin editing and deletion with server-side admin procedures.
+- Added table sorting and status/data-quality filtering.
+
+Remaining admin work is persistent validation/audit records, document metadata, appeals, and richer time-series reporting.
+
+## Appeals, disputes, and lost-key recovery
+
+The admin panel must include a separate appeals queue for applicants who cannot safely resolve an application themselves.
+
+### Appeal reasons
+
+- Wrong child or incorrect applicant information was saved.
+- A birth certificate number is already used by another application, but the applicant claims ownership or reports misuse.
+- The applicant lost the application key.
+- The applicant believes an application was created fraudulently or by mistake.
+- The applicant needs an administrator to correct or remove a record.
+
+### Applicant flow
+
+- Add a public appeal form that accepts a contact method, child/applicant identifying details, birth-certificate details, appeal reason, explanation, and optional supporting-document metadata.
+- Do not require the application key when the reason is “lost key,” but require enough information for manual identity verification.
+- Never display or email the existing plaintext key automatically.
+- Show a reference number after the appeal is created and tell the applicant that an administrator must verify ownership.
+- Rate-limit appeals and avoid revealing whether a birth-certificate number exists to unauthenticated users.
+
+### Admin workflow
+
+- Add an admin appeals queue with status: `open`, `needs_verification`, `approved`, `rejected`, and `resolved`.
+- Show the appeal, linked application metadata when a safe match exists, verification notes, and an audit history.
+- Allow an admin to request more information, approve a correction, delete a wrongly created application, or close the appeal.
+- For a verified lost key, issue a new one-time recovery key or rotate the application key; do not reveal the old key.
+- For a birth-certificate conflict, allow the admin to place the conflicting application on hold while ownership is investigated. Deletion must require an explicit confirmation and audit entry.
+- Every admin action must record who acted, when, the appeal reference, the target application ID, and the reason.
+
+### Data and security boundaries
+
+- Store only a hash of appeal recovery tokens and application keys.
+- Keep appeals separate from application JSON so sensitive correspondence and verification state are queryable and auditable.
+- Admin APIs must require the admin role and must never return access-key plaintext.
+- Deleting an application must also revoke its active key and publish the application-count update.
+- A key rotation must invalidate the previous key immediately and update all local-session guidance after the applicant loads the replacement key.
+
+### Acceptance criteria
+
+- An applicant can submit a lost-key or wrong-record appeal without learning whether another person’s record exists.
+- An admin can see, verify, resolve, reject, delete, or rotate a record through an auditable queue.
+- A birth-certificate conflict cannot be solved by simply overwriting another application.
+- Lost-key recovery produces a new secret rather than exposing the old one.
+- Appeal and recovery actions are visible in admin activity reporting.

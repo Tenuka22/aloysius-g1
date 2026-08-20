@@ -79,7 +79,7 @@ function ResidenceStep({ form, draft, setSection, administrativeData }: { form: 
   </div>;
 }
 
-export function ApplicationForm({ administrativeData }: { administrativeData: AdministrativeData }) {
+export function ApplicationForm({ administrativeData, adminApplicationId, readOnly = false }: { administrativeData: AdministrativeData; adminApplicationId?: string; readOnly?: boolean }) {
   const draft = useApplicationStore();
   const [hydrated, setHydrated] = useState(false);
   const [accessKey, setAccessKey] = useState(() => localStorage.getItem("aloysius-g1-application-key") ?? "");
@@ -97,7 +97,13 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
     const restore = async () => {
       const key = localStorage.getItem("aloysius-g1-application-key");
       try {
-        if (key) {
+        if (adminApplicationId) {
+          const result = await client.admin.application.get({ id: adminApplicationId });
+          if (!cancelled) {
+            const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
+            draft.updateDraft(latest); form.reset(latest); setSavedSnapshot(JSON.stringify(latest));
+          }
+        } else if (key) {
           const result = await client.application.get({ accessKey: key });
           if (!cancelled) {
             const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
@@ -130,7 +136,8 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
     const operation = saveQueue.current.then(async () => {
     const data = normalizeDraft({ ...(form.state.values as ApplicationDraft), ...draft });
     setSaveStatus("Saving…");
-    if (accessKey) await client.application.update({ accessKey, data });
+    if (adminApplicationId) await client.admin.application.update({ id: adminApplicationId, data });
+    else if (accessKey) await client.application.update({ accessKey, data });
     else { const result = await client.application.create({ data }); localStorage.setItem("aloysius-g1-application-key", result.accessKey); const keys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[]; localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([result.accessKey, ...keys])])); setAccessKey(result.accessKey); }
     setSavedSnapshot(JSON.stringify(data));
     setSaveStatus("Saved securely");
@@ -180,7 +187,7 @@ export function ApplicationForm({ administrativeData }: { administrativeData: Ad
       <div className="progress-track"><div style={{ width: `${Math.max(progress, 8)}%` }} /></div>
       <nav className="step-nav" aria-label="Form steps">{steps.map((step, index) => <button type="button" key={step} className={index === current ? "active" : index < current ? "done" : ""} onClick={() => index <= current && draft.setStep(index)}><span>{index < current ? <Check size={14} /> : index + 1}</span>{step}</button>)}</nav>
       <div className="step-content">
-        {current === 0 && <><div className="step-copy"><h3>Start with the home location</h3><p>Your true browser location is saved first. You may then replace the selected application location with another point.</p></div><LocationStep value={draft.location ?? emptyDraft.location} defaultValue={draft.defaultLocation ?? emptyDraft.defaultLocation} onAvailabilityChange={setLocationCanProceed} onChange={(value, defaultValue) => { setSection("location", value); setSection("selectedLocation", value); if (defaultValue) setSection("defaultLocation", defaultValue); }} /></>}
+        {current === 0 && <><div className="step-copy"><h3>Start with the home location</h3><p>Your true browser location is saved first. You may then replace the selected application location with another point.</p></div><LocationStep readOnly={readOnly} value={draft.location ?? emptyDraft.location} defaultValue={draft.defaultLocation ?? emptyDraft.defaultLocation} onAvailabilityChange={setLocationCanProceed} onChange={(value, defaultValue) => { if (readOnly) return; setSection("location", value); setSection("selectedLocation", value); if (defaultValue) setSection("defaultLocation", defaultValue); }} /></>}
         {current === 1 && <div className="fields-grid"><div className="step-copy full-span"><h3>Tell us about the applicant</h3><p>Use the name shown on the applicant’s birth certificate.</p></div><Field form={form} name="applicant.fullName" label="Full name" placeholder="Enter full name" /><SinhalaNameField form={form} /><SelectField form={form} name="applicant.gender" label="Gender" options={["Select gender", "Female", "Male"]} onChange={(value) => setSection("applicant", { ...draft.applicant, gender: value })} />{draft.applicant.gender === "Female" && <p className="error-line full-span">This is a boys’ school, so female applicants cannot continue with this application.</p>}<SelectField form={form} name="applicant.religion" label="Religion" options={["Select religion", "Catholic", "Christian", "Buddhist", "Islam"]} onChange={(value) => setSection("applicant", { ...draft.applicant, religion: value })} />{["Catholic", "Christian"].includes(draft.applicant.religion) && <p className="error-line full-span">This intake is not available to Catholic or Christian applicants.</p>}<SelectField form={form} name="applicant.educationMedium" label="Education medium" options={["Select medium", "Sinhala", "Tamil"]} onChange={(value) => setSection("applicant", { ...draft.applicant, educationMedium: value })} /><DateOfBirthField form={form} /><Field form={form} name="applicant.birthCertificateNumber" label="Birth certificate number" placeholder="Enter birth certificate number" /></div>}
         {current === 2 && <div className="fields-grid"><div className="step-copy full-span"><h3>Parent or guardian details</h3><p>We’ll use these details only to contact the family about this intake.</p></div><SelectField form={form} name="guardian.relationship" label="Relationship to applicant" options={["Select relationship", "Mother", "Father", "Guardian"]} /><Field form={form} name="guardian.fullName" label="Full name" /><Field form={form} name="guardian.nic" label="NIC number" /><Field form={form} name="guardian.phone" label="Phone number" type="tel" /><Field form={form} name="guardian.whatsappPhone" label="WhatsApp phone number" type="tel" /><Field form={form} name="guardian.email" label="Email address" type="email" /></div>}
         {current === 3 && <ResidenceStep form={form} draft={draft} setSection={setSection} administrativeData={administrativeData} />}

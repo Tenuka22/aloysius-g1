@@ -40,7 +40,6 @@ export type ApplicationDraft = {
     gnDivision: string;
     electoralDistrict: string;
   };
-  schools: { firstChoice: string; secondChoice: string; acceptNearby: string };
   declaration: { confirmed: boolean; consent: boolean };
   lastSavedAt: string | null;
 };
@@ -53,7 +52,6 @@ export const emptyDraft: ApplicationDraft = {
   applicant: { fullName: "", sinhalaName: "", gender: "", religion: "", educationMedium: "", dateOfBirth: "", birthCertificateNumber: "" },
   guardian: { relationship: "", fullName: "", nic: "", phone: "", whatsappPhone: "", email: "" },
   residence: { permanentAddress: "", currentAddress: "", sameAsPermanent: false, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "" },
-  schools: { firstChoice: "", secondChoice: "", acceptNearby: "" },
   declaration: { confirmed: false, consent: false },
   lastSavedAt: null,
 };
@@ -68,7 +66,6 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
     applicant: { ...emptyDraft.applicant, ...input?.applicant },
     guardian: { ...emptyDraft.guardian, ...input?.guardian },
     residence: { ...emptyDraft.residence, ...input?.residence },
-    schools: { ...emptyDraft.schools, ...input?.schools },
     declaration: { ...emptyDraft.declaration, ...input?.declaration },
   };
 }
