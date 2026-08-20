@@ -185,6 +185,7 @@ export function ApplicationForm({ administrativeData, adminApplicationId, readOn
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [locationCanProceed, setLocationCanProceed] = useState(false);
   const [duplicateBirthCertificate, setDuplicateBirthCertificate] = useState(false);
+  const duplicateCheckRef = useRef(0);
   const saveQueue = useRef(Promise.resolve());
   const navigate = useNavigate();
   const [collectionOnly, setCollectionOnly] = useState(import.meta.env.PROD);
@@ -229,16 +230,18 @@ export function ApplicationForm({ administrativeData, adminApplicationId, readOn
   const current = draft.currentStep;
   const birthCertificateNumber = String(form.state.values.applicant.birthCertificateNumber ?? "").trim();
   useEffect(() => {
+    const checkId = ++duplicateCheckRef.current;
     if (current !== 1 || !birthCertificateNumber) {
       setDuplicateBirthCertificate(false);
       return;
     }
+    setDuplicateBirthCertificate(false);
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void client.application.checkBirthCertificate({ birthCertificateNumber }).then((result) => {
-        if (!cancelled) setDuplicateBirthCertificate(result.exists);
+        if (!cancelled && checkId === duplicateCheckRef.current) setDuplicateBirthCertificate(result.exists);
       }).catch(() => {
-        if (!cancelled) setDuplicateBirthCertificate(false);
+        if (!cancelled && checkId === duplicateCheckRef.current) setDuplicateBirthCertificate(false);
       });
     }, 250);
     return () => { cancelled = true; window.clearTimeout(timer); };
