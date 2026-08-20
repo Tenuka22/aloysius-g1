@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
-import { LocateFixed, MapPin, Search, TriangleAlert } from "lucide-react";
+import { LocateFixed, TriangleAlert } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
 type LocationValue = { label: string; address: string; latitude: number | null; longitude: number | null; source: "manual" | "device" | "map" | "" };
@@ -43,11 +43,10 @@ export function LocationStep({ value, onChange }: { value: LocationValue; onChan
       <div className="field-group">
         <label htmlFor="location-search">Where does the applicant live?</label>
         <p className="field-help">Choose the applicant’s home location. This is used to help determine the nearest school.</p>
-        <div className="input-with-icon"><Search size={18} /><input id="location-search" value={query} onChange={(event) => { setQuery(event.target.value); onChange({ ...value, address: event.target.value, source: "manual" }); }} placeholder="Enter an address or landmark" /></div>
+        <input id="location-search" value={query} onChange={(event) => { setQuery(event.target.value); onChange({ ...value, address: event.target.value, source: "manual" }); }} placeholder="Enter an address or landmark" />
       </div>
       <button type="button" className="secondary-button full-button" onClick={useDeviceLocation}><LocateFixed size={17} /> Use my current device location</button>
       {status && <p className="status-line" role="status">{status}</p>}
-      <div className="location-note"><MapPin size={17} /><span>We only use your location for this draft. It is not sent to the server in collection mode.</span></div>
       {value.latitude === null && <p className="error-line"><TriangleAlert size={16} /> Select a point on the map or use your device location to continue.</p>}
     </div>
     <div className="map-frame" aria-label="OpenStreetMap location picker">

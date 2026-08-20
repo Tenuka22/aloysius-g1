@@ -77,6 +77,7 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
   } else {
     await db.insert(schema.account).values({
       id: crypto.randomUUID(),
+      issuer: "credential",
       accountId: user.id,
       providerId: "credential",
       userId: user.id,
