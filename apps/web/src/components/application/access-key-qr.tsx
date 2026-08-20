@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
-import { QrCode, Upload } from "lucide-react";
+import { Camera, QrCode, Upload } from "lucide-react";
 import QRCode from "qrcode";
 import QrScanner from "qr-scanner";
 
@@ -10,6 +10,9 @@ function cleanKey(value: string) {
 
 export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void }) {
   const [error, setError] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const scannerRef = useRef<QrScanner | null>(null);
   const readFile = async (file?: File) => {
     if (!file) return;
     try {
@@ -22,7 +25,26 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
       setError(scanError instanceof Error ? scanError.message : "Could not read that QR code");
     }
   };
-  return <div className="qr-import-control"><label className="secondary-button qr-import-button"><Upload size={16} /> Import access key QR<input type="file" accept="image/*" onChange={(event) => void readFile(event.target.files?.[0])} /></label>{error && <p className="error-line">{error}</p>}</div>;
+  useEffect(() => {
+    if (!cameraOpen || !videoRef.current) return;
+    setError("");
+    const scanner = new QrScanner(videoRef.current, (result) => {
+      const value = typeof result === "string" ? result : result.data;
+      const key = cleanKey(value);
+      if (!key) return;
+      onKey(key);
+      setCameraOpen(false);
+    }, { returnDetailedScanResult: true, highlightScanRegion: true, highlightCodeOutline: true });
+    scannerRef.current = scanner;
+    void scanner.start().catch(() => setError("Camera access was unavailable. You can import a QR image instead."));
+    return () => {
+      scanner.stop();
+      scanner.destroy();
+      scannerRef.current = null;
+    };
+  }, [cameraOpen, onKey]);
+
+  return <div className="qr-import-control"><div className="qr-import-actions"><button className="secondary-button" type="button" onClick={() => setCameraOpen(true)}><Camera size={16} /> Scan with camera</button><label className="secondary-button qr-import-button"><Upload size={16} /> Import QR image<input type="file" accept="image/*" onChange={(event) => void readFile(event.target.files?.[0])} /></label></div>{error && <p className="error-line">{error}</p>}<Dialog open={cameraOpen} onOpenChange={setCameraOpen}><DialogContent className="qr-camera-dialog"><DialogHeader><DialogTitle>Scan access key</DialogTitle><DialogDescription>Allow camera access and hold the application QR code inside the frame.</DialogDescription></DialogHeader><div className="qr-camera-preview"><video ref={videoRef} muted playsInline /><span>Point your camera at the QR code</span></div></DialogContent></Dialog></div>;
 }
 
 export function AccessKeyQrDialog({ accessKey, open, onOpenChange }: { accessKey: string; open: boolean; onOpenChange: (open: boolean) => void }) {
