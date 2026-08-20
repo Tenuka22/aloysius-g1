@@ -5,6 +5,7 @@ export const applicationAccessRequests = sqliteTable("application_access_request
   applicationId: text("application_id").notNull(),
   birthCertificateNumber: text("birth_certificate_number").notNull(),
   applicantName: text("applicant_name").notNull(),
+  guardianName: text("guardian_name").notNull().default(""),
   contactEmail: text("contact_email").notNull(),
   contactPhone: text("contact_phone"),
   requestType: text("request_type").notNull().default("access"),

@@ -1,0 +1,1 @@
+ALTER TABLE `application_access_requests` ADD `guardian_name` text DEFAULT '' NOT NULL;

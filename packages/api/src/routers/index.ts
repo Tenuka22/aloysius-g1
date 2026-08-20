@@ -96,21 +96,33 @@ export const appRouter = {
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
       return { exists: Boolean(row) };
     }),
-    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().min(1), contactEmail: z.email(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal"]).default("access") }).refine((input) => Boolean(input.birthCertificateNumber || input.sessionCode || input.guardianNic || input.accessKey), "A birth certificate number, session code, guardian NIC, or access key is required")).handler(async ({ input }) => {
+    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().min(1), guardianName: z.string().trim().optional(), contactEmail: z.email().optional(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal"]).default("access") }).superRefine((input, context) => {
+      if (!input.birthCertificateNumber && !input.sessionCode && !input.guardianNic && !input.accessKey) context.addIssue({ code: "custom", message: "A birth certificate number, session code, guardian NIC, or access key is required" });
+      if (input.requestType === "access" && !input.contactEmail) context.addIssue({ code: "custom", path: ["contactEmail"], message: "A contact email is required for access recovery" });
+      if (input.requestType === "removal" && (!input.guardianName || !input.contactPhone)) context.addIssue({ code: "custom", message: "A guardian name and contact number are required for removal requests" });
+    })).handler(async ({ input }) => {
       const keyRow = input.accessKey ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get() : null;
       const codeRow = input.sessionCode ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.sessionCode, input.sessionCode.trim().toUpperCase())).get() : null;
       const birthCertificateNumber = input.birthCertificateNumber?.trim().toUpperCase() || keyRow?.birthCertificateNumber || codeRow?.birthCertificateNumber;
-      let row = keyRow ?? codeRow ?? (birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null);
+      const birthRow = input.birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null;
+      if (keyRow && (codeRow && codeRow.id !== keyRow.id || birthRow && birthRow.id !== keyRow.id)) throw new Error("The supplied identifier belongs to a different application than this access key");
+      let row = keyRow ?? codeRow ?? birthRow;
+      let guardianRow: typeof row = null;
       if (!row && input.guardianNic) {
         const normalizedNic = input.guardianNic.trim().toUpperCase();
         const candidates = await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber, data: applications.data }).from(applications).all();
-        row = candidates.find((candidate) => String((candidate.data as { guardian?: { nic?: string } }).guardian?.nic ?? "").trim().toUpperCase() === normalizedNic) ?? null;
+        guardianRow = candidates.find((candidate) => String((candidate.data as { guardian?: { nic?: string } }).guardian?.nic ?? "").trim().toUpperCase() === normalizedNic) ?? null;
+        row = guardianRow;
+      } else if (keyRow && input.guardianNic) {
+        const candidates = await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber, data: applications.data }).from(applications).all();
+        guardianRow = candidates.find((candidate) => String((candidate.data as { guardian?: { nic?: string } }).guardian?.nic ?? "").trim().toUpperCase() === input.guardianNic?.trim().toUpperCase()) ?? null;
+        if (guardianRow && guardianRow.id !== keyRow.id) throw new Error("The supplied guardian NIC belongs to a different application than this access key");
       }
       if (!row) throw new Error("No application was found for this birth certificate number");
       const resolvedBirthCertificateNumber = row.birthCertificateNumber;
       if (!resolvedBirthCertificateNumber) throw new Error("This application does not have a birth certificate number yet");
       const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(and(eq(applicationAccessRequests.applicationId, row.id), eq(applicationAccessRequests.requestType, input.requestType))).get();
-      if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName.trim(), contactEmail: input.contactEmail.trim().toLowerCase(), ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), requestType: input.requestType, status: "open", createdAt: new Date(), resolvedAt: null });
+      if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName.trim(), guardianName: input.guardianName?.trim() ?? "", contactEmail: input.contactEmail?.trim().toLowerCase() ?? "", ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), requestType: input.requestType, status: "open", createdAt: new Date(), resolvedAt: null });
       return { submitted: true };
     }),
     liveCount: publicProcedure.output(eventIterator(z.object({ count: z.number() }))).handler(async function* ({ signal }) {
