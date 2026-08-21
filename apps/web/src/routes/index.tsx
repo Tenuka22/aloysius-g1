@@ -75,13 +75,13 @@ function HomeComponent() {
         <Card><CardContent className="p-5"><div className="text-4xl font-bold">{keys.filter((k) => !records[k]?.submitted && (records[k]?.completion ?? 0) < 100).length}</div><div className="text-sm text-muted-foreground">Incomplete</div></CardContent></Card>
       </section>
 
-      <section className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Button type="button" className="w-full h-auto py-5 flex-col gap-2" onClick={createNewApplication}><Plus size={22} /> New application</Button>
-        <Button type="button" className="w-full h-auto py-5 flex-col gap-2" onClick={() => window.location.assign("/application/access")}><KeyRound size={22} /> Load with a key</Button>
-        {isAdmin && <Button type="button" className="w-full h-auto py-5 flex-col gap-2" onClick={() => window.location.assign("/admin")}><ShieldCheck size={22} /> Admin panel</Button>}
-        <Button type="button" className="w-full h-auto py-5 flex-col gap-2" onClick={() => setRecoveryKey(keys[0] || "")} disabled={!keys[0]}><KeyRound size={22} /> Manage saved keys</Button>
-        <Button type="button" className="w-full h-auto py-5 flex-col gap-2" onClick={() => document.getElementById("qr-upload")?.click()}><Upload size={22} /> Import QR image</Button>
-        <Button type="button" className="w-full h-auto py-5 flex-col gap-2" variant="outline" onClick={() => { if (keys[0]) setRecoveryKey(keys[0]); }} disabled={!keys[0]}><Trash2 size={22} /> Forgot a key?</Button>
+      <section className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <Button type="button" className="w-full h-auto py-3 flex-col gap-1.5 text-sm" onClick={createNewApplication}><Plus size={18} /> New application</Button>
+        <Button type="button" className="w-full h-auto py-3 flex-col gap-1.5 text-sm" onClick={() => window.location.assign("/application/access")}><KeyRound size={18} /> Load with a key</Button>
+        {isAdmin && <Button type="button" className="w-full h-auto py-3 flex-col gap-1.5 text-sm" onClick={() => window.location.assign("/admin")}><ShieldCheck size={18} /> Admin panel</Button>}
+        <Button type="button" className="w-full h-auto py-3 flex-col gap-1.5 text-sm" onClick={() => setRecoveryKey(keys[0] || "")} disabled={!keys[0]}><KeyRound size={18} /> Manage saved keys</Button>
+        <Button type="button" className="w-full h-auto py-3 flex-col gap-1.5 text-sm" onClick={() => document.getElementById("qr-upload")?.click()}><Upload size={18} /> Import QR image</Button>
+        <Button type="button" className="w-full h-auto py-3 flex-col gap-1.5 text-sm" variant="outline" onClick={() => { if (keys[0]) setRecoveryKey(keys[0]); }} disabled={!keys[0]}><Trash2 size={18} /> Forgot a key?</Button>
       </section>
       <input id="qr-upload" type="file" accept="image/*" className="sr-only" onChange={(event) => { if (event.target.files?.[0]) { const file = event.target.files[0]; const reader = new FileReader(); reader.onload = () => { const qr = (reader.result as string); import("qr-scanner").then(({ scanImage }) => scanImage(file, { returnDetailedScanResult: true }).then((result: unknown) => { const data = result as { data?: string } | string; const key = typeof data === "string" ? data : data.data || ""; if (key) window.location.assign(`/application/access?key=${encodeURIComponent(key)}`); }).catch(() => {})); }; reader.readAsDataURL(file); } }} />
 
