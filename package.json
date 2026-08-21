@@ -32,6 +32,7 @@
     "dev": "nx run-many -t dev",
     "build": "nx run-many -t build",
     "check-types": "nx run-many -t check-types",
+    "test": "vitest run",
     "dev:web": "nx run-many -t dev --projects=web",
     "dev:server": "nx run-many -t dev --projects=server",
     "db:push": "nx run-many -t db:push --projects=@aloysius-g1/db",
@@ -55,9 +56,15 @@
   },
   "devDependencies": {
     "@aloysius-g1/config": "workspace:*",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.5",
     "@types/bun": "catalog:",
+    "@vitest/coverage-v8": "^4.1.11",
+    "jsdom": "^30.0.1",
     "nx": "^23.1.0",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.1.11"
   },
   "packageManager": "bun@1.3.13"
 }

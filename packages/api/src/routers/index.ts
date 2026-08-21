@@ -2,23 +2,30 @@ import { EventPublisher, eventIterator } from "@orpc/server";
 import type { RouterClient } from "@orpc/server";
 
 import { adminProcedure, protectedProcedure, publicProcedure } from "../index";
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
 import { applicationAccessRequests, applicationSettings, applications } from "@aloysius-g1/db";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { env } from "@aloysius-g1/env/server";
+import {
+  accessRequestIssues,
+  applicationValidationErrors,
+  createAccessKey,
+  createSessionCode,
+  defaultSubmissionWindow,
+  draftSchema,
+  extractBirthCertificateNumber,
+  hashKey,
+  isSubmissionLocked,
+  isValidSubmissionWindow,
+  keySchema,
+  sessionCodePattern,
+  withoutSchoolPreferences,
+} from "../logic";
+import type { ApplicationData } from "../logic";
 
 const db = createDb();
-const draftSchema = z.record(z.string(), z.unknown());
-const withoutSchoolPreferences = (data: Record<string, unknown>) => {
-  const { schools: _removed, ...sanitized } = data;
-  return sanitized;
-};
-const keySchema = z.string().min(32).max(128);
-const hashKey = (key: string) => createHash("sha256").update(key).digest("hex");
-const createAccessKey = () => `ALY-${randomBytes(32).toString("base64url")}`;
-const createSessionCode = () => `26${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
 const uniqueSessionCode = async () => {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const sessionCode = createSessionCode();
@@ -33,8 +40,8 @@ const ensureSessionCode = async (row: typeof applications.$inferSelect) => {
   await db.update(applications).set({ sessionCode }).where(eq(applications.id, row.id)).run();
   return sessionCode;
 };
-const defaultOpensAt = new Date("2026-09-09T00:00:00+05:30");
-const defaultClosesAt = new Date("2026-09-12T00:00:00+05:30");
+const defaultOpensAt = defaultSubmissionWindow().opensAt;
+const defaultClosesAt = defaultSubmissionWindow().closesAt;
 const getApplicationWindow = async () => {
   const existing = await db.select().from(applicationSettings).where(eq(applicationSettings.id, "default")).get();
   if (existing) return existing;
@@ -43,23 +50,12 @@ const getApplicationWindow = async () => {
   await db.insert(applicationSettings).values(defaults).onConflictDoNothing();
   return (await db.select().from(applicationSettings).where(eq(applicationSettings.id, "default")).get()) ?? defaults;
 };
-const submissionLocked = (window: { opensAt: Date; closesAt: Date }) => new Date() < window.opensAt || new Date() > window.closesAt;
 const applicationEvents = new EventPublisher<{ "application-count": { count: number } }>();
 const applicationCount = async () => (await db.select({ id: applications.id }).from(applications).all()).length;
 const publishApplicationChange = async () => applicationEvents.publish("application-count", { count: await applicationCount() });
 const applicationRecord = (row: typeof applications.$inferSelect) => {
-  const data = row.data as { applicant?: { fullName?: string; gender?: string; religion?: string; educationMedium?: string; dateOfBirth?: string; birthCertificateNumber?: string }; guardian?: { email?: string }; location?: { latitude?: number | null; longitude?: number | null } };
-  const email = data.guardian?.email?.trim() ?? "";
-  const errors = [
-    !data.applicant?.fullName && "missing_full_name",
-    !data.applicant?.birthCertificateNumber && "missing_birth_certificate",
-    !data.applicant?.dateOfBirth && "missing_date_of_birth",
-    data.applicant?.gender === "Female" && "female_applicant",
-    ["Catholic", "Christian"].includes(data.applicant?.religion ?? "") && "restricted_religion",
-    email && !/^\S+@\S+\.\S+$/.test(email) && "invalid_email",
-    (data.location?.latitude == null || data.location?.longitude == null) && "missing_location",
-  ].filter(Boolean) as string[];
-  return { id: row.id, sessionCode: row.sessionCode, applicantName: data.applicant?.fullName || "Unnamed applicant", status: row.submittedAt ? "submitted" : "draft", createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt, accessKeyHint: row.accessKeyHint, validationErrors: errors };
+  const data = row.data as ApplicationData | null | undefined;
+  return { id: row.id, sessionCode: row.sessionCode, applicantName: data?.applicant?.fullName || "Unnamed applicant", status: row.submittedAt ? "submitted" : "draft", createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt, accessKeyHint: row.accessKeyHint, validationErrors: applicationValidationErrors(data) };
 };
 
 export const appRouter = {
@@ -69,10 +65,8 @@ export const appRouter = {
       const sessionCode = await uniqueSessionCode();
       const now = new Date();
       const window = await getApplicationWindow();
-      if (submissionLocked(window)) throw new Error("New applications can only be created during the configured form window");
-      const birthCertificateNumber = typeof input.data.applicant === "object" && input.data.applicant !== null && "birthCertificateNumber" in input.data.applicant
-        ? String((input.data.applicant as { birthCertificateNumber?: unknown }).birthCertificateNumber ?? "").trim().toUpperCase()
-        : "";
+      if (isSubmissionLocked(window)) throw new Error("New applications can only be created during the configured form window");
+      const birthCertificateNumber = extractBirthCertificateNumber(input.data);
       const data = withoutSchoolPreferences(input.data);
       const existing = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null;
       if (existing) throw new Error("An application already exists for this birth certificate number");
@@ -80,7 +74,7 @@ export const appRouter = {
       await publishApplicationChange();
       return { accessKey, sessionCode, data };
     }),
-    lookup: publicProcedure.input(z.object({ sessionCode: z.string().regex(/^\d{2}[A-Z]{3}\d{3}$/) })).handler(async ({ input }) => {
+    lookup: publicProcedure.input(z.object({ sessionCode: z.string().regex(sessionCodePattern) })).handler(async ({ input }) => {
       const row = await db.select({ sessionCode: applications.sessionCode, data: applications.data, submittedAt: applications.submittedAt, updatedAt: applications.updatedAt }).from(applications).where(eq(applications.sessionCode, input.sessionCode.toUpperCase())).get();
       if (!row) throw new Error("Application session not found");
       const data = row.data as { applicant?: { fullName?: string } };
@@ -96,16 +90,15 @@ export const appRouter = {
       const row = await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get();
       return { exists: Boolean(row) };
     }),
-    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().optional(), guardianName: z.string().trim().optional(), contactEmail: z.email().optional(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal"]).default("access") }).superRefine((input, context) => {
-      if (!input.birthCertificateNumber && !input.sessionCode && !input.guardianNic && !input.accessKey) context.addIssue({ code: "custom", message: "A birth certificate number, session code, guardian NIC, or access key is required" });
-      if (input.requestType === "access" && !input.contactPhone) context.addIssue({ code: "custom", path: ["contactPhone"], message: "A mobile number is required for access recovery" });
-      if (input.requestType === "removal" && (!input.applicantName || !input.guardianName || !input.contactPhone)) context.addIssue({ code: "custom", message: "Applicant name, guardian name, and contact number are required for removal requests" });
-      if (input.requestType === "access" && input.guardianNic && !input.applicantName) context.addIssue({ code: "custom", message: "Applicant name is required when using guardian NIC recovery" });
+    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().optional(), guardianName: z.string().trim().optional(), contactEmail: z.email().optional(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal", "submission"]).default("access") }).superRefine((input, context) => {
+      for (const issue of accessRequestIssues(input)) {
+        context.addIssue(issue.path ? { code: "custom", path: issue.path, message: issue.message } : { code: "custom", message: issue.message });
+      }
     })).handler(async ({ input }) => {
       const keyRow = input.accessKey ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get() : null;
       const codeRow = input.sessionCode ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.sessionCode, input.sessionCode.trim().toUpperCase())).get() : null;
       const birthCertificateNumber = input.birthCertificateNumber?.trim().toUpperCase() || keyRow?.birthCertificateNumber || codeRow?.birthCertificateNumber;
-      const birthRow = input.birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null;
+      const birthRow = input.birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber!)).get() : null;
       if (keyRow && (codeRow && codeRow.id !== keyRow.id || birthRow && birthRow.id !== keyRow.id)) throw new Error("The supplied identifier belongs to a different application than this access key");
       let row = keyRow ?? codeRow ?? birthRow;
       let guardianRow: typeof row = null;
@@ -120,9 +113,11 @@ export const appRouter = {
         if (guardianRow && guardianRow.id !== keyRow.id) throw new Error("The supplied guardian NIC belongs to a different application than this access key");
       }
       if (!row) throw new Error("No application was found for this birth certificate number");
-      const submittedApplication = await db.select({ submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, row.id)).get();
-      if (!submittedApplication?.submittedAt) throw new Error("Access recovery is available only for submitted applications");
-      const resolvedBirthCertificateNumber = row.birthCertificateNumber;
+      if (input.requestType !== "submission") {
+        const submittedApplication = await db.select({ submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, row.id)).get();
+        if (!submittedApplication?.submittedAt) throw new Error("Access recovery is available only for submitted applications");
+      }
+      const resolvedBirthCertificateNumber = row.birthCertificateNumber || "";
       if (!resolvedBirthCertificateNumber) throw new Error("This application does not have a birth certificate number yet");
       const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(and(eq(applicationAccessRequests.applicationId, row.id), eq(applicationAccessRequests.requestType, input.requestType))).get();
       if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName?.trim() ?? "", guardianName: input.guardianName?.trim() ?? "", contactEmail: input.contactEmail?.trim().toLowerCase() ?? "", ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), requestType: input.requestType, status: "open", createdAt: new Date(), resolvedAt: null });
@@ -135,23 +130,21 @@ export const appRouter = {
     count: publicProcedure.handler(async () => ({ count: await applicationCount() })),
     update: publicProcedure.input(z.object({ accessKey: keySchema, data: draftSchema })).handler(async ({ input }) => {
       const updatedAt = new Date();
-      const birthCertificateNumber = typeof input.data.applicant === "object" && input.data.applicant !== null && "birthCertificateNumber" in input.data.applicant
-        ? String((input.data.applicant as { birthCertificateNumber?: unknown }).birthCertificateNumber ?? "").trim().toUpperCase()
-        : "";
-      const current = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
+      const birthCertificateNumber = extractBirthCertificateNumber(input.data);
+      const current = await db.select({ id: applications.id, submittedAt: applications.submittedAt }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!current) throw new Error("Application key not found");
       const window = await getApplicationWindow();
-      if (submissionLocked(window)) throw new Error("Applications can only be updated during the configured form window");
+      if (current.submittedAt && isSubmissionLocked(window)) throw new Error("Submitted applications can only be updated during the configured form window");
       const duplicate = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
       if (duplicate && duplicate.id !== current?.id) throw new Error("An application already exists for this birth certificate number");
       await db.update(applications).set({ birthCertificateNumber: birthCertificateNumber || null, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).run();
       await publishApplicationChange();
       return { updatedAt };
     }),
-    status: publicProcedure.handler(async () => { const window = await getApplicationWindow(); return { submissionLocked: submissionLocked(window), submissionOpensAt: window.opensAt.toISOString(), submissionClosesAt: window.closesAt.toISOString(), environment: env.NODE_ENV }; }),
+    status: publicProcedure.handler(async () => { const window = await getApplicationWindow(); return { submissionLocked: isSubmissionLocked(window), submissionOpensAt: window.opensAt.toISOString(), submissionClosesAt: window.closesAt.toISOString(), environment: env.NODE_ENV }; }),
     submit: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const window = await getApplicationWindow();
-      if (submissionLocked(window)) throw new Error("Submissions are outside the configured form window");
+      if (isSubmissionLocked(window)) throw new Error("Submissions are outside the configured form window");
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new Error("Application key not found");
       await db.update(applications).set({ submittedAt: new Date(), updatedAt: new Date() }).where(eq(applications.id, row.id)).run();
@@ -181,11 +174,28 @@ export const appRouter = {
         return { deleted: true };
       }),
       dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => { await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, input.requestId)).run(); return { dismissed: true }; }),
+      submissionRequests: adminProcedure.handler(async () => db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "submission"), eq(applicationAccessRequests.status, "open"))).all()),
+      approveSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
+        const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
+        if (!request) throw new Error("Submission request not found");
+        if (request.requestType !== "submission") throw new Error("Only submission requests can be approved");
+        await db.update(applications).set({ submittedAt: new Date(), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
+        await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
+        await publishApplicationChange();
+        return { approved: true };
+      }),
+      rejectSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
+        const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
+        if (!request) throw new Error("Submission request not found");
+        if (request.requestType !== "submission") throw new Error("Only submission requests can be rejected");
+        await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
+        return { rejected: true };
+      }),
     },
     settings: {
       get: adminProcedure.handler(async () => { const window = await getApplicationWindow(); return { opensAt: window.opensAt, closesAt: window.closesAt, updatedAt: window.updatedAt }; }),
       update: adminProcedure.input(z.object({ opensAt: z.coerce.date(), closesAt: z.coerce.date() })).handler(async ({ input }) => {
-        if (input.closesAt <= input.opensAt) throw new Error("The closing time must be after the opening time");
+        if (!isValidSubmissionWindow(input.opensAt, input.closesAt)) throw new Error("The closing time must be after the opening time");
         const updatedAt = new Date();
         await db.insert(applicationSettings).values({ id: "default", opensAt: input.opensAt, closesAt: input.closesAt, updatedAt }).onConflictDoUpdate({ target: applicationSettings.id, set: { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt } });
         return { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt };
@@ -209,8 +219,7 @@ export const appRouter = {
       }),
       update: adminProcedure.input(z.object({ id: z.string().uuid(), data: draftSchema })).handler(async ({ input }) => {
         const updatedAt = new Date();
-        const birthCertificateNumber = typeof input.data.applicant === "object" && input.data.applicant !== null && "birthCertificateNumber" in input.data.applicant
-          ? String((input.data.applicant as { birthCertificateNumber?: unknown }).birthCertificateNumber ?? "").trim().toUpperCase() : "";
+        const birthCertificateNumber = extractBirthCertificateNumber(input.data);
         if (!birthCertificateNumber) throw new Error("Birth certificate number is required");
         const duplicate = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
         if (duplicate && duplicate.id !== input.id) throw new Error("An application already exists for this birth certificate number");

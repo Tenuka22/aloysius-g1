@@ -1,63 +1,143 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import type { AnyFieldApi, ReactFormExtendedApi } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { emptyDraft, normalizeDraft, useApplicationStore, type ApplicationDraft } from "@/lib/application-store";
-import { DISTRICTS, DIVISIONAL_SECRETARIATS, ELECTORAL_CONSTITUENCIES, GN_DIVISIONS } from "@/lib/divisions";
+import { G1_DOB_CUTOFF, getNextStepReason } from "@/lib/eligibility";
 import { client } from "@/utils/orpc";
-import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@aloysius-g1/ui/components/combobox";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@aloysius-g1/ui/components/card";
+import { Button } from "@aloysius-g1/ui/components/button";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@aloysius-g1/ui/components/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@aloysius-g1/ui/components/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@aloysius-g1/ui/components/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@aloysius-g1/ui/components/drawer";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@aloysius-g1/ui/components/field";
 import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
 import { PhoneInput } from "@/components/application/phone-input";
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@aloysius-g1/ui/components/drawer";
+import { DISTRICTS, DIVISIONAL_SECRETARIATS, ELECTORAL_CONSTITUENCIES, GN_DIVISIONS } from "@/lib/divisions";
+import { useAppForm } from "@/lib/app-form";
+import {
+  applicantStepSchema,
+  guardianStepSchema,
+  residenceStepSchema,
+  declarationStepSchema,
+} from "@/lib/validation";
+
+// biome-ignore lint/suspicious/noExplicitAny: internal step components need the React form type with .Field
+type AppForm = ReactFormExtendedApi<any, any, any, any, any, any, any, any, any, any, any, any>;
 
 const steps = ["Location", "Applicant", "Parent / guardian", "Residence", "Declaration", "Review"];
-
-function Field({ label, name, type = "text", placeholder, form, disabled = false, onDuplicateChange }: { label: string; name: string; type?: string; placeholder?: string; form: any; disabled?: boolean; onDuplicateChange?: (duplicate: boolean) => void }) {
-  if (name === "applicant.birthCertificateNumber") return <BirthCertificateFieldDialogV2 form={form} onDuplicateChange={onDuplicateChange} />;
-  if (name === "guardian.phone") return <PhoneField form={form} name={name} label={label} />;
-  if (name === "guardian.nic") return <NicField form={form} />;
-  return <form.Field name={name}>{(field: any) => <div className="field-group"><label htmlFor={name}>{label}</label><Input id={name} name={name} type={type} value={field.state.value} placeholder={placeholder} disabled={disabled} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} />{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}</div>}</form.Field>;
+function FieldErrorDisplay({ field }: { field: AnyFieldApi }) {
+  const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+  if (!isInvalid || !field.state.meta.errors?.length) return null;
+  return (
+    <p className="text-sm text-destructive">
+      {field.state.meta.errors.map((e) => e?.message).join(", ")}
+    </p>
+  );
 }
 
-function PhoneField({ form, name, label }: { form: any; name: string; label: string }) {
-  return <form.Field name={name}>{(field: any) => <div className="field-group"><label htmlFor={name}>{label}</label><PhoneInput value={field.state.value || ""} onChange={field.handleChange} /></div>}</form.Field>;
+function StepIndicator({
+  current,
+  steps: stepLabels,
+  onStepClick,
+}: {
+  current: number;
+  steps: string[];
+  onStepClick: (index: number) => void;
+}) {
+  const progress = Math.round((current / (stepLabels.length - 1)) * 100);
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4 px-8 pt-6 pb-4">
+        <div>
+          <p className="text-xs text-muted-foreground">
+            Step {current + 1} of {stepLabels.length}
+          </p>
+          <h2 className="font-heading text-2xl">{stepLabels[current]}</h2>
+        </div>
+        <span className="text-sm text-muted-foreground">{progress}% complete</span>
+      </div>
+      <div className="h-1 bg-secondary">
+        <div
+          className="h-full bg-primary transition-[width] duration-350 ease-in-out"
+          style={{ width: `${Math.max(progress, 8)}%` }}
+        />
+      </div>
+      <nav
+        className="flex gap-1 overflow-auto border-b px-8 py-3"
+        aria-label="Form steps"
+      >
+        {stepLabels.map((step, index) => (
+          <button
+            type="button"
+            key={step}
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap bg-transparent px-2.5 py-2 text-xs ${
+              index === current
+                ? "font-bold text-foreground"
+                : index < current
+                  ? "text-muted-foreground"
+                  : "text-muted-foreground"
+            }`}
+            onClick={() => index <= current && onStepClick(index)}
+          >
+            <span
+              className={`grid size-6 place-items-center rounded-full border text-[11px] ${
+                index === current || index < current
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border"
+              }`}
+            >
+              {index < current ? <Check size={14} /> : index + 1}
+            </span>
+            {step}
+          </button>
+        ))}
+      </nav>
+    </>
+  );
 }
 
-function NicField({ form }: { form: any }) {
-  return <form.Field name="guardian.nic">{(field: any) => { const value = String(field.state.value || "").trim().toUpperCase(); const valid = !value || /^\d{12}$/.test(value) || /^\d{9}[VX]$/.test(value); return <div className="field-group"><label htmlFor="guardian.nic">NIC number</label><Input id="guardian.nic" name="guardian.nic" value={field.state.value} placeholder="e.g. 123456789V or 200012345678" maxLength={12} autoCapitalize="characters" spellCheck={false} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value.toUpperCase())} />{!valid && <p className="error-line">Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12 digits.</p>}</div>; }}</form.Field>;
-}
-
-const G1_DOB_CUTOFF = "2022-01-31";
-function DateOfBirthField({ form, onChange }: { form: any; onChange?: (value: string) => void }) {
-  return <form.Field name="applicant.dateOfBirth">{(field: any) => <div className="field-group"><label htmlFor="applicant.dateOfBirth">Date of birth</label><Input id="applicant.dateOfBirth" name="applicant.dateOfBirth" type="date" max={G1_DOB_CUTOFF} value={field.state.value} onBlur={field.handleBlur} onChange={(event) => { field.handleChange(event.target.value); onChange?.(event.target.value); }} /><p className="field-help">The child must be at least five years old by 31 January 2027.</p></div>}</form.Field>;
-}
-
-function SinhalaNameField({ form }: { form: any }) {
-  return <form.Field name="applicant.sinhalaName">{(field: any) => <div className="field-group"><label htmlFor="applicant.sinhalaName">Name in Sinhala</label><Input id="applicant.sinhalaName" name="applicant.sinhalaName" value={field.state.value} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} /><a className="keyboard-help-link" href="https://www.helakuru.lk/keyboard" target="_blank" rel="noreferrer">Need a Sinhala phonetic keyboard? Open Helakuru</a>{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}</div>}</form.Field>;
-}
-
-function BirthCertificateField({ form }: { form: any }) {
-  const navigate = useNavigate();
-  const [duplicate, setDuplicate] = useState(false); const [accessKey, setAccessKey] = useState(""); const [contactEmail, setContactEmail] = useState(""); const [applicantName, setApplicantName] = useState(""); const [requestState, setRequestState] = useState("");
-  const check = async (value: string) => { const number = value.trim(); if (!number) return; try { const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number }); setDuplicate(result.exists); } catch { setDuplicate(false); } };
-  const requestAccess = async (birthCertificateNumber: string) => { try { setRequestState("Sending request…"); await client.application.requestAccess({ birthCertificateNumber, applicantName, contactEmail }); setRequestState("Request sent. An administrator will review it."); } catch (error) { setRequestState(error instanceof Error ? error.message : "Could not send the request"); } };
-  return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group"><label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label><Input id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setDuplicate(false); setRequestState(""); }} onBlur={() => { field.handleBlur(); void check(field.state.value); }} />{duplicate && <div className="duplicate-application-notice"><strong>An application already exists for this birth certificate number.</strong><p>Open the existing student profile with its access key. Do not create another application for the same student.</p><div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div><div className="duplicate-request"><p>Don’t have the key? Send an admin request for recovery.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Contact email" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)} onClick={() => void requestAccess(field.state.value)}>Request access</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</div></div>}{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}</div>}</form.Field>;
-}
-
-function BirthCertificateFieldDialog({ form }: { form: any }) {
-  const navigate = useNavigate();
-  const [duplicate, setDuplicate] = useState(false); const [accessKey, setAccessKey] = useState(""); const [contactEmail, setContactEmail] = useState(""); const [applicantName, setApplicantName] = useState(""); const [requestState, setRequestState] = useState("");
-  const check = async (value: string) => { const number = value.trim(); if (!number) return; try { const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number }); setDuplicate(result.exists); if (result.exists) { const savedKeys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as string[]; const legacyKey = localStorage.getItem("aloysius-g1-application-key"); const keys = [...new Set(legacyKey ? [legacyKey, ...savedKeys] : savedKeys)]; const matchingKey = (await Promise.all(keys.map(async (key) => { try { const record = await client.application.get({ accessKey: key }); const data = record.data as { applicant?: { birthCertificateNumber?: string } }; return data.applicant?.birthCertificateNumber?.trim().toUpperCase() === number.toUpperCase() ? key : null; } catch { return null; } }))).find(Boolean); setAccessKey(matchingKey ?? ""); } } catch { setDuplicate(false); } };
-  const requestAccess = async (birthCertificateNumber: string) => { try { setRequestState("Sending request…"); await client.application.requestAccess({ birthCertificateNumber, applicantName, contactEmail }); setRequestState("Request sent. An administrator will review it."); } catch (error) { setRequestState(error instanceof Error ? error.message : "Could not send the request"); } };
-  return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group"><label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label><Input className={duplicate ? "duplicate-input-error" : undefined} id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setDuplicate(false); setRequestState(""); }} onBlur={field.handleBlur} />{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}<Dialog open={duplicate} onOpenChange={setDuplicate}><DialogContent className="duplicate-dialog"><DialogHeader><DialogTitle>Existing application found</DialogTitle><DialogDescription>An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.</DialogDescription></DialogHeader><div className="duplicate-dialog-body"><div className="duplicate-actions"><Input value={accessKey} onChange={(event) => setAccessKey(event.target.value)} placeholder="Existing access key" /><button className="secondary-button" type="button" disabled={!accessKey.trim()} onClick={() => void navigate({ to: "/application/access", search: { key: accessKey.trim() } })}><KeyRound size={16} /> Open profile</button></div><div className="duplicate-request"><p>Don’t have the key? Send an admin request for recovery.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="Contact email" /><button className="primary-button" type="button" disabled={!applicantName.trim() || !/^\S+@\S+\.\S+$/.test(contactEmail)} onClick={() => void requestAccess(field.state.value)}>Request access</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</div></div></DialogContent></Dialog></div>}</form.Field>;
-}
-
-function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any; onDuplicateChange?: (duplicate: boolean) => void }) {
+function BirthCertificateField({
+  form,
+  onDuplicateChange,
+}: {
+  form: AppForm;
+  onDuplicateChange?: (duplicate: boolean) => void;
+}) {
   const [duplicate, setDuplicate] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [applicantName, setApplicantName] = useState("");
@@ -65,21 +145,38 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
   const [contactPhone, setContactPhone] = useState("");
   const [requestState, setRequestState] = useState("");
   const checkTimer = useRef<number | undefined>(undefined);
-  const existingApplicantName = String(form.state.values.applicant?.fullName ?? "");
-  const existingGuardianName = String(form.state.values.guardian?.fullName ?? "");
-  const existingContactPhone = String(form.state.values.guardian?.phone ?? "");
+
+  const existingApplicantName = String(
+    form.state.values.applicant?.fullName ?? "",
+  );
+  const existingGuardianName = String(
+    form.state.values.guardian?.fullName ?? "",
+  );
+  const existingContactPhone = String(
+    form.state.values.guardian?.phone ?? "",
+  );
 
   useEffect(() => {
-    if (existingApplicantName) setApplicantName((current) => current || existingApplicantName);
-    if (existingGuardianName) setGuardianName((current) => current || existingGuardianName);
-    if (existingContactPhone) setContactPhone((current) => current || existingContactPhone);
+    if (existingApplicantName)
+      setApplicantName((c) => c || existingApplicantName);
+    if (existingGuardianName)
+      setGuardianName((c) => c || existingGuardianName);
+    if (existingContactPhone)
+      setContactPhone((c) => c || existingContactPhone);
   }, [existingApplicantName, existingGuardianName, existingContactPhone]);
 
   const check = async (value: string, reveal = true) => {
     const number = value.trim();
-    if (!number) { setDuplicate(false); setDialogOpen(false); onDuplicateChange?.(false); return; }
+    if (!number) {
+      setDuplicate(false);
+      setDialogOpen(false);
+      onDuplicateChange?.(false);
+      return;
+    }
     try {
-      const result = await client.application.checkBirthCertificate({ birthCertificateNumber: number });
+      const result = await client.application.checkBirthCertificate({
+        birthCertificateNumber: number,
+      });
       setDuplicate(result.exists);
       if (reveal) setDialogOpen(result.exists);
       onDuplicateChange?.(result.exists);
@@ -90,266 +187,1530 @@ function BirthCertificateFieldDialogV2({ form, onDuplicateChange }: { form: any;
     }
   };
 
-  const scheduleCheck = (value: string) => { if (checkTimer.current) window.clearTimeout(checkTimer.current); checkTimer.current = window.setTimeout(() => void check(value), 250); };
-  const watchedBirthCertificateNumber = String(form.state.values.applicant?.birthCertificateNumber ?? "");
+  const scheduleCheck = (value: string) => {
+    if (checkTimer.current) window.clearTimeout(checkTimer.current);
+    checkTimer.current = window.setTimeout(() => void check(value, false), 250);
+  };
+
+  const watchedValue = String(
+    form.state.values.applicant?.birthCertificateNumber ?? "",
+  );
   useEffect(() => {
-    scheduleCheck(watchedBirthCertificateNumber);
-    const watcher = window.setInterval(() => void check(watchedBirthCertificateNumber, false), 3000);
-    return () => { window.clearInterval(watcher); if (checkTimer.current) window.clearTimeout(checkTimer.current); };
-  }, [watchedBirthCertificateNumber]);
+    scheduleCheck(watchedValue);
+    const watcher = window.setInterval(
+      () => void check(watchedValue, false),
+      3000,
+    );
+    return () => {
+      window.clearInterval(watcher);
+      if (checkTimer.current) window.clearTimeout(checkTimer.current);
+    };
+  }, [watchedValue]);
 
   const requestRemoval = async (birthCertificateNumber: string) => {
     try {
-      setRequestState("Sending removal request…");
-      await client.application.requestAccess({ birthCertificateNumber, applicantName, guardianName, contactPhone, requestType: "removal" });
-      setRequestState("Removal request sent. The school will review it and contact you before taking action.");
+      setRequestState("Sending removal request\u2026");
+      await client.application.requestAccess({
+        birthCertificateNumber,
+        applicantName,
+        guardianName,
+        contactPhone,
+        requestType: "removal",
+      });
+      setRequestState(
+        "Removal request sent. The school will review it and contact you before taking action.",
+      );
     } catch (error) {
-      setRequestState(error instanceof Error ? error.message : "Could not send the request");
+      setRequestState(
+        error instanceof Error ? error.message : "Could not send the request",
+      );
     }
   };
 
-  return <form.Field name="applicant.birthCertificateNumber">{(field: any) => <div className="field-group">
-    <div className="field-label-row"><label htmlFor="applicant.birthCertificateNumber">Birth certificate number</label><button className="field-refresh-button" type="button" title="Check this birth certificate number again" onClick={() => void check(field.state.value)}><RotateCcw size={14} /> Refresh</button></div>
-    <Input className={duplicate ? "duplicate-input-error" : undefined} id="applicant.birthCertificateNumber" name="applicant.birthCertificateNumber" value={field.state.value} placeholder="Enter birth certificate number" onChange={(event) => { field.handleChange(event.target.value); setRequestState(""); scheduleCheck(event.target.value); }} onBlur={field.handleBlur} />
-    <Drawer open={dialogOpen} onOpenChange={setDialogOpen}>{duplicate && <DrawerTrigger className="duplicate-open-button">View existing application options</DrawerTrigger>}
-    {field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}
-    <DrawerContent className="duplicate-drawer"><DrawerHeader><DrawerTitle>Existing application found</DrawerTitle><DrawerDescription>An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.</DrawerDescription></DrawerHeader>
-      <div className="duplicate-dialog-body">
-        <section className="duplicate-request"><h3>Ask the school to remove this record</h3><p>Only the school can approve removal after checking the record and contacting the family.</p><div className="duplicate-actions"><Input value={applicantName} onChange={(event) => setApplicantName(event.target.value)} placeholder="Applicant name" /><Input value={guardianName} onChange={(event) => setGuardianName(event.target.value)} placeholder="Guardian name" /><PhoneInput value={contactPhone} onChange={setContactPhone} /><button className="primary-button" type="button" disabled={!applicantName.trim() || !guardianName.trim() || !contactPhone.trim()} onClick={() => void requestRemoval(field.state.value)}>Request record removal</button></div>{requestState && <p className="field-help" role="status">{requestState}</p>}</section>
+  return (
+    <form.Field name="applicant.birthCertificateNumber">
+      {(field: AnyFieldApi) => (
+        <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+          <FieldLabel htmlFor="applicant.birthCertificateNumber">
+            Birth certificate number
+          </FieldLabel>
+          <div className="flex gap-2">
+            <Input
+              className={`flex-1 ${duplicate ? "border-destructive ring-destructive/20" : ""}`}
+              id="applicant.birthCertificateNumber"
+              name="applicant.birthCertificateNumber"
+              value={field.state.value}
+              placeholder="Enter birth certificate number"
+              onChange={(e) => {
+                field.handleChange(e.target.value);
+                setRequestState("");
+                scheduleCheck(e.target.value);
+              }}
+              onBlur={field.handleBlur}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              title="Check this birth certificate number again"
+              onClick={() => void check(field.state.value, false)}
+            >
+              <RotateCcw size={14} /> Refresh
+            </Button>
+          </div>
+          <Drawer open={dialogOpen} onOpenChange={setDialogOpen}>
+            {duplicate && (
+              <DrawerTrigger className="border-0 bg-transparent p-0 text-destructive text-sm underline w-fit">
+                View existing application options
+              </DrawerTrigger>
+            )}
+            <FieldErrorDisplay field={field} />
+            <DrawerContent className="p-6">
+              <DrawerHeader>
+                <DrawerTitle>Existing application found</DrawerTitle>
+                <DrawerDescription>
+                  An application already exists for this birth certificate
+                  number. Open the existing student profile instead of creating
+                  another record.
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="grid gap-4">
+                <section className="grid gap-2">
+                  <h3 className="text-base font-semibold">
+                    Ask the school to remove this record
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Only the school can approve removal after checking the
+                    record and contacting the family.
+                  </p>
+                  <div className="grid gap-2">
+                    <Input
+                      value={applicantName}
+                      onChange={(e) => setApplicantName(e.target.value)}
+                      placeholder="Applicant name"
+                    />
+                    <Input
+                      value={guardianName}
+                      onChange={(e) => setGuardianName(e.target.value)}
+                      placeholder="Guardian name"
+                    />
+                    <PhoneInput
+                      value={contactPhone}
+                      onChange={setContactPhone}
+                    />
+                    <Button
+                      type="button"
+                      disabled={
+                        !applicantName.trim() ||
+                        !guardianName.trim() ||
+                        !contactPhone.trim()
+                      }
+                      onClick={() => void requestRemoval(field.state.value)}
+                    >
+                      Request record removal
+                    </Button>
+                  </div>
+                  {requestState && (
+                    <p className="text-sm text-muted-foreground" role="status">
+                      {requestState}
+                    </p>
+                  )}
+                </section>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </Field>
+      )}
+    </form.Field>
+  );
+}
+
+function LocationStepCard({
+  draft,
+  readOnly,
+  setSection,
+  onLocationCanProceed,
+}: {
+  draft: ApplicationDraft;
+  readOnly: boolean;
+  setSection: (section: keyof ApplicationDraft, value: unknown) => void;
+  onLocationCanProceed: (canProceed: boolean) => void;
+}) {
+  return (
+    <div className="grid gap-4">
+      <div className="mb-4">
+        <h3 className="font-heading text-2xl">Start with the home location</h3>
+        <p className="text-sm text-muted-foreground">
+          Your true browser location is saved first. You may then replace the
+          selected application location with another point.
+        </p>
       </div>
-    </DrawerContent></Drawer>
-  </div>}</form.Field>;
+      <LocationStep
+        readOnly={readOnly}
+        value={draft.location ?? emptyDraft.location}
+        defaultValue={draft.defaultLocation ?? emptyDraft.defaultLocation}
+        onAvailabilityChange={onLocationCanProceed}
+        onChange={(value, defaultValue) => {
+          if (readOnly) return;
+          setSection("location", value);
+          setSection("selectedLocation", value);
+          if (defaultValue) setSection("defaultLocation", defaultValue);
+        }}
+      />
+    </div>
+  );
 }
 
-const boysSchools = ["Select a boys’ school", "Ananda College", "Nalanda College", "Royal College", "D. S. Senanayake College"];
-const girlsSchools = ["Select a girls’ school", "Visakha Vidyalaya", "Devi Balika Vidyalaya", "Sirimavo Bandaranaike Vidyalaya", "Musaeus College"];
+function ApplicantStep({
+  form,
+  draft,
+  setSection,
+  onDuplicateChange,
+}: {
+  form: AppForm;
+  draft: ApplicationDraft;
+  setSection: (section: keyof ApplicationDraft, value: unknown) => void;
+  onDuplicateChange?: (duplicate: boolean) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-5 max-w-[780px]">
+      <div className="col-span-2 mb-4">
+        <h3 className="font-heading text-2xl">Tell us about the applicant</h3>
+        <p className="text-sm text-muted-foreground">
+          Use the name shown on the applicant&apos;s birth certificate.
+        </p>
+      </div>
 
-function SelectField({ form, name, label, options, onChange }: { form: any; name: string; label: string; options: string[]; onChange?: (value: string) => void }) {
-  return <form.Field name={name}>{(field: any) => <div className="field-group"><label htmlFor={name}>{label}</label><Select value={field.state.value || ""} onValueChange={(value) => { const next = String(value ?? ""); field.handleChange(next); onChange?.(next); }}><SelectTrigger id={name} className="w-full"><SelectValue placeholder={options[0]} /></SelectTrigger><SelectContent>{options.slice(1).map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select>{field.state.meta.errors?.length ? <p className="error-line">{field.state.meta.errors.join(", ")}</p> : null}</div>}</form.Field>;
+      <form.Field name="applicant.fullName">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="applicant.fullName">Full name</FieldLabel>
+            <Input
+              id="applicant.fullName"
+              value={field.state.value}
+              placeholder="Enter full name"
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="applicant.sinhalaName">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="applicant.sinhalaName">
+              Name in Sinhala
+            </FieldLabel>
+            <Input
+              id="applicant.sinhalaName"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+            <a
+              className="text-xs text-primary underline underline-offset-1 hover:text-primary/80"
+              href="https://www.helakuru.lk/keyboard"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Need a Sinhala phonetic keyboard? Open Helakuru
+            </a>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="applicant.gender">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="applicant.gender">Gender</FieldLabel>
+            <Select
+              value={field.state.value || ""}
+              onValueChange={(value) => {
+                field.handleChange(value);
+                setSection("applicant", { ...draft.applicant, gender: value });
+              }}
+            >
+              <SelectTrigger
+                id="applicant.gender"
+                className="w-full"
+                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              >
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Female">Female</SelectItem>
+                <SelectItem value="Male">Male</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      {draft.applicant.gender === "Female" && (
+        <p className="col-span-2 text-sm text-destructive">
+          This is a boys&apos; school, so female applicants cannot continue
+          with this application.
+        </p>
+      )}
+
+      <form.Field name="applicant.religion">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="applicant.religion">Religion</FieldLabel>
+            <Select
+              value={field.state.value || ""}
+              onValueChange={(value) => {
+                field.handleChange(value);
+                setSection("applicant", { ...draft.applicant, religion: value });
+              }}
+            >
+              <SelectTrigger
+                id="applicant.religion"
+                className="w-full"
+                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              >
+                <SelectValue placeholder="Select religion" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Catholic">Catholic</SelectItem>
+                <SelectItem value="Christian">Christian</SelectItem>
+                <SelectItem value="Buddhist">Buddhist</SelectItem>
+                <SelectItem value="Islam">Islam</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      {draft.applicant.religion === "Christian" && (
+        <p className="col-span-2 text-sm text-destructive">
+          This intake is not available to Christian applicants.
+        </p>
+      )}
+
+      <form.Field name="applicant.educationMedium">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="applicant.educationMedium">
+              Education medium
+            </FieldLabel>
+            <Select
+              value={field.state.value || ""}
+              onValueChange={(value) => {
+                field.handleChange(value);
+                setSection("applicant", {
+                  ...draft.applicant,
+                  educationMedium: value,
+                });
+              }}
+            >
+              <SelectTrigger
+                id="applicant.educationMedium"
+                className="w-full"
+                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              >
+                <SelectValue placeholder="Select medium" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Sinhala">Sinhala</SelectItem>
+                <SelectItem value="Tamil">Tamil</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="applicant.dateOfBirth">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="applicant.dateOfBirth">
+              Date of birth
+            </FieldLabel>
+            <Input
+              id="applicant.dateOfBirth"
+              type="date"
+              max={G1_DOB_CUTOFF}
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+            <FieldDescription>
+              The child must be at least five years old by 31 January 2027.
+            </FieldDescription>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <div className="col-span-2">
+        <BirthCertificateField form={form} onDuplicateChange={onDuplicateChange} />
+      </div>
+    </div>
+  );
 }
 
-function ResidenceCombobox({ form, name, label, options, onChange, onInputValueChange }: { form: any; name: string; label: string; options: string[]; onChange?: (value: string) => void; onInputValueChange?: (value: string) => void }) {
-  const items = options.map((value) => ({ value, label: value }));
-  return <form.Field name={name}>{(field: any) => <div className="field-group"><label htmlFor={name}>{label}</label><Combobox items={items} value={field.state.value || ""} onInputValueChange={(value) => onInputValueChange?.(value)} onValueChange={(value) => { const next = typeof value === "object" && value ? (value as { value: string }).value : String(value ?? ""); field.handleChange(next); onChange?.(next); }}><ComboboxInput id={name} placeholder={`Search ${label.toLowerCase()}`} /><ComboboxContent><ComboboxEmpty>{options.length ? "No matches found." : "Type at least 2 characters to search."}</ComboboxEmpty><ComboboxList>{(item) => <ComboboxItem key={item.value} value={item}>{item.label}</ComboboxItem>}</ComboboxList></ComboboxContent></Combobox></div>}</form.Field>;
+function GuardianStep({
+  form,
+}: {
+  form: AppForm;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-5 max-w-[780px]">
+      <div className="col-span-2 mb-4">
+        <h3 className="font-heading text-2xl">Parent or guardian details</h3>
+        <p className="text-sm text-muted-foreground">
+          We&apos;ll use these details only to contact the family about this
+          intake.
+        </p>
+      </div>
+
+      <form.Field name="guardian.relationship">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="guardian.relationship">
+              Relationship to applicant
+            </FieldLabel>
+            <Select
+              value={field.state.value || ""}
+              onValueChange={(value) => field.handleChange(value)}
+            >
+              <SelectTrigger
+                id="guardian.relationship"
+                className="w-full"
+                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              >
+                <SelectValue placeholder="Select relationship" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Mother">Mother</SelectItem>
+                <SelectItem value="Father">Father</SelectItem>
+                <SelectItem value="Guardian">Guardian</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="guardian.fullName">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="guardian.fullName">Full name</FieldLabel>
+            <Input
+              id="guardian.fullName"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="guardian.nic">
+        {(field: AnyFieldApi) => {
+          const value = String(field.state.value || "").trim().toUpperCase();
+          const valid =
+            !value || /^\d{12}$/.test(value) || /^\d{9}[VX]$/.test(value);
+          return (
+            <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+              <FieldLabel htmlFor="guardian.nic">NIC number</FieldLabel>
+              <Input
+                id="guardian.nic"
+                value={field.state.value}
+                placeholder="e.g. 123456789V or 200012345678"
+                maxLength={12}
+                autoCapitalize="characters"
+                spellCheck={false}
+                onBlur={field.handleBlur}
+                onChange={(e) =>
+                  field.handleChange(e.target.value.toUpperCase())
+                }
+                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              />
+              {!valid && (
+                <p className="text-sm text-destructive">
+                  Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12
+                  digits.
+                </p>
+              )}
+              <FieldErrorDisplay field={field} />
+            </Field>
+          );
+        }}
+      </form.Field>
+
+      <form.Field name="guardian.phone">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="guardian.phone">Phone number</FieldLabel>
+            <PhoneInput
+              value={field.state.value || ""}
+              onChange={field.handleChange}
+            />
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="guardian.email">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="guardian.email">Email address</FieldLabel>
+            <Input
+              id="guardian.email"
+              type="email"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+    </div>
+  );
 }
 
+function ResidenceStep({
+  form,
+  draft,
+  setSection,
+}: {
+  form: AppForm;
+  draft: ApplicationDraft;
+  setSection: (section: keyof ApplicationDraft, value: unknown) => void;
+}) {
+  const [sameAsPermanent, setSameAsPermanent] = useState(
+    draft.residence.sameAsPermanent,
+  );
+  useEffect(() => {
+    setSameAsPermanent(draft.residence.sameAsPermanent);
+  }, [draft.residence.sameAsPermanent]);
 
-function ResidenceStep({ form, draft, setSection }: { form: any; draft: ApplicationDraft; setSection: (section: keyof ApplicationDraft, value: unknown) => void }) {
-  const [sameAsPermanent, setSameAsPermanent] = useState(draft.residence.sameAsPermanent);
-  useEffect(() => { setSameAsPermanent(draft.residence.sameAsPermanent); }, [draft.residence.sameAsPermanent]);
   const [districtSearch, setDistrictSearch] = useState("");
   const [dsSearch, setDsSearch] = useState("");
   const [gnSearch, setGnSearch] = useState("");
   const [electoralSearch, setElectoralSearch] = useState("");
+
   const normalize = (value: string) => value.trim().toLocaleLowerCase();
   const filterOptions = (values: string[], search: string) => {
     const query = normalize(search);
-    return values.filter((value) => !query || normalize(value).includes(query)).slice(0, 12);
+    return values
+      .filter((value) => !query || normalize(value).includes(query))
+      .slice(0, 12);
   };
-  const selectedDistrict = DISTRICTS.find((district) => district.en === draft.residence.district || district.id === draft.residence.district);
-  const selectedDs = DIVISIONAL_SECRETARIATS.find((division) => division.en === draft.residence.dsDivision || division.id === draft.residence.dsDivision);
-  const districtOptions = useMemo(() => filterOptions(DISTRICTS.map((district) => district.en), districtSearch), [districtSearch]);
-  const dsOptions = useMemo(() => filterOptions(DIVISIONAL_SECRETARIATS.filter((division) => !selectedDistrict || division.districtId === selectedDistrict.id).map((division) => division.en), dsSearch), [dsSearch, selectedDistrict?.id]);
-  const gnOptions = useMemo(() => filterOptions(GN_DIVISIONS.filter((division) => !selectedDs || division.dsId === selectedDs.id).map((division) => division.en), gnSearch), [gnSearch, selectedDs?.id]);
-  const electoralOptions = useMemo(() => filterOptions(ELECTORAL_CONSTITUENCIES.map((constituency) => constituency.en), electoralSearch), [electoralSearch]);
+
+  const selectedDistrict = DISTRICTS.find(
+    (d) =>
+      d.en === draft.residence.district || d.id === draft.residence.district,
+  );
+  const selectedDs = DIVISIONAL_SECRETARIATS.find(
+    (d) =>
+      d.en === draft.residence.dsDivision ||
+      d.id === draft.residence.dsDivision,
+  );
+
+  const districtOptions = useMemo(
+    () => filterOptions(DISTRICTS.map((d) => d.en), districtSearch),
+    [districtSearch],
+  );
+  const dsOptions = useMemo(
+    () =>
+      filterOptions(
+        DIVISIONAL_SECRETARIATS.filter(
+          (d) => !selectedDistrict || d.districtId === selectedDistrict.id,
+        ).map((d) => d.en),
+        dsSearch,
+      ),
+    [dsSearch, selectedDistrict?.id],
+  );
+  const gnOptions = useMemo(
+    () =>
+      filterOptions(
+        GN_DIVISIONS.filter(
+          (d) => !selectedDs || d.dsId === selectedDs.id,
+        ).map((d) => d.en),
+        gnSearch,
+      ),
+    [gnSearch, selectedDs?.id],
+  );
+  const electoralOptions = useMemo(
+    () =>
+      filterOptions(
+        ELECTORAL_CONSTITUENCIES.map((c) => c.en),
+        electoralSearch,
+      ),
+    [electoralSearch],
+  );
 
   const copyPermanent = (checked: boolean) => {
     setSameAsPermanent(checked);
-    setSection("residence", { ...form.state.values.residence, sameAsPermanent: checked });
-    if (checked) {
-      const residence = form.state.values.residence;
-      form.setFieldValue("residence.currentAddress", residence.permanentAddress);
-      setSection("residence", { ...residence, currentAddress: residence.permanentAddress, sameAsPermanent: true });
-    }
+    const residence = form.state.values.residence;
+    const updated = {
+      ...residence,
+      sameAsPermanent: checked,
+      currentAddress: checked ? residence.permanentAddress : residence.currentAddress,
+    };
+    if (checked) form.setFieldValue("residence.currentAddress", residence.permanentAddress);
+    setSection("residence", updated);
   };
-  return <div className="fields-grid">
-    <div className="step-copy full-span"><h3>Where does the family live?</h3><p>Provide the permanent residence first, then add current details if different. The circular requires residence to be supported by official documents and, where applicable, GN certification.</p></div>
-    <Field form={form} name="residence.permanentAddress" label="Permanent address" placeholder="House number, street, town" />
-    <Field form={form} name="residence.currentAddress" label="Current address" placeholder="Current address" disabled={sameAsPermanent} />
-    <div className="field-group full-span"><label className="check-row"><Checkbox className="size-5" checked={sameAsPermanent} onCheckedChange={(checked) => copyPermanent(checked === true)} /> Current address is the same as permanent address</label></div>
-    <ResidenceCombobox form={form} name="residence.district" label="District" options={districtOptions} onInputValueChange={setDistrictSearch} onChange={() => { form.setFieldValue("residence.dsDivision", ""); form.setFieldValue("residence.gnDivision", ""); }} />
-    <ResidenceCombobox form={form} name="residence.dsDivision" label="Divisional Secretariat division" options={dsOptions} onInputValueChange={setDsSearch} onChange={() => form.setFieldValue("residence.gnDivision", "")} />
-    <ResidenceCombobox form={form} name="residence.gnDivision" label="Grama Niladhari division" options={gnOptions} onInputValueChange={setGnSearch} />
-    <ResidenceCombobox form={form} name="residence.electoralDistrict" label="Electoral district" options={electoralOptions} onInputValueChange={setElectoralSearch} />
-  </div>;
+
+  return (
+    <div className="grid grid-cols-2 gap-5 max-w-[780px]">
+      <div className="col-span-2 mb-4">
+        <h3 className="font-heading text-2xl">Where does the family live?</h3>
+        <p className="text-sm text-muted-foreground">
+          Provide the permanent residence first, then add current details if
+          different. The circular requires residence to be supported by official
+          documents and, where applicable, GN certification.
+        </p>
+      </div>
+
+      <form.Field name="residence.permanentAddress">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="residence.permanentAddress">
+              Permanent address
+            </FieldLabel>
+            <Input
+              id="residence.permanentAddress"
+              value={field.state.value}
+              placeholder="House number, street, town"
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="residence.currentAddress">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="residence.currentAddress">
+              Current address
+            </FieldLabel>
+            <Input
+              id="residence.currentAddress"
+              value={field.state.value}
+              placeholder="Current address"
+              disabled={sameAsPermanent}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <div className="col-span-2">
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            className="size-5"
+            checked={sameAsPermanent}
+            onCheckedChange={(checked) => copyPermanent(checked === true)}
+          />
+          Current address is the same as permanent address
+        </label>
+      </div>
+
+      <form.Field name="residence.district">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="residence.district">District</FieldLabel>
+            <input
+              id="residence.district"
+              list="district-options"
+              value={field.state.value || districtSearch}
+              placeholder="Search district"
+              onBlur={field.handleBlur}
+              onChange={(e) => {
+                setDistrictSearch(e.target.value);
+                const match = districtOptions.find(
+                  (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
+                );
+                if (match) {
+                  field.handleChange(match);
+                  setSection("residence", {
+                    ...form.state.values.residence,
+                    district: match,
+                    dsDivision: "",
+                    gnDivision: "",
+                  });
+                }
+              }}
+              className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+            />
+            <datalist id="district-options">
+              {districtOptions.map((opt) => (
+                <option key={opt} value={opt} />
+              ))}
+            </datalist>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="residence.dsDivision">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="residence.dsDivision">
+              Divisional Secretariat division
+            </FieldLabel>
+            <input
+              id="residence.dsDivision"
+              list="ds-options"
+              value={field.state.value || dsSearch}
+              placeholder="Search DS division"
+              onBlur={field.handleBlur}
+              onChange={(e) => {
+                setDsSearch(e.target.value);
+                const match = dsOptions.find(
+                  (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
+                );
+                if (match) {
+                  field.handleChange(match);
+                  setSection("residence", {
+                    ...form.state.values.residence,
+                    dsDivision: match,
+                    gnDivision: "",
+                  });
+                }
+              }}
+              className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+            />
+            <datalist id="ds-options">
+              {dsOptions.map((opt) => (
+                <option key={opt} value={opt} />
+              ))}
+            </datalist>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="residence.gnDivision">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="residence.gnDivision">
+              Grama Niladhari division
+            </FieldLabel>
+            <input
+              id="residence.gnDivision"
+              list="gn-options"
+              value={field.state.value || gnSearch}
+              placeholder="Search GN division"
+              onBlur={field.handleBlur}
+              onChange={(e) => {
+                setGnSearch(e.target.value);
+                const match = gnOptions.find(
+                  (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
+                );
+                if (match) field.handleChange(match);
+              }}
+              className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+            />
+            <datalist id="gn-options">
+              {gnOptions.map((opt) => (
+                <option key={opt} value={opt} />
+              ))}
+            </datalist>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+
+      <form.Field name="residence.electoralDistrict">
+        {(field: AnyFieldApi) => (
+          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
+            <FieldLabel htmlFor="residence.electoralDistrict">
+              Electoral district
+            </FieldLabel>
+            <input
+              id="residence.electoralDistrict"
+              list="electoral-options"
+              value={field.state.value || electoralSearch}
+              placeholder="Search electoral district"
+              onBlur={field.handleBlur}
+              onChange={(e) => {
+                setElectoralSearch(e.target.value);
+                const match = electoralOptions.find(
+                  (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
+                );
+                if (match) field.handleChange(match);
+              }}
+              className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+            />
+            <datalist id="electoral-options">
+              {electoralOptions.map((opt) => (
+                <option key={opt} value={opt} />
+              ))}
+            </datalist>
+            <FieldErrorDisplay field={field} />
+          </Field>
+        )}
+      </form.Field>
+    </div>
+  );
 }
 
-export function ApplicationForm({ adminApplicationId, readOnly = false }: { adminApplicationId?: string; readOnly?: boolean }) {
+function DeclarationStep({
+  draft,
+  setSection,
+}: {
+  draft: ApplicationDraft;
+  setSection: (section: keyof ApplicationDraft, value: unknown) => void;
+}) {
+  return (
+    <div className="max-w-[700px] grid gap-5">
+      <div className="mb-4">
+        <h3 className="font-heading text-2xl">Confirm before review</h3>
+        <p className="text-sm text-muted-foreground">
+          This is a collection draft. Nothing will be submitted while collection
+          mode is active.
+        </p>
+      </div>
+
+      <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
+        <Checkbox
+          className="size-5 mt-0.5"
+          checked={draft.declaration.confirmed}
+          onCheckedChange={(checked) =>
+            setSection("declaration", {
+              ...draft.declaration,
+              confirmed: checked === true,
+            })
+          }
+        />
+        I confirm that the information I provide is accurate to the best of my
+        knowledge.
+      </label>
+
+      <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
+        <Checkbox
+          className="size-5 mt-0.5"
+          checked={draft.declaration.consent}
+          onCheckedChange={(checked) =>
+            setSection("declaration", {
+              ...draft.declaration,
+              consent: checked === true,
+            })
+          }
+        />
+        I consent to this information being used to prepare the G1 2026 intake
+        application.
+      </label>
+    </div>
+  );
+}
+
+function ReviewStep({
+  draft,
+  onNavigateToStep,
+}: {
+  draft: ApplicationDraft;
+  onNavigateToStep: (step: number) => void;
+}) {
+  const sections: [string, string, number][] = useMemo(
+    () => [
+      ["Location", draft.location.address || "Not selected", 0],
+      ["Applicant full name", draft.applicant.fullName || "Not completed", 1],
+      ["Name in Sinhala", draft.applicant.sinhalaName || "Not completed", 1],
+      ["Gender", draft.applicant.gender || "Not selected", 1],
+      ["Religion", draft.applicant.religion || "Not selected", 1],
+      [
+        "Education medium",
+        draft.applicant.educationMedium || "Not selected",
+        1,
+      ],
+      ["Date of birth", draft.applicant.dateOfBirth || "Not completed", 1],
+      [
+        "Birth certificate number",
+        draft.applicant.birthCertificateNumber || "Not completed",
+        1,
+      ],
+      ["Relationship", draft.guardian.relationship || "Not selected", 2],
+      ["Guardian name", draft.guardian.fullName || "Not completed", 2],
+      ["Guardian NIC", draft.guardian.nic || "Not completed", 2],
+      ["Phone number", draft.guardian.phone || "Not completed", 2],
+      ["Guardian email", draft.guardian.email || "Not completed", 2],
+      [
+        "Permanent address",
+        draft.residence.permanentAddress || "Not completed",
+        3,
+      ],
+      [
+        "Current address",
+        draft.residence.currentAddress || "Not completed",
+        3,
+      ],
+      ["District", draft.residence.district || "Not selected", 3],
+      [
+        "Divisional Secretariat division",
+        draft.residence.dsDivision || "Not selected",
+        3,
+      ],
+      [
+        "Grama Niladhari division",
+        draft.residence.gnDivision || "Not selected",
+        3],
+      [
+        "Electoral district",
+        draft.residence.electoralDistrict || "Not selected",
+        3,
+      ],
+    ],
+    [draft],
+  );
+
+  return (
+    <div className="max-w-[780px]">
+      <div className="mb-4">
+        <h3 className="font-heading text-2xl">Review your draft</h3>
+        <p className="text-sm text-muted-foreground">
+          Check all collected information before the application submission step
+          becomes available.
+        </p>
+      </div>
+      {sections.map(([label, value, step]) => (
+        <div
+          className="flex items-center justify-between gap-4 border-b py-3"
+          key={label}
+        >
+          <div className="grid gap-0.5">
+            <span className="text-xs text-muted-foreground">{label}</span>
+            <strong className="text-sm">{value}</strong>
+          </div>
+          <button
+            type="button"
+            className="text-xs font-bold text-primary"
+            onClick={() => onNavigateToStep(step)}
+          >
+            Edit
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ApplicationForm({
+  adminApplicationId,
+  readOnly = false,
+}: {
+  adminApplicationId?: string;
+  readOnly?: boolean;
+}) {
   const draft = useApplicationStore();
   const [hydrated, setHydrated] = useState(false);
-  const [accessKey, setAccessKey] = useState(() => new URLSearchParams(window.location.search).get("key") ?? localStorage.getItem("aloysius-g1-application-key") ?? "");
-  const [sessionCode, setSessionCode] = useState(() => new URLSearchParams(window.location.search).get("code") ?? localStorage.getItem("aloysius-g1-application-session-code") ?? "");
+  const [accessKey, setAccessKey] = useState(
+    () =>
+      new URLSearchParams(window.location.search).get("key") ??
+      localStorage.getItem("aloysius-g1-application-key") ??
+      "",
+  );
+  const [sessionCode, setSessionCode] = useState(
+    () =>
+      new URLSearchParams(window.location.search).get("code") ??
+      localStorage.getItem("aloysius-g1-application-session-code") ??
+      "",
+  );
   const [saveStatus, setSaveStatus] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionOpensAt, setSubmissionOpensAt] = useState("");
   const [submissionClosesAt, setSubmissionClosesAt] = useState("");
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [locationCanProceed, setLocationCanProceed] = useState(false);
-  const [duplicateBirthCertificate, setDuplicateBirthCertificate] = useState(false);
-  const duplicateCheckRef = useRef(0);
+  const [duplicate, setDuplicate] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [submissionLocked, setSubmissionLocked] = useState(false);
+  const [submittedAt, setSubmittedAt] = useState<Date | null>(null);
+  const [showSubmissionRequest, setShowSubmissionRequest] = useState(false);
+  const [requestName, setRequestName] = useState("");
+  const [requestPhone, setRequestPhone] = useState("");
+  const [requestSaving, setRequestSaving] = useState(false);
   const saveQueue = useRef(Promise.resolve());
   const navigate = useNavigate();
-  const [collectionOnly, setCollectionOnly] = useState(import.meta.env.PROD);
-  const form = useForm({ defaultValues: draft as ApplicationDraft, onSubmit: ({ value }) => draft.updateDraft(value as Partial<ApplicationDraft>) });
+  const collectionOnly = submissionLocked && submittedAt !== null;
+
+  const form = useForm({
+    defaultValues: draft as ApplicationDraft,
+    onSubmit: ({ value }) =>
+      draft.updateDraft(value as Partial<ApplicationDraft>),
+  });
+
   useEffect(() => {
     let cancelled = false;
     const restore = async () => {
       const key = accessKey;
+      let dataLoaded = false;
       try {
         if (adminApplicationId) {
-          const result = await client.admin.application.get({ id: adminApplicationId });
+          const result = await client.admin.application.get({
+            id: adminApplicationId,
+          });
           if (!cancelled) {
-            const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
-            draft.updateDraft(latest); form.reset(latest); setSavedSnapshot(JSON.stringify(latest));
+            const latest = normalizeDraft(
+              result.data as Partial<ApplicationDraft>,
+            );
+            draft.updateDraft(latest);
+            form.reset(latest);
+            setSavedSnapshot(JSON.stringify(latest));
+            setSubmittedAt(result.submittedAt || null);
+            dataLoaded = true;
           }
         } else if (key) {
           const result = await client.application.get({ accessKey: key });
           if (!cancelled) {
-            const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
-            const restoredSessionCode = result.sessionCode || new URLSearchParams(window.location.search).get("code") || localStorage.getItem("aloysius-g1-application-session-code") || "";
+            const latest = normalizeDraft(
+              result.data as Partial<ApplicationDraft>,
+            );
+            const restoredSessionCode =
+              result.sessionCode ||
+              new URLSearchParams(window.location.search).get("code") ||
+              localStorage.getItem(
+                "aloysius-g1-application-session-code",
+              ) ||
+              "";
             if (restoredSessionCode) {
               setSessionCode(restoredSessionCode);
-              localStorage.setItem("aloysius-g1-application-session-code", restoredSessionCode);
+              localStorage.setItem(
+                "aloysius-g1-application-session-code",
+                restoredSessionCode,
+              );
             }
             draft.updateDraft(latest);
             form.reset(latest);
             setSavedSnapshot(JSON.stringify(latest));
+            setSubmittedAt(result.submittedAt || null);
+            dataLoaded = true;
           }
-        }
-        else if (!adminApplicationId && !readOnly) {
+        } else if (!adminApplicationId && !readOnly) {
           const result = await client.application.create({ data: {} });
           if (!cancelled) {
             setAccessKey(result.accessKey);
             setSessionCode(result.sessionCode);
-            localStorage.setItem("aloysius-g1-application-key", result.accessKey);
-            const savedKeys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as unknown;
-            localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([...(Array.isArray(savedKeys) ? savedKeys : []), result.accessKey])]));
-            localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
-            window.history.replaceState({}, "", `/application?code=${encodeURIComponent(result.sessionCode)}&key=${encodeURIComponent(result.accessKey)}`);
-            const latest = normalizeDraft(result.data as Partial<ApplicationDraft>);
+            localStorage.setItem(
+              "aloysius-g1-application-key",
+              result.accessKey,
+            );
+            const savedKeys = JSON.parse(
+              localStorage.getItem("aloysius-g1-application-keys") ?? "[]",
+            ) as unknown;
+            localStorage.setItem(
+              "aloysius-g1-application-keys",
+              JSON.stringify([
+                ...new Set([
+                  ...(Array.isArray(savedKeys) ? savedKeys : []),
+                  result.accessKey,
+                ]),
+              ]),
+            );
+            localStorage.setItem(
+              "aloysius-g1-application-session-code",
+              result.sessionCode,
+            );
+            window.history.replaceState(
+              {},
+              "",
+              `/application?code=${encodeURIComponent(result.sessionCode)}&key=${encodeURIComponent(result.accessKey)}`,
+            );
+            const latest = normalizeDraft(
+              result.data as Partial<ApplicationDraft>,
+            );
             draft.updateDraft(latest);
             form.reset(latest);
             setSavedSnapshot(JSON.stringify(latest));
+            setSubmittedAt(null);
+            dataLoaded = true;
           }
         }
-        const status = await client.application.status();
-        if (!cancelled) { setCollectionOnly(status.submissionLocked); setSubmissionOpensAt(status.submissionOpensAt); setSubmissionClosesAt(status.submissionClosesAt); }
+        try {
+          const status = await client.application.status();
+          if (!cancelled) {
+            setSubmissionLocked(status.submissionLocked);
+            setSubmissionOpensAt(status.submissionOpensAt);
+            setSubmissionClosesAt(status.submissionClosesAt);
+          }
+        } catch {
+          if (!cancelled) {
+            setSubmissionLocked(true);
+          }
+        }
       } catch {
-        if (!cancelled) {
+        if (!cancelled && !dataLoaded) {
           draft.reset();
           setAccessKey("");
           setSessionCode("");
           localStorage.removeItem("aloysius-g1-application-key");
           localStorage.removeItem("aloysius-g1-application-session-code");
-          setCollectionOnly(import.meta.env.PROD);
+          setSubmissionLocked(true);
+          setSubmittedAt(null);
         }
       } finally {
         if (!cancelled) setHydrated(true);
       }
     };
     void restore();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
-  const progress = Math.round((draft.currentStep / (steps.length - 1)) * 100);
-  const current = draft.currentStep;
-  const birthCertificateNumber = String(form.state.values.applicant.birthCertificateNumber ?? "").trim();
-  const guardianNic = String(form.state.values.guardian.nic ?? "").trim().toUpperCase();
-  const guardianNicInvalid = Boolean(guardianNic) && !/^\d{12}$/.test(guardianNic) && !/^\d{9}[VX]$/.test(guardianNic);
-  useEffect(() => {
-    const checkId = ++duplicateCheckRef.current;
-    if (current !== 1 || !birthCertificateNumber) {
-      setDuplicateBirthCertificate(false);
-      return;
-    }
-    setDuplicateBirthCertificate(false);
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      void client.application.checkBirthCertificate({ birthCertificateNumber }).then((result) => {
-        if (!cancelled && checkId === duplicateCheckRef.current) setDuplicateBirthCertificate(result.exists);
-      }).catch(() => {
-        if (!cancelled && checkId === duplicateCheckRef.current) setDuplicateBirthCertificate(false);
-      });
-    }, 250);
-    return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [birthCertificateNumber, current]);
 
-  const setSection = (section: keyof ApplicationDraft, value: unknown) => draft.updateDraft({ [section]: value } as Partial<ApplicationDraft>);
+  const current = draft.currentStep;
+
+  const setSection = (section: keyof ApplicationDraft, value: unknown) =>
+    draft.updateDraft({ [section]: value } as Partial<ApplicationDraft>);
+
   const saveToServer = async () => {
     const operation = saveQueue.current.then(async () => {
-    const data = normalizeDraft({ ...(form.state.values as ApplicationDraft), ...draft });
-    setSaveStatus("Saving…");
-    if (adminApplicationId) await client.admin.application.update({ id: adminApplicationId, data });
-    else if (accessKey) await client.application.update({ accessKey, data });
-    setSavedSnapshot(JSON.stringify(data));
-    setSaveStatus("Saved securely");
+      const data = normalizeDraft({
+        ...(form.state.values as ApplicationDraft),
+        ...draft,
+      });
+      setSaveStatus("Saving\u2026");
+      if (adminApplicationId)
+        await client.admin.application.update({ id: adminApplicationId, data });
+      else if (accessKey)
+        await client.application.update({ accessKey, data });
+      setSavedSnapshot(JSON.stringify(data));
+      setSaveStatus("Saved securely");
     });
     saveQueue.current = operation.catch(() => undefined);
     return operation;
   };
+
   useEffect(() => {
-    if (!hydrated || !accessKey || !savedSnapshot || JSON.stringify(form.state.values) === savedSnapshot) return;
-    const timer = window.setTimeout(() => { void saveToServer(); }, 1500);
+    if (
+      !hydrated ||
+      !accessKey ||
+      !savedSnapshot ||
+      JSON.stringify(form.state.values) === savedSnapshot
+    )
+      return;
+    const timer = window.setTimeout(() => {
+      void saveToServer();
+    }, 1500);
     return () => window.clearTimeout(timer);
-  }, [accessKey, hydrated, savedSnapshot, JSON.stringify(form.state.values)]);
+  }, [
+    accessKey,
+    hydrated,
+    savedSnapshot,
+    JSON.stringify(form.state.values),
+  ]);
+
   const next = async () => {
-    if (current === 1 && duplicateBirthCertificate) return;
-    if (current === 4 && (!draft.declaration.confirmed || !draft.declaration.consent)) return;
-    const locationReady = draft.location.latitude !== null && draft.location.longitude !== null;
-    if (current === 0 && !locationCanProceed && !locationReady) return;
+    if (nextDisabledReason) return;
     try {
       setSubmitError("");
       await form.handleSubmit();
+      const nextStep = Math.min(current + 1, steps.length - 1);
+      draft.setStep(nextStep);
       await saveToServer();
-      draft.setStep(Math.min(current + 1, steps.length - 1));
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Could not save this step. Please try again.");
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Could not save this step. Please try again.",
+      );
+      draft.setStep(current);
     }
   };
-  const hasUnsavedChanges = !accessKey || JSON.stringify(form.state.values) !== savedSnapshot;
-  const submitApplication = async () => { try { setSubmitError(""); if (hasUnsavedChanges) await saveToServer(); if (!accessKey) return; setSaveStatus("Submitting…"); await client.application.submit({ accessKey }); setSaveStatus("Submitted"); setSubmitted(true); } catch (error) { setSaveStatus(""); setSubmitError(error instanceof Error ? error.message : "Could not submit the application. Please try again."); } };
-  const startAnotherApplication = () => { localStorage.removeItem("aloysius-g1-application-key"); localStorage.removeItem("aloysius-g1-application-session-code"); draft.reset(); window.location.assign("/application"); };
+
+  const hasUnsavedChanges =
+    !accessKey || JSON.stringify(form.state.values) !== savedSnapshot;
+
+  const submitApplication = async () => {
+    try {
+      setIsSubmitting(true);
+      setSubmitError("");
+      if (hasUnsavedChanges) await saveToServer();
+      if (!accessKey) return;
+      setSaveStatus("Submitting…");
+      await client.application.submit({ accessKey });
+      setSubmitted(true);
+      setSubmittedAt(new Date());
+      setSaveStatus("Submitted");
+    } catch (error) {
+      setSaveStatus("");
+      if (error instanceof Error && error.message.includes("Submissions are outside the configured form window")) {
+        setShowSubmissionRequest(true);
+      } else {
+        setSubmitError(
+          error instanceof Error
+            ? error.message
+            : "Could not submit the application. Please try again.",
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const submitApprovalRequest = async () => {
+    try {
+      setRequestSaving(true);
+      await client.application.requestAccess({ accessKey, applicantName: requestName.trim(), contactPhone: requestPhone.trim(), requestType: "submission" });
+      setShowSubmissionRequest(false);
+      setSaveStatus("Approval request sent");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Could not send the approval request");
+    } finally {
+      setRequestSaving(false);
+    }
+  };
+
+  const startAnotherApplication = () => {
+    localStorage.removeItem("aloysius-g1-application-key");
+    localStorage.removeItem("aloysius-g1-application-session-code");
+    draft.reset();
+    window.location.assign("/application");
+  };
+
   const back = () => draft.setStep(Math.max(current - 1, 0));
 
-  const reviewSections = useMemo(() => [
-    ["Location", draft.location.address || "Not selected", 0],
-    ["Applicant full name", draft.applicant.fullName || "Not completed", 1],
-    ["Name in Sinhala", draft.applicant.sinhalaName || "Not completed", 1],
-    ["Gender", draft.applicant.gender || "Not selected", 1],
-    ["Religion", draft.applicant.religion || "Not selected", 1],
-    ["Education medium", draft.applicant.educationMedium || "Not selected", 1],
-    ["Date of birth", draft.applicant.dateOfBirth || "Not completed", 1],
-    ["Birth certificate number", draft.applicant.birthCertificateNumber || "Not completed", 1],
-    ["Relationship", draft.guardian.relationship || "Not selected", 2],
-    ["Guardian name", draft.guardian.fullName || "Not completed", 2],
-    ["Guardian NIC", draft.guardian.nic || "Not completed", 2],
-    ["Phone number", draft.guardian.phone || "Not completed", 2],
-    ["Guardian email", draft.guardian.email || "Not completed", 2],
-    ["Permanent address", draft.residence.permanentAddress || "Not completed", 3],
-    ["Current address", draft.residence.currentAddress || "Not completed", 3],
-    ["District", draft.residence.district || "Not selected", 3],
-    ["Divisional Secretariat division", draft.residence.dsDivision || "Not selected", 3],
-    ["Grama Niladhari division", draft.residence.gnDivision || "Not selected", 3],
-    ["Electoral district", draft.residence.electoralDistrict || "Not selected", 3],
-  ], [draft]);
+  const copyWithFeedback = (label: string, value: string) => {
+    void navigator.clipboard?.writeText(value).then(
+      () => {
+        setCopiedField(label);
+        setTimeout(() => setCopiedField(null), 2000);
+      },
+      () => undefined,
+    );
+  };
 
-  if (!hydrated) return <div className="loading-state">Restoring your draft…</div>;
-  return <main className="application-shell">
-    <section className="application-intro"><div className="application-intro-copy"><p className="form-kicker">G1 2026 intake</p><h1>Applicant information</h1><p>Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.</p>{(sessionCode || accessKey) && <div className="application-credentials" aria-label="Application access details">{sessionCode && <div className="application-credential"><div className="credential-heading"><span>Session code</span><button type="button" className="credential-copy" aria-label="Copy session code" onClick={() => void navigator.clipboard?.writeText(sessionCode)}><Copy size={15} /> Copy</button></div><code>{sessionCode}</code><span className="credential-note">Memorise this code to find this child&apos;s application on another device.</span></div>}{accessKey && <div className="application-credential"><div className="credential-heading"><span>Access key</span><button type="button" className="credential-copy" aria-label="Copy access key" onClick={() => void navigator.clipboard?.writeText(accessKey)}><Copy size={15} /> Copy</button></div><code>{accessKey}</code><span className="credential-note">This key authorizes you to view, change, and edit this application again. Store it safely.</span></div>}</div>}</div><div className="draft-badge"><ShieldCheck size={17} /> {accessKey ? "Saved to database" : "Connecting to database"}</div></section>
-    <section className="wizard-card" aria-label="Application form">
-      <div className="progress-header"><div><p className="step-count">Step {current + 1} of {steps.length}</p><h2>{steps[current]}</h2></div><span>{progress}% complete</span></div>
-      <div className="progress-track"><div style={{ width: `${Math.max(progress, 8)}%` }} /></div>
-      <nav className="step-nav" aria-label="Form steps">{steps.map((step, index) => <button type="button" key={step} className={index === current ? "active" : index < current ? "done" : ""} onClick={() => index <= current && draft.setStep(index)}><span>{index < current ? <Check size={14} /> : index + 1}</span>{step}</button>)}</nav>
-      <div className="step-content">
-        {current === 0 && <><div className="step-copy"><h3>Start with the home location</h3><p>Your true browser location is saved first. You may then replace the selected application location with another point.</p></div><LocationStep readOnly={readOnly} value={draft.location ?? emptyDraft.location} defaultValue={draft.defaultLocation ?? emptyDraft.defaultLocation} onAvailabilityChange={setLocationCanProceed} onChange={(value, defaultValue) => { if (readOnly) return; setSection("location", value); setSection("selectedLocation", value); if (defaultValue) setSection("defaultLocation", defaultValue); }} /></>}
-        {current === 1 && <div className="fields-grid"><div className="step-copy full-span"><h3>Tell us about the applicant</h3><p>Use the name shown on the applicant’s birth certificate.</p></div><Field form={form} name="applicant.fullName" label="Full name" placeholder="Enter full name" /><SinhalaNameField form={form} /><SelectField form={form} name="applicant.gender" label="Gender" options={["Select gender", "Female", "Male"]} onChange={(value) => setSection("applicant", { ...draft.applicant, gender: value })} />{draft.applicant.gender === "Female" && <p className="error-line full-span">This is a boys’ school, so female applicants cannot continue with this application.</p>}<SelectField form={form} name="applicant.religion" label="Religion" options={["Select religion", "Catholic", "Christian", "Buddhist", "Islam"]} onChange={(value) => setSection("applicant", { ...draft.applicant, religion: value })} />{draft.applicant.religion === "Christian" && <p className="error-line full-span">This intake is not available to Christian applicants.</p>}<SelectField form={form} name="applicant.educationMedium" label="Education medium" options={["Select medium", "Sinhala", "Tamil"]} onChange={(value) => setSection("applicant", { ...draft.applicant, educationMedium: value })} /><DateOfBirthField form={form} /><Field form={form} name="applicant.birthCertificateNumber" label="Birth certificate number" placeholder="Enter birth certificate number" /></div>}
-        {current === 2 && <div className="fields-grid"><div className="step-copy full-span"><h3>Parent or guardian details</h3><p>We’ll use these details only to contact the family about this intake.</p></div><SelectField form={form} name="guardian.relationship" label="Relationship to applicant" options={["Select relationship", "Mother", "Father", "Guardian"]} /><Field form={form} name="guardian.fullName" label="Full name" /><Field form={form} name="guardian.nic" label="NIC number" /><Field form={form} name="guardian.phone" label="Phone number" type="tel" /><Field form={form} name="guardian.email" label="Email address" type="email" /></div>}
-        {current === 3 && <ResidenceStep form={form} draft={draft} setSection={setSection} />}
-        {current === 4 && <div className="declaration-panel"><div className="step-copy"><h3>Confirm before review</h3><p>This is a collection draft. Nothing will be submitted while collection mode is active.</p></div><label className="check-row"><Checkbox className="size-5" checked={draft.declaration.confirmed} onCheckedChange={(checked) => setSection("declaration", { ...draft.declaration, confirmed: checked === true })} /> I confirm that the information I provide is accurate to the best of my knowledge.</label><label className="check-row"><Checkbox className="size-5" checked={draft.declaration.consent} onCheckedChange={(checked) => setSection("declaration", { ...draft.declaration, consent: checked === true })} /> I consent to this information being used to prepare the G1 2026 intake application.</label></div>}
-        {current === 5 && <div className="review-list"><div className="step-copy"><h3>Review your draft</h3><p>Check all collected information before the application submission step becomes available.</p></div>{reviewSections.map(([label, value, step]) => <div className="review-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><button type="button" onClick={() => draft.setStep(Number(step))}>Edit</button></div>)}</div>}
+  if (!hydrated)
+    return (
+      <div className="grid place-items-center min-h-[50vh] text-muted-foreground">
+        Restoring your draft\u2026
       </div>
-      <div className="wizard-footer">{submitError && <p className="error-line submit-error">{submitError}</p>}{submitted ? <div className="submission-actions"><strong>Application submitted successfully.</strong><div className="key-success"><span>Keep this application key safe. You need it to view or update this child’s application.</span><code>{accessKey}</code><button type="button" className="secondary-button" onClick={() => void navigator.clipboard?.writeText(accessKey)}><Copy size={16} /> Copy key</button></div><div className="footer-actions"><button type="button" className="secondary-button" onClick={() => void navigate({ to: "/" })}><House size={17} /> Back to home</button><button type="button" className="primary-button" onClick={startAnotherApplication}><UserPlus size={17} /> Apply for another child</button></div></div> : <>{draft.lastSavedAt && <span className="saved-time"><Check size={15} /> Saved locally</span>}<div className="footer-actions">{current > 0 && <button type="button" className="secondary-button" onClick={back}><ArrowLeft size={17} /> Back</button>}{current < steps.length - 1 ? <button type="button" className="primary-button" disabled={(current === 1 && (form.state.values.applicant.gender === "Female" || form.state.values.applicant.religion === "Christian" || !form.state.values.applicant.dateOfBirth || form.state.values.applicant.dateOfBirth > G1_DOB_CUTOFF || !form.state.values.applicant.birthCertificateNumber)) || (current === 2 && guardianNicInvalid)} onClick={next}>Continue <ArrowRight size={17} /></button> : <button type="button" className="primary-button" disabled={collectionOnly || !draft.declaration.confirmed || !draft.declaration.consent || !hasUnsavedChanges} onClick={() => void submitApplication()}>{collectionOnly ? <><Clock3 size={17} /> Submission opens 9 Sep 2026</> : accessKey ? "Update application" : "Submit application"}</button>}</div></>}</div>
-      {collectionOnly && <div className="collection-banner"><Clock3 size={18} /><div><strong>Form submission is outside the open window</strong><span>Your draft is saved locally and synchronized with the server. The form window is {submissionOpensAt ? new Date(submissionOpensAt).toLocaleString() : "not yet configured"} to {submissionClosesAt ? new Date(submissionClosesAt).toLocaleString() : "not configured"}.</span></div><button type="button" className="reset-button" onClick={() => draft.reset()}><RotateCcw size={15} /> Clear draft</button></div>}
-    </section>
-  </main>;
+    );
+
+  const nextDisabledReason = getNextStepReason({
+    step: current,
+    locationCanProceed,
+    location: draft.location,
+    duplicateBirthCertificate: duplicate,
+    applicant: form.state.values.applicant,
+    guardian: form.state.values.guardian,
+    declaration: draft.declaration,
+  });
+  const isNextDisabled = Boolean(nextDisabledReason);
+
+  return (
+    <main className="min-h-[calc(100svh-4rem)] px-5 pt-14 pb-20 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_30rem)]">
+      <section className="mx-auto max-w-[1120px]">
+        <div className="flex justify-between gap-8 items-start mb-9">
+          <div className="min-w-0 flex-1">
+            <p className="text-primary font-bold tracking-widest uppercase text-xs">
+              G1 2026 intake
+            </p>
+            <h1 className="font-heading text-[clamp(2.4rem,5vw,4.5rem)] leading-none tracking-tight mt-1 mb-4">
+              Applicant information
+            </h1>
+            <p className="max-w-[42rem] text-muted-foreground text-[1.05rem]">
+              Complete the details at your own pace. Your progress is saved
+              securely and can be reopened with your session code and access key.
+            </p>
+            {(sessionCode || accessKey) && (
+              <div className="grid grid-cols-2 gap-3 mt-5 max-w-[900px]">
+                {sessionCode && (
+                  <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
+                    <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
+                      <span>Session code</span>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 border-0 rounded-md px-1.5 py-1 text-primary bg-transparent text-[0.72rem] hover:bg-primary/10"
+                        aria-label="Copy session code"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyWithFeedback("session", sessionCode);
+                        }}
+                      >
+                        {copiedField === "session" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
+                      </button>
+                    </div>
+                    <code className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
+                      {sessionCode}
+                    </code>
+                    <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
+                      Memorise this code to find this child&apos;s application
+                      on another device.
+                    </span>
+                  </div>
+                )}
+                {accessKey && (
+                  <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
+                    <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
+                      <span>Access key</span>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 border-0 rounded-md px-1.5 py-1 text-primary bg-transparent text-[0.72rem] hover:bg-primary/10"
+                        aria-label="Copy access key"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyWithFeedback("key", accessKey);
+                        }}
+                      >
+                        {copiedField === "key" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
+                      </button>
+                    </div>
+                    <code className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
+                      {accessKey}
+                    </code>
+                    <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
+                      This key authorizes you to view, change, and edit this
+                      application again. Store it safely.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="inline-flex items-center gap-1.5 text-primary text-[0.85rem] whitespace-nowrap">
+            <ShieldCheck size={17} />{" "}
+            {accessKey ? "Saved to database" : "Connecting to database"}
+          </div>
+        </div>
+      </section>
+
+      <Card className="mx-auto max-w-[1120px] overflow-hidden shadow-[0_20px_45px_color-mix(in_oklch,var(--foreground)_8%,transparent)]">
+        <StepIndicator
+          current={current}
+          steps={steps}
+          onStepClick={(index) => draft.setStep(index)}
+        />
+
+        <CardContent className="p-9 min-h-[440px]">
+          {current === 0 && (
+            <LocationStepCard
+              draft={draft}
+              readOnly={readOnly}
+              setSection={setSection}
+              onLocationCanProceed={setLocationCanProceed}
+            />
+          )}
+          {current === 1 && (
+            <ApplicantStep
+              form={form}
+              draft={draft}
+              setSection={setSection}
+              onDuplicateChange={setDuplicate}
+            />
+          )}
+          {current === 2 && <GuardianStep form={form} />}
+          {current === 3 && (
+            <ResidenceStep
+              form={form}
+              draft={draft}
+              setSection={setSection}
+            />
+          )}
+          {current === 4 && (
+            <DeclarationStep draft={draft} setSection={setSection} />
+          )}
+          {current === 5 && (
+            <ReviewStep
+              draft={draft}
+              onNavigateToStep={(step) => draft.setStep(step)}
+            />
+          )}
+        </CardContent>
+
+        <div className="flex items-center justify-between gap-4 border-t px-8 py-6">
+          {submitError && (
+            <p className="text-sm text-destructive">{submitError}</p>
+          )}
+          {submitted ? (
+            <div className="p-6">
+              <strong className="text-lg">
+                Application submitted successfully.
+              </strong>
+              <div className="grid gap-3 max-w-[42rem] my-4 p-4 rounded-xl border border-primary/30 bg-primary/7">
+                <span className="text-muted-foreground text-sm">
+                  Keep this application key safe. You need it to view or update
+                  this child&apos;s application.
+                </span>
+                <code className="block overflow-wrap-anywhere p-3 rounded-lg bg-background text-[0.85rem]">
+                  {accessKey}
+                </code>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-secondary text-secondary-foreground px-4 py-2 text-sm font-medium"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyWithFeedback("keycard", accessKey);
+                  }}
+                >
+                  {copiedField === "keycard" ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy key</>}
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-secondary text-secondary-foreground px-4 py-2 text-sm font-medium"
+                  onClick={() => void navigate({ to: "/" })}
+                >
+                  <House size={17} /> Back to home
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium"
+                  onClick={startAnotherApplication}
+                >
+                  <UserPlus size={17} /> Apply for another child
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {draft.lastSavedAt && (
+                <span className="inline-flex items-center gap-1 text-primary text-[0.85rem] whitespace-nowrap">
+                  <Check size={15} /> Saved locally
+                </span>
+              )}
+              <div className="flex gap-3 ml-auto">
+                {current > 0 && (
+                  <Button variant="secondary" onClick={back}>
+                    <ArrowLeft size={17} /> Back
+                  </Button>
+                )}
+                {current < steps.length - 1 ? (
+                  <Button
+                    disabled={isNextDisabled}
+                    onClick={next}
+                  >
+                    Continue <ArrowRight size={17} />
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={
+                      isSubmitting ||
+                      collectionOnly ||
+                      !draft.declaration.confirmed ||
+                      !draft.declaration.consent ||
+                      (submittedAt !== null && !hasUnsavedChanges)
+                    }
+                    onClick={() => void submitApplication()}
+                  >
+                    {collectionOnly ? (
+                      <>
+                        <Clock3 size={17} /> Submission opens 9 Sep 2026
+                      </>
+                    ) : submittedAt ? (
+                      "Update application"
+                    ) : (
+                      "Submit application"
+                    )}
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {nextDisabledReason && current < steps.length - 1 && (
+          <div className="flex items-center gap-2 px-(--card-spacing) py-2 text-sm text-muted-foreground border-t">
+            <span>{nextDisabledReason}</span>
+          </div>
+        )}
+
+        {current === steps.length - 1 && !collectionOnly && !isSubmitting && (() => {
+          const reasons: string[] = [];
+          if (!draft.declaration.confirmed) reasons.push("Confirm that the information is correct");
+          if (!draft.declaration.consent) reasons.push("Give consent to process the data");
+          if (submittedAt !== null && !hasUnsavedChanges && reasons.length === 0) reasons.push("No changes to save");
+          if (reasons.length === 0) return null;
+          return (
+            <div className="flex items-center gap-2 px-(--card-spacing) py-2 text-sm text-muted-foreground border-t">
+              <span>{reasons.join(". ")}.</span>
+            </div>
+          );
+        })()}
+
+        {collectionOnly && (
+          <div className="flex items-center gap-3 px-(--card-spacing) py-4 bg-primary/8 border-t border-primary/20">
+            <Clock3 size={18} />
+            <div className="grid gap-0.5 text-sm flex-1">
+              <strong>Form submission is outside the open window</strong>
+              <span className="text-muted-foreground">
+                Your draft is saved locally and synchronized with the server.
+                The form window is{" "}
+                {submissionOpensAt
+                  ? new Date(submissionOpensAt).toLocaleString()
+                  : "not yet configured"}{" "}
+                to{" "}
+                {submissionClosesAt
+                  ? new Date(submissionClosesAt).toLocaleString()
+                  : "not configured"}
+                .
+              </span>
+            </div>
+            <button
+              type="button"
+              className="bg-transparent text-muted-foreground text-xs border-0 cursor-pointer hover:text-foreground"
+              onClick={() => draft.reset()}
+            >
+              <RotateCcw size={15} /> Clear draft
+            </button>
+          </div>
+        )}
+
+        {showSubmissionRequest && (
+          <div className="flex items-start gap-3 px-(--card-spacing) py-4 bg-primary/8 border-t border-primary/20">
+            <ShieldCheck size={18} className="mt-0.5" />
+            <div className="grid gap-3 flex-1">
+              <strong>Request approval to submit</strong>
+              <span className="text-sm text-muted-foreground">
+                The submission window is closed. Submit this request for admin
+                approval.
+              </span>
+              <div className="grid gap-2 max-w-md">
+                <Input
+                  placeholder="Your full name"
+                  value={requestName}
+                  onChange={(e) => setRequestName(e.target.value)}
+                />
+                <Input
+                  placeholder="Contact phone number"
+                  value={requestPhone}
+                  onChange={(e) => setRequestPhone(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  disabled={requestSaving || !requestName.trim() || !requestPhone.trim()}
+                  onClick={() => void submitApprovalRequest()}
+                >
+                  {requestSaving ? "Sending…" : "Send approval request"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowSubmissionRequest(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+    </main>
+  );
 }

@@ -1,0 +1,1 @@
+export const hasAdminRole = (user: { role?: string | null } | null | undefined): boolean => user?.role === "admin";

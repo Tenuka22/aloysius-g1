@@ -1,6 +1,7 @@
 import { ORPCError, os } from "@orpc/server";
 
 import type { Context } from "./context";
+import { hasAdminRole } from "./auth-policy";
 
 export const o = os.$context<Context>();
 
@@ -20,6 +21,6 @@ const requireAuth = o.middleware(async ({ context, next }) => {
 export const protectedProcedure = publicProcedure.use(requireAuth);
 
 export const adminProcedure = protectedProcedure.use(async ({ context, next }) => {
-  if (context.session.user.role !== "admin") throw new ORPCError("FORBIDDEN");
+  if (!hasAdminRole(context.session.user)) throw new ORPCError("FORBIDDEN");
   return next({ context });
 });
