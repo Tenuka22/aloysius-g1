@@ -29,6 +29,7 @@ function HomeComponent() {
   const [loadKeyError, setLoadKeyError] = useState("");
   const createNewApplication = () => {
     clearActiveKey();
+    localStorage.removeItem("aloysius-g1-application-keys");
     window.location.assign("/application");
   };
   const removeApplication = (key: string) => {
