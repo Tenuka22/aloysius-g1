@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, FileWarning, KeyRound, LayoutDashboard, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, FileWarning, LayoutDashboard, ShieldCheck, Trash2, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { cn } from "@aloysius-g1/ui/lib/utils";
@@ -11,7 +11,6 @@ import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-g1/ui/components/popover";
 import { Calendar } from "@aloysius-g1/ui/components/calendar";
 import { client, orpc } from "@/utils/orpc";
-import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
 
 export const Route = createFileRoute("/_auth/admin")({ component: AdminPage });
 
@@ -22,7 +21,6 @@ function AdminPage() {
   const overview = useQuery(orpc.admin.overview.queryOptions());
   const applications = useQuery(orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "" } }));
   const settings = useQuery(orpc.admin.settings.get.queryOptions());
-  const accessRequests = useQuery(orpc.admin.accessRequests.query.queryOptions());
   useEffect(() => {
     if (session.data?.user.role !== "admin") return;
     const controller = new AbortController();
@@ -59,7 +57,7 @@ function AdminPage() {
   const sidebarNav = <>
     <SidebarHeader>
       <div className="flex items-center gap-2.5">
-        <div className="grid place-items-center w-9 h-9 rounded-lg text-primary-foreground bg-primary"><ShieldCheck size={19} /></div>
+            <div className="grid place-items-center w-9 h-9 rounded-lg text-primary-foreground bg-primary"><ShieldCheck size={24} /></div>
         <div>
           <strong className="block">G1 Intake</strong>
           <span className="block text-muted-foreground text-xs mt-0.5">Admin console</span>
@@ -71,20 +69,23 @@ function AdminPage() {
         <SidebarGroupLabel>Workspace</SidebarGroupLabel>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin" isActive={location.pathname === "/admin"} onClick={() => setSidebarOpen(false)}><LayoutDashboard size={17} /> Overview</SidebarMenuButton>
+            <SidebarMenuButton href="/admin" isActive={location.pathname === "/admin"} onClick={() => setSidebarOpen(false)}><LayoutDashboard size={20} /> Overview</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/applications" isActive={location.pathname.startsWith("/admin/applications")} onClick={() => setSidebarOpen(false)}><BarChart3 size={17} /> Applications</SidebarMenuButton>
+            <SidebarMenuButton href="/admin/applications" isActive={location.pathname.startsWith("/admin/applications")} onClick={() => setSidebarOpen(false)}><BarChart3 size={20} /> Applications</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/requests" isActive={location.pathname === "/admin/requests"} onClick={() => setSidebarOpen(false)}><FileWarning size={17} /> Submission requests</SidebarMenuButton>
+            <SidebarMenuButton href="/admin/requests" isActive={location.pathname === "/admin/requests"} onClick={() => setSidebarOpen(false)}><FileWarning size={20} /> Submission requests</SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/admin/removal-requests" isActive={location.pathname === "/admin/removal-requests"} onClick={() => setSidebarOpen(false)}><Trash2 size={20} /> Removal requests</SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>
     <SidebarFooter>
       <Link className="flex items-center gap-2.5 min-h-10 px-2.5 rounded-lg text-muted-foreground text-sm no-underline hover:text-foreground hover:bg-muted transition-colors" to="/dashboard">
-        <ArrowLeft size={16} /> Back to dashboard
+        <ArrowLeft size={18} /> Back to dashboard
       </Link>
     </SidebarFooter>
   </>;
@@ -140,7 +141,16 @@ function AdminPage() {
               ))}
             </div>
             <FormWindowSettings settings={settings.data} />
-            <AccessRequestQueue requests={accessRequests.data ?? []} onRefresh={() => void accessRequests.refetch()} />
+            <Card className="mb-4">
+              <CardHeader><CardTitle>Application requests</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">Review and act on access, removal, and late submission requests from applicants.</p>
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="secondary" render={<Link to="/admin/requests" />}>Submission requests</Button>
+                  <Button variant="secondary" render={<Link to="/admin/removal-requests" />}>Removal requests</Button>
+                </div>
+              </CardContent>
+            </Card>
             <Card className="mb-4">
               <CardHeader><CardTitle>Recent activity</CardTitle></CardHeader>
               <CardContent>

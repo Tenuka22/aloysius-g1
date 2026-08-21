@@ -180,6 +180,12 @@ export const appRouter = {
         const start = (input.page - 1) * input.pageSize;
         return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
       }),
+      removalRequests: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
+        const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "removal"), eq(applicationAccessRequests.status, "open"))).all();
+        const filtered = input.query ? all.filter((r) => r.applicantName.toLowerCase().includes(input.query.toLowerCase()) || r.contactEmail.toLowerCase().includes(input.query.toLowerCase())) : all;
+        const start = (input.page - 1) * input.pageSize;
+        return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
+      }),
       approveSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
         if (!request) throw new Error("Submission request not found");
