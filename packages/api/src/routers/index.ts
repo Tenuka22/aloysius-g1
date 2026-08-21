@@ -1,7 +1,7 @@
 import { EventPublisher, eventIterator } from "@orpc/server";
 import type { RouterClient } from "@orpc/server";
 
-import { adminProcedure, protectedProcedure, publicProcedure } from "../index";
+import { adminProcedure, subAdminProcedure, protectedProcedure, publicProcedure } from "../index";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
@@ -90,7 +90,7 @@ export const appRouter = {
       const row = await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get();
       return { exists: Boolean(row) };
     }),
-    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().optional(), guardianName: z.string().trim().optional(), contactEmail: z.email().optional(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal", "submission"]).default("access") }).superRefine((input, context) => {
+    requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().optional(), guardianName: z.string().trim().optional(), contactEmail: z.email().optional(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal", "submission", "forgot"]).default("access") }).superRefine((input, context) => {
       for (const issue of accessRequestIssues(input)) {
         context.addIssue(issue.path ? { code: "custom", path: issue.path, message: issue.message } : { code: "custom", message: issue.message });
       }
@@ -158,7 +158,7 @@ export const appRouter = {
       rotateKey: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
         if (!request) throw new Error("Access request not found");
-        if (request.requestType !== "access") throw new Error("Only access requests can generate a replacement key");
+        if (request.requestType !== "access" && request.requestType !== "forgot") throw new Error("Only access and forgot requests can generate a replacement key");
         const accessKey = createAccessKey();
         await db.update(applications).set({ accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
         await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
@@ -183,6 +183,12 @@ export const appRouter = {
       removalRequests: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
         const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "removal"), eq(applicationAccessRequests.status, "open"))).all();
         const filtered = input.query ? all.filter((r) => r.applicantName.toLowerCase().includes(input.query.toLowerCase()) || r.contactEmail.toLowerCase().includes(input.query.toLowerCase())) : all;
+        const start = (input.page - 1) * input.pageSize;
+        return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
+      }),
+      forgotRequests: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
+        const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "forgot"), eq(applicationAccessRequests.status, "open"))).all();
+        const filtered = input.query ? all.filter((r) => r.applicantName.toLowerCase().includes(input.query.toLowerCase()) || r.contactEmail.toLowerCase().includes(input.query.toLowerCase()) || r.birthCertificateNumber.toLowerCase().includes(input.query.toLowerCase())) : all;
         const start = (input.page - 1) * input.pageSize;
         return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
       }),
@@ -248,6 +254,42 @@ export const appRouter = {
         return { deleted: true };
       }),
     },
+  },
+  subAdmin: {
+    forgotRequests: subAdminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
+      const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "forgot"), eq(applicationAccessRequests.status, "open"))).all();
+      const filtered = input.query ? all.filter((r) => r.birthCertificateNumber.toLowerCase().includes(input.query.toLowerCase()) || r.applicantName.toLowerCase().includes(input.query.toLowerCase())) : all;
+      const start = (input.page - 1) * input.pageSize;
+      return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize).map((r) => ({ id: r.id, birthCertificateNumber: r.birthCertificateNumber, applicantName: r.applicantName, status: r.status, createdAt: r.createdAt })) };
+    }),
+    removalRequests: subAdminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
+      const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "removal"), eq(applicationAccessRequests.status, "open"))).all();
+      const filtered = input.query ? all.filter((r) => r.birthCertificateNumber.toLowerCase().includes(input.query.toLowerCase()) || r.applicantName.toLowerCase().includes(input.query.toLowerCase())) : all;
+      const start = (input.page - 1) * input.pageSize;
+      return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize).map((r) => ({ id: r.id, birthCertificateNumber: r.birthCertificateNumber, applicantName: r.applicantName, status: r.status, createdAt: r.createdAt })) };
+    }),
+    rotateKey: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
+      const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
+      if (!request) throw new Error("Request not found");
+      if (request.requestType !== "access" && request.requestType !== "forgot") throw new Error("Only access and forgot requests can generate a replacement key");
+      const accessKey = createAccessKey();
+      await db.update(applications).set({ accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
+      await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
+      return { accessKey, applicationId: request.applicationId };
+    }),
+    deleteAfterRemovalRequest: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
+      const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
+      if (!request) throw new Error("Removal request not found");
+      if (request.requestType !== "removal") throw new Error("Only removal requests can delete an application");
+      await db.delete(applications).where(eq(applications.id, request.applicationId)).run();
+      await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
+      await publishApplicationChange();
+      return { deleted: true };
+    }),
+    dismiss: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
+      await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, input.requestId)).run();
+      return { dismissed: true };
+    }),
   },
   healthCheck: publicProcedure.handler(() => {
     return "OK";

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, FileWarning, LayoutDashboard, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, FileWarning, KeyRound, LayoutDashboard, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { cn } from "@aloysius-g1/ui/lib/utils";
@@ -80,6 +80,9 @@ function AdminPage() {
           <SidebarMenuItem>
             <SidebarMenuButton href="/admin/removal-requests" isActive={location.pathname === "/admin/removal-requests"} onClick={() => setSidebarOpen(false)}><Trash2 size={20} /> Removal requests</SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/admin/forgot-requests" isActive={location.pathname === "/admin/forgot-requests"} onClick={() => setSidebarOpen(false)}><KeyRound size={20} /> Forgot key requests</SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>
@@ -148,6 +151,7 @@ function AdminPage() {
                 <div className="flex gap-2 flex-wrap">
                   <Button variant="secondary" render={<Link to="/admin/requests" />}>Submission requests</Button>
                   <Button variant="secondary" render={<Link to="/admin/removal-requests" />}>Removal requests</Button>
+                  <Button variant="secondary" render={<Link to="/admin/forgot-requests" />}>Forgot key requests</Button>
                 </div>
               </CardContent>
             </Card>

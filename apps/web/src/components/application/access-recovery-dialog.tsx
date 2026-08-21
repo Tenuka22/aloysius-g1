@@ -18,7 +18,7 @@ export function AccessRecoveryDialog({ applicantName, open, onOpenChange, onForg
     setSaving(true);
     setMessage("");
     try {
-      await client.application.requestAccess({ birthCertificateNumber: mode === "birth" ? birthCertificateNumber.trim() || undefined : undefined, sessionCode: mode === "session" ? sessionCode.trim() || undefined : undefined, guardianNic: mode === "guardian" ? guardianNic.trim() || undefined : undefined, applicantName: name, contactPhone });
+      await client.application.requestAccess({ birthCertificateNumber: mode === "birth" ? birthCertificateNumber.trim() || undefined : undefined, sessionCode: mode === "session" ? sessionCode.trim() || undefined : undefined, guardianNic: mode === "guardian" ? guardianNic.trim() || undefined : undefined, applicantName: name, contactPhone, requestType: "forgot" });
       onForgot();
       setMessage("Request sent. An administrator will contact you with a replacement key.");
     } catch (error) {

@@ -9,6 +9,7 @@ import { admin } from "better-auth/plugins";
 
 const SITE_ADMIN_EMAIL = "admin@aloysiuscollege.lk";
 const SITE_ADMIN_PASSWORD = "12345678";
+const SUB_ADMIN_DEFAULT_PASSWORD = "12345678";
 const EMAIL_ROLES: Record<string, string> = {
   [SITE_ADMIN_EMAIL]: "admin",
 };
@@ -123,4 +124,69 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
     .where(eq(schema.user.id, user.id));
 
   console.log(`[auth] Ensured site admin: ${SITE_ADMIN_EMAIL}`);
+}
+
+export async function ensureSubAdmin(
+  email: string,
+  name: string,
+  authInstance: ReturnType<typeof createAuth> = auth,
+) {
+  const db = createDb();
+  const existing = await db
+    .select()
+    .from(schema.user)
+    .where(eq(schema.user.email, email))
+    .limit(1);
+  const user = existing[0];
+
+  if (!user) {
+    await authInstance.api.createUser({
+      body: {
+        email,
+        password: SUB_ADMIN_DEFAULT_PASSWORD,
+        name,
+      },
+    });
+    const created = await db.select().from(schema.user).where(eq(schema.user.email, email)).limit(1);
+    if (created[0]) {
+      await db.update(schema.user).set({ role: "sub-admin" }).where(eq(schema.user.id, created[0].id));
+    }
+    console.log(`[auth] Created sub-admin: ${email}`);
+    return;
+  }
+
+  const password = await hashPassword(SUB_ADMIN_DEFAULT_PASSWORD);
+  const credentialAccount = await db
+    .select()
+    .from(schema.account)
+    .where(eq(schema.account.userId, user.id))
+    .limit(10);
+  const existingCredential = credentialAccount.find(
+    (account) => account.providerId === "credential",
+  );
+
+  if (existingCredential) {
+    await db
+      .update(schema.account)
+      .set({ password })
+      .where(eq(schema.account.id, existingCredential.id));
+  } else {
+    await db.insert(schema.account).values({
+      id: crypto.randomUUID(),
+      issuer: "credential",
+      accountId: user.id,
+      providerId: "credential",
+      userId: user.id,
+      password,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
+  await db
+    .update(schema.user)
+    .set({ role: "sub-admin" })
+    .where(eq(schema.user.id, user.id));
+
+  console.log(`[auth] Ensured sub-admin: ${email}`);
 }

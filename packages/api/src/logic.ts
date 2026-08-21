@@ -76,7 +76,7 @@ export type AccessRequestInput = {
   guardianName?: string;
   contactPhone?: string;
   accessKey?: string;
-  requestType?: "access" | "removal" | "submission";
+  requestType?: "access" | "removal" | "submission" | "forgot";
 };
 
 export const accessRequestIssues = (input: AccessRequestInput): { path?: string[]; message: string }[] => {
@@ -96,6 +96,9 @@ export const accessRequestIssues = (input: AccessRequestInput): { path?: string[
   }
   if (requestType === "access" && input.guardianNic && !input.applicantName) {
     issues.push({ message: "Applicant name is required when using guardian NIC recovery" });
+  }
+  if (requestType === "forgot" && !input.contactPhone) {
+    issues.push({ path: ["contactPhone"], message: "A mobile number is required for forgot key requests" });
   }
   return issues;
 };
