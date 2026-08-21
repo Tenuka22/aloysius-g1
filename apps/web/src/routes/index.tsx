@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { consumeEventIterator } from "@orpc/client";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button";
+import { Button } from "@aloysius-g1/ui/components/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-g1/ui/components/alert-dialog";
 import { client } from "@/utils/orpc";
@@ -75,13 +75,15 @@ function HomeComponent() {
 
       <section className="grid gap-4">
         <h2 className="text-lg font-semibold">Quick actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Button type="button" className="w-full h-auto py-6 flex-col gap-2" onClick={createNewApplication}><Plus size={24} /> New application</Button>
-          <Link className={buttonVariants({ variant: "secondary", className: "w-full h-auto py-6 flex-col gap-2" })} to="/application/access"><KeyRound size={24} /> Load with a key</Link>
-          {isAdmin && <Link className={buttonVariants({ variant: "secondary", className: "w-full h-auto py-6 flex-col gap-2" })} to="/admin"><ShieldCheck size={24} /> Admin panel</Link>}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <Button type="button" className="w-full h-auto py-5 flex-col gap-2" onClick={createNewApplication}><Plus size={22} /> New application</Button>
+          <Button type="button" className="w-full h-auto py-5 flex-col gap-2" onClick={() => window.location.assign("/application/access")}><KeyRound size={22} /> Load with a key</Button>
+          {isAdmin && <Button type="button" className="w-full h-auto py-5 flex-col gap-2" onClick={() => window.location.assign("/admin")}><ShieldCheck size={22} /> Admin panel</Button>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <AccessKeyQrImporter onKey={(importedKey) => window.location.assign(`/application/access?key=${encodeURIComponent(importedKey)}`)} />
+          <div className="w-auto">
+            <AccessKeyQrImporter onKey={(importedKey) => window.location.assign(`/application/access?key=${encodeURIComponent(importedKey)}`)} />
+          </div>
           {keys[0] && <Button variant="outline" type="button" onClick={() => setRecoveryKey(keys[0])}><KeyRound size={17} /> Forget first key</Button>}
         </div>
       </section>
