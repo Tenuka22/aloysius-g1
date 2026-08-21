@@ -5,6 +5,8 @@ import { ArrowRight, CheckCircle2, KeyRound, Plus, ShieldCheck, Trash2, Upload }
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-g1/ui/components/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
+import { Input } from "@aloysius-g1/ui/components/input";
 import { client } from "@/utils/orpc";
 import { authClient } from "@/lib/auth-client";
 import { completionPercent } from "@/lib/completion";
@@ -21,6 +23,10 @@ function HomeComponent() {
   const [applicationCount, setApplicationCount] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
+  const [manageKeysOpen, setManageKeysOpen] = useState(false);
+  const [loadKeyOpen, setLoadKeyOpen] = useState(false);
+  const [loadKeyInput, setLoadKeyInput] = useState("");
+  const [loadKeyError, setLoadKeyError] = useState("");
   const createNewApplication = () => {
     clearActiveKey();
     window.location.assign("/application");
@@ -30,6 +36,17 @@ function HomeComponent() {
     const remaining = getSavedKeys().filter((savedKey) => savedKey !== key);
     setKeys(remaining);
     setRemoveKey(null);
+  };
+  const loadWithKey = () => {
+    const key = loadKeyInput.trim();
+    if (!key) { setLoadKeyError("Enter an access key"); return; }
+    localStorage.setItem("aloysius-g1-application-key", key);
+    const saved = getSavedKeys();
+    if (!saved.includes(key)) { localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...saved, key])); }
+    setLoadKeyOpen(false);
+    setLoadKeyInput("");
+    setLoadKeyError("");
+    window.location.assign(`/application/access?key=${encodeURIComponent(key)}`);
   };
   useEffect(() => {
     let cancelled = false;
@@ -77,9 +94,9 @@ function HomeComponent() {
 
       <section className="flex flex-wrap gap-2">
         <Button type="button" className="h-auto py-3 px-4 flex-row gap-1.5 text-sm" onClick={createNewApplication}><Plus size={18} /> New application</Button>
-        <Button type="button" className="h-auto py-3 px-4 flex-row gap-1.5 text-sm" onClick={() => window.location.assign("/application/access")}><KeyRound size={18} /> Load with a key</Button>
+        <Button type="button" className="h-auto py-3 px-4 flex-row gap-1.5 text-sm" onClick={() => setLoadKeyOpen(true)}><KeyRound size={18} /> Load with a key</Button>
         {isAdmin && <Button type="button" className="h-auto py-3 px-4 flex-row gap-1.5 text-sm" onClick={() => window.location.assign("/admin")}><ShieldCheck size={18} /> Admin panel</Button>}
-        <Button type="button" className="h-auto py-3 px-4 flex-row gap-1.5 text-sm" onClick={() => setRecoveryKey(keys[0] || "")} disabled={!keys[0]}><KeyRound size={18} /> Manage saved keys</Button>
+        <Button type="button" className="h-auto py-3 px-4 flex-row gap-1.5 text-sm" onClick={() => setManageKeysOpen(true)} disabled={keys.length === 0}><KeyRound size={18} /> Manage saved keys</Button>
         <Button type="button" className="h-auto py-3 px-4 flex-row gap-1.5 text-sm" onClick={() => document.getElementById("qr-upload")?.click()}><Upload size={18} /> Import QR image</Button>
         <Button type="button" className="h-auto py-3 px-4 flex-row gap-1.5 text-sm" variant="outline" onClick={() => { if (keys[0]) setRecoveryKey(keys[0]); }} disabled={!keys[0]}><Trash2 size={18} /> Forgot a key?</Button>
       </section>
@@ -123,6 +140,41 @@ function HomeComponent() {
       </section>}
       <AccessRecoveryDialog applicantName={recoveryKey ? records[recoveryKey]?.name : undefined} open={Boolean(recoveryKey)} onOpenChange={(open) => { if (!open) setRecoveryKey(null); }} onForgot={() => { if (!recoveryKey) return; const forgottenKey = recoveryKey; const remaining = keys.filter((key) => key !== forgottenKey); localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(remaining)); if (localStorage.getItem("aloysius-g1-application-key") === forgottenKey) localStorage.removeItem("aloysius-g1-application-key"); setKeys(remaining); setRecoveryKey(null); }} />
       <AlertDialog open={removeKey !== null} onOpenChange={(open) => { if (!open) setRemoveKey(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Forget this application key?</AlertDialogTitle><AlertDialogDescription>This removes the key from this device only. The application remains safely stored in the database and can be loaded again with its session code and access key.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (removeKey) removeApplication(removeKey); }}>Forget key</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+
+      <Dialog open={manageKeysOpen} onOpenChange={setManageKeysOpen}>
+        <DialogContent className="max-w-[min(28rem,calc(100%-2rem))]">
+          <DialogHeader>
+            <DialogTitle>Saved application keys</DialogTitle>
+            <DialogDescription>These keys are stored on this device only. Remove any you no longer need.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 max-h-[50vh] overflow-y-auto">
+            {keys.length === 0 && <p className="text-sm text-muted-foreground">No saved keys on this device.</p>}
+            {keys.map((key) => (
+              <div key={key} className="flex items-center justify-between gap-2 p-3 rounded-lg border">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium truncate">{records[key]?.name || "Loading…"}</div>
+                  <div className="text-xs text-muted-foreground font-mono truncate">{key}</div>
+                </div>
+                <Button variant="ghost" size="icon-sm" type="button" onClick={() => { setRemoveKey(key); setManageKeysOpen(false); }}><Trash2 size={14} /></Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={loadKeyOpen} onOpenChange={setLoadKeyOpen}>
+        <DialogContent className="max-w-[min(28rem,calc(100%-2rem))]">
+          <DialogHeader>
+            <DialogTitle>Load application with a key</DialogTitle>
+            <DialogDescription>Enter the access key you received from the school to open this application.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <Input value={loadKeyInput} onChange={(e) => { setLoadKeyInput(e.target.value); setLoadKeyError(""); }} placeholder="Paste access key here…" />
+            {loadKeyError && <p className="text-sm text-destructive">{loadKeyError}</p>}
+            <Button type="button" onClick={loadWithKey} disabled={!loadKeyInput.trim()}>Open application</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   </main>;
 }
