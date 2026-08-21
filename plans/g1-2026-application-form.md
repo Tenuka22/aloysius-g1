@@ -250,3 +250,49 @@ The admin panel must include a separate appeals queue for applicants who cannot 
 - The school/admin reviews the request, contacts the user, and deletes the application only after confirming that removal is legally and operationally appropriate. The request is then marked resolved.
 - Access-key requests and record-removal requests are stored with separate types so an admin cannot generate a replacement key for a removal request or delete a record from an access request.
 - Keep duplicate handling in one resolution panel: first verify that an access key belongs to the entered birth certificate, then offer the school-review removal request with applicant name, guardian name, and contact number. Never present a saved key as valid merely because it exists on the device.
+
+## Sub-admin role and forgot-key requests
+
+### Role model
+
+- Three roles: `admin`, `sub-admin`, and `user`.
+- `adminProcedure` requires `role === "admin"`.
+- `subAdminProcedure` requires `role === "admin"` or `role === "sub-admin"`.
+- `ensureSubAdmin(email, name)` in `packages/auth/src/index.ts` creates or resets a sub-admin account with a configurable default password (`SUB_ADMIN_DEFAULT_PASSWORD`).
+- Sub-admin accounts are created via the `ensureSubAdmin` function at startup or programmatically; there is no self-service registration.
+
+### Forgot-key requests
+
+- The homepage "Forgot a key?" button opens the `AccessRecoveryDialog` which submits a `requestType: "forgot"` request.
+- The `forgot` type is supported alongside `access`, `removal`, and `submission` in the `requestAccess` endpoint.
+- Validation: forgot requests require a contact phone number.
+- Duplicate prevention: only one open request per application per request type.
+
+### Admin forgot-requests page
+
+- `/admin/forgot-requests` shows a paginated data table with applicant name, birth certificate number, and request date.
+- Actions: generate a new access key (with one-time display + QR code), or dismiss.
+- `admin.accessRequests.forgotRequests` returns full request data for admin views.
+
+### Sub-admin pages
+
+- `/sub-admin` overview with links to forgot-key and removal request queues.
+- `/sub-admin/forgot-requests` and `/sub-admin/removal-requests` show only verification data: birth certificate number, applicant name, status, and created date. No contact info, email, or guardian name.
+- `subAdmin.forgotRequests` and `subAdmin.removalRequests` map responses to limited fields only.
+- Sub-admins can generate new access keys via `subAdmin.rotateKey` and delete applications via `subAdmin.deleteAfterRemovalRequest`.
+- Sub-admin removal-requests page checks `application.status` to determine if the submission window is open; deletion is disabled outside the window with a visible amber banner.
+- Key generation and deletion require alert dialog confirmation.
+
+### QR import dialog
+
+- The "Import QR image" button opens a dialog with two options: import from image file (file picker) or open camera (live scanning via `qr-scanner`).
+- Camera scanning uses `QrScanner` with highlighted scan region and code outline.
+- After forgetting a key, the QR import dialog opens automatically so the parent can re-import.
+
+### Security notes
+
+- Sub-admin routes return only safe fields; no contact info or full application data.
+- All procedures enforce role checks server-side via middleware.
+- Access keys are never stored in plaintext; only SHA-256 hashes are persisted.
+- The `rotateKey` endpoint immediately invalidates the previous key.
+- `deleteAfterRemovalRequest` verifies the request type is `removal` before deleting.

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, Trash2, X } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-g1/ui/components/alert-dialog";
@@ -19,7 +19,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@aloysius-g1/ui/components/dropdown-menu";
 import { client, orpc } from "@/utils/orpc";
@@ -40,7 +39,6 @@ type RemovalRequestRow = {
 function ActionsMenu({ item, onAction }: { item: RemovalRequestRow; onAction: () => void }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const deleteMutation = useQueryClient().getQueryCache().config.defaultOptions?.queries;
   const approve = async () => {
     try {
       await client.admin.accessRequests.deleteAfterRemovalRequest({ requestId: item.id });
@@ -136,7 +134,6 @@ const columns = [
 function AdminRemovalRequestsPage() {
   const { session } = Route.useRouteContext();
   const location = useLocation();
-  const queryClient = useQueryClient();
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);

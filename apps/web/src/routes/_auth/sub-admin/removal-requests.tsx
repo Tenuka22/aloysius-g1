@@ -104,7 +104,7 @@ const columns = [
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }: { row: { original: RemovalRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onAction={() => void requests.refetch()} isOpen={true} /></div>,
+    cell: ({ row }: { row: { original: RemovalRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onAction={() => void refetch()} isOpen={isOpen} /></div>,
   },
 ];
 
