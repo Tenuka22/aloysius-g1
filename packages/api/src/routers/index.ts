@@ -174,7 +174,12 @@ export const appRouter = {
         return { deleted: true };
       }),
       dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => { await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, input.requestId)).run(); return { dismissed: true }; }),
-      submissionRequests: adminProcedure.handler(async () => db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "submission"), eq(applicationAccessRequests.status, "open"))).all()),
+      submissionRequests: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
+        const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "submission"), eq(applicationAccessRequests.status, "open"))).all();
+        const filtered = input.query ? all.filter((r) => r.applicantName.toLowerCase().includes(input.query.toLowerCase()) || r.contactEmail.toLowerCase().includes(input.query.toLowerCase())) : all;
+        const start = (input.page - 1) * input.pageSize;
+        return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
+      }),
       approveSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
         if (!request) throw new Error("Submission request not found");
@@ -206,8 +211,8 @@ export const appRouter = {
       const records = rows.map(applicationRecord);
       return { total: records.length, drafts: records.filter((record) => record.status === "draft").length, submitted: records.filter((record) => record.status === "submitted").length, invalidEmail: records.filter((record) => record.validationErrors.includes("invalid_email")).length, incomplete: records.filter((record) => record.validationErrors.length > 0).length, recent: records.slice().sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()).slice(0, 10) };
     }),
-    applications: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
-      const all = (await db.select().from(applications).all()).map(applicationRecord).filter((record) => record.applicantName.toLowerCase().includes(input.query.toLowerCase()) || record.sessionCode.toLowerCase().includes(input.query.toLowerCase()) || record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase()));
+    applications: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default(""), sort: z.string().default("updatedAt"), sortDir: z.enum(["asc", "desc"]).default("desc"), status: z.enum(["all", "draft", "submitted", "invalid"]).default("all") })).handler(async ({ input }) => {
+      const all = (await db.select().from(applications).all()).map(applicationRecord).filter((record) => { if (input.query && !record.applicantName.toLowerCase().includes(input.query.toLowerCase()) && !record.sessionCode.toLowerCase().includes(input.query.toLowerCase()) && !record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase())) return false; if (input.status !== "all") { if (input.status === "invalid" && record.validationErrors.length === 0) return false; if (input.status !== "invalid" && record.status !== input.status) return false; } return true; }).sort((a, b) => { const av = (a as unknown as Record<string, unknown>)[input.sort]; const bv = (b as unknown as Record<string, unknown>)[input.sort]; const cmp = String(av ?? "").localeCompare(String(bv ?? ""), undefined, { numeric: true }); return input.sortDir === "desc" ? -cmp : cmp; });
       const start = (input.page - 1) * input.pageSize;
       return { total: all.length, page: input.page, pageSize: input.pageSize, items: all.slice(start, start + input.pageSize) };
     }),

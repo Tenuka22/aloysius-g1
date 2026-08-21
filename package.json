@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@aloysius-g1/env": "workspace:*",
+    "@tanstack/react-table": "^9.1.2",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },
