@@ -114,7 +114,7 @@ function AdminPage() {
           <span className="text-sm font-medium">Admin console</span>
         </header>
         {location.pathname === "/admin" && (
-          <main className="min-h-svh p-12.5 max-w-[1240px] mx-auto bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
+          <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
             <div className="flex items-end justify-between gap-8 mb-8">
               <div>
                 <p className="text-primary font-bold tracking-widest uppercase text-xs">Operations</p>
