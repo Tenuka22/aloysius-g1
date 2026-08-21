@@ -121,8 +121,6 @@ function SubAdminRemovalRequestsPage() {
       page: pagination.pageIndex + 1,
       pageSize: pagination.pageSize,
       query,
-      sort: sorting[0]?.id ?? "createdAt",
-      sortDir: sorting[0]?.desc ? "desc" : "asc",
     },
   }));
 

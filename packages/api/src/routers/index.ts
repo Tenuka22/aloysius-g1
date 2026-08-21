@@ -50,6 +50,39 @@ const getApplicationWindow = async () => {
   await db.insert(applicationSettings).values(defaults).onConflictDoNothing();
   return (await db.select().from(applicationSettings).where(eq(applicationSettings.id, "default")).get()) ?? defaults;
 };
+// Shared request action helpers (used by both admin and subAdmin)
+const rotateRequestKey = async (requestId: string) => {
+  const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, requestId)).get();
+  if (!request) throw new Error("Request not found");
+  if (request.requestType !== "access" && request.requestType !== "forgot") throw new Error("Only access and forgot requests can generate a replacement key");
+  const accessKey = createAccessKey();
+  await db.update(applications).set({ accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
+  await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
+  return { accessKey, applicationId: request.applicationId };
+};
+const deleteAfterRemoval = async (requestId: string) => {
+  const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, requestId)).get();
+  if (!request) throw new Error("Removal request not found");
+  if (request.requestType !== "removal") throw new Error("Only removal requests can delete an application");
+  await db.delete(applications).where(eq(applications.id, request.applicationId)).run();
+  await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
+  await publishApplicationChange();
+  return { deleted: true };
+};
+const dismissRequest = async (requestId: string) => {
+  await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, requestId)).run();
+  return { dismissed: true };
+};
+const paginationInput = z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") });
+const paginateRequests = async (requestType: string, query: string, page: number, pageSize: number, searchFields?: string[]) => {
+  const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, requestType), eq(applicationAccessRequests.status, "open"))).all();
+  const filtered = query ? all.filter((r) => {
+    const fields = searchFields ?? ["applicantName", "contactEmail"];
+    return fields.some((field) => String(r[field as keyof typeof r] ?? "").toLowerCase().includes(query.toLowerCase()));
+  }) : all;
+  const start = (page - 1) * pageSize;
+  return { total: filtered.length, page, pageSize, items: filtered.slice(start, start + pageSize) };
+};
 const applicationEvents = new EventPublisher<{ "application-count": { count: number } }>();
 const applicationCount = async () => (await db.select({ id: applications.id }).from(applications).all()).length;
 const publishApplicationChange = async () => applicationEvents.publish("application-count", { count: await applicationCount() });
@@ -155,43 +188,12 @@ export const appRouter = {
   admin: {
     accessRequests: {
       query: adminProcedure.handler(async () => db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.status, "open")).all()),
-      rotateKey: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
-        const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
-        if (!request) throw new Error("Access request not found");
-        if (request.requestType !== "access" && request.requestType !== "forgot") throw new Error("Only access and forgot requests can generate a replacement key");
-        const accessKey = createAccessKey();
-        await db.update(applications).set({ accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
-        await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
-        return { accessKey, applicationId: request.applicationId };
-      }),
-      deleteAfterRemovalRequest: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
-        const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
-        if (!request) throw new Error("Removal request not found");
-        if (request.requestType !== "removal") throw new Error("Only removal requests can delete an application");
-        await db.delete(applications).where(eq(applications.id, request.applicationId)).run();
-        await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
-        await publishApplicationChange();
-        return { deleted: true };
-      }),
-      dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => { await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, input.requestId)).run(); return { dismissed: true }; }),
-      submissionRequests: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
-        const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "submission"), eq(applicationAccessRequests.status, "open"))).all();
-        const filtered = input.query ? all.filter((r) => r.applicantName.toLowerCase().includes(input.query.toLowerCase()) || r.contactEmail.toLowerCase().includes(input.query.toLowerCase())) : all;
-        const start = (input.page - 1) * input.pageSize;
-        return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
-      }),
-      removalRequests: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
-        const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "removal"), eq(applicationAccessRequests.status, "open"))).all();
-        const filtered = input.query ? all.filter((r) => r.applicantName.toLowerCase().includes(input.query.toLowerCase()) || r.contactEmail.toLowerCase().includes(input.query.toLowerCase())) : all;
-        const start = (input.page - 1) * input.pageSize;
-        return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
-      }),
-      forgotRequests: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
-        const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "forgot"), eq(applicationAccessRequests.status, "open"))).all();
-        const filtered = input.query ? all.filter((r) => r.applicantName.toLowerCase().includes(input.query.toLowerCase()) || r.contactEmail.toLowerCase().includes(input.query.toLowerCase()) || r.birthCertificateNumber.toLowerCase().includes(input.query.toLowerCase())) : all;
-        const start = (input.page - 1) * input.pageSize;
-        return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
-      }),
+      rotateKey: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => rotateRequestKey(input.requestId)),
+      deleteAfterRemovalRequest: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => deleteAfterRemoval(input.requestId)),
+      dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => dismissRequest(input.requestId)),
+      submissionRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("submission", input.query, input.page, input.pageSize)),
+      removalRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("removal", input.query, input.page, input.pageSize)),
+      forgotRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "contactEmail", "birthCertificateNumber"])),
       approveSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
         if (!request) throw new Error("Submission request not found");
@@ -256,40 +258,17 @@ export const appRouter = {
     },
   },
   subAdmin: {
-    forgotRequests: subAdminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
-      const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "forgot"), eq(applicationAccessRequests.status, "open"))).all();
-      const filtered = input.query ? all.filter((r) => r.birthCertificateNumber.toLowerCase().includes(input.query.toLowerCase()) || r.applicantName.toLowerCase().includes(input.query.toLowerCase())) : all;
-      const start = (input.page - 1) * input.pageSize;
-      return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize).map((r) => ({ id: r.id, birthCertificateNumber: r.birthCertificateNumber, applicantName: r.applicantName, status: r.status, createdAt: r.createdAt })) };
+    forgotRequests: subAdminProcedure.input(paginationInput).handler(async ({ input }) => {
+      const result = await paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "birthCertificateNumber"]);
+      return { ...result, items: result.items.map((r) => ({ id: r.id, birthCertificateNumber: r.birthCertificateNumber, applicantName: r.applicantName, status: r.status, createdAt: r.createdAt })) };
     }),
-    removalRequests: subAdminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") })).handler(async ({ input }) => {
-      const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, "removal"), eq(applicationAccessRequests.status, "open"))).all();
-      const filtered = input.query ? all.filter((r) => r.birthCertificateNumber.toLowerCase().includes(input.query.toLowerCase()) || r.applicantName.toLowerCase().includes(input.query.toLowerCase())) : all;
-      const start = (input.page - 1) * input.pageSize;
-      return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize).map((r) => ({ id: r.id, birthCertificateNumber: r.birthCertificateNumber, applicantName: r.applicantName, status: r.status, createdAt: r.createdAt })) };
+    removalRequests: subAdminProcedure.input(paginationInput).handler(async ({ input }) => {
+      const result = await paginateRequests("removal", input.query, input.page, input.pageSize, ["applicantName", "birthCertificateNumber"]);
+      return { ...result, items: result.items.map((r) => ({ id: r.id, birthCertificateNumber: r.birthCertificateNumber, applicantName: r.applicantName, status: r.status, createdAt: r.createdAt })) };
     }),
-    rotateKey: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
-      const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
-      if (!request) throw new Error("Request not found");
-      if (request.requestType !== "access" && request.requestType !== "forgot") throw new Error("Only access and forgot requests can generate a replacement key");
-      const accessKey = createAccessKey();
-      await db.update(applications).set({ accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
-      await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
-      return { accessKey, applicationId: request.applicationId };
-    }),
-    deleteAfterRemovalRequest: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
-      const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
-      if (!request) throw new Error("Removal request not found");
-      if (request.requestType !== "removal") throw new Error("Only removal requests can delete an application");
-      await db.delete(applications).where(eq(applications.id, request.applicationId)).run();
-      await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
-      await publishApplicationChange();
-      return { deleted: true };
-    }),
-    dismiss: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
-      await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, input.requestId)).run();
-      return { dismissed: true };
-    }),
+    rotateKey: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => rotateRequestKey(input.requestId)),
+    deleteAfterRemovalRequest: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => deleteAfterRemoval(input.requestId)),
+    dismiss: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => dismissRequest(input.requestId)),
   },
   healthCheck: publicProcedure.handler(() => {
     return "OK";

@@ -133,8 +133,6 @@ function SubAdminForgotRequestsPage() {
       page: pagination.pageIndex + 1,
       pageSize: pagination.pageSize,
       query,
-      sort: sorting[0]?.id ?? "createdAt",
-      sortDir: sorting[0]?.desc ? "desc" : "asc",
     },
   }));
 
@@ -149,12 +147,8 @@ function SubAdminForgotRequestsPage() {
   }, [session.data?.user.role, requests]);
 
   const role = session.data?.user.role;
-  if (role !== "admin" && role !== "sub-admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Access required</CardTitle></CardHeader><Button variant="default" className="w-fit" render={<Link to="/dashboard" />}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
-
   const items = (requests.data?.items ?? []) as ForgotRequestRow[];
-  const pageCount = requests.data ? Math.ceil(requests.data.total / requests.data.pageSize) : 0;
-
-  return (
+  const pageCount = requests.data ? Math.ceil(requests.data.total / requests.data.pageSize) : 0;    return (
     <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
       <div className="flex items-end justify-between gap-8 mb-8">
         <div>
