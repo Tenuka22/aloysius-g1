@@ -53,7 +53,8 @@
     "@aloysius-g1/env": "workspace:*",
     "@tanstack/react-table": "8",
     "dotenv": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@aloysius-g1/config": "workspace:*",

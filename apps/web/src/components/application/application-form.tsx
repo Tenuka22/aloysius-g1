@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw,
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { emptyDraft, normalizeDraft, useApplicationStore, type ApplicationDraft } from "@/lib/application-store";
-import { useSessionStore, useKeysStore } from "@/stores/application-store";
 import { G1_DOB_CUTOFF, getNextStepReason } from "@/lib/eligibility";
 import { client } from "@/utils/orpc";
 import {
@@ -1117,13 +1116,19 @@ export function ApplicationForm({
   readOnly?: boolean;
 }) {
   const draft = useApplicationStore();
-  const accessKey = useSessionStore((state) => state.accessKey);
-  const sessionCode = useSessionStore((state) => state.sessionCode);
-  const setAccessKey = useSessionStore((state) => state.setAccessKey);
-  const setSessionCode = useSessionStore((state) => state.setSessionCode);
-  const clearActive = useSessionStore((state) => state.clearActive);
-  const addSavedApplication = useKeysStore((state) => state.addSavedApplication);
   const [hydrated, setHydrated] = useState(false);
+  const [accessKey, setAccessKey] = useState(
+    () =>
+      new URLSearchParams(window.location.search).get("key") ??
+      localStorage.getItem("aloysius-g1-application-key") ??
+      "",
+  );
+  const [sessionCode, setSessionCode] = useState(
+    () =>
+      new URLSearchParams(window.location.search).get("code") ??
+      localStorage.getItem("aloysius-g1-application-session-code") ??
+      "",
+  );
   const [saveStatus, setSaveStatus] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -1179,10 +1184,16 @@ export function ApplicationForm({
             const restoredSessionCode =
               result.sessionCode ||
               new URLSearchParams(window.location.search).get("code") ||
-              sessionCode ||
+              localStorage.getItem(
+                "aloysius-g1-application-session-code",
+              ) ||
               "";
             if (restoredSessionCode) {
               setSessionCode(restoredSessionCode);
+              localStorage.setItem(
+                "aloysius-g1-application-session-code",
+                restoredSessionCode,
+              );
             }
             draft.updateDraft(latest);
             form.reset(latest);
@@ -1195,7 +1206,26 @@ export function ApplicationForm({
           if (!cancelled) {
             setAccessKey(result.accessKey);
             setSessionCode(result.sessionCode);
-            addSavedApplication({ accessKey: result.accessKey, sessionCode: result.sessionCode });
+            localStorage.setItem(
+              "aloysius-g1-application-key",
+              result.accessKey,
+            );
+            const savedKeys = JSON.parse(
+              localStorage.getItem("aloysius-g1-application-keys") ?? "[]",
+            ) as unknown;
+            localStorage.setItem(
+              "aloysius-g1-application-keys",
+              JSON.stringify([
+                ...new Set([
+                  ...(Array.isArray(savedKeys) ? savedKeys : []),
+                  result.accessKey,
+                ]),
+              ]),
+            );
+            localStorage.setItem(
+              "aloysius-g1-application-session-code",
+              result.sessionCode,
+            );
             window.history.replaceState(
               {},
               "",
@@ -1226,7 +1256,10 @@ export function ApplicationForm({
       } catch {
         if (!cancelled && !dataLoaded) {
           draft.reset();
-          clearActive();
+          setAccessKey("");
+          setSessionCode("");
+          localStorage.removeItem("aloysius-g1-application-key");
+          localStorage.removeItem("aloysius-g1-application-session-code");
           setSubmissionLocked(true);
           setSubmittedAt(null);
         }
@@ -1344,9 +1377,10 @@ export function ApplicationForm({
   };
 
   const startAnotherApplication = () => {
-    clearActive();
+    localStorage.removeItem("aloysius-g1-application-key");
+    localStorage.removeItem("aloysius-g1-application-session-code");
     draft.reset();
-    window.location.href = window.location.origin + "/application";
+    window.location.assign("/application");
   };
 
   const back = () => draft.setStep(Math.max(current - 1, 0));
@@ -1395,7 +1429,7 @@ export function ApplicationForm({
               securely and can be reopened with your session code and access key.
             </p>
             {(sessionCode || accessKey) && (
-              <div className="grid gap-2 mt-5 max-w-[900px]">
+              <div className="grid grid-cols-2 gap-3 mt-5 max-w-[900px]">
                 {sessionCode && (
                   <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
                     <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
@@ -1412,7 +1446,7 @@ export function ApplicationForm({
                         {copiedField === "session" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
                       </button>
                     </div>
-                    <code className="block break-all text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
+                    <code className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
                       {sessionCode}
                     </code>
                     <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
@@ -1437,7 +1471,7 @@ export function ApplicationForm({
                         {copiedField === "key" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
                       </button>
                     </div>
-                    <code className="block break-all text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
+                    <code className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
                       {accessKey}
                     </code>
                     <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
