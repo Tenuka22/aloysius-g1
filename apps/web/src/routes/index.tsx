@@ -66,11 +66,13 @@ function HomeComponent() {
         <p className="text-muted-foreground max-w-[42rem]">Start a new application, continue an existing one, or manage saved records. All data is stored securely and synchronized with the school database.</p>
       </section>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <Card><CardContent className="p-5"><div className="text-4xl font-bold">{applicationCount ?? "—"}</div><div className="text-sm text-muted-foreground">Total applications</div></CardContent></Card>
         <Card><CardContent className="p-5"><div className="text-4xl font-bold">{keys.length}</div><div className="text-sm text-muted-foreground">Saved on this device</div></CardContent></Card>
         <Card><CardContent className="p-5"><div className="text-4xl font-bold">{keys.filter((k) => records[k]?.submitted).length}</div><div className="text-sm text-muted-foreground">Submitted</div></CardContent></Card>
         <Card><CardContent className="p-5"><div className="text-4xl font-bold">{keys.filter((k) => !records[k]?.submitted).length}</div><div className="text-sm text-muted-foreground">Drafts</div></CardContent></Card>
+        <Card><CardContent className="p-5"><div className="text-4xl font-bold">{keys.filter((k) => records[k]?.error).length}</div><div className="text-sm text-muted-foreground">With errors</div></CardContent></Card>
+        <Card><CardContent className="p-5"><div className="text-4xl font-bold">{keys.filter((k) => !records[k]?.submitted && (records[k]?.completion ?? 0) < 100).length}</div><div className="text-sm text-muted-foreground">Incomplete</div></CardContent></Card>
       </section>
 
       <section className="grid gap-4">
