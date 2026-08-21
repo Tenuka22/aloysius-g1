@@ -4,6 +4,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApplicationForm } from "./application-form";
 import { emptyDraft, useApplicationStore } from "@/lib/application-store";
+import { useSessionStore, useKeysStore } from "@/stores/application-store";
 
 const { MOCK_ACCESS_KEY, MOCK_SESSION_CODE } = vi.hoisted(() => ({
   MOCK_ACCESS_KEY: "ALY-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO",
@@ -46,6 +47,12 @@ function setStore(patch: Partial<typeof emptyDraft>) {
   act(() => useApplicationStore.setState({ ...patch }));
 }
 
+function clearStores() {
+  useApplicationStore.getState().reset();
+  useSessionStore.getState().clearActive();
+  useKeysStore.getState().setSavedApplications([]);
+}
+
 function renderForm() {
   render(<ApplicationForm />);
   return screen.findByRole("button", { name: /continue/i });
@@ -62,8 +69,7 @@ function currentDraftData(): typeof emptyDraft {
 }
 
 beforeEach(() => {
-  useApplicationStore.getState().reset();
-  localStorage.clear();
+  clearStores();
   window.history.replaceState({}, "", "/");
   createMock.mockReset().mockImplementation(async () => ({
     accessKey: MOCK_ACCESS_KEY,
@@ -333,8 +339,8 @@ describe("ApplicationForm — submit flow", () => {
 
 describe("ApplicationForm — submit a restored application", () => {
   it("submits a fully valid restored draft", async () => {
-    localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
-    localStorage.setItem("aloysius-g1-application-session-code", MOCK_SESSION_CODE);
+    useSessionStore.getState().setAccessKey(MOCK_ACCESS_KEY);
+    useSessionStore.getState().setSessionCode(MOCK_SESSION_CODE);
     getMock.mockResolvedValue({
       data: { ...fullValidDraft, currentStep: 5 },
       sessionCode: MOCK_SESSION_CODE,
@@ -396,16 +402,16 @@ describe("ApplicationForm — server errors", () => {
     await renderForm();
     expect(useApplicationStore.getState().currentStep).toBe(0);
     expect(useApplicationStore.getState().applicant.fullName).toBe("");
-    expect(localStorage.getItem("aloysius-g1-application-key")).toBeNull();
+    expect(useSessionStore.getState().accessKey).toBe("");
   });
 
   it("resets the draft when restore get fails", async () => {
-    localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
+    useSessionStore.getState().setAccessKey(MOCK_ACCESS_KEY);
     getMock.mockReset().mockRejectedValue(new Error("Key not found"));
     await renderForm();
     expect(useApplicationStore.getState().currentStep).toBe(0);
     expect(useApplicationStore.getState().applicant.fullName).toBe("");
-    expect(localStorage.getItem("aloysius-g1-application-key")).toBeNull();
+    expect(useSessionStore.getState().accessKey).toBe("");
   });
 
   it("shows an error when the submit fails", async () => {
