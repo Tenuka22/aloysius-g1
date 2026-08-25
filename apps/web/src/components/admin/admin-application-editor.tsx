@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, CircleAlert, MapPin, Save, X } from "lucide-react";
+import { Check, CircleAlert, LocateFixed, MapPin, Save, X } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CircleMarker, MapContainer, Marker, TileLayer } from "react-leaflet";
 import { divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { client, orpc } from "@/utils/orpc";
-import { emptyDraft, normalizeDraft, type ApplicationDraft, type LocationDraft } from "@/lib/application-store";
+import { emptyDraft, normalizeDraft, prependLocationHistory, type ApplicationDraft, type CategoryApplication, type CategoryType, type LocationDraft, type ScoringInputs } from "@/lib/application-store";
+import { scoreCategory } from "@/lib/scoring";
+import { findSchoolById } from "@/lib/school-utils";
 import { toast } from "sonner";
 
 import { Button } from "@aloysius-g1/ui/components/button";
@@ -22,7 +24,143 @@ const sections = [
   ["declaration", "Declaration"],
 ] as const;
 
+const CATEGORY_LABELS: Record<CategoryType, string> = {
+  "6.1": "6.1 – Residence Verification & Proximity",
+  "6.2": "6.2 – Educational Qualifications & Co-Curricular Achievements",
+  "6.3": "6.3 – Siblings",
+  "6.4": "6.4 – Period of Service & Distance",
+  "6.5": "6.5 – Transfer Applications",
+  "6.6": "6.6 – Foreign Employment",
+};
+
+const DIFFICULT_SERVICE_TYPES = ["current", "previous", "none"] as const;
+const EMPLOYMENT_PURPOSES = ["board", "personal", "government", "education"] as const;
+const SPORTS_LEVELS = ["none", "inter-house", "zonal", "district", "provincial", "national", "international"] as const;
+const SIBLING_EXAM_ACHIEVEMENTS = ["none", "scholarship", "ol", "al"] as const;
+const LEADERSHIP_ROLES = [
+  "none",
+  "prefect-primary",
+  "prefect-junior",
+  "prefect-senior",
+  "deputy-head-prefect",
+  "head-prefect",
+  "first-team-vice-captain",
+  "first-team-captain",
+] as const;
+
+type CategoryTextFieldKey = "mainDocumentType" | "documentOwnership" | "serviceLocationLevel";
+type CategoryNumberFieldKey = "yearsRegistered" | "electoralMotherYears" | "electoralFatherYears" | "schoolsRadiusKm" | "periodOfServiceYears" | "difficultServiceDistanceKm" | "difficultServiceExtraPeriods" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "previousWorkplacePeriodYears" | "transferElapsedYears" | "periodAbroadYears" | "alumniYearsAtSchool" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "sportsCount" | "siblingsCurrentlyStudyingCount" | "siblingPrefectCount";
+
+const CATEGORY_TEXT_FIELDS: Array<[CategoryTextFieldKey, string]> = [
+  ["mainDocumentType", "Main document type"],
+  ["documentOwnership", "Document ownership"],
+  ["serviceLocationLevel", "Service location level"],
+];
+
+const CATEGORY_NUMBER_FIELDS: Array<[CategoryNumberFieldKey, string]> = [
+  ["yearsRegistered", "Years registered"],
+  ["electoralMotherYears", "Electoral mother years"],
+  ["electoralFatherYears", "Electoral father years"],
+  ["schoolsRadiusKm", "Schools radius km"],
+  ["periodOfServiceYears", "Period of service years"],
+  ["difficultServiceDistanceKm", "Difficult service distance km"],
+  ["difficultServiceExtraPeriods", "Difficult service extra periods"],
+  ["unutilizedLeaveYears", "Unutilized leave years"],
+  ["residenceToSchoolKm", "Residence to school km"],
+  ["workplaceToSchoolKm", "Workplace to school km"],
+  ["previousWorkplaceDistanceKm", "Previous workplace distance km"],
+  ["previousWorkplacePeriodYears", "Previous workplace period years"],
+  ["transferElapsedYears", "Transfer elapsed years"],
+  ["periodAbroadYears", "Period abroad years"],
+  ["alumniYearsAtSchool", "Alumni years at school"],
+  ["olSubjectCount", "O/L subject count"],
+  ["olGradeS", "O/L S passes"],
+  ["olGradeC", "O/L C passes"],
+  ["olGradeB", "O/L B passes"],
+  ["olGradeA", "O/L A passes"],
+  ["alSubjectCount", "A/L subject count"],
+  ["alGradeS", "A/L S passes"],
+  ["alGradeC", "A/L C passes"],
+  ["alGradeB", "A/L B passes"],
+  ["alGradeA", "A/L A passes"],
+  ["sportsCount", "Sports achievements count"],
+  ["siblingsCurrentlyStudyingCount", "Siblings currently studying"],
+  ["siblingPrefectCount", "Sibling prefect achievement count"],
+];
+
+const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
+  ["mainDocumentType", "Main document type"],
+  ["documentOwnership", "Document ownership"],
+  ["yearsRegistered", "Years registered"],
+  ["additionalDocs", "Additional docs"],
+  ["electoralMotherYears", "Electoral mother years"],
+  ["electoralFatherYears", "Electoral father years"],
+  ["schoolsRadiusKm", "Schools radius km"],
+  ["grade5ScholarshipPassed", "Grade 5 Scholarship passed"],
+  ["alumniYearsAtSchool", "Alumni years at school"],
+  ["olSubjectCount", "O/L subject count"],
+  ["olGradeS", "O/L S passes"],
+  ["olGradeC", "O/L C passes"],
+  ["olGradeB", "O/L B passes"],
+  ["olGradeA", "O/L A passes"],
+  ["alSubjectCount", "A/L subject count"],
+  ["alGradeS", "A/L S passes"],
+  ["alGradeC", "A/L C passes"],
+  ["alGradeB", "A/L B passes"],
+  ["alGradeA", "A/L A passes"],
+  ["sportsLevel", "Sports level"],
+  ["sportsCount", "Sports achievements count"],
+  ["leadershipRole", "Leadership role"],
+  ["siblingsCurrentlyStudyingCount", "Siblings currently studying"],
+  ["siblingStudiedAtAppliedSchool", "Sibling studied at applied school"],
+  ["twoOrMoreSiblingsApplying", "Two or more siblings applying"],
+  ["siblingPrefectLevel", "Sibling prefect level"],
+  ["siblingPrefectCount", "Sibling prefect achievement count"],
+  ["siblingExamAchievement", "Sibling exam achievement"],
+  ["siblingPraiseworthyAchievement", "Sibling praiseworthy achievement"],
+  ["parentsSupportRendered", "Parent support rendered"],
+  ["periodOfServiceYears", "Period of service years"],
+  ["difficultServiceType", "Difficult service type"],
+  ["difficultServiceDistanceKm", "Difficult service distance km"],
+  ["difficultServiceExtraPeriods", "Difficult service extra periods"],
+  ["unutilizedLeaveYears", "Unutilized leave years"],
+  ["serviceLocationLevel", "Service location level"],
+  ["residenceToSchoolKm", "Residence to school km"],
+  ["workplaceToSchoolKm", "Workplace to school km"],
+  ["previousWorkplaceDistanceKm", "Previous workplace distance km"],
+  ["previousWorkplacePeriodYears", "Previous workplace period years"],
+  ["transferElapsedYears", "Transfer elapsed years"],
+  ["periodAbroadYears", "Period abroad years"],
+  ["employmentPurpose", "Employment purpose"],
+];
+
 const selectedLocationIcon = divIcon({ className: "bg-transparent border-0", html: "<span></span>", iconSize: [22, 22], iconAnchor: [11, 11] });
+
+function parseScoringNumber(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (trimmed === "") return undefined;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseScoringEnum<T extends string>(value: string, options: readonly T[]): T | undefined {
+  const trimmed = value.trim();
+  return (options as readonly string[]).includes(trimmed) ? (trimmed as T) : undefined;
+}
+
+function fieldPatch<K extends keyof ScoringInputs>(key: K, value: ScoringInputs[K]): Partial<ScoringInputs> {
+  const patch: Partial<ScoringInputs> = {};
+  patch[key] = value;
+  return patch;
+}
+
+function schoolsSelectedSummary(ids: string[] | undefined): string {
+  const names = (ids ?? []).flatMap((schoolId) => {
+    const school = findSchoolById(schoolId);
+    return school ? [school.en] : [];
+  });
+  return names.length === 0 ? "0" : `(${names.length}) ${names.join(", ")}`;
+}
 
 function Value({ label, value }: { label: string; value: unknown }) {
   const text = value === null || value === undefined || value === "" ? "Not provided" : String(value);
@@ -61,6 +199,7 @@ export function AdminApplicationView({ id }: { id: string }) {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             {sections.map(([key, label]) => <TabsTrigger key={key} value={key}>{label}</TabsTrigger>)}
             <TabsTrigger value="locations">Locations</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
             {validationErrors.length > 0 && <TabsTrigger value="quality">Data quality <Badge variant="destructive" className="ml-1">{validationErrors.length}</Badge></TabsTrigger>}
           </TabsList>
           <TabsContent value="overview">
@@ -83,6 +222,22 @@ export function AdminApplicationView({ id }: { id: string }) {
                 <LocationSummary label="Saved browser location" value={data.defaultLocation} />
                 <LocationSummary label="Selected application location" value={data.selectedLocation.latitude != null ? data.selectedLocation : data.location} />
               </div>
+              <AdminLocationHistory title="Device fixes (newest first)" history={data.deviceLocationHistory} />
+              <AdminLocationHistory title="Selected pins (newest first)" history={data.userLocationHistory} />
+            </div>
+          </TabsContent>
+          <TabsContent value="categories">
+            <div className="grid gap-4">
+              {data.categories.length === 0 && <p className="text-muted-foreground">No categories selected.</p>}
+              {data.categories.map((category) => <div className="border rounded-xl p-4" key={category.id}>
+                <h4>{CATEGORY_LABELS[category.categoryType]} — {scoreCategory(category).total}/100</h4>
+                {SCORING_INPUT_SUMMARY_ROWS.map(([key, label]) => {
+                  const raw = category.scoringInputs[key];
+                  if (raw == null) return null;
+                  return <Value key={key} label={label} value={Array.isArray(raw) ? raw.join(", ") : String(raw)} />;
+                })}
+                <Value label="Schools selected" value={schoolsSelectedSummary(category.scoringInputs.schoolsWithinRadius)} />
+              </div>)}
             </div>
           </TabsContent>
           {validationErrors.length > 0 && <TabsContent value="quality">
@@ -130,7 +285,8 @@ export function AdminApplicationEditor({ id }: { id: string }) {
   return <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]"><AdminHeader title="Edit application" description="Make corrections directly to the saved record. Changes are applied to the database when you save." status="Admin edit mode" /><Card className="grid gap-4"><CardHeader><div className="flex items-start justify-between gap-4"><div><p className="text-primary font-bold tracking-widest uppercase text-xs">{draft.applicant.fullName || "Unnamed applicant"}</p><CardTitle>Application information</CardTitle><p className="text-muted-foreground text-[0.82rem]">Session code: <strong>{detail.data?.sessionCode ?? "Not available"}</strong></p></div>{saveState && <span className={saveState.startsWith("Could") ? "text-destructive" : "text-primary"}>{saveState}</span>}</div></CardHeader>
     <CardContent className="grid gap-4">
       {fields.map(([key, label]) => <AdminFieldSection key={key} section={key} label={label} value={draft[key] as Record<string, unknown>} onChange={set} />)}
-      <div className="border rounded-xl p-4"><h3>Locations</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured browser point or the location selected by the applicant. Drag the green pin or edit the coordinates, then save.</p><AdminLocationMap editable browser={draft.defaultLocation} selected={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} onSelectedChange={(latitude, longitude) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, latitude, longitude, source: "map" }, location: { ...current.location, latitude, longitude, source: "map" } }))} /><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1"><AdminLocationEditor label="Saved browser location" value={draft.defaultLocation} onChange={(key, value) => setDraft((current) => ({ ...current, defaultLocation: { ...current.defaultLocation, [key]: value } }))} /><AdminLocationEditor label="Selected / edited location" value={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} onChange={(key, value) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, [key]: value }, location: { ...current.location, [key]: value } }))} /></div></div>
+      <div className="border rounded-xl p-4"><h3>Locations</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured browser point or the location selected by the applicant. Drag the green pin, edit the coordinates, or capture a fresh device fix, then save.</p><AdminLocationMap editable browser={draft.defaultLocation} selected={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} onSelectedChange={(latitude, longitude) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, latitude, longitude, source: "map" }, location: { ...current.location, latitude, longitude, source: "map" }, userLocationHistory: prependLocationHistory(current.userLocationHistory, { ...current.selectedLocation, latitude, longitude, source: "map", label: "Selected location" }) }))} /><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(({ coords }) => setDraft((current) => { const devicePoint: LocationDraft = { label: "Your location", address: current.location.address, latitude: coords.latitude, longitude: coords.longitude, source: "device" }; return { ...current, defaultLocation: devicePoint, selectedLocation: devicePoint, location: devicePoint, deviceLocationHistory: prependLocationHistory(current.deviceLocationHistory, devicePoint), userLocationHistory: prependLocationHistory(current.userLocationHistory, devicePoint) }; })); }}><LocateFixed size={16} /> Use my current location</Button></div><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1"><AdminLocationEditor label="Saved browser location" value={draft.defaultLocation} onChange={(key, value) => setDraft((current) => ({ ...current, defaultLocation: { ...current.defaultLocation, [key]: value } }))} /><AdminLocationEditor label="Selected / edited location" value={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} onChange={(key, value) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, [key]: value }, location: { ...current.location, [key]: value } }))} /></div><AdminLocationHistory title="Device fixes (newest first)" history={draft.deviceLocationHistory} /><AdminLocationHistory title="Selected pins (newest first)" history={draft.userLocationHistory} /></div>
+      <div className="border rounded-xl p-4"><h3>Categories</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured category details. Schools within radius are shown for reference and cannot be edited here.</p><div className="grid gap-4">{draft.categories.length === 0 && <p className="text-muted-foreground">No categories selected.</p>}{draft.categories.map((category) => <AdminCategoryEditor key={category.id} category={category} onPatch={(categoryId, patch) => setDraft((current) => ({ ...current, categories: current.categories.map((entry) => entry.id === categoryId ? { ...entry, scoringInputs: { ...entry.scoringInputs, ...patch } } : entry) }))} onRemove={() => setDraft((current) => ({ ...current, categories: current.categories.filter((entry) => entry.id !== category.id) }))} />)}</div></div>
       <div className="border rounded-xl p-4"><h3>Declaration</h3><Toggle label="Information confirmed" checked={draft.declaration.confirmed} onChange={(value) => set("declaration", "confirmed", value)} /><Toggle label="Consent given" checked={draft.declaration.consent} onChange={(value) => set("declaration", "consent", value)} /></div>
       <div className="flex justify-between gap-3 flex-wrap"><Button variant="secondary" disabled={saving} onClick={() => void navigate({ to: "/admin/applications/$id", params: { id } })}><X size={16} /> Cancel</Button><Button disabled={saving} onClick={() => void save()}><Save size={16} /> {saving ? "Saving…" : "Save changes"}</Button></div>
     </CardContent>
@@ -141,8 +297,56 @@ function AdminFieldSection({ section, label, value, onChange }: { section: keyof
   return <div className="border rounded-xl p-4"><h3>{label}</h3><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">{Object.entries(value).filter(([key]) => key !== "sameAsPermanent").map(([key, item]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{key.replace(/[A-Z]/g, (letter) => ` ${letter}`).replace(/^./, (letter) => letter.toUpperCase())}</span><Input type={key === "dateOfBirth" ? "date" : key === "email" ? "email" : "text"} value={String(item ?? "")} onChange={(event) => onChange(section, key, event.target.value)} /></label>)}</div>{section === "residence" && <Toggle label="Current address is the same as permanent address" checked={Boolean(value.sameAsPermanent)} onChange={(checked) => onChange(section, "sameAsPermanent", checked)} />}</div>;
 }
 
+function AdminLocationHistory({ title, history }: { title: string; history: LocationDraft[] }) {
+  return (
+    <div className="grid gap-2">
+      <p className="text-[0.78rem] font-semibold text-muted-foreground">{title}</p>
+      {history.length === 0 ? (
+        <p className="text-muted-foreground text-[0.82rem]">No entries recorded.</p>
+      ) : (
+        <ol className="grid gap-1">
+          {history.map((entry, index) => (
+            <li key={`${entry.latitude}-${entry.longitude}-${index}`} className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-[0.82rem]">
+              <MapPin size={13} className="shrink-0 text-muted-foreground" />
+              <span className="truncate">{entry.address || entry.label || "Unnamed point"}</span>
+              <span className="ml-auto shrink-0 font-mono text-[0.72rem] text-muted-foreground">
+                {entry.latitude?.toFixed(5) ?? "?"}, {entry.longitude?.toFixed(5) ?? "?"}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 function AdminLocationEditor({ label, value, onChange }: { label: string; value: LocationDraft; onChange: (key: keyof LocationDraft, value: string | number | null) => void }) {
   return <div className="grid gap-2 p-4 border rounded-[10px]"><h4>{label}</h4><label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Label</span><Input value={value.label} onChange={(event) => onChange("label", event.target.value)} /></label><label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Address</span><Input value={value.address} onChange={(event) => onChange("address", event.target.value)} /></label><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1"><label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Latitude</span><Input type="number" step="any" value={value.latitude ?? ""} onChange={(event) => onChange("latitude", event.target.value === "" ? null : Number(event.target.value))} /></label><label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Longitude</span><Input type="number" step="any" value={value.longitude ?? ""} onChange={(event) => onChange("longitude", event.target.value === "" ? null : Number(event.target.value))} /></label></div></div>;
+}
+
+function AdminCategoryEditor({ category, onPatch, onRemove }: { category: CategoryApplication; onPatch: (id: string, patch: Partial<ScoringInputs>) => void; onRemove: () => void }) {
+  const inputs = category.scoringInputs;
+  const patch = (partial: Partial<ScoringInputs>) => onPatch(category.id, partial);
+  return <div className="grid gap-3 p-4 border rounded-[10px]">
+    <div className="flex items-center justify-between gap-3"><h4>{CATEGORY_LABELS[category.categoryType]} — {scoreCategory(category).total}/100</h4><Button variant="secondary" onClick={onRemove}><X size={16} /> Remove</Button></div>
+    <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+      {CATEGORY_TEXT_FIELDS.map(([key, label]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{label}</span><Input type="text" value={inputs[key] ?? ""} onChange={(event) => patch(fieldPatch(key, event.target.value))} /></label>)}
+      {CATEGORY_NUMBER_FIELDS.map(([key, label]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{label}</span><Input type="number" step="any" value={inputs[key] ?? ""} onChange={(event) => patch(fieldPatch(key, parseScoringNumber(event.target.value)))} /></label>)}
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Additional docs</span><Input type="text" value={(inputs.additionalDocs ?? []).join(", ")} onChange={(event) => { const docs = event.target.value.split(",").map((doc) => doc.trim()).filter(Boolean); patch({ additionalDocs: docs.length > 0 ? docs : undefined }); }} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Difficult service type</span><Input type="text" value={inputs.difficultServiceType ?? ""} onChange={(event) => patch({ difficultServiceType: parseScoringEnum(event.target.value, DIFFICULT_SERVICE_TYPES) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Employment purpose</span><Input type="text" value={inputs.employmentPurpose ?? ""} onChange={(event) => patch({ employmentPurpose: parseScoringEnum(event.target.value, EMPLOYMENT_PURPOSES) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sports level</span><Input type="text" value={inputs.sportsLevel ?? ""} onChange={(event) => patch({ sportsLevel: parseScoringEnum(event.target.value, SPORTS_LEVELS) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Leadership role</span><Input type="text" value={inputs.leadershipRole ?? ""} onChange={(event) => patch({ leadershipRole: parseScoringEnum(event.target.value, LEADERSHIP_ROLES) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sibling prefect level</span><Input type="text" value={inputs.siblingPrefectLevel ?? ""} onChange={(event) => patch({ siblingPrefectLevel: parseScoringEnum(event.target.value, SPORTS_LEVELS) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sibling exam achievement</span><Input type="text" value={inputs.siblingExamAchievement ?? ""} onChange={(event) => patch({ siblingExamAchievement: parseScoringEnum(event.target.value, SIBLING_EXAM_ACHIEVEMENTS) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sibling studied at applied school (yes)</span><Input type="text" value={inputs.siblingStudiedAtAppliedSchool === true ? "yes" : ""} onChange={(event) => patch({ siblingStudiedAtAppliedSchool: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Two or more siblings applying (yes)</span><Input type="text" value={inputs.twoOrMoreSiblingsApplying === true ? "yes" : ""} onChange={(event) => patch({ twoOrMoreSiblingsApplying: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sibling praiseworthy achievement (yes)</span><Input type="text" value={inputs.siblingPraiseworthyAchievement === true ? "yes" : ""} onChange={(event) => patch({ siblingPraiseworthyAchievement: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Parent support rendered (yes)</span><Input type="text" value={inputs.parentsSupportRendered === true ? "yes" : ""} onChange={(event) => patch({ parentsSupportRendered: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Grade 5 Scholarship passed</span><Input type="text" value={inputs.grade5ScholarshipPassed === true ? "yes" : ""} onChange={(event) => patch({ grade5ScholarshipPassed: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
+    </div>
+    <p className="text-muted-foreground text-[0.82rem]">Schools selected: {schoolsSelectedSummary(inputs.schoolsWithinRadius)}</p>
+  </div>;
 }
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) { return <label className="flex items-center gap-2"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><span>{checked ? <Check size={14} /> : null}</span>{label}</label>; }

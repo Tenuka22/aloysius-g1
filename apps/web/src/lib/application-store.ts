@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export type LocationDraft = {
   label: string;
@@ -6,6 +7,62 @@ export type LocationDraft = {
   latitude: number | null;
   longitude: number | null;
   source: "manual" | "device" | "map" | "";
+};
+
+export const CATEGORY_TYPES = ["6.1", "6.2", "6.3", "6.4", "6.5", "6.6"] as const;
+export type CategoryType = (typeof CATEGORY_TYPES)[number];
+
+export type ScoringInputs = {
+  mainDocumentType?: string;
+  documentOwnership?: string;
+  yearsRegistered?: number;
+  additionalDocs?: string[];
+  electoralMotherYears?: number;
+  electoralFatherYears?: number;
+  schoolsWithinRadius?: string[];
+  schoolsRadiusKm?: number;
+  periodOfServiceYears?: number;
+  difficultServiceType?: "current" | "previous" | "none";
+  difficultServiceDistanceKm?: number;
+  difficultServiceExtraPeriods?: number;
+  unutilizedLeaveYears?: number;
+  serviceLocationLevel?: string;
+  residenceToSchoolKm?: number;
+  workplaceToSchoolKm?: number;
+  previousWorkplaceDistanceKm?: number;
+  previousWorkplacePeriodYears?: number;
+  transferElapsedYears?: number;
+  periodAbroadYears?: number;
+  employmentPurpose?: "board" | "personal" | "government" | "education";
+  alumniYearsAtSchool?: number;
+  grade5ScholarshipPassed?: boolean;
+  olSubjectCount?: number;
+  olGradeS?: number;
+  olGradeC?: number;
+  olGradeB?: number;
+  olGradeA?: number;
+  alSubjectCount?: number;
+  alGradeS?: number;
+  alGradeC?: number;
+  alGradeB?: number;
+  alGradeA?: number;
+  sportsLevel?: string;
+  sportsCount?: number;
+  leadershipRole?: string;
+  siblingsCurrentlyStudyingCount?: number;
+  siblingStudiedAtAppliedSchool?: boolean;
+  twoOrMoreSiblingsApplying?: boolean;
+  siblingPrefectLevel?: string;
+  siblingPrefectCount?: number;
+  siblingExamAchievement?: string;
+  siblingPraiseworthyAchievement?: boolean;
+  parentsSupportRendered?: boolean;
+};
+
+export type CategoryApplication = {
+  id: string;
+  categoryType: CategoryType;
+  scoringInputs: ScoringInputs;
 };
 
 export type ApplicationDraft = {
@@ -40,6 +97,9 @@ export type ApplicationDraft = {
     electoralDistrict: string;
   };
   declaration: { confirmed: boolean; consent: boolean };
+  categories: CategoryApplication[];
+  deviceLocationHistory: LocationDraft[];
+  userLocationHistory: LocationDraft[];
   lastSavedAt: string | null;
 };
 
@@ -52,8 +112,79 @@ export const emptyDraft: ApplicationDraft = {
   guardian: { relationship: "", fullName: "", nic: "", phone: "", whatsappPhone: "", email: "" },
   residence: { permanentAddress: "", currentAddress: "", sameAsPermanent: false, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "" },
   declaration: { confirmed: false, consent: false },
+  categories: [],
+  deviceLocationHistory: [],
+  userLocationHistory: [],
   lastSavedAt: null,
 };
+
+export const LOCATION_HISTORY_LIMIT = 25;
+
+function normalizeLocationHistory(input: unknown): LocationDraft[] {
+  if (!Array.isArray(input)) return [];
+  const history: LocationDraft[] = [];
+  for (const entry of input) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const candidate = entry as Partial<LocationDraft>;
+    if (typeof candidate.latitude !== "number" || typeof candidate.longitude !== "number") continue;
+    history.push({
+      label: typeof candidate.label === "string" ? candidate.label : "",
+      address: typeof candidate.address === "string" ? candidate.address : "",
+      latitude: candidate.latitude,
+      longitude: candidate.longitude,
+      source: typeof candidate.source === "string" && ["manual", "device", "map"].includes(candidate.source) ? (candidate.source as LocationDraft["source"]) : "map",
+    });
+    if (history.length >= LOCATION_HISTORY_LIMIT) break;
+  }
+  return history;
+}
+
+export function prependLocationHistory(list: LocationDraft[], entry: LocationDraft): LocationDraft[] {
+  const head = list[0];
+  if (head && head.latitude === entry.latitude && head.longitude === entry.longitude) return list;
+  return [entry, ...list].slice(0, LOCATION_HISTORY_LIMIT);
+}
+
+export function applyLocationChange(
+  draft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory">,
+  value: LocationDraft,
+  defaultValue?: LocationDraft,
+): Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory"> {
+  let deviceLocationHistory = draft.deviceLocationHistory;
+  let userLocationHistory = draft.userLocationHistory;
+  if (defaultValue) deviceLocationHistory = prependLocationHistory(deviceLocationHistory, defaultValue);
+  if (value.latitude != null && value.longitude != null) {
+    userLocationHistory = prependLocationHistory(userLocationHistory, value);
+  }
+  return { deviceLocationHistory, userLocationHistory };
+}
+
+export function createCategory(categoryType: CategoryType, existingCount = 0): CategoryApplication {
+  const id = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${categoryType}-${existingCount}`;
+  return { id, categoryType, scoringInputs: {} };
+}
+
+export function normalizeCategories(input: unknown): CategoryApplication[] {
+  if (!Array.isArray(input)) return [];
+  const seenIds = new Set<string>();
+  const categories: CategoryApplication[] = [];
+  for (const [index, entry] of input.entries()) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const candidate = entry as Record<string, unknown>;
+    const categoryType = candidate["categoryType"];
+    if (typeof categoryType !== "string" || !(CATEGORY_TYPES as readonly string[]).includes(categoryType)) continue;
+    let id = typeof candidate["id"] === "string" && candidate["id"] !== "" ? candidate["id"] : `${categoryType}-${index}`;
+    if (seenIds.has(id)) id = `${categoryType}-${categories.length}-${index}`;
+    seenIds.add(id);
+    const rawScoringInputs = candidate["scoringInputs"];
+    const scoringInputs =
+      typeof rawScoringInputs === "object" && rawScoringInputs !== null && !Array.isArray(rawScoringInputs)
+        ? ({ ...(rawScoringInputs as ScoringInputs) } as ScoringInputs)
+        : {};
+    categories.push({ id, categoryType: categoryType as CategoryType, scoringInputs });
+  }
+  return categories;
+}
 
 export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefined): ApplicationDraft {
   return {
@@ -66,18 +197,56 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
     guardian: { ...emptyDraft.guardian, ...input?.guardian },
     residence: { ...emptyDraft.residence, ...input?.residence },
     declaration: { ...emptyDraft.declaration, ...input?.declaration },
+    categories: normalizeCategories(input?.categories),
+    deviceLocationHistory: normalizeLocationHistory(input?.deviceLocationHistory),
+    userLocationHistory: normalizeLocationHistory(input?.userLocationHistory),
   };
 }
 
 type ApplicationStore = ApplicationDraft & {
   updateDraft: (patch: Partial<ApplicationDraft>) => void;
   setStep: (currentStep: number) => void;
+  addCategory: (categoryType: CategoryType) => void;
+  removeCategory: (id: string) => void;
+  updateCategoryInputs: (id: string, patch: Partial<ScoringInputs>) => void;
   reset: () => void;
 };
 
-export const useApplicationStore = create<ApplicationStore>()((set) => ({
+export const APPLICATION_DRAFT_STORAGE_KEY = "aloysius-g1-application-draft";
+
+export const useApplicationStore = create<ApplicationStore>()(
+  persist(
+    (set) => ({
       ...emptyDraft,
       updateDraft: (patch) => set({ ...patch, lastSavedAt: new Date().toISOString() }),
       setStep: (currentStep) => set({ currentStep }),
+      addCategory: (categoryType) =>
+        set((state) => ({
+          categories: [...state.categories, createCategory(categoryType, state.categories.length)],
+          lastSavedAt: new Date().toISOString(),
+        })),
+      removeCategory: (id) =>
+        set((state) => ({
+          categories: state.categories.filter((category) => category.id !== id),
+          lastSavedAt: new Date().toISOString(),
+        })),
+      updateCategoryInputs: (id, patch) =>
+        set((state) => ({
+          categories: state.categories.map((category) =>
+            category.id === id ? { ...category, scoringInputs: { ...category.scoringInputs, ...patch } } : category,
+          ),
+          lastSavedAt: new Date().toISOString(),
+        })),
       reset: () => set(emptyDraft),
-    }));
+    }),
+    {
+      name: APPLICATION_DRAFT_STORAGE_KEY,
+      version: 1,
+      storage: createJSONStorage(() => window.localStorage),
+      merge: (persisted, current) => ({
+        ...current,
+        ...normalizeDraft(persisted as Partial<ApplicationDraft>),
+      }),
+    },
+  ),
+);

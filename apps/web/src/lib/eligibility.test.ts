@@ -20,6 +20,7 @@ const LOCATION_REASON = "Select a location on the map to continue.";
 const NIC_REASON = "Complete all required guardian fields to continue.";
 const NIC_INVALID_REASON = "Enter a valid NIC number for the guardian.";
 const DECLARATION_REASON = "You must confirm the declaration and provide consent to proceed.";
+const CATEGORIES_REASON = "Select at least one category to continue.";
 
 describe("isRestrictedGender", () => {
   test.each(DISALLOWED_GENDERS)("blocks %s", (gender) => expect(isRestrictedGender(gender)).toBe(true));
@@ -169,7 +170,17 @@ describe("getNextStepReason — step 2 (guardian)", () => {
     expect(getNextStepReason({ step: 2, ...deps })).toBe(expected));
 });
 
-describe("getNextStepReason — step 4 (declaration) exhaustive", () => {
+describe("getNextStepReason — step 4 (categories)", () => {
+  test.each([
+    ["no categories blocked", [], CATEGORIES_REASON],
+    ["missing categories blocked", undefined, CATEGORIES_REASON],
+    ["one category proceeds", [{ categoryType: "6.1" }], ""],
+    ["multiple categories proceed", [{ categoryType: "6.1" }, { categoryType: "6.4" }], ""],
+  ])("%s", (_label, categories, expected) =>
+    expect(getNextStepReason({ step: 4, categories })).toBe(expected));
+});
+
+describe("getNextStepReason — step 5 (declaration) exhaustive", () => {
   test.each([
     ["confirmed true, consent true proceeds", { confirmed: true, consent: true }, ""],
     ["confirmed true, consent false blocked", { confirmed: true, consent: false }, DECLARATION_REASON],
@@ -177,11 +188,11 @@ describe("getNextStepReason — step 4 (declaration) exhaustive", () => {
     ["confirmed false, consent false blocked", { confirmed: false, consent: false }, DECLARATION_REASON],
     ["missing declaration blocked", undefined, DECLARATION_REASON],
   ])("%s", (_label, declaration, expected) =>
-    expect(getNextStepReason({ step: 4, declaration })).toBe(expected));
+    expect(getNextStepReason({ step: 5, declaration })).toBe(expected));
 });
 
 describe("getNextStepReason — other steps", () => {
-  test.each([3, 5, -1, 99])("step %d always proceeds", (step) =>
+  test.each([3, 6, -1, 99])("step %d always proceeds", (step) =>
     expect(getNextStepReason({ step })).toBe(""));
   it("respects no other step's rules", () =>
     expect(getNextStepReason({ step: 3, locationCanProceed: false, duplicateBirthCertificate: true, declaration: { confirmed: false, consent: false } })).toBe(""));

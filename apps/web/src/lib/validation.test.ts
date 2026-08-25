@@ -1,9 +1,13 @@
 import { describe, expect, it, test } from "vitest";
 import {
   applicantStepSchema,
+  categoryApplicationSchema,
+  categoryStepSchema,
+  categoriesSchema,
   declarationStepSchema,
   guardianStepSchema,
   residenceStepSchema,
+  scoringInputsSchema,
   signInSchema,
   signUpSchema,
 } from "./validation";
@@ -78,7 +82,7 @@ describe("applicantStepSchema", () => {
     expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: G1_DOB_CUTOFF() }).success).toBe(true));
   it("rejects DOB after the cutoff", () => {
     const nextYear = new Date().getFullYear() + 1;
-    expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: `${nextYear}-02-01` }).success).toBe(false));
+    expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: `${nextYear}-02-01` }).success).toBe(false);
   });
   it("rejects an empty DOB", () =>
     expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: "" }).success).toBe(false));
@@ -145,4 +149,62 @@ describe("declarationStepSchema", () => {
     }
   });
   it("accepts both true", () => expect(declarationStepSchema.safeParse({ confirmed: true, consent: true }).success).toBe(true));
+});
+
+const validCategory = {
+  id: "category-1",
+  categoryType: "6.1",
+  scoringInputs: { mainDocumentType: "title-deed", yearsRegistered: 5, additionalDocs: ["nic"] },
+};
+
+describe("scoringInputsSchema", () => {
+  it("accepts an empty object", () => expect(scoringInputsSchema.safeParse({}).success).toBe(true));
+  it("coerces numeric fields from strings", () =>
+    expect(scoringInputsSchema.parse({ yearsRegistered: "5", schoolsRadiusKm: "1.5" })).toEqual({ yearsRegistered: 5, schoolsRadiusKm: 1.5 }));
+  it("accepts every difficult service type", () => {
+    for (const difficultServiceType of ["current", "previous", "none"]) {
+      expect(scoringInputsSchema.safeParse({ difficultServiceType }).success).toBe(true);
+    }
+  });
+  it("rejects a difficult service type outside the enum", () =>
+    expect(scoringInputsSchema.safeParse({ difficultServiceType: "future" }).success).toBe(false));
+  it("rejects an employment purpose outside the enum", () =>
+    expect(scoringInputsSchema.safeParse({ employmentPurpose: "charity" }).success).toBe(false));
+  it("rejects a non-positive schools radius", () =>
+    expect(scoringInputsSchema.safeParse({ schoolsRadiusKm: 0 }).success).toBe(false));
+  it("rejects a non-numeric schools radius", () =>
+    expect(scoringInputsSchema.safeParse({ schoolsRadiusKm: "nearby" }).success).toBe(false));
+  it("rejects non-string additional docs entries", () =>
+    expect(scoringInputsSchema.safeParse({ additionalDocs: [1] }).success).toBe(false));
+});
+
+describe("categoryApplicationSchema", () => {
+  it("accepts a valid category", () => expect(categoryApplicationSchema.safeParse(validCategory).success).toBe(true));
+  it("accepts every category type", () => {
+    for (const categoryType of ["6.1", "6.4", "6.5", "6.6"]) {
+      expect(categoryApplicationSchema.safeParse({ ...validCategory, categoryType }).success).toBe(true);
+    }
+  });
+  it("rejects an unsupported category type", () =>
+    expect(categoryApplicationSchema.safeParse({ ...validCategory, categoryType: "6.9" }).success).toBe(false));
+  it("rejects an empty id", () => expect(categoryApplicationSchema.safeParse({ ...validCategory, id: "" }).success).toBe(false));
+  it("rejects missing scoring inputs", () => {
+    const { scoringInputs: _omitted, ...withoutScoringInputs } = validCategory;
+    expect(categoryApplicationSchema.safeParse(withoutScoringInputs).success).toBe(false);
+  });
+});
+
+describe("categoriesSchema", () => {
+  it("accepts categories with unique ids", () =>
+    expect(categoriesSchema.safeParse([validCategory, { ...validCategory, id: "category-2", categoryType: "6.4" }]).success).toBe(true));
+  it("rejects duplicate ids", () =>
+    expect(categoriesSchema.safeParse([validCategory, { ...validCategory, categoryType: "6.4" }]).success).toBe(false));
+  it("accepts an empty array", () => expect(categoriesSchema.safeParse([]).success).toBe(true));
+});
+
+describe("categoryStepSchema", () => {
+  it("accepts at least one category", () => expect(categoryStepSchema.safeParse({ categories: [validCategory] }).success).toBe(true));
+  it("rejects an empty categories list", () => expect(categoryStepSchema.safeParse({ categories: [] }).success).toBe(false));
+  it("propagates duplicate id failures", () =>
+    expect(categoryStepSchema.safeParse({ categories: [validCategory, { ...validCategory, categoryType: "6.4" }] }).success).toBe(false));
 });

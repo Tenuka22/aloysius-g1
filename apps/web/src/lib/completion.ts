@@ -7,6 +7,7 @@ export type CompletionData = {
   guardian?: Partial<ApplicationDraft["guardian"]>;
   residence?: Partial<ApplicationDraft["residence"]>;
   declaration?: Partial<ApplicationDraft["declaration"]>;
+  categories?: ApplicationDraft["categories"];
 };
 
 export function completionPercent(data: CompletionData | null | undefined): number {
@@ -28,6 +29,7 @@ export function completionPercent(data: CompletionData | null | undefined): numb
         data.residence?.gnDivision &&
         data.residence?.electoralDistrict,
     ),
+    Array.isArray(data.categories) && data.categories.length >= 1,
     Boolean(data.declaration?.confirmed && data.declaration?.consent),
   ];
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);

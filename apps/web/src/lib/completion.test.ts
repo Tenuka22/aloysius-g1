@@ -22,6 +22,9 @@ function withSection(draft: Draft, section: keyof Draft, completed: boolean): Dr
     case "declaration":
       if (completed) next.declaration = { confirmed: true, consent: true };
       break;
+    case "categories":
+      if (completed) next.categories = [{ id: "cat-1", categoryType: "6.1", scoringInputs: {} }];
+      break;
     default:
       throw new Error(`Unexpected section ${section as string}`);
   }
@@ -29,7 +32,7 @@ function withSection(draft: Draft, section: keyof Draft, completed: boolean): Dr
 }
 
 describe("completionPercent", () => {
-  const sections = ["location", "applicant", "guardian", "residence", "declaration"] as const;
+  const sections = ["location", "applicant", "guardian", "residence", "categories", "declaration"] as const;
 
   it("returns 0 for null, undefined and empty drafts", () => {
     expect(completionPercent(null)).toBe(0);
@@ -37,14 +40,14 @@ describe("completionPercent", () => {
     expect(completionPercent(emptyDraft)).toBe(0);
   });
 
-  it("counts each completed section as one fifth (all 32 combinations)", () => {
-    for (let count = 0; count <= 5; count += 1) {
+  it("counts each completed section as one sixth (all 64 combinations)", () => {
+    for (let count = 0; count <= 6; count += 1) {
       for (const combo of combinations(sections, count)) {
         let draft = JSON.parse(JSON.stringify(emptyDraft)) as Draft;
         for (const section of sections) {
           if (combo.has(section)) draft = withSection(draft, section, true);
         }
-        expect(completionPercent(draft)).toBe(Math.round((count / 5) * 100));
+        expect(completionPercent(draft)).toBe(Math.round((count / 6) * 100));
       }
     }
   });
@@ -52,19 +55,28 @@ describe("completionPercent", () => {
   it("treats a location with address but no coordinates as complete", () => {
     const draft = withSection(emptyDraft, "location", true);
     draft.location = { ...draft.location, latitude: null, longitude: null };
-    expect(completionPercent(draft)).toBe(20);
+    expect(completionPercent(draft)).toBe(17);
   });
 
   it("treats a location with coordinates but no address as complete", () => {
     const draft = JSON.parse(JSON.stringify(emptyDraft)) as Draft;
     draft.location = { ...draft.location, latitude: 7.29, longitude: 80.63 };
-    expect(completionPercent(draft)).toBe(20);
+    expect(completionPercent(draft)).toBe(17);
   });
 
   test("a single missing field within a section drops the whole section", () => {
     const draft = withSection(emptyDraft, "guardian", true);
     draft.guardian.email = "";
     expect(completionPercent(draft)).toBe(0);
+  });
+
+  it("treats a draft with at least one category as categories-complete", () => {
+    const draft = withSection(emptyDraft, "categories", true);
+    expect(completionPercent(draft)).toBe(Math.round((1 / 6) * 100));
+  });
+
+  it("treats an empty categories list as incomplete", () => {
+    expect(completionPercent({ ...emptyDraft, categories: [] })).toBe(0);
   });
 
   it("reports 100% for a fully completed draft", () => {

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provide a persistent G1 2026 application flow for multiple children. Each child has a separate long-lived application key that can reopen, update, submit, or remove that child’s record.
+Provide a persistent G1 2026 application flow for multiple children. Each child has a separate long-lived application key that can reopen, update, submit, or remove that child’s record. Applications support multiple marking scheme categories (6.1, 6.4, 6.5, 6.6) per child, each with its own scoring inputs and school selection.
 
 ## Current implementation
 
@@ -15,16 +15,93 @@ Provide a persistent G1 2026 application flow for multiple children. Each child 
 - The home page displays the latest applicant status for each saved key and the live number of server-stored applications.
 - Application removal uses shared alert dialogs. If the server cannot remove a record, its local key is still removed and the user is told that the server copy may remain. Keys already missing on the server are automatically pruned from local storage.
 
-## Form sequence
+## Form sequence (7 steps)
 
-1. **Application location** — Browser geolocation is requested automatically when available. Permission is required before continuing when the browser supports geolocation. If geolocation is unavailable, manual address or map selection is allowed. The true device location and user-selected location are stored separately.
+1. **Application location** — Browser geolocation is requested automatically when available. Permission is required before continuing when the browser supports geolocation. If geolocation is unavailable, manual address or map selection is allowed. The true device location and user-selected location are stored separately. The user-selected location (not the device location) is used as the center for school proximity calculations.
 2. **Applicant** — Full name, Sinhala name, gender, religion, education medium, date of birth, and birth certificate number.
 3. **Parent or guardian** — Mother, Father, or Guardian; full name, NIC, phone, WhatsApp phone, and email.
 4. **Residence** — Permanent/current addresses, same-address synchronization, district, DS division, GN division, and electoral district comboboxes backed by cached administrative data.
-5. **Declaration** — Accuracy confirmation and consent.
-6. **Review** — Complete read-only summary with working edit actions.
+5. **Categories** — Marking scheme category selection and per-category scoring inputs. User selects one or more categories (6.1, 6.4, 6.5, 6.6) and fills in the required scoring inputs for each. Each category includes a map-based school picker.
+6. **Declaration** — Accuracy confirmation and consent.
+7. **Review** — Complete read-only summary with working edit actions, including all category data.
 
-School preferences are intentionally excluded because this is a boys’ school and the school-selection step is not required.
+School preferences remain excluded because this is a boys’ school; the category step replaces any generic school-selection concept.
+
+## Category step (step index 4) — detailed design
+
+### Phase A: Category picker
+
+User sees checkboxes for four marking scheme categories. Any combination may be selected (unlimited). Each selected category expands into its own sub-form below the picker.
+
+| Category | Name | Max Marks |
+|----------|------|-----------|
+| 6.1 | Residence Verification & Proximity | 100 |
+| 6.4 | Period of Service & Distance | 100 |
+| 6.5 | Transfer Applications | 100 |
+| 6.6 | Foreign Employment & Proximity | 100 |
+
+### Phase B: Per-category scoring inputs
+
+Fields derive from `plans/g1-2026-marking-scheme.md`.
+
+**6.1 — Residence Verification:**
+
+- Main document type (dropdown: title deed applicant / title deed parents / lease deed / municipal or DS certificate / other documents)
+- Years registered at residence (number)
+- Additional documents (checkboxes: NIC, driving license, landline bill, marriage certificate, life insurance policy, school leaving certificate, child birth certificate, vehicle registration/license/insurance, bank passbook)
+- Electoral register — mother years (0–5)
+- Electoral register — father years (0–5)
+- **Schools within radius** (map picker)
+
+**6.4 — Period of Service:**
+
+- Period of service years (number)
+- Difficult service type (radio: currently working / previously worked / none)
+- If previously worked: distance of permanent residence from place of first appointment (km number)
+- Difficult service extra periods beyond one year (number of 6-month periods)
+- Unutilized leave years with more than 20 days unused (count 0–5)
+- Service location level (radio: same school / education zone or division / province / other education-related institution)
+- Distance: permanent residence to applied school (km number)
+- Distance: current workplace to applied school (km number)
+- **Schools within radius** (map picker)
+
+**6.5 — Transfer Applications:**
+
+- Distance previous workplace to new workplace (km number)
+- Period of service (years number)
+- Period served at previous place of service (years number)
+- Time elapsed since obtaining the transfer (years number)
+- Unutilized leave years count (0–5)
+- **Schools within radius** (map picker)
+
+**6.6 — Foreign Employment:**
+
+- Period spent abroad continuously with the child up to arrival (years number)
+- Employment purpose (radio: board executive duties / personal employment / Sri Lankan government needs / education-professional development)
+- **Schools within radius** (map picker)
+
+### Phase C: School map picker (shared across categories)
+
+A reusable Leaflet map component rendered at the bottom of each selected category sub-form.
+
+Behavior:
+
+- Map center = `selectedLocation` from step 0 (the user-selected location, never the device GPS location).
+- A geographic `Circle` overlay shows the radius around the home point.
+- Schools are plotted as clickable markers.
+- Every school inside the radius is listed with a checkbox; all checkboxes are enabled because data can be wrong and users must be able to select or deselect anything.
+- Clicking a marker toggles its checkbox.
+- The selected-school count feeds the proximity formulas (6.1: 5 × count, max 50; 6.5: 3 × count, max 30; 6.6: 3.5 × count, max 35).
+- Radius = home-to-school distances; the circle spans the furthest selectable school range with a sensible default (10 km) adjustable by the user.
+
+School data source:
+
+- Static `schools.ts` modeled after `divisions.ts`, covering government schools in the Galle and Matara districts.
+- Each entry: id, name (en/si), latitude, longitude, genderType (boys/girls/mixed), schoolType (national/provincial/private), districtId, dsId.
+- Coordinates are approximate reference points; users visually confirm positions on the map and control final selection.
+- Haversine distance calculation filters schools by radius client-side; no API round-trips.
+
+Scoring helpers live in `school-utils.ts` (haversineDistance, getSchoolsWithinRadius) so both the form and future server-side scoring can reuse them.
 
 ## Validation and policy rules
 
@@ -35,6 +112,8 @@ School preferences are intentionally excluded because this is a boys’ school a
 - Birth certificate numbers are required and unique in the database.
 - Submissions are locked in production until 9 September 2026.
 - Submitted applications can be updated until 11 September 2026.
+- At least one category must be selected before advancing past the category step.
+- Category scoring inputs stay optional while drafting; submission-time validation enforces required fields per selected category.
 - Review shows `Submit application` for a new record and `Update application` for a saved record; the update action is disabled when no data changed.
 
 ## State and synchronization model
@@ -48,251 +127,285 @@ ApplicationDraft = {
   applicant,
   guardian,
   residence,
+  categories: CategoryApplication[],
   declaration,
   lastSavedAt
+}
+
+CategoryApplication = {
+  id: string,
+  categoryType: "6.1" | "6.4" | "6.5" | "6.6",
+  scoringInputs: {
+    mainDocumentType?, documentOwnership?, yearsRegistered?,
+    additionalDocs?: string[], electoralMotherYears?, electoralFatherYears?,
+    schoolsWithinRadius?: string[], schoolsRadiusKm?,
+    periodOfServiceYears?, difficultServiceType?: "current"|"previous"|"none",
+    difficultServiceDistanceKm?, difficultServiceExtraPeriods?,
+    unutilizedLeaveYears?, serviceLocationLevel?,
+    residenceToSchoolKm?, workplaceToSchoolKm?,
+    previousWorkplaceDistanceKm?, previousWorkplacePeriodYears?, transferElapsedYears?,
+    periodAbroadYears?, employmentPurpose?: "board"|"personal"|"government"|"education"
+  }
 }
 ```
 
 Zustand owns the persisted local draft. TanStack Form owns field state. The active access key identifies the server record. Database refreshes replace the local draft with the latest server copy; debounced edits and step transitions sync local changes back to the server.
 
+Store helpers: `addCategory(type)` appends a normalized category with a fresh id, `removeCategory(id)` deletes it, and category sub-forms patch `scoringInputs` immutably.
+
 The home-page application count uses an oRPC `EventPublisher` and event iterator, publishing after application creation and deletion and consuming the stream as an SSE-style live update.
 
 ## State audit and invariants
 
-The application has four distinct state layers: route state (the active key and route), Zustand state (the persisted local draft), TanStack Form state (field editing), and server/database state (the authoritative saved record). The following invariants are now enforced:
+The application has four distinct state layers: route state (the active key and route), Zustand state (the persisted local draft), TanStack Form state (field editing), and server/database state (the authoritative saved record). Invariants:
 
 - A database load is normalized before entering either Zustand or TanStack Form, so older records cannot leave missing nested fields or crash location/session UI.
+- Categories are always normalized to an array on load; missing entries default to `[]` and malformed entries are dropped rather than crashing the wizard.
+- Category ids are stable strings generated once at add-time so reordering or reloading does not duplicate or orphan selections.
 - An invalid or deleted active key clears the active key and resets the local draft instead of silently showing another child’s stale data.
-- Server saves merge the current TanStack Form values with the current Zustand draft, preserving location, declaration, selected/default location, and other non-form state.
+- Server saves merge the current TanStack Form values with the current Zustand draft, preserving location, declaration, categories, selected/default location, and other non-form state.
 - Autosave is debounced and only runs for an active server key; step transitions still await an explicit save before changing steps.
 - The active key is separate from the list of saved keys, so creating another child cannot overwrite the current child’s session.
 - A local removal fallback is explicit: the local key is removed even if the server is unavailable, and the user is told which copy may remain.
 - Production submission locking is separate from draft persistence; collection mode no longer claims that server synchronization is disabled.
 
-Remaining architectural risks are document storage/metadata, payload integrity signing, and cross-device key recovery. Those require a defined storage and trust model before implementation.
+Remaining architectural risks are document storage/metadata, payload integrity signing, and cross-device key recovery.
 
 ## Database-first draft sessions and cross-device recovery
 
-The application must create its server record before requesting browser location or collecting form fields. The database is the source of truth for draft contents; browser storage may retain only the current session code and private access key.
+The application creates its server record before requesting browser location or collecting form fields. The database is the source of truth for draft contents; browser storage retains only the current session code and private access key.
 
-- Starting a new application creates an empty server draft immediately and returns two credentials: a private access key for opening/editing the record and a memorable year-scoped session code in the form `26ABC123` (the intake year, three uppercase letters, and three digits).
-- The session code is unique, indexed, and searchable. It identifies the draft/application record without exposing the access key. A public lookup may return only safe identifying metadata such as applicant name/status and whether an access key is still required.
-- The access key remains the authorization token and is never stored in plaintext in the database. It may be entered manually or imported through the existing QR flow. The session code helps the applicant find the correct child/application before presenting the access key.
-- Every meaningful form change and step transition saves to the database first. The user advances only after the save succeeds. Optional fields may remain empty and do not prevent a draft save; server-side validation is enforced when submitting.
-- Reloading or changing devices uses the session code plus the access key/QR import to retrieve the latest server draft. Local storage contains only those two credentials, never a second copy of the draft or a registry of stale records.
-- Draft creation and updates remain available outside the submission window. Submission is allowed only inside the configured published window. Editing a submitted application is allowed only within the configured edit window; outside it, the record is readable but locked.
-- The home and access pages provide session-code lookup and access-key/QR recovery. The UI must make the distinction clear: the session code finds the record, while the access key authorizes access.
+- Starting a new application creates an empty server draft immediately and returns two credentials: a private access key and a memorable year-scoped session code in the form `26ABC123`.
+- The session code is unique, indexed, and searchable. A public lookup returns only safe identifying metadata.
+- The access key remains the authorization token and is never stored plaintext. It may be entered manually or imported through the QR flow.
+- Every meaningful form change and step transition saves to the database first; the user advances only after the save succeeds.
+- Reloading or changing devices uses the session code plus the access key/QR import to retrieve the latest server draft.
+- Draft creation and updates remain available outside the submission window. Submission is allowed only inside the configured published window.
+- Category selections save with every autosave like any other draft section.
 
 ### Database/API changes
 
-- Add a unique `session_code` column to `applications` and generate collision-safe `26ABC123` values server-side.
-- Add `application.start`, `application.lookup`, and update `application.create/get/update` contracts so drafts can be created without a birth certificate and returned with their session code.
-- Return the session code with authorized loads and show it in the application header; never return access-key hashes.
-- Remove browser-local draft persistence; retain only the active session code and access key for resuming the server record.
-- Keep the configured open/publish window separate from draft persistence and enforce read/edit/submit policy on the server.
+- None required for categories: the open `draftSchema` (`Record<string, unknown>`) accepts the new `categories` array inside the existing JSON `data` blob.
+- `withoutSchoolPreferences()` strips a legacy `schools` key only; the new `categories` key passes through untouched.
+- Existing create/get/update/submit contracts continue unchanged.
 
 ## Implementation structure
 
-- `apps/web/src/routes/index.tsx`: home page, saved-key list, live count, and deletion dialogs.
-- `apps/web/src/routes/application.tsx`: application route and administrative-data loader.
-- `apps/web/src/routes/application.access.tsx`: verified application-key dialog and database load.
-- `apps/web/src/components/application/application-form.tsx`: wizard, persistence, validation, synchronization, and review.
-- `apps/web/src/components/application/location-step.tsx`: browser geolocation, map selection, true/selected location handling, and reverse geocoding.
-- `apps/web/src/lib/application-store.ts`: typed Zustand persisted draft.
-- `packages/api/src/routers/index.ts`: create/get/update/submit/remove/status procedures and live application-count event iterator.
-- `packages/db/src/schema/applications.ts`: application record schema.
-- `packages/db/src/migrations/`: application, birth-certificate uniqueness, and submission-state migrations.
+New files:
+
+- `apps/web/src/lib/schools.ts`: static Galle + Matara district school dataset (id, names, coordinates, genderType, schoolType, districtId, dsId).
+- `apps/web/src/lib/school-utils.ts`: haversine distance and radius filtering utilities with unit tests.
+- `apps/web/src/components/application/category-step.tsx`: category picker plus per-category scoring-input sub-forms embedding the school map picker.
+- `apps/web/src/components/application/school-map-picker.tsx`: Leaflet map centered on the user-selected location with a radius circle and selectable school markers/checkboxes.
+
+Modified files:
+
+- `apps/web/src/lib/application-store.ts`: add `CategoryApplication` type, `categories` field, CRUD helpers, and normalization defaults.
+- `apps/web/src/lib/validation.ts`: Zod schemas for category payloads and the category step gate.
+- `apps/web/src/components/application/application-form.tsx`: expand the wizard to seven steps inserting Categories at index 4; persist categories through the existing save pipeline.
+- `apps/web/src/components/application/review-step.tsx` (or review section): render every selected category with its inputs, selected schools, and computed proximity counts.
+- `apps/web/src/lib/eligibility.ts`: shift step indices for the inserted step and add the at-least-one-category rule.
+- `apps/web/src/lib/completion.ts`: include category selection completeness in the percentage.
+- `apps/web/src/components/admin/admin-application-editor.tsx`: render a categories tab listing per-category inputs and chosen schools; editable fields follow the existing auto-label convention.
+
+Unchanged:
+
+- `packages/api/*` and `packages/db/*` require no schema or contract changes.
+
+## Implementation order
+
+1. Data layer: `schools.ts`, `school-utils.ts` with haversine/radius helpers and tests.
+2. State layer: store categories support, normalization, Zod validation schemas.
+3. Components: `school-map-picker.tsx`, then `category-step.tsx`.
+4. Wiring: wizard expansion, review rendering, eligibility/completion updates.
+5. Admin: categories display/edit in the application detail view.
+6. Verification: `bun run typecheck`, lint, and full vitest suite.
 
 ## Deferred work
 
-- Document upload/storage and displaying actual uploaded documents; the home page currently displays document metadata/count when present in the saved record.
+- Document upload/storage and displaying actual uploaded documents.
 - Cryptographic signing/integrity protection for the JSON payload beyond access-key authorization.
-- Official school directory lookup and final electoral validation.
-- Administrator review and notification workflow.
+- Official verified school directory with authoritative coordinates; current dataset ships approximate reference points.
+- Server-side scoring computation using the shared marking scheme rules.
+- Administrator review/notification workflow enhancements.
 
 ## Admin panel observability plan
 
-The authenticated admin area provides an operational view of the G1 application system. It is separate from the applicant flow and is restricted to the Better Auth admin role.
+The authenticated admin area provides an operational view of the G1 application system, restricted to the Better Auth admin role.
 
 ### Access and roles
 
-- Add a dedicated admin route under the authenticated route group.
-- Restrict the route and all admin procedures to users with the Better Auth admin role; an authenticated user without the admin role must receive `FORBIDDEN`.
-- Keep applicant access-key procedures separate from authenticated admin procedures. Admins should not need or see applicants’ plaintext access keys.
-- Use the existing site-admin bootstrap and Better Auth session as the source of identity and authorization.
+- Dedicated admin route under the authenticated route group.
+- All admin procedures require the Better Auth admin role; others receive `FORBIDDEN`.
+- Applicant access-key procedures stay separate; admins never see plaintext access keys.
 
 ### Admin overview
-
-The overview should show:
 
 - Total application records currently stored.
 - Draft, submitted, and recently updated counts.
 - Applications created and updated over time.
 - Applications with incomplete required fields.
-- Duplicate or rejected birth-certificate attempts, where safely measurable.
-- Validation/error trends, such as invalid email addresses, missing phone numbers, invalid DOB, disallowed gender/religion, and missing location.
-- Synchronization health: local-only activity cannot be observed by the server, while server saves, updates, submissions, and deletions can be counted and timestamped.
+- Duplicate or rejected birth-certificate attempts where safely measurable.
+- Validation/error trends such as invalid email addresses, missing phones, invalid DOB, disallowed gender/religion, missing location.
+- Category distribution: applications per marking scheme category (6.1, 6.4, 6.5, 6.6).
+- Synchronization health distinguishing unobservable local-only activity from counted server saves, updates, submissions, and deletions.
 
 ### Application inspection
 
-- Show a searchable, paginated table of applications using safe metadata: record ID, applicant name, birth-certificate hint or masked value, status, created time, updated time, submitted time, and validation state.
+- Searchable, paginated table with safe metadata: record ID, applicant name, masked birth-certificate hint, status, categories applied, created/updated/submitted times, validation state.
 - Never show plaintext access keys, passwords, or unnecessary private secrets.
-- Open a detail view with the saved application sections, default/true location, selected location, and document metadata when documents exist.
-- Record an audit trail for admin reads, edits, exports, and deletes if those actions are introduced.
+- Detail view includes saved sections, default/true and selected locations, per-category inputs, selected schools, and document metadata when present.
+- Audit trail hooks for admin reads, edits, exports, and deletes when introduced.
 
 ### API and data integration
 
-- Add authenticated admin-only API procedures for summary metrics, paginated application lists, application detail, and validation/error reports.
-- Derive metrics from the `applications` table and structured application data rather than duplicating counts in the browser.
-- Add explicit status/validation fields or a server-side validation result model if querying JSON data becomes too fragile.
-- Publish admin metrics updates through the existing oRPC event-iterator pattern when application records are created, updated, submitted, or deleted.
-- Keep the applicant event stream and admin event stream separate so application-count data is not accidentally exposed with private application details.
+- Admin-only procedures for summary metrics, paginated lists, application detail, and validation reports.
+- Metrics derived from the `applications` table and structured data; category distribution derives from the JSON blob until a dedicated model proves necessary.
+- Admin metrics publish through the oRPC event-iterator pattern on create/update/submit/delete.
+- Applicant and admin event streams stay separate.
 
 ### Validation and data-quality reporting
 
-- Validate email, phone, NIC, DOB, birth-certificate number, residence fields, location, and eligibility rules on the server as well as in the browser.
-- Store normalized validation results and error codes, not raw invalid secrets or full request payloads.
-- Make it clear whether an issue was detected during draft save, update, or submission.
-- Treat a missing local key as a client synchronization issue; it must not be reported as an applicant validation failure.
+- Validate email, phone, NIC, DOB, birth-certificate number, residence, location, and eligibility server-side as well as in the browser.
+- Store normalized validation results and error codes, not raw invalid secrets.
+- Distinguish issues detected during draft save, update, or submission.
+- Missing local keys report as client synchronization issues, never applicant validation failures.
 
 ### Admin UI structure
 
-- `/_auth/admin`: protected admin shell and navigation.
-- `/_auth/admin/index`: summary cards, trends, synchronization status, and recent activity.
-- `/_auth/admin/applications`: searchable, sortable, filterable application list with view, edit, and delete actions.
-- `/_auth/admin/applications/$id`: safe application detail and validation report.
-- Shared admin loading, empty, error, and permission-denied states should use the existing UI components.
+- `/_auth/admin`: protected shell and navigation.
+- `/_auth/admin/index`: summary cards, trends, sync status, recent activity.
+- `/_auth/admin/applications`: searchable, sortable, filterable list with view/edit/delete actions.
+- `/_auth/admin/applications/$id`: safe detail and validation report including a categories tab.
+- Shared loading, empty, error, and permission-denied states reuse existing UI components.
 
 ### Acceptance criteria
 
-- A non-admin cannot access admin routes or admin procedures.
-- An admin can see the number of applications and reconcile it with database state.
-- An admin can identify incomplete applications and common invalid-email/data-quality issues without seeing access keys.
-- Updates, submissions, deletions, and synchronization failures are distinguishable in the activity view.
-- The admin view remains useful when there are zero applications, stale client keys, failed saves, or partially completed drafts.
+- Non-admins cannot reach admin routes or procedures.
+- Admins reconcile application counts with database state.
+- Admins identify incomplete applications and data-quality issues without seeing access keys.
+- Admins see which categories each application uses with per-category inputs and selected schools.
+- Updates, submissions, deletions, and synchronization failures remain distinguishable in activity views.
+- The admin view stays useful with zero applications, stale client keys, failed saves, or partially completed drafts.
 
 ### Implemented admin slice
 
-- Added `adminProcedure`, requiring an authenticated Better Auth user with `role === "admin"`.
-- Added admin overview and paginated/searchable application procedures.
-- Added `/_auth/admin` with total, draft, submitted, incomplete, and invalid-email metrics.
-- Added safe application metadata and validation issue counts without exposing plaintext access keys.
-- Added recent activity and SSE live updates for create, update, submit, and delete events.
-- Added responsive admin dashboard styling and permission-denied UI.
-- Added the `/admin/applications` child route and rendered nested admin routes through the admin shell outlet.
-- Added admin detail inspection for complete saved data, including default/device and user-selected locations.
-- Added confirmation-protected admin editing and deletion with server-side admin procedures.
-- Added table sorting and status/data-quality filtering.
+- `adminProcedure` requiring authenticated Better Auth user with `role === "admin"`.
+- Admin overview and paginated/searchable application procedures.
+- `/_auth/admin` dashboard with total, draft, submitted, incomplete, invalid-email metrics.
+- Safe metadata plus validation issue counts without plaintext keys.
+- Recent activity SSE updates for create/update/submit/delete.
+- Responsive styling and permission-denied UI.
+- `/admin/applications` child routes rendered through the admin shell outlet.
+- Detail inspection of complete saved data including device and user-selected locations.
+- Confirmation-protected admin editing/deletion via server procedures.
+- Table sorting and status/data-quality filtering.
 
-Remaining admin work is persistent validation/audit records, document metadata, appeals, and richer time-series reporting.
+Remaining admin work: persistent validation/audit records, document metadata, appeals polish, richer time-series reporting, category distribution cards.
 
 ## Appeals, disputes, and lost-key recovery
 
-The admin panel must include a separate appeals queue for applicants who cannot safely resolve an application themselves.
+The admin panel includes a separate appeals queue for applicants who cannot safely resolve an application themselves.
 
 ### Appeal reasons
 
 - Wrong child or incorrect applicant information was saved.
-- A birth certificate number is already used by another application, but the applicant claims ownership or reports misuse.
+- A birth certificate number is already used but the applicant claims ownership or reports misuse.
 - The applicant lost the application key.
 - The applicant believes an application was created fraudulently or by mistake.
 - The applicant needs an administrator to correct or remove a record.
 
 ### Applicant flow
 
-- Add a public appeal form that accepts a contact method, child/applicant identifying details, birth-certificate details, appeal reason, explanation, and optional supporting-document metadata.
-- Do not require the application key when the reason is “lost key,” but require enough information for manual identity verification.
+- Public appeal form accepting contact method, identifying details, birth-certificate details, reason, explanation, and optional supporting-document metadata.
+- No key required for “lost key” but enough information for manual identity verification.
 - Never display or email the existing plaintext key automatically.
-- Show a reference number after the appeal is created and tell the applicant that an administrator must verify ownership.
-- Rate-limit appeals and avoid revealing whether a birth-certificate number exists to unauthenticated users.
+- Show a reference number after creation; administrators must verify ownership.
+- Rate-limit appeals; avoid revealing whether a birth-certificate exists to unauthenticated users.
 
 ### Admin workflow
 
-- Add an admin appeals queue with status: `open`, `needs_verification`, `approved`, `rejected`, and `resolved`.
-- Show the appeal, linked application metadata when a safe match exists, verification notes, and an audit history.
-- Allow an admin to request more information, approve a correction, delete a wrongly created application, or close the appeal.
-- For a verified lost key, issue a new one-time recovery key or rotate the application key; do not reveal the old key.
-- For a birth-certificate conflict, allow the admin to place the conflicting application on hold while ownership is investigated. Deletion must require an explicit confirmation and audit entry.
-- Every admin action must record who acted, when, the appeal reference, the target application ID, and the reason.
+- Queue statuses: `open`, `needs_verification`, `approved`, `rejected`, `resolved`.
+- Show appeal, safe linked-application metadata, verification notes, audit history.
+- Request more information, approve corrections, delete wrongly created records, or close appeals.
+- Verified lost keys produce a one-time replacement key; old keys rotate immediately.
+- Birth-certificate conflicts allow holds pending investigation; deletion requires explicit confirmation and audit entry.
+- Every action records actor, timestamp, appeal reference, target ID, and reason.
 
 ### Data and security boundaries
 
-- Store only a hash of appeal recovery tokens and application keys.
-- Keep appeals separate from application JSON so sensitive correspondence and verification state are queryable and auditable.
-- Admin APIs must require the admin role and must never return access-key plaintext.
-- Deleting an application must also revoke its active key and publish the application-count update.
-- A key rotation must invalidate the previous key immediately and update all local-session guidance after the applicant loads the replacement key.
+- Only hashes of recovery tokens and application keys are stored.
+- Appeals stay separate from application JSON for queryability and auditability.
+- Admin APIs require the admin role and never return key plaintext.
+- Deletion revokes active keys and publishes count updates.
+- Rotation invalidates prior keys immediately.
 
 ### Implemented duplicate birth-certificate and lost-key recovery
 
-- Birth-certificate numbers are checked against existing database records before a new application is created.
-- A matching number shows an existing-application notice instead of allowing a second student record.
-- Applicants with their key can open the existing profile through the verified access-key route.
-- Applicants without a key can submit a recovery request with their name and contact email.
-- Admins can review open recovery requests, generate a replacement key once, or dismiss the request.
-- Replacement keys rotate the stored hash so the previous key is immediately invalid.
-- A saved matching key is detected locally and offers a direct profile-open action.
-- Admins can display a generated replacement key as a QR code, and applicants can import that QR from `/` or `/application`.
+- Pre-create checks against existing birth-certificate numbers.
+- Matching numbers surface an existing-application notice instead of a second record.
+- Key holders reopen profiles via the verified access-key route.
+- Keyless users submit recovery requests with name and contact email.
+- Admins review requests, generate replacements once, or dismiss.
+- Replacement rotation invalidates previous hashes instantly.
+- Locally saved matching keys offer direct profile-open actions.
+- Generated keys display as text plus QR; applicants re-import from `/` or `/application`.
 
 ### Acceptance criteria
 
-- An applicant can submit a lost-key or wrong-record appeal without learning whether another person’s record exists.
-- An admin can see, verify, resolve, reject, delete, or rotate a record through an auditable queue.
-- A birth-certificate conflict cannot be solved by simply overwriting another application.
-- Lost-key recovery produces a new secret rather than exposing the old one.
-- Appeal and recovery actions are visible in admin activity reporting.
+- Lost-key or wrong-record appeals work without revealing other records’ existence.
+- Admins verify, resolve, reject, delete, or rotate records through an auditable queue.
+- Conflicts cannot be solved by overwriting another application.
+- Recovery produces new secrets without exposing old ones.
+- Appeal and recovery actions appear in admin activity reporting.
 
 ## Duplicate birth certificate and record removal
 
-- A matching birth certificate number must stop creation of a second application.
-- The existing access key or QR code is only for opening and editing the existing application.
-- A user who believes the existing record should be removed submits a separate record-removal request with their name and contact email. This request is never an automatic deletion or a key-recovery request.
-- The school/admin reviews the request, contacts the user, and deletes the application only after confirming that removal is legally and operationally appropriate. The request is then marked resolved.
-- Access-key requests and record-removal requests are stored with separate types so an admin cannot generate a replacement key for a removal request or delete a record from an access request.
-- Keep duplicate handling in one resolution panel: first verify that an access key belongs to the entered birth certificate, then offer the school-review removal request with applicant name, guardian name, and contact number. Never present a saved key as valid merely because it exists on the device.
+- Matching birth certificate numbers block second applications.
+- Existing keys or QR codes only open/edit the existing application.
+- Removal goes through a separate school-review request with name and contact email; never automatic deletion or key recovery.
+- Admins review, contact users, and delete only after confirming legal and operational appropriateness, then mark resolved.
+- Access-key and removal requests use distinct types preventing cross-actions.
+- One resolution panel verifies key-to-birth-certificate ownership before offering removal; saved keys alone prove nothing.
 
 ## Sub-admin role and forgot-key requests
 
 ### Role model
 
-- Three roles: `admin`, `sub-admin`, and `user`.
+- Three roles: `admin`, `sub-admin`, `user`.
 - `adminProcedure` requires `role === "admin"`.
-- `subAdminProcedure` requires `role === "admin"` or `role === "sub-admin"`.
-- `ensureSubAdmin(email, name)` in `packages/auth/src/index.ts` creates or resets a sub-admin account with a configurable default password (`SUB_ADMIN_DEFAULT_PASSWORD`).
-- Sub-admin accounts are created via the `ensureSubAdmin` function at startup or programmatically; there is no self-service registration.
+- `subAdminProcedure` requires admin or sub-admin.
+- `ensureSubAdmin(email, name)` in `packages/auth/src/index.ts` provisions accounts with `SUB_ADMIN_DEFAULT_PASSWORD`; no self-service registration.
 
 ### Forgot-key requests
 
-- The homepage "Forgot a key?" button opens the `AccessRecoveryDialog` which submits a `requestType: "forgot"` request.
-- The `forgot` type is supported alongside `access`, `removal`, and `submission` in the `requestAccess` endpoint.
-- Validation: forgot requests require a contact phone number.
-- Duplicate prevention: only one open request per application per request type.
+- Homepage “Forgot a key?” opens `AccessRecoveryDialog` submitting `requestType: "forgot"`.
+- Forgot joins access/removal/submission in `requestAccess`; phone number required.
+- Duplicate prevention: one open request per application per type.
 
 ### Admin forgot-requests page
 
-- `/admin/forgot-requests` shows a paginated data table with applicant name, birth certificate number, and request date.
-- Actions: generate a new access key (with one-time display + QR code), or dismiss.
-- `admin.accessRequests.forgotRequests` returns full request data for admin views.
+- Paginated table with applicant name, birth certificate number, request date.
+- Actions: generate replacement key (one-time display + QR) or dismiss.
+- `admin.accessRequests.forgotRequests` returns full request data.
 
 ### Sub-admin pages
 
-- `/sub-admin` overview with links to forgot-key and removal request queues.
-- `/sub-admin/forgot-requests` and `/sub-admin/removal-requests` show only verification data: birth certificate number, applicant name, status, and created date. No contact info, email, or guardian name.
-- `subAdmin.forgotRequests` and `subAdmin.removalRequests` map responses to limited fields only.
-- Sub-admins can generate new access keys via `subAdmin.rotateKey` and delete applications via `subAdmin.deleteAfterRemovalRequest`.
-- Sub-admin removal-requests page checks `application.status` to determine if the submission window is open; deletion is disabled outside the window with a visible amber banner.
-- Key generation and deletion require alert dialog confirmation.
+- Overview linking to queues.
+- Queues expose only verification data: birth certificate number, applicant name, status, created date.
+- `subAdmin.rotateKey` generates keys; `subAdmin.deleteAfterRemovalRequest` deletes applications.
+- Removal deletions respect the submission window with an amber banner outside it.
+- Key generation and deletion require alert-dialog confirmation.
 
 ### QR import dialog
 
-- The "Import QR image" button opens a dialog with two options: import from image file (file picker) or open camera (live scanning via `qr-scanner`).
-- Camera scanning uses `QrScanner` with highlighted scan region and code outline.
-- After forgetting a key, the QR import dialog opens automatically so the parent can re-import.
+- File-picker import or live camera scanning via `qr-scanner` with highlighted scan region.
+- Opens automatically after key loss so parents re-import immediately.
 
 ### Security notes
 
-- Sub-admin routes return only safe fields; no contact info or full application data.
-- All procedures enforce role checks server-side via middleware.
-- Access keys are never stored in plaintext; only SHA-256 hashes are persisted.
-- The `rotateKey` endpoint immediately invalidates the previous key.
-- `deleteAfterRemovalRequest` verifies the request type is `removal` before deleting.
+- Sub-admin routes return limited safe fields only.
+- Role checks enforce server-side middleware.
+- Keys persist solely as SHA-256 hashes.
+- Rotation invalidates previous keys immediately.
+- `deleteAfterRemovalRequest` verifies request type `removal` before deleting.

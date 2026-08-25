@@ -2,6 +2,67 @@
 
 ---
 
+## 6.2 Educational Qualifications & Co-Curricular Achievements — Alumni (Maximum Marks 100)
+
+Applies to children of past pupils of the school. Marks derive from the parent-applicant's own record at the school.
+
+### 6.2.1 Years of education at the school (2 × 13) (Maximum Marks 26)
+
+Two marks per year the applicant received education at the school, up to thirteen years.
+
+### 6.2.2 Educational achievements during the school period (Maximum Marks 25)
+
+**Grade 5 Scholarship Examination** — passed (Marks 03)
+
+**G.C.E. (O/L)** (Maximum Marks 10) — marks per subject by grade and subject count:
+
+| Grade | 6 subjects | 8 subjects | 9 subjects |
+|---|---|---|---|
+| S | 0.66 (all-S ≈ 04) | 0.51 (all-S ≈ 04) | 0.44 (all-S ≈ 04) |
+| C | 1.33 (all-C ≈ 08) | 1.00 (all-C ≈ 08) | 0.66 (all-C ≈ 06) |
+| B / D | 1.66 (all ≈ 10) | 1.25 (all ≈ 10) | 0.88 (all-B ≈ 08) |
+| A | — | — | 1.11 (all-A ≈ 10) |
+
+> Bracketed values show the ceiling reached when every subject holds that grade.
+
+**G.C.E. (A/L)** (Maximum Marks 12) — marks per subject by grade and syllabus:
+
+| Grade | 3 subjects (New Syllabus) | 4 subjects (Old Syllabus) |
+|---|---|---|
+| S | 2.00 (all-S ≈ 06) | 1.50 (all-S ≈ 06) |
+| C | 2.66 (all-C ≈ 08) | 2.00 (all-C ≈ 08) |
+| B | 3.33 (all-B ≈ 10) | 2.50 (all-B ≈ 10) |
+| A | 4.00 (all-A ≈ 12) | 3.00 (all-A ≈ 12) |
+
+### 6.2.3 Co-curricular achievements during the school period (Maximum Marks 25)
+
+**Sports and co-curricular skills** (Marks 10) — per achievement by highest competition level:
+
+| Level | Marks |
+|---|---|
+| Inter-House | 0.5 |
+| Zonal | 1 |
+| District | 2 |
+| Provincial | 3 |
+| National | 4.75 |
+| International | 5 |
+
+**Leadership qualities** (Marks 05) — role held:
+
+| Role | Marks |
+|---|---|
+| Primary Student Prefect | 1 |
+| Junior Student Prefect | 1.5 |
+| Senior Student Prefect | 3 |
+| Deputy Head Prefect | 4 |
+| Head Prefect | 5 |
+| First Team Sports Vice-Captain | 1.5 |
+| First Team Sports Captain | 2 |
+
+> The circular lists sub-section caps of 10 + 5 against a section maximum of 25; remaining weight is reserved for additional co-curricular evidence assessed at interview.
+
+---
+
 ## 6.1 Proximity to School
 
 ### A) Main documents confirming residence (Maximum Marks 20)
@@ -123,6 +184,78 @@ Schools within radius:
 | Less than 20 km | 05 |
 
 > Shortest public transport route
+
+### Grand Total: 100 Marks
+
+---
+
+## 6.3 Siblings (Maximum Marks 100)
+
+### 1. Sibling criteria (Maximum Marks 40)
+
+**1(a) Siblings currently studying in the school** (2 × 10 = 20) (Maximum Marks 20)
+
+Two marks per sibling currently studying at the school, up to ten siblings.
+
+**1(b)** If applying for admission to the school where the sibling studied — (Marks 05)
+
+**1(c)** If two or more siblings are applying to other grades of the same school — (Marks 05)
+
+**1(d) Co-curricular achievements and Primary / Junior prefect posts of siblings** (Maximum Marks 10)
+
+Primary & Junior prefect skills (Marks 2):
+
+| Level | Marks |
+|---|---|
+| Inter-House | 0.25 |
+| Zonal | 0.5 |
+| District | 1 |
+| Provincial | 1.5 |
+| National | 1.75 |
+| International | 2 |
+
+Scholarship (Marks 0.5) / O/L (Marks 01) / A/L (Marks 1.5) — block maximum (Marks 2):
+
+| Achievement | Marks |
+|---|---|
+| Grade 5 Scholarship passed | 0.5 |
+| G.C.E. (O/L) qualified | 01 |
+| G.C.E. (A/L) qualified | 1.5 |
+
+Praiseworthy achievements (Prefect / Student Leader / Band Leader) — (Marks 2)
+
+Support rendered by parents — (Marks 04)
+
+### 2. Documents confirming residence (Maximum Marks 10)
+
+| Code | Document | Marks |
+|---|---|---|
+| 2.1 | Title deed in applicant's/spouse's name | 10 |
+| 2.2 | Title deed in applicant's parents' name | 06 |
+| 2.3 | Lease deed in applicant's name | 04 |
+| 2.4 | Certificate issued by Municipal Commissioner / Divisional Secretary in applicant's/spouse's name, or documents registered under the Rent Act, or Certificate issued by Estate Superintendent and Divisional Secretary | 04 |
+| 2.5 | Other acceptable documents in applicant's/spouse's name (0.5 × 4) | 02 |
+| 2.6 | In applicant's/spouse's parents' name (0.25 × 4) | 01 |
+| 2.7 | Registered residents of feeder area included in electoral register / birth certificate / electoral register minimum 5 years | 06 |
+
+### 3. Registration in Electoral Register (2 × 10) (Maximum Marks 20)
+
+Registration across 2020–2024 for Mother and Father; two marks per registered person-year.
+
+### 4. Proximity from residence to this school (3 × 10) (Maximum Marks 30)
+
+Schools within radius:
+
+1. …
+2. …
+3. …
+4. …
+5. …
+6. …
+7. …
+8. …
+9. …
+10. …
 
 ### Grand Total: 100 Marks
 

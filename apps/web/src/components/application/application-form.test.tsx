@@ -40,7 +40,32 @@ vi.mock("@/utils/orpc", () => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
-vi.mock("./location-step", () => ({ LocationStep: () => <div data-testid="location-step" /> }));
+
+const { locationChangePayload } = vi.hoisted(() => ({
+  locationChangePayload: {
+    current: null as null | { value: Record<string, unknown>; defaultValue?: Record<string, unknown> },
+  },
+}));
+
+vi.mock("./location-step", () => ({
+  LocationStep: (props: {
+    onChange: (value: Record<string, unknown>, defaultValue?: Record<string, unknown>) => void;
+  }) => (
+    <div data-testid="location-step">
+      <button
+        type="button"
+        data-testid="fire-location-change"
+        onClick={() => {
+          if (!locationChangePayload.current) throw new Error("locationChangePayload not configured");
+          props.onChange(locationChangePayload.current.value, locationChangePayload.current.defaultValue);
+        }}
+      >
+        fire
+      </button>
+    </div>
+  ),
+}));
+vi.mock("./school-map-picker", () => ({ SchoolMapPicker: () => <div data-testid="school-map-picker" /> }));
 
 function setStore(patch: Partial<typeof emptyDraft>) {
   act(() => useApplicationStore.setState({ ...patch }));
@@ -53,7 +78,7 @@ function renderForm() {
 
 function renderReview() {
   render(<ApplicationForm />);
-  return screen.findByRole("button", { name: /update application/i });
+  return screen.findByRole("button", { name: /(submit|update) application/i });
 }
 
 function currentDraftData(): typeof emptyDraft {
@@ -64,6 +89,7 @@ function currentDraftData(): typeof emptyDraft {
 beforeEach(() => {
   useApplicationStore.getState().reset();
   localStorage.clear();
+  locationChangePayload.current = null;
   window.history.replaceState({}, "", "/");
   createMock.mockReset().mockImplementation(async () => ({
     accessKey: MOCK_ACCESS_KEY,
@@ -114,6 +140,14 @@ const validResidence = {
 
 const validDeclaration = { confirmed: true, consent: true };
 
+const validCategories: typeof emptyDraft.categories = [
+  {
+    id: "cat-1",
+    categoryType: "6.1",
+    scoringInputs: { mainDocumentType: "title-deed-applicant", schoolsWithinRadius: ["school-1"] },
+  },
+];
+
 const fullValidDraft = {
   ...emptyDraft,
   location: { ...emptyDraft.location, latitude: 7.29, longitude: 80.63, address: "Colombo, Sri Lanka" },
@@ -121,6 +155,7 @@ const fullValidDraft = {
   guardian: validGuardian,
   residence: validResidence,
   declaration: validDeclaration,
+  categories: validCategories,
 };
 
 describe("ApplicationForm — step 0 (location)", () => {
@@ -207,15 +242,89 @@ describe("ApplicationForm — step 2 (guardian) gating", () => {
   });
 });
 
-describe("ApplicationForm — step 4 (declaration) gating", () => {
+describe("ApplicationForm — step 4 (categories) gating", () => {
+  it("blocks until at least one category is selected", async () => {
+    setStore({ currentStep: 4 });
+    await renderForm();
+    const continueButton = screen.getByRole("button", { name: /continue/i });
+    expect(continueButton).toBeDisabled();
+    expect(screen.getByText("Select at least one category to continue.")).toBeInTheDocument();
+    setStore({ categories: validCategories });
+    expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
+    expect(screen.queryByText("Select at least one category to continue.")).not.toBeInTheDocument();
+  });
+
+  it("shows indicative baseline notice on the category step", async () => {
+    setStore({ ...fullValidDraft, currentStep: 4 });
+    await renderForm();
+    expect(screen.getByText(/baseline estimate/)).toBeInTheDocument();
+    expect(screen.getByText(/interview panel/)).toBeInTheDocument();
+    expect(screen.getByText("Indicative total")).toBeInTheDocument();
+  });
+});
+
+describe("ApplicationForm — step 5 (declaration) gating", () => {
   it("blocks until the declaration is confirmed and consented", async () => {
-    setStore({ currentStep: 4, declaration: { confirmed: false, consent: false } });
+    setStore({ currentStep: 5, declaration: { confirmed: false, consent: false } });
     await renderForm();
     const continueButton = screen.getByRole("button", { name: /continue/i });
     expect(continueButton).toBeDisabled();
     expect(screen.getByText("You must confirm the declaration and provide consent to proceed.")).toBeInTheDocument();
     setStore({ declaration: { confirmed: true, consent: true } });
     expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
+  });
+});
+
+describe("ApplicationForm — location history capture", () => {
+  const mapPoint = { label: "Selected location", address: "1 Temple Road", latitude: 6.0343, longitude: 80.217, source: "map" };
+  const deviceFix = { label: "Your location", address: "", latitude: 6.0562, longitude: 80.2205, source: "device" };
+  const addressTyping = { label: "", address: "typed text", latitude: null, longitude: null, source: "manual" };
+
+  it("records a map selection into the user history with the newest first", async () => {
+    const user = userEvent.setup();
+    await renderForm();
+    locationChangePayload.current = { value: mapPoint };
+    await user.click(screen.getByTestId("fire-location-change"));
+    locationChangePayload.current = { value: { ...mapPoint, latitude: 6.0578, longitude: 80.2138 } };
+    await user.click(screen.getByTestId("fire-location-change"));
+    const data = currentDraftData();
+    expect(data.userLocationHistory).toHaveLength(2);
+    expect(data.userLocationHistory[0]).toMatchObject({ latitude: 6.0578 });
+    expect(data.userLocationHistory[1]).toMatchObject({ latitude: 6.0343 });
+    expect(data.deviceLocationHistory).toEqual([]);
+    expect(data.selectedLocation).toMatchObject({ latitude: 6.0578 });
+  });
+
+  it("records an automatic device fix in device history without duplicating it in device array twice", async () => {
+    const user = userEvent.setup();
+    await renderForm();
+    locationChangePayload.current = { value: deviceFix, defaultValue: deviceFix };
+    await user.click(screen.getByTestId("fire-location-change"));
+    const data = currentDraftData();
+    expect(data.deviceLocationHistory).toHaveLength(1);
+    expect(data.deviceLocationHistory[0]).toMatchObject({ latitude: 6.0562, source: "device" });
+    expect(data.defaultLocation).toMatchObject({ latitude: 6.0562 });
+    expect(data.userLocationHistory).toHaveLength(1);
+  });
+
+  it("ignores coordinate-less address typing for both histories", async () => {
+    const user = userEvent.setup();
+    await renderForm();
+    locationChangePayload.current = { value: addressTyping };
+    await user.click(screen.getByTestId("fire-location-change"));
+    const data = currentDraftData();
+    expect(data.userLocationHistory).toEqual([]);
+    expect(data.deviceLocationHistory).toEqual([]);
+    expect(data.location.address).toBe("typed text");
+  });
+
+  it("does not duplicate consecutive identical selections", async () => {
+    const user = userEvent.setup();
+    await renderForm();
+    locationChangePayload.current = { value: mapPoint };
+    await user.click(screen.getByTestId("fire-location-change"));
+    await user.click(screen.getByTestId("fire-location-change"));
+    expect(currentDraftData().userLocationHistory).toHaveLength(1);
   });
 });
 
@@ -250,11 +359,11 @@ describe("ApplicationForm — step 3 (residence)", () => {
     expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
   });
 
-  it("advances to declaration when Continue is clicked", async () => {
+  it("advances to categories when Continue is clicked", async () => {
     setStore({ currentStep: 3, residence: validResidence });
     await renderForm();
     await userEvent.click(screen.getByRole("button", { name: /continue/i }));
-    expect(screen.getByText("Confirm before review")).toBeInTheDocument();
+    expect(screen.getByText("Marking scheme categories")).toBeInTheDocument();
   });
 
   it("copies permanent address to current when sameAsPermanent is toggled", async () => {
@@ -265,7 +374,7 @@ describe("ApplicationForm — step 3 (residence)", () => {
     expect(useApplicationStore.getState().residence.currentAddress).toBe(validResidence.permanentAddress);
   });
 
-  it("returns to step 3 when Back is clicked from step 4", async () => {
+  it("returns to residence when Back is clicked from the categories step", async () => {
     setStore({ ...fullValidDraft, currentStep: 4 });
     await renderForm();
     await userEvent.click(screen.getByRole("button", { name: /back/i }));
@@ -273,9 +382,9 @@ describe("ApplicationForm — step 3 (residence)", () => {
   });
 });
 
-describe("ApplicationForm — step 5 (review)", () => {
+describe("ApplicationForm — step 6 (review)", () => {
   it("renders a summary for every section", async () => {
-    setStore({ ...fullValidDraft, currentStep: 5 });
+    setStore({ ...fullValidDraft, currentStep: 6 });
     await renderReview();
     expect(screen.getByText("Review your draft")).toBeInTheDocument();
     expect(screen.getByText("Ashan Perera")).toBeInTheDocument();
@@ -284,49 +393,67 @@ describe("ApplicationForm — step 5 (review)", () => {
     expect(screen.getAllByText("Colombo").length).toBeGreaterThan(0);
   });
 
+  it("renders a Categories summary with indicative marks", async () => {
+    setStore({ ...fullValidDraft, currentStep: 6 });
+    await renderReview();
+    expect(screen.getByText("6.1 – Residence Verification & Proximity")).toBeInTheDocument();
+    expect(screen.getByText(/Main document: title-deed-applicant/)).toBeInTheDocument();
+    expect(screen.getByText(/1 school within radius/)).toBeInTheDocument();
+    expect(screen.getByText(/Marks \(indicative\):/)).toBeInTheDocument();
+  });
+
   it("shows Not completed for empty fields", async () => {
-    setStore({ ...emptyDraft, currentStep: 5, location: { ...emptyDraft.location, latitude: 7.29, longitude: 80.63, address: "Colombo" } });
+    setStore({ ...emptyDraft, currentStep: 6, location: { ...emptyDraft.location, latitude: 7.29, longitude: 80.63, address: "Colombo" } });
     await renderReview();
     expect(screen.getAllByText("Not completed").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Not selected").length).toBeGreaterThan(0);
+    expect(screen.getByText("None selected")).toBeInTheDocument();
   });
 
   it("navigates to the correct step when Edit is clicked", async () => {
-    setStore({ ...fullValidDraft, currentStep: 5 });
+    setStore({ ...fullValidDraft, currentStep: 6 });
     await renderReview();
     const editButtons = screen.getAllByRole("button", { name: /edit/i });
     await userEvent.click(editButtons[0]);
     expect(screen.getByTestId("location-step")).toBeInTheDocument();
   });
 
-  it("shows the submit button when declaration is confirmed and there are changes", async () => {
-    setStore({ ...fullValidDraft, currentStep: 5 });
+  it("jumps to the categories step when the Categories row Edit is clicked", async () => {
+    setStore({ ...fullValidDraft, currentStep: 6 });
     await renderReview();
-    expect(screen.getByRole("button", { name: /update application/i })).toBeEnabled();
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await userEvent.click(editButtons[editButtons.length - 1]);
+    expect(screen.getByText("Marking scheme categories")).toBeInTheDocument();
+  });
+
+  it("shows the submit button when declaration is confirmed and there are changes", async () => {
+    setStore({ ...fullValidDraft, currentStep: 6 });
+    await renderReview();
+    expect(screen.getByRole("button", { name: /(submit|update) application/i })).toBeEnabled();
   });
 
   it("disables the submit button when declaration is not confirmed", async () => {
-    setStore({ ...fullValidDraft, currentStep: 5, declaration: { confirmed: false, consent: false } });
+    setStore({ ...fullValidDraft, currentStep: 6, declaration: { confirmed: false, consent: false } });
     await renderReview();
-    expect(screen.getByRole("button", { name: /update application/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /(submit|update) application/i })).toBeDisabled();
   });
 });
 
 describe("ApplicationForm — submit flow", () => {
   it("submits successfully and shows the success view", async () => {
-    setStore({ ...fullValidDraft, currentStep: 5 });
+    setStore({ ...fullValidDraft, currentStep: 6 });
     const user = userEvent.setup();
     await renderReview();
-    await user.click(screen.getByRole("button", { name: /update application/i }));
+    await user.click(screen.getByRole("button", { name: /(submit|update) application/i }));
     expect(await screen.findByText("Application submitted successfully.")).toBeInTheDocument();
     expect(screen.getAllByText(MOCK_ACCESS_KEY).length).toBeGreaterThan(0);
   });
 
   it("submits even with no unsaved changes", async () => {
-    setStore({ ...fullValidDraft, currentStep: 5, lastSavedAt: new Date().toISOString() });
+    setStore({ ...fullValidDraft, currentStep: 6, lastSavedAt: new Date().toISOString() });
     await renderReview();
     await screen.findByText(MOCK_ACCESS_KEY);
-    await userEvent.click(screen.getByRole("button", { name: /update application/i }));
+    await userEvent.click(screen.getByRole("button", { name: /(submit|update) application/i }));
     expect(await screen.findByText("Application submitted successfully.")).toBeInTheDocument();
   });
 });
@@ -336,7 +463,7 @@ describe("ApplicationForm — submit a restored application", () => {
     localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
     localStorage.setItem("aloysius-g1-application-session-code", MOCK_SESSION_CODE);
     getMock.mockResolvedValue({
-      data: { ...fullValidDraft, currentStep: 5 },
+      data: { ...fullValidDraft, currentStep: 6 },
       sessionCode: MOCK_SESSION_CODE,
       accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
       submittedAt: null,
@@ -344,7 +471,7 @@ describe("ApplicationForm — submit a restored application", () => {
     const user = userEvent.setup();
     render(<ApplicationForm />);
     await screen.findByText(MOCK_ACCESS_KEY);
-    await user.click(screen.getByRole("button", { name: /update application/i }));
+    await user.click(screen.getByRole("button", { name: /(submit|update) application/i }));
     expect(await screen.findByText("Application submitted successfully.")).toBeInTheDocument();
     expect(screen.getAllByText(MOCK_ACCESS_KEY).length).toBeGreaterThan(0);
   });
@@ -371,10 +498,10 @@ describe("ApplicationForm — state transitions", () => {
   it("resets the draft and navigates home when starting another application", async () => {
     const assignMock = vi.fn();
     Object.defineProperty(window, "location", { value: { ...window.location, assign: assignMock }, writable: true });
-    setStore({ ...fullValidDraft, currentStep: 5, declaration: validDeclaration });
+    setStore({ ...fullValidDraft, currentStep: 6, declaration: validDeclaration });
     const user = userEvent.setup();
     await renderReview();
-    await user.click(screen.getByRole("button", { name: /update application/i }));
+    await user.click(screen.getByRole("button", { name: /(submit|update) application/i }));
     expect(await screen.findByText("Application submitted successfully.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /apply for another child/i }));
     expect(useApplicationStore.getState().currentStep).toBe(0);
@@ -410,12 +537,12 @@ describe("ApplicationForm — server errors", () => {
 
   it("shows an error when the submit fails", async () => {
     submitMock.mockReset().mockRejectedValue(new Error("Submission window closed"));
-    setStore({ ...fullValidDraft, currentStep: 5 });
+    setStore({ ...fullValidDraft, currentStep: 6 });
     const user = userEvent.setup();
     await renderReview();
-    await user.click(screen.getByRole("button", { name: /update application/i }));
+    await user.click(screen.getByRole("button", { name: /(submit|update) application/i }));
     expect(await screen.findByText("Submission window closed")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /update application/i })).toBeDisabled();
+    expect(submitMock).toHaveBeenCalledWith({ accessKey: MOCK_ACCESS_KEY });
     submitMock.mockReset().mockResolvedValue({ accepted: true });
   });
 

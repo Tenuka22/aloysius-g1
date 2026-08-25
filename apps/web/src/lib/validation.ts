@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { G1_DOB_CUTOFF, g1SchoolYear, nicRegex } from "./eligibility";
+import { CATEGORY_TYPES } from "./application-store";
 
 export const signInSchema = z.object({
   email: z.email("Enter a valid email address"),
@@ -51,9 +52,92 @@ export const declarationStepSchema = z.object({
   consent: z.literal(true, { message: "You must consent to the information being used" }),
 });
 
+export const scoringInputsSchema = z.object({
+  mainDocumentType: z.string().optional(),
+  documentOwnership: z.string().optional(),
+  yearsRegistered: z.coerce.number().optional(),
+  additionalDocs: z.array(z.string()).optional(),
+  electoralMotherYears: z.coerce.number().optional(),
+  electoralFatherYears: z.coerce.number().optional(),
+  schoolsWithinRadius: z.array(z.string()).optional(),
+  schoolsRadiusKm: z.coerce.number().positive("School radius must be greater than zero").optional(),
+  periodOfServiceYears: z.coerce.number().optional(),
+  difficultServiceType: z.enum(["current", "previous", "none"]).optional(),
+  difficultServiceDistanceKm: z.coerce.number().optional(),
+  difficultServiceExtraPeriods: z.coerce.number().optional(),
+  unutilizedLeaveYears: z.coerce.number().optional(),
+  serviceLocationLevel: z.string().optional(),
+  residenceToSchoolKm: z.coerce.number().optional(),
+  workplaceToSchoolKm: z.coerce.number().optional(),
+  previousWorkplaceDistanceKm: z.coerce.number().optional(),
+  previousWorkplacePeriodYears: z.coerce.number().optional(),
+  transferElapsedYears: z.coerce.number().optional(),
+  periodAbroadYears: z.coerce.number().optional(),
+  employmentPurpose: z.enum(["board", "personal", "government", "education"]).optional(),
+  alumniYearsAtSchool: z.coerce.number().optional(),
+  grade5ScholarshipPassed: z.boolean().optional(),
+  olSubjectCount: z.union([z.literal(6), z.literal(8), z.literal(9)]).optional(),
+  olGradeS: z.coerce.number().optional(),
+  olGradeC: z.coerce.number().optional(),
+  olGradeB: z.coerce.number().optional(),
+  olGradeA: z.coerce.number().optional(),
+  alSubjectCount: z.union([z.literal(3), z.literal(4)]).optional(),
+  alGradeS: z.coerce.number().optional(),
+  alGradeC: z.coerce.number().optional(),
+  alGradeB: z.coerce.number().optional(),
+  alGradeA: z.coerce.number().optional(),
+  sportsLevel: z.enum(["none", "inter-house", "zonal", "district", "provincial", "national", "international"]).optional(),
+  sportsCount: z.coerce.number().optional(),
+  leadershipRole: z
+    .enum([
+      "none",
+      "prefect-primary",
+      "prefect-junior",
+      "prefect-senior",
+      "deputy-head-prefect",
+      "head-prefect",
+      "first-team-vice-captain",
+      "first-team-captain",
+    ])
+    .optional(),
+  siblingsCurrentlyStudyingCount: z.coerce.number().optional(),
+  siblingStudiedAtAppliedSchool: z.boolean().optional(),
+  twoOrMoreSiblingsApplying: z.boolean().optional(),
+  siblingPrefectLevel: z.enum(["none", "inter-house", "zonal", "district", "provincial", "national", "international"]).optional(),
+  siblingPrefectCount: z.coerce.number().optional(),
+  siblingExamAchievement: z.enum(["none", "scholarship", "ol", "al"]).optional(),
+  siblingPraiseworthyAchievement: z.boolean().optional(),
+  parentsSupportRendered: z.boolean().optional(),
+});
+
+export const categoryApplicationSchema = z.object({
+  id: z.string().min(1, "Category id is required"),
+  categoryType: z.enum(CATEGORY_TYPES, { message: "Category type is invalid" }),
+  scoringInputs: scoringInputsSchema,
+});
+
+export const categoriesSchema = z.array(categoryApplicationSchema).superRefine((categories, ctx) => {
+  const seenIds = new Set<string>();
+  categories.forEach((category, index) => {
+    if (seenIds.has(category.id)) {
+      ctx.addIssue({ code: "custom", message: "duplicate_category_ids", path: [index] });
+      return;
+    }
+    seenIds.add(category.id);
+  });
+});
+
+export const categoryStepSchema = z.object({
+  categories: categoriesSchema.min(1, "select_at_least_one_category"),
+});
+
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type ApplicantStepValues = z.infer<typeof applicantStepSchema>;
 export type GuardianStepValues = z.infer<typeof guardianStepSchema>;
 export type ResidenceStepValues = z.infer<typeof residenceStepSchema>;
 export type DeclarationStepValues = z.infer<typeof declarationStepSchema>;
+export type ScoringInputsValues = z.infer<typeof scoringInputsSchema>;
+export type CategoryApplicationValues = z.infer<typeof categoryApplicationSchema>;
+export type CategoriesValues = z.infer<typeof categoriesSchema>;
+export type CategoryStepValues = z.infer<typeof categoryStepSchema>;

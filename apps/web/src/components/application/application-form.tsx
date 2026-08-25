@@ -4,8 +4,18 @@ import type { AnyFieldApi, ReactFormExtendedApi } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
-import { emptyDraft, normalizeDraft, useApplicationStore, type ApplicationDraft } from "@/lib/application-store";
+import { CategoryStep } from "./category-step";
+import {
+  applyLocationChange,
+  emptyDraft,
+  normalizeDraft,
+  useApplicationStore,
+  type ApplicationDraft,
+  type CategoryApplication,
+  type CategoryType,
+} from "@/lib/application-store";
 import { G1_DOB_CUTOFF, getNextStepReason } from "@/lib/eligibility";
+import { scoreCategory } from "@/lib/scoring";
 import { client } from "@/utils/orpc";
 import {
   Card,
@@ -57,9 +67,69 @@ import {
 } from "@/lib/validation";
 
 // biome-ignore lint/suspicious/noExplicitAny: internal step components need the React form type with .Field
-type AppForm = ReactFormExtendedApi<any, any, any, any, any, any, any, any, any, any, any, any>;
+type AppForm = ReactFormExtendedApi<ApplicationDraft, any, any, any, any, any, any, any, any, any, any, any>;
 
-const steps = ["Location", "Applicant", "Parent / guardian", "Residence", "Declaration", "Review"];
+const steps = ["Location", "Applicant", "Parent / guardian", "Residence", "Categories", "Declaration", "Review"];
+
+const CATEGORY_LABELS: Record<CategoryType, string> = {
+  "6.1": "6.1 – Residence Verification & Proximity",
+  "6.2": "6.2 – Educational Qualifications & Co-Curricular Achievements",
+  "6.3": "6.3 – Siblings",
+  "6.4": "6.4 – Period of Service & Distance",
+  "6.5": "6.5 – Transfer Applications",
+  "6.6": "6.6 – Foreign Employment",
+};
+
+function categorySummary(category: CategoryApplication): string {
+  const inputs = category.scoringInputs;
+  const parts: string[] = [];  if (inputs.mainDocumentType) parts.push(`Main document: ${inputs.mainDocumentType}`);
+  if (inputs.difficultServiceType) parts.push(`Difficult service: ${inputs.difficultServiceType}`);
+  if (inputs.employmentPurpose) parts.push(`Employment purpose: ${inputs.employmentPurpose}`);
+  if (inputs.periodAbroadYears != null) parts.push(`Period abroad: ${inputs.periodAbroadYears} years`);
+  if (inputs.residenceToSchoolKm != null) parts.push(`Residence to school: ${inputs.residenceToSchoolKm} km`);
+  if (inputs.workplaceToSchoolKm != null) parts.push(`Workplace to school: ${inputs.workplaceToSchoolKm} km`);
+  if (inputs.previousWorkplaceDistanceKm != null)
+    parts.push(`Previous workplace: ${inputs.previousWorkplaceDistanceKm} km`);
+  if (inputs.alumniYearsAtSchool != null) parts.push(`Alumni years at school: ${inputs.alumniYearsAtSchool}`);
+  if (inputs.grade5ScholarshipPassed) parts.push("Grade 5 Scholarship passed");
+  if (inputs.olSubjectCount != null)
+    parts.push(
+      `O/L (${inputs.olSubjectCount} subjects): ${["S", "C", "B", "A"]
+        .map((grade) => {
+          const count = inputs[`olGrade${grade}` as "olGradeS"] as number | undefined;
+          return count != null ? `${grade}=${count}` : null;
+        })
+        .filter(Boolean)
+        .join(" ")}`,
+    );
+  if (inputs.alSubjectCount != null)
+    parts.push(
+      `A/L (${inputs.alSubjectCount} subjects): ${["S", "C", "B", "A"]
+        .map((grade) => {
+          const count = inputs[`alGrade${grade}` as "alGradeS"] as number | undefined;
+          return count != null ? `${grade}=${count}` : null;
+        })
+        .filter(Boolean)
+        .join(" ")}`,
+    );
+  if (inputs.sportsLevel) parts.push(`Sports level: ${inputs.sportsLevel}${inputs.sportsCount != null ? ` ×${inputs.sportsCount}` : ""}`);
+  if (inputs.leadershipRole) parts.push(`Leadership: ${inputs.leadershipRole}`);
+  if (inputs.siblingsCurrentlyStudyingCount != null)
+    parts.push(`Siblings at school: ${inputs.siblingsCurrentlyStudyingCount}`);
+  if (inputs.siblingStudiedAtAppliedSchool) parts.push("Sibling studied here");
+  if (inputs.twoOrMoreSiblingsApplying) parts.push("Two or more siblings applying");
+  if (inputs.siblingPrefectLevel)
+    parts.push(
+      `Sibling prefect level: ${inputs.siblingPrefectLevel}${inputs.siblingPrefectCount != null ? ` ×${inputs.siblingPrefectCount}` : ""}`,
+    );
+  if (inputs.siblingExamAchievement) parts.push(`Sibling exam: ${inputs.siblingExamAchievement}`);
+  if (inputs.siblingPraiseworthyAchievement) parts.push("Sibling praiseworthy achievement");
+  if (inputs.parentsSupportRendered) parts.push("Parent support rendered");
+  const schools = inputs.schoolsWithinRadius?.length ?? 0;
+  parts.push(`${schools} ${schools === 1 ? "school" : "schools"} within radius`);
+  parts.push(`Marks (indicative): ${scoreCategory(category).total}`);
+  return parts.join(" · ");
+}
 function FieldErrorDisplay({ field }: { field: AnyFieldApi }) {
   const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
   if (!isInvalid || !field.state.meta.errors?.length) return null;
@@ -330,11 +400,13 @@ function LocationStepCard({
   readOnly,
   setSection,
   onLocationCanProceed,
+  autoRequestLocation = true,
 }: {
   draft: ApplicationDraft;
   readOnly: boolean;
   setSection: (section: keyof ApplicationDraft, value: unknown) => void;
   onLocationCanProceed: (canProceed: boolean) => void;
+  autoRequestLocation?: boolean;
 }) {
   return (
     <div className="grid gap-4">
@@ -347,14 +419,24 @@ function LocationStepCard({
       </div>
       <LocationStep
         readOnly={readOnly}
+        autoRequestLocation={autoRequestLocation}
         value={draft.location ?? emptyDraft.location}
         defaultValue={draft.defaultLocation ?? emptyDraft.defaultLocation}
+        deviceLocationHistory={draft.deviceLocationHistory ?? []}
+        userLocationHistory={draft.userLocationHistory ?? []}
         onAvailabilityChange={onLocationCanProceed}
         onChange={(value, defaultValue) => {
           if (readOnly) return;
           setSection("location", value);
           setSection("selectedLocation", value);
           if (defaultValue) setSection("defaultLocation", defaultValue);
+          const histories = applyLocationChange(draft, value, defaultValue);
+          if (histories.deviceLocationHistory !== draft.deviceLocationHistory) {
+            setSection("deviceLocationHistory", histories.deviceLocationHistory);
+          }
+          if (histories.userLocationHistory !== draft.userLocationHistory) {
+            setSection("userLocationHistory", histories.userLocationHistory);
+          }
         }}
       />
     </div>
@@ -537,7 +619,7 @@ function ApplicantStep({
             <Input
               id="applicant.dateOfBirth"
               type="date"
-              max={G1_DOB_CUTOFF}
+              max={G1_DOB_CUTOFF()}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -1077,6 +1159,21 @@ function ReviewStep({
     [draft],
   );
 
+  const categoryRows: [string, string, number][] = useMemo(
+    () =>
+      draft.categories.length > 0
+        ? draft.categories.map(
+            (category): [string, string, number] => [
+              CATEGORY_LABELS[category.categoryType],
+              categorySummary(category),
+              4,
+            ],
+          )
+        : [["Categories", "None selected", 4]],
+    [draft.categories],
+  );
+  const rows = [...sections, ...categoryRows];
+
   return (
     <div className="max-w-[780px]">
       <div className="mb-4">
@@ -1086,7 +1183,7 @@ function ReviewStep({
           becomes available.
         </p>
       </div>
-      {sections.map(([label, value, step]) => (
+      {rows.map(([label, value, step]) => (
         <div
           className="flex items-center justify-between gap-4 border-b py-3"
           key={label}
@@ -1313,6 +1410,7 @@ export function ApplicationForm({
     hydrated,
     savedSnapshot,
     JSON.stringify(form.state.values),
+    JSON.stringify(draft.categories),
   ]);
 
   const next = async () => {
@@ -1409,6 +1507,7 @@ export function ApplicationForm({
     duplicateBirthCertificate: duplicate,
     applicant: form.state.values.applicant,
     guardian: form.state.values.guardian,
+    categories: draft.categories,
     declaration: draft.declaration,
   });
   const isNextDisabled = Boolean(nextDisabledReason);
@@ -1504,6 +1603,13 @@ export function ApplicationForm({
               readOnly={readOnly}
               setSection={setSection}
               onLocationCanProceed={setLocationCanProceed}
+              autoRequestLocation={
+                !readOnly &&
+                !accessKey &&
+                !adminApplicationId &&
+                draft.location?.latitude == null &&
+                draft.selectedLocation?.latitude == null
+              }
             />
           )}
           {current === 1 && (
@@ -1522,10 +1628,11 @@ export function ApplicationForm({
               setSection={setSection}
             />
           )}
-          {current === 4 && (
+          {current === 4 && <CategoryStep />}
+          {current === 5 && (
             <DeclarationStep draft={draft} setSection={setSection} />
           )}
-          {current === 5 && (
+          {current === 6 && (
             <ReviewStep
               draft={draft}
               onNavigateToStep={(step) => draft.setStep(step)}

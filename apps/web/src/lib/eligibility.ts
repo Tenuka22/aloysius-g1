@@ -65,6 +65,7 @@ export type NextStepDeps = {
   duplicateBirthCertificate?: boolean;
   applicant?: ApplicantValues;
   guardian?: { relationship?: string; fullName?: string; nic?: string; phone?: string };
+  categories?: { length?: number };
   declaration?: { confirmed?: boolean; consent?: boolean };
 };
 
@@ -99,6 +100,10 @@ export function getNextStepReason(deps: NextStepDeps): string {
     return "";
   }
   if (step === 4) {
+    if (!deps.categories?.length) return "Select at least one category to continue.";
+    return "";
+  }
+  if (step === 5) {
     if (!deps.declaration?.confirmed || !deps.declaration?.consent)
       return "You must confirm the declaration and provide consent to proceed.";
     return "";
