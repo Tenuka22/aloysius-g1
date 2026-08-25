@@ -5,7 +5,7 @@ import { env } from "@aloysius-g1/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { hashPassword } from "better-auth/crypto";
-import { admin } from "better-auth/plugins";
+import { admin, multiSession } from "better-auth/plugins";
 
 const SITE_ADMIN_EMAIL = "admin@aloysiuscollege.lk";
 const SITE_ADMIN_PASSWORD = "12345678";
@@ -62,7 +62,7 @@ export function createAuth() {
         httpOnly: true,
       },
     },
-    plugins: [admin()],
+    plugins: [admin(), multiSession()],
   });
 }
 

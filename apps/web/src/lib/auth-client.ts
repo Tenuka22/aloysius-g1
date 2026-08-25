@@ -1,5 +1,6 @@
 import { env } from "@aloysius-g1/env/web";
 import { createAuthClient } from "better-auth/react";
+import { multiSessionClient } from "better-auth/client/plugins";
 
 function getServerUrl(url: string) {
   const processEnv = (
@@ -38,4 +39,5 @@ export const authClient = createAuthClient({
   // better-auth derives its route-matching base from this URL's path, so the
   // public auth path must equal the server-side mount (/api/auth everywhere)
   baseURL: new URL("/api/auth", getServerUrl(env.VITE_SERVER_URL)).toString(),
+  plugins: [multiSessionClient()],
 });

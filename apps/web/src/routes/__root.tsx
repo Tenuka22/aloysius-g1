@@ -8,6 +8,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useState } from "react";
 
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin";
 import { ThemeProvider } from "@/components/theme-provider";
 import { authClient } from "@/lib/auth-client";
 import { link, orpc } from "@/utils/orpc";
@@ -56,6 +57,7 @@ function RootComponent() {
           authClient={authClient}
           navigate={navigate}
           Link={({ href, ...props }) => <Link to={href} {...props} />}
+          plugins={[multiSessionPlugin()]}
         >
           <div className="min-h-svh">
             <Outlet />
