@@ -571,9 +571,9 @@ function ApplicantStep({
         )}
       </form.Field>
 
-      {draft.applicant.religion === "Christian" && (
+      {["Christian", "Catholic"].includes(draft.applicant.religion) && (
         <p className="col-span-2 text-sm text-destructive">
-          This intake is not available to Christian applicants.
+          This intake is not available to {draft.applicant.religion} applicants.
         </p>
       )}
 
