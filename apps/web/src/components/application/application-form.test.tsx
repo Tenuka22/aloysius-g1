@@ -185,11 +185,10 @@ describe("ApplicationForm — step 1 (applicant) gating", () => {
     expect(screen.getByText(/not available to Christian/i)).toBeInTheDocument();
   });
 
-  it("blocks a Catholic applicant", async () => {
+  it("allows a Catholic applicant", async () => {
     setStore({ currentStep: 1, applicant: { ...validApplicant, religion: "Catholic" } });
     await renderForm();
-    expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
-    expect(screen.getByText(/not available to Catholic/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
   });
 
   it("blocks an applicant born after the cutoff", async () => {

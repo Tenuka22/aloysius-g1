@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import type { AnyFieldApi, ReactFormExtendedApi } from "@tanstack/react-form";
-import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, Loader2, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { CategoryStep } from "./category-step";
@@ -571,9 +571,9 @@ function ApplicantStep({
         )}
       </form.Field>
 
-      {["Christian", "Catholic"].includes(draft.applicant.religion) && (
+      {draft.applicant.religion === "Christian" && (
         <p className="col-span-2 text-sm text-destructive">
-          This intake is not available to {draft.applicant.religion} applicants.
+          This intake is not available to Christian applicants.
         </p>
       )}
 
@@ -1413,6 +1413,22 @@ export function ApplicationForm({
     JSON.stringify(draft.categories),
   ]);
 
+  const [localSaveStatus, setLocalSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const snapshot = JSON.stringify(form.state.values);
+    if (snapshot === JSON.stringify(draft)) return;
+    setLocalSaveStatus("saving");
+    const timer = window.setTimeout(() => {
+      draft.updateDraft(form.state.values as Partial<ApplicationDraft>);
+      setLocalSaveStatus("saved");
+      const clear = window.setTimeout(() => setLocalSaveStatus("idle"), 2000);
+      return () => window.clearTimeout(clear);
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [hydrated, JSON.stringify(form.state.values)]);
+
   const next = async () => {
     if (nextDisabledReason) return;
     try {
@@ -1570,7 +1586,7 @@ export function ApplicationForm({
                         {copiedField === "key" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
                       </button>
                     </div>
-                    <code className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
+                    <code className="block break-all text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
                       {accessKey}
                     </code>
                     <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
@@ -1654,7 +1670,7 @@ export function ApplicationForm({
                   Keep this application key safe. You need it to view or update
                   this child&apos;s application.
                 </span>
-                <code className="block overflow-wrap-anywhere p-3 rounded-lg bg-background text-[0.85rem]">
+                <code className="block break-all p-3 rounded-lg bg-background text-[0.85rem]">
                   {accessKey}
                 </code>
                 <button
@@ -1687,7 +1703,17 @@ export function ApplicationForm({
             </div>
           ) : (
             <>
-              {draft.lastSavedAt && (
+              {localSaveStatus === "saving" && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground text-[0.85rem] whitespace-nowrap">
+                  <Loader2 size={15} className="animate-spin" /> Saving…
+                </span>
+              )}
+              {localSaveStatus === "saved" && (
+                <span className="inline-flex items-center gap-1 text-primary text-[0.85rem] whitespace-nowrap">
+                  <Check size={15} /> Saved
+                </span>
+              )}
+              {localSaveStatus === "idle" && draft.lastSavedAt && (
                 <span className="inline-flex items-center gap-1 text-primary text-[0.85rem] whitespace-nowrap">
                   <Check size={15} /> Saved locally
                 </span>

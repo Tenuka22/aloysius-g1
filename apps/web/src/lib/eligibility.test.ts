@@ -118,7 +118,6 @@ describe("getNextStepReason — step 1 (applicant) exhaustive combinations", () 
     if (case_.duplicate) return DUP_REASON;
     const fieldBlocked =
       case_.gender === "Female" ||
-      case_.religion === "Catholic" ||
       case_.religion === "Christian" ||
       !case_.dateOfBirth ||
       case_.dateOfBirth > G1_DOB_CUTOFF() ||

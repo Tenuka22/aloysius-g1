@@ -5,7 +5,7 @@ export const G1_DOB_CUTOFF = () => `${g1SchoolYear()}-01-31`;
 export const nicRegex = /^\d{12}$|^\d{9}[VX]$/;
 
 export const DISALLOWED_GENDERS = ["Female"] as const;
-export const DISALLOWED_RELIGIONS = ["Catholic", "Christian"] as const;
+export const DISALLOWED_RELIGIONS = ["Christian"] as const;
 export const ALLOWED_EDUCATION_MEDIUMS = ["Sinhala", "Tamil"] as const;
 
 export type ApplicantValues = {
