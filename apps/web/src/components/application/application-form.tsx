@@ -1414,14 +1414,16 @@ export function ApplicationForm({
   ]);
 
   const [localSaveStatus, setLocalSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const lastSavedRef = useRef("");
 
   useEffect(() => {
     if (!hydrated) return;
     const snapshot = JSON.stringify(form.state.values);
-    if (snapshot === JSON.stringify(draft)) return;
+    if (snapshot === lastSavedRef.current) return;
     setLocalSaveStatus("saving");
     const timer = window.setTimeout(() => {
       draft.updateDraft(form.state.values as Partial<ApplicationDraft>);
+      lastSavedRef.current = snapshot;
       setLocalSaveStatus("saved");
       const clear = window.setTimeout(() => setLocalSaveStatus("idle"), 2000);
       return () => window.clearTimeout(clear);
@@ -1434,6 +1436,7 @@ export function ApplicationForm({
     try {
       setSubmitError("");
       await form.handleSubmit();
+      lastSavedRef.current = JSON.stringify(form.state.values);
       const nextStep = Math.min(current + 1, steps.length - 1);
       draft.setStep(nextStep);
       await saveToServer();

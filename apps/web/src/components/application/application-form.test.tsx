@@ -516,11 +516,16 @@ describe("ApplicationForm — state transitions", () => {
     expect(assignMock).toHaveBeenCalledWith("/application");
   });
 
-  it("shows Saved locally after a successful save", async () => {
+  it("shows Saving then Saved after a successful save", async () => {
     setStore({ currentStep: 1, applicant: validApplicant });
     await renderForm();
     await userEvent.click(screen.getByRole("button", { name: /continue/i }));
-    await waitFor(() => expect(screen.getByText("Saved locally")).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText(/saving/i)).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/^Saved$/)).toBeInTheDocument();
+    });
   });
 });
 
