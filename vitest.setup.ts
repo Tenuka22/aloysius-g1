@@ -1,4 +1,11 @@
+import { afterEach } from "vitest";
 import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
+
+// Ensure React Testing Library cleanup runs between tests.
+afterEach(() => {
+  cleanup();
+});
 
 class ResizeObserverStub {
   observe() {}
