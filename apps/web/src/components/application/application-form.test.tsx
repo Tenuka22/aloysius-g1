@@ -570,3 +570,260 @@ describe("ApplicationForm — server errors", () => {
     updateMock.mockReset().mockResolvedValue({ updatedAt: "2026-01-01T00:00:00.000Z" });
   });
 });
+
+/* ════════════════════════════════════════════════════════════════════════════
+   FORM FIELD INTERACTIONS — actual typing into inputs
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("ApplicationForm — form field typing", () => {
+  it("types into the applicant full name field and updates the store", async () => {
+    setStore({ currentStep: 1, applicant: { ...validApplicant, fullName: "" } });
+    const user = userEvent.setup();
+    await renderForm();
+    const input = screen.getByLabelText(/full name/i);
+    await user.type(input, "Tenuka");
+    expect(useApplicationStore.getState().applicant.fullName).toBe("Tenuka");
+  });
+
+  it("types into the Sinhala name field", async () => {
+    setStore({ currentStep: 1, applicant: validApplicant });
+    const user = userEvent.setup();
+    await renderForm();
+    const input = screen.getByLabelText(/sinhala/i);
+    await user.type(input, "අවිනාශ");
+    expect(useApplicationStore.getState().applicant.sinhalaName).toContain("අ");
+  });
+
+  it("types into the guardian full name field", async () => {
+    setStore({ currentStep: 2, guardian: { ...validGuardian, fullName: "" } });
+    const user = userEvent.setup();
+    await renderForm();
+    const guardianInput = document.body.querySelector('[id="guardian.fullName"]') as HTMLInputElement;
+    expect(guardianInput).not.toBeNull();
+    await user.type(guardianInput, "Mother");
+    expect(useApplicationStore.getState().guardian.fullName).toBe("Mother");
+  });
+
+  it("types into the guardian NIC field and normalizes to uppercase", async () => {
+    setStore({ currentStep: 2, guardian: { ...validGuardian, nic: "" } });
+    const user = userEvent.setup();
+    await renderForm();
+    const input = document.body.querySelector('[id="guardian.nic"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    await user.type(input, "901234567v");
+    expect(useApplicationStore.getState().guardian.nic).toBe("901234567V");
+  });
+
+  it("types into the permanent address field", async () => {
+    setStore({ currentStep: 3, residence: { ...validResidence, permanentAddress: "" } });
+    const user = userEvent.setup();
+    await renderForm();
+    const input = document.body.querySelector('[id="residence.permanentAddress"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    await user.type(input, "123 Main St");
+    expect(useApplicationStore.getState().residence.permanentAddress).toBe("123 Main St");
+  });
+
+  it("types into the current address field", async () => {
+    setStore({ currentStep: 3, residence: { ...validResidence, currentAddress: "" } });
+    const user = userEvent.setup();
+    await renderForm();
+    const input = document.body.querySelector('[id="residence.currentAddress"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    await user.type(input, "456 Park Rd");
+    expect(useApplicationStore.getState().residence.currentAddress).toBe("456 Park Rd");
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DECLARATION CHECKBOX CLICKS
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("ApplicationForm — declaration checkbox clicks", () => {
+  it("clicking confirm checkbox toggles declaration.confirmed", async () => {
+    setStore({ currentStep: 5, declaration: { confirmed: false, consent: false } });
+    const user = userEvent.setup();
+    await renderForm();
+    const checkbox = screen.getByRole("checkbox", { name: /confirm/i });
+    expect(checkbox).not.toBeChecked();
+    await user.click(checkbox);
+    expect(useApplicationStore.getState().declaration.confirmed).toBe(true);
+  });
+
+  it("clicking consent checkbox toggles declaration.consent", async () => {
+    setStore({ currentStep: 5, declaration: { confirmed: false, consent: false } });
+    const user = userEvent.setup();
+    await renderForm();
+    const checkbox = screen.getByRole("checkbox", { name: /consent/i });
+    expect(checkbox).not.toBeChecked();
+    await user.click(checkbox);
+    expect(useApplicationStore.getState().declaration.consent).toBe(true);
+  });
+
+  it("clicking both checkboxes enables Continue", async () => {
+    setStore({ currentStep: 5, declaration: { confirmed: false, consent: false } });
+    const user = userEvent.setup();
+    await renderForm();
+    expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: /confirm/i }));
+    await user.click(screen.getByRole("checkbox", { name: /consent/i }));
+    expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SUBMISSION LOCKED STATE
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("ApplicationForm — submission locked state", () => {
+  it("shows the locked banner when submission is outside the window", async () => {
+    statusMock.mockResolvedValue({
+      submissionLocked: true,
+      submissionOpensAt: "2026-09-09T00:00:00+05:30",
+      submissionClosesAt: "2026-09-12T00:00:00+05:30",
+      environment: "test",
+    });
+    // Need submittedAt set so collectionOnly = true
+    getMock.mockResolvedValue({
+      data: currentDraftData(),
+      sessionCode: MOCK_SESSION_CODE,
+      accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
+      submittedAt: "2026-08-01T00:00:00Z",
+    });
+    localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
+    localStorage.setItem("aloysius-g1-application-session-code", MOCK_SESSION_CODE);
+    setStore({ ...fullValidDraft, currentStep: 6 });
+    await renderReview();
+    expect(screen.getByText(/submission is outside/i)).toBeInTheDocument();
+    expect(screen.getByText(/Submission opens 9 Sep 2026/i)).toBeInTheDocument();
+  });
+
+  it("shows 'Submission opens' button text when collectionOnly", async () => {
+    statusMock.mockResolvedValue({
+      submissionLocked: true,
+      submissionOpensAt: "2026-09-09T00:00:00+05:30",
+      submissionClosesAt: "2026-09-12T00:00:00+05:30",
+      environment: "test",
+    });
+    // Create a submitted application (submittedAt set) so collectionOnly is true
+    getMock.mockResolvedValue({
+      data: { ...fullValidDraft, currentStep: 6 },
+      sessionCode: MOCK_SESSION_CODE,
+      accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
+      submittedAt: "2026-08-01T00:00:00Z",
+    });
+    localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
+    localStorage.setItem("aloysius-g1-application-session-code", MOCK_SESSION_CODE);
+    await renderReview();
+    expect(screen.getByText(/Submission opens 9 Sep 2026/)).toBeInTheDocument();
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SUBMISSION REQUEST DIALOG
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("ApplicationForm — submission request dialog", () => {
+  const { requestAccessMock } = vi.hoisted(() => ({ requestAccessMock: vi.fn() }));
+
+  it("shows the approval request form when submit fails with window closed error", async () => {
+    submitMock.mockRejectedValue(new Error("Submissions are outside the configured form window"));
+    requestAccessMock.mockResolvedValue({ submitted: true });
+    setStore({ ...fullValidDraft, currentStep: 6 });
+    const user = userEvent.setup();
+    await renderReview();
+    await user.click(screen.getByRole("button", { name: /submit application/i }));
+    expect(await screen.findByText(/request approval to submit/i)).toBeInTheDocument();
+    expect(screen.getByText(/submission window is closed/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/full name/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/phone/i)).toBeInTheDocument();
+  });
+
+  it("sends the approval request with name and phone", async () => {
+    submitMock.mockRejectedValue(new Error("Submissions are outside the configured form window"));
+    requestAccessMock.mockResolvedValue({ submitted: true });
+    setStore({ ...fullValidDraft, currentStep: 6 });
+    const user = userEvent.setup();
+    await renderReview();
+    await user.click(screen.getByRole("button", { name: /submit application/i }));
+    await screen.findByText(/request approval to submit/i);
+    await user.type(screen.getByPlaceholderText(/full name/i), "Test User");
+    await user.type(screen.getByPlaceholderText(/phone/i), "0712345678");
+    await user.click(screen.getByRole("button", { name: /send approval request/i }));
+    expect(await screen.findByText(/approval request sent/i)).toBeInTheDocument();
+  });
+
+  it("hides the approval request form when Cancel is clicked", async () => {
+    submitMock.mockRejectedValue(new Error("Submissions are outside the configured form window"));
+    setStore({ ...fullValidDraft, currentStep: 6 });
+    const user = userEvent.setup();
+    await renderReview();
+    await user.click(screen.getByRole("button", { name: /submit application/i }));
+    await screen.findByText(/request approval to submit/i);
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(screen.queryByText(/request approval to submit/i)).not.toBeInTheDocument();
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   BIRTH CERTIFICATE DUPLICATE DRAWER
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("ApplicationForm — birth certificate duplicate drawer", () => {
+  it("opens the drawer and shows removal form when duplicate detected", async () => {
+    checkBirthCertificateMock.mockResolvedValue({ exists: true });
+    setStore({ currentStep: 1, applicant: { ...validApplicant, birthCertificateNumber: "DUP123" } });
+    const user = userEvent.setup();
+    await renderForm();
+    await waitFor(() =>
+      expect(screen.getByText("This birth certificate number is already used by another applicant.")).toBeInTheDocument(),
+    );
+    // Click the trigger to open the drawer
+    const trigger = screen.getByRole("button", { name: /view existing application options/i });
+    await user.click(trigger);
+    // Verify drawer content appears
+    expect(await screen.findByText("Existing application found")).toBeInTheDocument();
+    expect(screen.getByText(/ask the school to remove/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/applicant name/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/guardian name/i)).toBeInTheDocument();
+  });
+
+  it("fills the removal request form and submits", async () => {
+    checkBirthCertificateMock.mockResolvedValue({ exists: true });
+    setStore({ currentStep: 1, applicant: { ...validApplicant, birthCertificateNumber: "DUP123" } });
+    const user = userEvent.setup();
+    await renderForm();
+    await waitFor(() =>
+      expect(screen.getByText("This birth certificate number is already used by another applicant.")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByRole("button", { name: /view existing application options/i }));
+    await screen.findByText("Existing application found");
+    // Fill the removal form
+    await user.type(screen.getByPlaceholderText(/applicant name/i), "Test Applicant");
+    await user.type(screen.getByPlaceholderText(/guardian name/i), "Test Guardian");
+    // The removal button should be enabled now (all 3 fields filled)
+    const removeButton = screen.getByRole("button", { name: /request record removal/i });
+    expect(removeButton).toBeEnabled();
+    await user.click(removeButton);
+    // Should show sending state then success
+    expect(await screen.findByRole("status")).toHaveTextContent(/removal request sent/i);
+  });
+
+  it("disables the removal button when fields are missing", async () => {
+    checkBirthCertificateMock.mockResolvedValue({ exists: true });
+    setStore({ currentStep: 1, applicant: { ...validApplicant, birthCertificateNumber: "DUP123" } });
+    const user = userEvent.setup();
+    await renderForm();
+    await waitFor(() =>
+      expect(screen.getByText("This birth certificate number is already used by another applicant.")).toBeInTheDocument(),
+    );
+    await user.click(screen.getByRole("button", { name: /view existing application options/i }));
+    await screen.findByText("Existing application found");
+    // Button should be disabled without filling the form
+    expect(screen.getByRole("button", { name: /request record removal/i })).toBeDisabled();
+    // Fill only applicant name
+    await user.type(screen.getByPlaceholderText(/applicant name/i), "Test");
+    // Still disabled (guardian name and phone missing)
+    expect(screen.getByRole("button", { name: /request record removal/i })).toBeDisabled();
+  });
+});
