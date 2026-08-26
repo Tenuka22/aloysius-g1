@@ -827,3 +827,76 @@ describe("ApplicationForm — birth certificate duplicate drawer", () => {
     expect(screen.getByRole("button", { name: /request record removal/i })).toBeDisabled();
   });
 });
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SELECT DROPDOWN INTERACTIONS
+   ════════════════════════════════════════════════════════════════════════════ */
+
+describe("ApplicationForm — select dropdown interactions", () => {
+  it("selecting Female gender shows the blocked message", async () => {
+    setStore({ currentStep: 1, applicant: { ...validApplicant, gender: "" } });
+    const user = userEvent.setup();
+    await renderForm();
+    // Open the gender select
+    const genderTrigger = document.body.querySelector('[id="applicant.gender"]') as HTMLElement;
+    expect(genderTrigger).not.toBeNull();
+    await user.click(genderTrigger);
+    // Click Female option in the popover
+    await waitFor(() => {
+      const femaleOption = document.body.querySelector('[role="option"]');
+      expect(femaleOption).not.toBeNull();
+    });
+    const options = document.body.querySelectorAll('[role="option"]');
+    let femaleOption: HTMLElement | null = null;
+    options.forEach((opt) => {
+      if (/female/i.test(opt.textContent ?? "")) femaleOption = opt;
+    });
+    expect(femaleOption).not.toBeNull();
+    await user.click(femaleOption!);
+    expect(useApplicationStore.getState().applicant.gender).toBe("Female");
+    expect(screen.getByText(/boys.*school/i)).toBeInTheDocument();
+  });
+
+  it("selecting Christian religion shows the blocked message", async () => {
+    setStore({ currentStep: 1, applicant: { ...validApplicant, religion: "" } });
+    const user = userEvent.setup();
+    await renderForm();
+    const religionTrigger = document.body.querySelector('[id="applicant.religion"]') as HTMLElement;
+    expect(religionTrigger).not.toBeNull();
+    await user.click(religionTrigger);
+    await waitFor(() => {
+      const options = document.body.querySelectorAll('[role="option"]');
+      expect(options.length).toBeGreaterThan(0);
+    });
+    const options = document.body.querySelectorAll('[role="option"]');
+    let christianOption: HTMLElement | null = null;
+    options.forEach((opt) => {
+      if (/christian/i.test(opt.textContent ?? "")) christianOption = opt;
+    });
+    expect(christianOption).not.toBeNull();
+    await user.click(christianOption!);
+    expect(useApplicationStore.getState().applicant.religion).toBe("Christian");
+    expect(screen.getByText(/not available to christian/i)).toBeInTheDocument();
+  });
+
+  it("selecting relationship updates the store", async () => {
+    setStore({ currentStep: 2, guardian: { ...validGuardian, relationship: "" } });
+    const user = userEvent.setup();
+    await renderForm();
+    const relationshipTrigger = document.body.querySelector('[id="guardian.relationship"]') as HTMLElement;
+    expect(relationshipTrigger).not.toBeNull();
+    await user.click(relationshipTrigger);
+    await waitFor(() => {
+      const options = document.body.querySelectorAll('[role="option"]');
+      expect(options.length).toBeGreaterThan(0);
+    });
+    const options = document.body.querySelectorAll('[role="option"]');
+    let motherOption: HTMLElement | null = null;
+    options.forEach((opt) => {
+      if (/mother/i.test(opt.textContent ?? "")) motherOption = opt;
+    });
+    expect(motherOption).not.toBeNull();
+    await user.click(motherOption!);
+    expect(useApplicationStore.getState().guardian.relationship).toBe("Mother");
+  });
+});
