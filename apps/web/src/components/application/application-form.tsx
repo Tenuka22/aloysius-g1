@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useForm } from "@tanstack/react-form";
 import type { AnyFieldApi, ReactFormExtendedApi } from "@tanstack/react-form";
-import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, Loader2, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { CategoryStep } from "./category-step";
@@ -1252,7 +1252,26 @@ export function ApplicationForm({
       draft.updateDraft(value as Partial<ApplicationDraft>),
   });
 
-  const [formSnapshot, setFormSnapshot] = useState(() => JSON.stringify(form.state.values));
+  const formSnapshot = useSyncExternalStore(
+    (cb) => {
+      const subscription = form.store.subscribe(cb);
+      return () => subscription.unsubscribe();
+    },
+    () => JSON.stringify(form.state.values),
+  );
+
+  useEffect(() => {
+    const parsed = JSON.parse(formSnapshot) as Partial<ApplicationDraft>;
+    // Skip when zustand already holds the same data (ignoring lastSavedAt)
+    // to avoid an infinite loop: updateDraft always sets a new lastSavedAt,
+    // which changes draft (the useForm defaultValues), which triggers
+    // formApi.update to reset form values, which changes formSnapshot.
+    const current = useApplicationStore.getState();
+    const { lastSavedAt: _ls1, ...parsedClean } = parsed;
+    const { lastSavedAt: _ls2, ...currentClean } = current;
+    if (JSON.stringify(parsedClean) === JSON.stringify(currentClean)) return;
+    draft.updateDraft(parsed);
+  }, [formSnapshot]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1294,9 +1313,27 @@ export function ApplicationForm({
                 restoredSessionCode,
               );
             }
-            draft.updateDraft(latest);
-            form.reset(latest);
-            setSavedSnapshot(JSON.stringify(latest));
+            const local = useApplicationStore.getState();
+            const localHasData = Boolean(
+              local.applicant.fullName ||
+              local.applicant.birthCertificateNumber ||
+              local.guardian.fullName ||
+              local.residence.permanentAddress,
+            );
+            const serverHasData = Boolean(
+              latest.applicant.fullName ||
+              latest.applicant.birthCertificateNumber ||
+              latest.guardian.fullName ||
+              latest.residence.permanentAddress,
+            );
+            if (serverHasData || !localHasData) {
+              draft.updateDraft(latest);
+              form.reset(latest);
+              setSavedSnapshot(JSON.stringify(latest));
+            } else {
+              form.reset(local as ApplicationDraft);
+              setSavedSnapshot(JSON.stringify(local));
+            }
             setSubmittedAt(result.submittedAt || null);
             dataLoaded = true;
           }
@@ -1395,49 +1432,12 @@ export function ApplicationForm({
     return operation;
   };
 
-  useEffect(() => {
-    if (
-      !hydrated ||
-      !accessKey ||
-      !savedSnapshot ||
-      formSnapshot === savedSnapshot
-    )
-      return;
-    const timer = window.setTimeout(() => {
-      void saveToServer();
-    }, 1500);
-    return () => window.clearTimeout(timer);
-  }, [
-    accessKey,
-    hydrated,
-    savedSnapshot,
-    formSnapshot,
-    JSON.stringify(draft.categories),
-  ]);
-
-  const [localSaveStatus, setLocalSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
-  const lastSavedRef = useRef("");
-
-  useEffect(() => {
-    if (!hydrated) return;
-    if (formSnapshot === lastSavedRef.current) return;
-    setLocalSaveStatus("saving");
-    const timer = window.setTimeout(() => {
-      draft.updateDraft(form.state.values as Partial<ApplicationDraft>);
-      lastSavedRef.current = formSnapshot;
-      setLocalSaveStatus("saved");
-      const clear = window.setTimeout(() => setLocalSaveStatus("idle"), 2000);
-      return () => window.clearTimeout(clear);
-    }, 500);
-    return () => window.clearTimeout(timer);
-  }, [hydrated, formSnapshot]);
 
   const next = async () => {
     if (nextDisabledReason) return;
     try {
       setSubmitError("");
       await form.handleSubmit();
-      lastSavedRef.current = JSON.stringify(form.state.values);
       const nextStep = Math.min(current + 1, steps.length - 1);
       draft.setStep(nextStep);
       await saveToServer();
@@ -1452,7 +1452,7 @@ export function ApplicationForm({
   };
 
   const hasUnsavedChanges =
-    !accessKey || formSnapshot !== savedSnapshot;
+    !accessKey || JSON.stringify(form.state.values) !== savedSnapshot;
 
   const submitApplication = async () => {
     try {
@@ -1534,10 +1534,7 @@ export function ApplicationForm({
 
   return (
     <main className="min-h-[calc(100svh-4rem)] px-5 pt-14 pb-20 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_30rem)]">
-      <form.Subscribe
-        selector={(s) => JSON.stringify(s.values)}
-        onChange={(snapshot) => setFormSnapshot(snapshot)}
-      />
+
       <section className="mx-auto max-w-[1120px]">
         <div className="flex justify-between gap-8 items-start mb-9">
           <div className="min-w-0 flex-1">
@@ -1711,17 +1708,7 @@ export function ApplicationForm({
             </div>
           ) : (
             <>
-              {localSaveStatus === "saving" && (
-                <span className="inline-flex items-center gap-1 text-muted-foreground text-[0.85rem] whitespace-nowrap">
-                  <Loader2 size={15} className="animate-spin" /> Saving…
-                </span>
-              )}
-              {localSaveStatus === "saved" && (
-                <span className="inline-flex items-center gap-1 text-primary text-[0.85rem] whitespace-nowrap">
-                  <Check size={15} /> Saved
-                </span>
-              )}
-              {localSaveStatus === "idle" && draft.lastSavedAt && (
+              {draft.lastSavedAt && (
                 <span className="inline-flex items-center gap-1 text-primary text-[0.85rem] whitespace-nowrap">
                   <Check size={15} /> Saved locally
                 </span>
