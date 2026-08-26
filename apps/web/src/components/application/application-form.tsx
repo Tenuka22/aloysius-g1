@@ -1252,6 +1252,8 @@ export function ApplicationForm({
       draft.updateDraft(value as Partial<ApplicationDraft>),
   });
 
+  const [formSnapshot, setFormSnapshot] = useState(() => JSON.stringify(form.state.values));
+
   useEffect(() => {
     let cancelled = false;
     const restore = async () => {
@@ -1398,7 +1400,7 @@ export function ApplicationForm({
       !hydrated ||
       !accessKey ||
       !savedSnapshot ||
-      JSON.stringify(form.state.values) === savedSnapshot
+      formSnapshot === savedSnapshot
     )
       return;
     const timer = window.setTimeout(() => {
@@ -1409,7 +1411,7 @@ export function ApplicationForm({
     accessKey,
     hydrated,
     savedSnapshot,
-    JSON.stringify(form.state.values),
+    formSnapshot,
     JSON.stringify(draft.categories),
   ]);
 
@@ -1418,18 +1420,17 @@ export function ApplicationForm({
 
   useEffect(() => {
     if (!hydrated) return;
-    const snapshot = JSON.stringify(form.state.values);
-    if (snapshot === lastSavedRef.current) return;
+    if (formSnapshot === lastSavedRef.current) return;
     setLocalSaveStatus("saving");
     const timer = window.setTimeout(() => {
       draft.updateDraft(form.state.values as Partial<ApplicationDraft>);
-      lastSavedRef.current = snapshot;
+      lastSavedRef.current = formSnapshot;
       setLocalSaveStatus("saved");
       const clear = window.setTimeout(() => setLocalSaveStatus("idle"), 2000);
       return () => window.clearTimeout(clear);
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [hydrated, JSON.stringify(form.state.values)]);
+  }, [hydrated, formSnapshot]);
 
   const next = async () => {
     if (nextDisabledReason) return;
@@ -1451,7 +1452,7 @@ export function ApplicationForm({
   };
 
   const hasUnsavedChanges =
-    !accessKey || JSON.stringify(form.state.values) !== savedSnapshot;
+    !accessKey || formSnapshot !== savedSnapshot;
 
   const submitApplication = async () => {
     try {
@@ -1533,6 +1534,10 @@ export function ApplicationForm({
 
   return (
     <main className="min-h-[calc(100svh-4rem)] px-5 pt-14 pb-20 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_30rem)]">
+      <form.Subscribe
+        selector={(s) => JSON.stringify(s.values)}
+        onChange={(snapshot) => setFormSnapshot(snapshot)}
+      />
       <section className="mx-auto max-w-[1120px]">
         <div className="flex justify-between gap-8 items-start mb-9">
           <div className="min-w-0 flex-1">
