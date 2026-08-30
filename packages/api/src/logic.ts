@@ -26,6 +26,9 @@ export const defaultSubmissionWindow = () => ({
 export const isSubmissionLocked = (window: { opensAt: Date; closesAt: Date }, now: Date = new Date()) =>
   now < window.opensAt || now > window.closesAt;
 
+export const isAdmissionsAvailable = (closesAt: Date, now: Date = new Date(), earlyAccess = false) =>
+  earlyAccess || now >= closesAt;
+
 export const isValidSubmissionWindow = (opensAt: Date, closesAt: Date) => closesAt > opensAt;
 
 export const withoutSchoolPreferences = (data: Record<string, unknown>): Record<string, unknown> => {

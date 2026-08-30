@@ -18,6 +18,7 @@ import {
   draftSchema,
   extractBirthCertificateNumber,
   hashKey,
+  isAdmissionsAvailable,
   isSubmissionLocked,
   isValidSubmissionWindow,
   keySchema,
@@ -90,6 +91,42 @@ const publishApplicationChange = async () => applicationEvents.publish("applicat
 const applicationRecord = (row: typeof applications.$inferSelect) => {
   const data = row.data as ApplicationData | null | undefined;
   return { id: row.id, sessionCode: row.sessionCode, applicantName: data?.applicant?.fullName || "Unnamed applicant", status: row.submittedAt ? "submitted" : "draft", createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt, accessKeyHint: row.accessKeyHint, validationErrors: applicationValidationErrors(data) };
+};
+const admissionStatusSchema = z.enum(["pending", "verified", "fake"]);
+const admissionsListInput = paginationInput.extend({
+  earlyAccess: z.boolean().default(false),
+  status: z.enum(["all", "pending", "verified", "fake", "banned"]).default("all"),
+});
+const admissionSummaryDataSchema = z.object({
+  applicant: z.object({ fullName: z.string().optional() }).optional(),
+  categories: z.array(z.object({ categoryType: z.string().optional() }).passthrough()).optional(),
+}).passthrough();
+const admissionSummary = (row: typeof applications.$inferSelect) => {
+  const parsed = admissionSummaryDataSchema.safeParse(row.data);
+  const data = parsed.success ? parsed.data : undefined;
+  const categories = data?.categories ?? [];
+  return {
+    id: row.id,
+    applicantName: data?.applicant?.fullName || "Unnamed applicant",
+    birthCertificateNumber: row.birthCertificateNumber ?? "Not provided",
+    sessionCode: row.sessionCode,
+    submittedAt: row.submittedAt,
+    updatedAt: row.updatedAt,
+    categoryCount: categories.length,
+    categoryTypes: categories.flatMap((category) => category.categoryType ? [category.categoryType] : []),
+    admissionStatus: row.admissionStatus,
+    interviewNotes: row.interviewNotes,
+    isBanned: row.isBanned,
+    banReason: row.banReason,
+    admissionUpdatedAt: row.admissionUpdatedAt,
+  };
+};
+const ensureAdmissionsAccess = async (earlyAccess: boolean) => {
+  const window = await getApplicationWindow();
+  if (!isAdmissionsAvailable(window.closesAt, new Date(), earlyAccess)) {
+    throw new ORPCError("FORBIDDEN", { message: `Admissions opens after ${window.closesAt.toISOString()}` });
+  }
+  return window;
 };
 
 export const appRouter = {
@@ -226,6 +263,47 @@ export const appRouter = {
       const records = rows.map(applicationRecord);
       return { total: records.length, drafts: records.filter((record) => record.status === "draft").length, submitted: records.filter((record) => record.status === "submitted").length, invalidEmail: records.filter((record) => record.validationErrors.includes("invalid_email")).length, incomplete: records.filter((record) => record.validationErrors.length > 0).length, recent: records.slice().sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()).slice(0, 10) };
     }),
+    admissions: {
+      list: adminProcedure.input(admissionsListInput).handler(async ({ input }) => {
+        await ensureAdmissionsAccess(input.earlyAccess);
+        const query = input.query.toLowerCase();
+        const rows = await db.select().from(applications).where(isNotNull(applications.submittedAt)).all();
+        const filtered = rows
+          .map(admissionSummary)
+          .filter((record) => {
+            if (query && ![record.applicantName, record.birthCertificateNumber, record.sessionCode].some((value) => value.toLowerCase().includes(query))) return false;
+            if (input.status === "banned" && !record.isBanned) return false;
+            if (input.status !== "all" && input.status !== "banned" && record.admissionStatus !== input.status) return false;
+            return true;
+          })
+          .sort((a, b) => (b.submittedAt?.getTime() ?? 0) - (a.submittedAt?.getTime() ?? 0));
+        const start = (input.page - 1) * input.pageSize;
+        return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
+    }),
+      get: adminProcedure.input(z.object({ id: z.string().uuid(), earlyAccess: z.boolean().default(false) })).handler(async ({ input }) => {
+        await ensureAdmissionsAccess(input.earlyAccess);
+        const row = await db.select().from(applications).where(eq(applications.id, input.id)).get();
+        if (!row || !row.submittedAt) throw new ORPCError("NOT_FOUND", { message: "Submitted application not found" });
+        return { ...admissionSummary(row), data: withoutSchoolPreferences(row.data as Record<string, unknown>), createdAt: row.createdAt };
+    }),
+      updateReview: adminProcedure.input(z.object({
+        id: z.string().uuid(),
+        admissionStatus: admissionStatusSchema,
+        interviewNotes: z.string().trim().max(5000).default(""),
+        isBanned: z.boolean().default(false),
+        banReason: z.string().trim().max(500).optional(),
+        earlyAccess: z.boolean().default(false),
+      }).superRefine((input, context) => {
+        if (input.isBanned && !input.banReason) context.addIssue({ code: "custom", path: ["banReason"], message: "A reason is required when banning an applicant" });
+      })).handler(async ({ input }) => {
+        await ensureAdmissionsAccess(input.earlyAccess);
+        const row = await db.select({ id: applications.id, submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, input.id)).get();
+        if (!row || !row.submittedAt) throw new ORPCError("NOT_FOUND", { message: "Submitted application not found" });
+        const admissionUpdatedAt = new Date();
+        await db.update(applications).set({ admissionStatus: input.admissionStatus, interviewNotes: input.interviewNotes, isBanned: input.isBanned, banReason: input.isBanned ? input.banReason ?? null : null, admissionUpdatedAt }).where(eq(applications.id, input.id)).run();
+        return { admissionStatus: input.admissionStatus, interviewNotes: input.interviewNotes, isBanned: input.isBanned, banReason: input.isBanned ? input.banReason ?? null : null, admissionUpdatedAt };
+    }),
+    },
     applications: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default(""), sort: z.string().default("updatedAt"), sortDir: z.enum(["asc", "desc"]).default("desc"), status: z.enum(["all", "draft", "submitted", "invalid"]).default("all") })).handler(async ({ input }) => {
       const all = (await db.select().from(applications).all()).map(applicationRecord).filter((record) => { if (input.query && !record.applicantName.toLowerCase().includes(input.query.toLowerCase()) && !record.sessionCode.toLowerCase().includes(input.query.toLowerCase()) && !record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase())) return false; if (input.status !== "all") { if (input.status === "invalid" && record.validationErrors.length === 0) return false; if (input.status !== "invalid" && record.status !== input.status) return false; } return true; }).sort((a, b) => { const av = (a as unknown as Record<string, unknown>)[input.sort]; const bv = (b as unknown as Record<string, unknown>)[input.sort]; const cmp = String(av ?? "").localeCompare(String(bv ?? ""), undefined, { numeric: true }); return input.sortDir === "desc" ? -cmp : cmp; });
       const start = (input.page - 1) * input.pageSize;

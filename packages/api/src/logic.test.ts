@@ -8,6 +8,7 @@ import {
   defaultSubmissionWindow,
   extractBirthCertificateNumber,
   hashKey,
+  isAdmissionsAvailable,
   isSubmissionLocked,
   isValidSessionCode,
   isValidSubmissionWindow,
@@ -93,6 +94,13 @@ describe("isSubmissionLocked (custom window)", () => {
   it("locks before a custom opening", () => expect(isSubmissionLocked(window, new Date("2025-12-31T23:59:59.999Z"))).toBe(true));
   it("unlocks inside a custom window", () => expect(isSubmissionLocked(window, new Date("2026-01-15T00:00:00.000Z"))).toBe(false));
   it("locks after a custom closing", () => expect(isSubmissionLocked(window, new Date("2026-02-01T00:00:00.001Z"))).toBe(true));
+});
+
+describe("isAdmissionsAvailable", () => {
+  const closesAt = new Date("2026-09-12T00:00:00.000Z");
+  it("opens automatically at the closing time", () => expect(isAdmissionsAvailable(closesAt, closesAt)).toBe(true));
+  it("stays closed before the submission window ends", () => expect(isAdmissionsAvailable(closesAt, new Date("2026-09-11T23:59:59.999Z"))).toBe(false));
+  it("allows explicit early access before closing", () => expect(isAdmissionsAvailable(closesAt, new Date("2026-09-11T23:59:59.999Z"), true)).toBe(true));
 });
 
 describe("isValidSubmissionWindow (admin setting)", () => {

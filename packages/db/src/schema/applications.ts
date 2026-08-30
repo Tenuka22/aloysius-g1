@@ -10,4 +10,9 @@ export const applications = sqliteTable("applications", {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   submittedAt: integer("submitted_at", { mode: "timestamp_ms" }),
+  admissionStatus: text("admission_status").notNull().default("pending"),
+  interviewNotes: text("interview_notes").notNull().default(""),
+  isBanned: integer("is_banned", { mode: "boolean" }).notNull().default(false),
+  banReason: text("ban_reason"),
+  admissionUpdatedAt: integer("admission_updated_at", { mode: "timestamp_ms" }),
 });

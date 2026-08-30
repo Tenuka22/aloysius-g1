@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, FileWarning, KeyRound, LayoutDashboard, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, FileWarning, KeyRound, LayoutDashboard, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { cn } from "@aloysius-g1/ui/lib/utils";
@@ -73,6 +73,9 @@ function AdminPage() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton href="/admin/applications" isActive={location.pathname.startsWith("/admin/applications")} onClick={() => setSidebarOpen(false)}><BarChart3 size={20} /> Applications</SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/admin/admissions" isActive={location.pathname === "/admin/admissions"} onClick={() => setSidebarOpen(false)}><ClipboardCheck size={20} /> Admissions</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton href="/admin/requests" isActive={location.pathname === "/admin/requests"} onClick={() => setSidebarOpen(false)}><FileWarning size={20} /> Submission requests</SidebarMenuButton>
@@ -153,6 +156,13 @@ function AdminPage() {
                   <Button variant="secondary" render={<Link to="/admin/removal-requests" />}>Removal requests</Button>
                   <Button variant="secondary" render={<Link to="/admin/forgot-requests" />}>Forgot key requests</Button>
                 </div>
+              </CardContent>
+            </Card>
+            <Card className="mb-4">
+              <CardHeader><CardTitle>Admissions</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">Open one submitted application at a time for interview review, corrections, and admissions decisions.</p>
+                <Button variant="secondary" render={<Link to="/admin/admissions" />}><ClipboardCheck size={17} /> Open admissions</Button>
               </CardContent>
             </Card>
             <Card className="mb-4">
