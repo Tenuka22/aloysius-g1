@@ -37,17 +37,29 @@ function createStorageStub(): Storage {
   } as Storage;
 }
 
+const gbl = globalThis as unknown as Record<string, unknown>;
+if (!gbl.ResizeObserver) gbl.ResizeObserver = ResizeObserverStub;
+if (!gbl.localStorage) gbl.localStorage = createStorageStub();
+if (!gbl.sessionStorage) gbl.sessionStorage = createStorageStub();
+if (!gbl.matchMedia) {
+  gbl.matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  });
+}
+
 if (typeof window !== "undefined") {
   const win = window as unknown as Record<string, unknown>;
-  const gbl = globalThis as unknown as Record<string, unknown>;
   if (!win.ResizeObserver) win.ResizeObserver = ResizeObserverStub;
-  if (!gbl.ResizeObserver) gbl.ResizeObserver = ResizeObserverStub;
   if (!win.PointerEvent) win.PointerEvent = win.MouseEvent;
-  if (!win.localStorage) {
-    const storage = createStorageStub();
-    win.localStorage = storage;
-    gbl.localStorage = storage;
-  }
+  if (!win.localStorage) win.localStorage = gbl.localStorage;
+  if (!win.sessionStorage) win.sessionStorage = gbl.sessionStorage;
   if (!win.matchMedia) {
     win.matchMedia = (query: string) => ({
       matches: false,

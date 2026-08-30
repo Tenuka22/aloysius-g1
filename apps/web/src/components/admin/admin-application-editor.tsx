@@ -26,7 +26,7 @@ const sections = [
 
 const CATEGORY_LABELS: Record<CategoryType, string> = {
   "6.1": "6.1 – Residence Verification & Proximity",
-  "6.2": "6.2 – Alumi",
+  "6.2": "6.2 – Alumni",
   "6.3": "6.3 – Siblings",
   "6.4": "6.4 – Period of Service & Distance",
   "6.5": "6.5 – Transfer Applications",

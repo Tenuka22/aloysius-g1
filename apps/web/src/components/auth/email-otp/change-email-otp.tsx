@@ -61,7 +61,7 @@ export type ChangeEmailOtpProps = {
  *
  * Replaces the built-in `<ChangeEmail />` card when the email-OTP plugin runs
  * with `changeEmail: true`. With `verifyCurrentEmail` on it is a three-step
- * flow — confirm the current address, then the new one — and two steps
+ * flow - confirm the current address, then the new one - and two steps
  * otherwise.
  *
  * @param className - Additional CSS classes applied to the card.

@@ -16,7 +16,7 @@ import { AccessRecoveryDialog } from "@/components/application/access-recovery-d
 
 export const Route = createFileRoute("/")({ component: HomeComponent });
 
-function HomeComponent() {
+export function HomeComponent() {
   const [keys, setKeys] = useState(getSavedKeys);
   const [records, setRecords] = useState<Record<string, { name: string; birthCertificateNumber: string; documents: number; sessionCode?: string; updatedAt?: string; completion: number; submitted: boolean; error?: string }>>({});
   const [removeKey, setRemoveKey] = useState<string | null>(null);
@@ -57,8 +57,8 @@ function HomeComponent() {
     if (key) window.location.assign(`/application/access?key=${encodeURIComponent(key)}`);
   };
   const handleFileImport = (file: File) => {
-    import("qr-scanner").then(({ scanImage }) =>
-      scanImage(file, { returnDetailedScanResult: true }).then((result: unknown) => {
+    import("qr-scanner").then(({ default: QrScanner }) =>
+      QrScanner.scanImage(file, { returnDetailedScanResult: true }).then((result: unknown) => {
         const data = result as { data?: string } | string;
         const key = typeof data === "string" ? data : data.data || "";
         handleQrKey(key);
@@ -99,28 +99,33 @@ function HomeComponent() {
         return [key, { name: data.applicant?.fullName || "Unnamed applicant", birthCertificateNumber: data.applicant?.birthCertificateNumber || "Not provided", documents: Array.isArray(data.documents) ? data.documents.length : 0, sessionCode: result.sessionCode, updatedAt: String(result.updatedAt), completion: completionPercent(data), submitted: Boolean(result.submittedAt) }] as const;
       } catch (error) {
         if (error instanceof Error && error.message.toLowerCase().includes("not found")) {
-          const remaining = getSavedKeys().filter((savedKey) => savedKey !== key);
-          localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(getSavedKeys().filter((savedKey) => savedKey !== key)));
-          if (localStorage.getItem("aloysius-g1-application-key") === key) localStorage.removeItem("aloysius-g1-application-key");
-          setKeys(remaining);
-        return [key, { name: "Removed locally", birthCertificateNumber: "", documents: 0, completion: 0, submitted: false, error: "No longer exists on the server" }] as const;
+          return [key, { name: "Unavailable application", birthCertificateNumber: "", documents: 0, completion: 0, submitted: false, error: "No longer exists on the server" }] as const;
         }
         return [key, { name: "Unavailable", birthCertificateNumber: "", documents: 0, completion: 0, submitted: false, error: "Could not refresh from the database" }] as const;
       }
     })).then((entries) => { if (!cancelled) setRecords(Object.fromEntries(entries)); });
     return () => { cancelled = true; };
   }, [keys]);
-  useEffect(() => { void authClient.getSession().then((result) => setIsAdmin(result.data?.user.role === "admin")); }, []);
+  useEffect(() => { void authClient.getSession().then((result) => setIsAdmin((result.data?.user as { role?: string } | undefined)?.role === "admin")); }, []);
   useEffect(() => {
     const controller = new AbortController();
     void client.application.count().then((result) => setApplicationCount(result.count)).catch(() => undefined);
-    const cancel = consumeEventIterator(client.application.liveCount(undefined, { signal: controller.signal }), { onEvent: (event) => setApplicationCount(event.count), onError: () => undefined });
-    return () => { controller.abort(); void cancel(); };
+    const subscription = consumeEventIterator(client.application.liveCount(undefined, { signal: controller.signal }), { onEvent: (event) => setApplicationCount(event.count), onError: () => undefined });
+    return () => {
+      controller.abort();
+      const stop = subscription as unknown;
+      if (typeof stop === "function") void stop();
+      else if (typeof stop === "object" && stop !== null && "cancel" in stop && typeof stop.cancel === "function") void stop.cancel();
+    };
   }, []);
   const submittedCount = keys.filter((k) => records[k]?.submitted).length;
   const draftCount = keys.filter((k) => !records[k]?.submitted).length;
   const errorCount = keys.filter((k) => records[k]?.error).length;
   const incompleteCount = keys.filter((k) => !records[k]?.submitted && (records[k]?.completion ?? 0) < 100).length;
+  const visibleKeys = keys.filter((key, index) => {
+    const sessionCode = records[key]?.sessionCode;
+    return !sessionCode || keys.findIndex((candidate) => records[candidate]?.sessionCode === sessionCode) === index;
+  });
 
   return (
     <main className="min-h-svh" data-surface="g1-2026-application">
@@ -139,7 +144,7 @@ function HomeComponent() {
             Application dashboard
           </h1>
           <p className="text-muted-foreground max-w-[38rem] text-sm leading-relaxed">
-            Start a new application, continue an existing one, or manage saved records.
+            Create a record, continue an existing one, or manage saved records.
           </p>
         </section>
 
@@ -152,7 +157,7 @@ function HomeComponent() {
                   <LayoutDashboard size={15} />
                 </div>
                 <div>
-                  <div className="text-xl font-bold tracking-tight">{applicationCount ?? "—"}</div>
+                  <div className="text-xl font-bold tracking-tight">{applicationCount ?? "..."}</div>
                   <div className="text-xs text-muted-foreground">Total applications</div>
                 </div>
               </div>
@@ -279,7 +284,7 @@ function HomeComponent() {
           </div>
           <span className="text-sm text-muted-foreground tabular-nums">{keys.length} {keys.length === 1 ? "application" : "applications"}</span>
         </div>
-        <div className="grid gap-2.5">{keys.map((key) => {
+        <div className="grid gap-2.5">{visibleKeys.map((key) => {
           const record = records[key];
           return <Card key={key} className="group transition-shadow hover:shadow-md hover:ring-primary/20">
             <Link className="contents" to="/application/access" search={{ key, code: record?.sessionCode }}>
@@ -352,7 +357,7 @@ function HomeComponent() {
           <div className="grid gap-3">
             <Input value={loadKeyInput} onChange={(e) => { setLoadKeyInput(e.target.value); setLoadKeyError(""); }} placeholder="Paste access key here…" />
             {loadKeyError && <p className="text-sm text-destructive">{loadKeyError}</p>}
-            <Button type="button" onClick={loadWithKey} disabled={!loadKeyInput.trim()}>Open application</Button>
+            <Button type="button" onClick={loadWithKey}>Open application</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,0 +1,306 @@
+[
+  {
+    "name": "Sacred Heart Convent",
+    "latitude": 6.0367901,
+    "longitude": 80.2111744,
+    "address": "26P6+PF7, Galle 80000",
+    "place_id": "0x3ae173bde9c17b91:0x9c9887c1d9f29e04",
+    "url": "https://www.google.com/maps/place/Sacred+Heart+Convent/data=!4m7!3m6!1s0x3ae173bde9c17b91:0x9c9887c1d9f29e04!8m2!3d6.0367901!4d80.2111744!16s%2Fm%2F010wlsl5!19sChIJkXvB6b1z4ToRBJ7y2cGHmJw?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "St. Aloysius' College",
+    "latitude": 6.0359809,
+    "longitude": 80.2118981,
+    "address": "St. Aloysius' College Main Building, St. Mary's Church, Templers Rd, Galle 80000",
+    "place_id": "0x3ae173bdb100e2cf:0x16c14f666237c35f",
+    "url": "https://www.google.com/maps/place/St.+Aloysius%27+College/data=!4m7!3m6!1s0x3ae173bdb100e2cf:0x16c14f666237c35f!8m2!3d6.0359809!4d80.2118981!16s%2Fm%2F03cq4_t!19sChIJz-IAsb1z4ToRX8M3YmZPwRY?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Southlands College",
+    "latitude": 6.0271544,
+    "longitude": 80.2163662,
+    "address": "26G8+VG9, Parawa St, Galle 80000",
+    "place_id": "0x3ae173a6a6f9e6f5:0xac804c1ca531b19",
+    "url": "https://www.google.com/maps/place/Southlands+College/data=!4m7!3m6!1s0x3ae173a6a6f9e6f5:0xac804c1ca531b19!8m2!3d6.0271544!4d80.2163662!16zL20vMDZqNXNz!19sChIJ9eb5pqZz4ToRGRtTysEEyAo?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Olcott Maha Vidyalaya - ඕල්කට් මහා විද්‍යාලය",
+    "latitude": 6.0399055,
+    "longitude": 80.2214993,
+    "address": "Galle 80000",
+    "place_id": "0x3ae173b7711f053b:0x4264c4747c9971d1",
+    "url": "https://www.google.com/maps/place/Olcott+Maha+Vidyalaya+-+%E0%B6%95%E0%B6%BD%E0%B7%8A%E0%B6%9A%E0%B6%A7%E0%B7%8A+%E0%B6%B8%E0%B7%84%E0%B7%8F+%E0%B7%80%E0%B7%92%E0%B6%AF%E0%B7%8A%E2%80%8D%E0%B6%BA%E0%B7%8F%E0%B6%BD%E0%B6%BA/data=!4m7!3m6!1s0x3ae173b7711f053b:0x4264c4747c9971d1!8m2!3d6.0399055!4d80.2214993!16s%2Fg%2F1v2dzykh!19sChIJOwUfcbdz4ToR0XGZfHTEZEI?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Sanghamitta Balika Vidyalaya",
+    "latitude": 6.0472346,
+    "longitude": 80.2125174,
+    "address": "26W7+V2R, Wakwella Rd, Galle 80000",
+    "place_id": "0x3ae173c1750d8727:0x9bb7f3f8c369ca68",
+    "url": "https://www.google.com/maps/place/Sanghamitta+Balika+Vidyalaya/data=!4m7!3m6!1s0x3ae173c1750d8727:0x9bb7f3f8c369ca68!8m2!3d6.0472346!4d80.2125174!16s%2Fm%2F0b_zzy4!19sChIJJ4cNdcFz4ToRaMppw_jzt5s?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "BTS Vidyalaya",
+    "latitude": 6.0492232,
+    "longitude": 80.1877121,
+    "address": "Dadalla, Galle",
+    "place_id": "0x3ae17409d92af487:0xc1ad18eeabe35930",
+    "url": "https://www.google.com/maps/place/BTS+Vidyalaya/data=!4m7!3m6!1s0x3ae17409d92af487:0xc1ad18eeabe35930!8m2!3d6.0492232!4d80.1877121!16s%2Fg%2F1tdlsq5f!19sChIJh_Qq2Ql04ToRMFnjq-4YrcE?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Anuladevi Girls' College |අනුලා දේවි බාලිකා විද්‍යාලය",
+    "latitude": 6.0379537,
+    "longitude": 80.2299993,
+    "address": "26QH+5XQ, Gangarama Rd, Galle 80000",
+    "place_id": "0x3ae173b482eafb99:0xc41b8a5460c1d457",
+    "url": "https://www.google.com/maps/place/Anuladevi+Girls%27+College+%7C%E0%B6%85%E0%B6%B1%E0%B7%94%E0%B6%BD%E0%B7%8F+%E0%B6%AF%E0%B7%9A%E0%B7%80%E0%B7%92+%E0%B6%B6%E0%B7%8F%E0%B6%BD%E0%B7%92%E0%B6%9A%E0%B7%8F+%E0%B7%80%E0%B7%92%E0%B6%AF%E0%B7%8A%E2%80%8D%E0%B6%BA%E0%B7%8F%E0%B6%BD%E0%B6%BA/data=!4m7!3m6!1s0x3ae173b482eafb99:0xc41b8a5460c1d457!8m2!3d6.0379537!4d80.2299993!16s%2Fg%2F1hf4nt6xg!19sChIJmfvqgrRz4ToRV9TBYFSKG8Q?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Richmond College",
+    "latitude": 6.0523479,
+    "longitude": 80.2041622,
+    "address": "Richmond College Richmond Hill Rd, Galle 80000",
+    "place_id": "0x3ae173ef4cc6b88d:0xd9c5ef5a5f92100b",
+    "url": "https://www.google.com/maps/place/Richmond+College/data=!4m7!3m6!1s0x3ae173ef4cc6b88d:0xd9c5ef5a5f92100b!8m2!3d6.0523479!4d80.2041622!16zL20vMDNocGww!19sChIJjbjGTO9z4ToRCxCSX1rvxdk?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Rippon Girls' College",
+    "latitude": 6.0527101,
+    "longitude": 80.2033719,
+    "address": "Richmond Hill Rd, Galle 80000",
+    "place_id": "0x3ae173ef585cc0db:0x77ee98503aa2aee",
+    "url": "https://www.google.com/maps/place/Rippon+Girls%27+College/data=!4m7!3m6!1s0x3ae173ef585cc0db:0x77ee98503aa2aee!8m2!3d6.0527101!4d80.2033719!16s%2Fm%2F0cpdz29!19sChIJ28BcWO9z4ToR7iqqA4Xpfgc?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Galle Muslim Ladies College",
+    "latitude": 6.0426135,
+    "longitude": 80.224143,
+    "address": "26VF+2MR, Kong Tree Rd, Galle 80000",
+    "place_id": "0x3ae173b62e18ca7b:0xf85db9dc09a5b682",
+    "url": "https://www.google.com/maps/place/Galle+Muslim+Ladies+College/data=!4m7!3m6!1s0x3ae173b62e18ca7b:0xf85db9dc09a5b682!8m2!3d6.0426135!4d80.224143!16s%2Fg%2F1tdd885v!19sChIJe8oYLrZz4ToRgralCdy5Xfg?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Sudarma College",
+    "latitude": 6.0339581,
+    "longitude": 80.2370006,
+    "address": "26MP+HRJ Sudharma college, Matara Rd, Galle 80000",
+    "place_id": "0x3ae1724dea2d12f3:0xfa28f47ed3c93f67",
+    "url": "https://www.google.com/maps/place/Sudarma+College/data=!4m7!3m6!1s0x3ae1724dea2d12f3:0xfa28f47ed3c93f67!8m2!3d6.0339581!4d80.2370006!16s%2Fg%2F11b6c8zhg1!19sChIJ8xIt6k1y4ToRZz_J0370KPo?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Principal's Home",
+    "latitude": 6.0417527,
+    "longitude": 80.2430558,
+    "address": "26RV+P63, Galle",
+    "place_id": "0x3ae17318a1561567:0x8d597c74234ac796",
+    "url": "https://www.google.com/maps/place/Principal%27s+Home/data=!4m7!3m6!1s0x3ae17318a1561567:0x8d597c74234ac796!8m2!3d6.0417527!4d80.2430558!16s%2Fg%2F11l0gmnnkc!19sChIJZxVWoRhz4ToRlsdKI3R8WY0?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Unawatuna Maha Vidyalaya",
+    "latitude": 6.0205577,
+    "longitude": 80.2493823,
+    "address": "26CX+6QC, Maharamba Rd, Unawatuna",
+    "place_id": "0x3ae172f5d1e60f63:0x56709aa228b7a594",
+    "url": "https://www.google.com/maps/place/Unawatuna+Maha+Vidyalaya/data=!4m7!3m6!1s0x3ae172f5d1e60f63:0x56709aa228b7a594!8m2!3d6.0205577!4d80.2493823!16s%2Fg%2F1ydpvc51k!19sChIJYw_m0fVy4ToRlKW3KKKacFY?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Bataduwa Rathanajothi Main Hall",
+    "latitude": 6.0418325,
+    "longitude": 80.2433323,
+    "address": "26RV+P8P, Batadoowa West, Galle",
+    "place_id": "0x3ae173970104b815:0x7318e44a90ce00bf",
+    "url": "https://www.google.com/maps/place/Bataduwa+Rathanajothi+Main+Hall/data=!4m7!3m6!1s0x3ae173970104b815:0x7318e44a90ce00bf!8m2!3d6.0418325!4d80.2433323!16s%2Fg%2F11m8vd6w0q!19sChIJFbgEAZdz4ToRvwDOkErkGHM?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Kalahe Sri Sumangalodaya National School",
+    "latitude": 6.0348933,
+    "longitude": 80.2669327,
+    "address": "27M8+P99, Kalahe, Galle",
+    "place_id": "0x3ae1727031237db7:0x6e1c944ef3be1874",
+    "url": "https://www.google.com/maps/place/Kalahe+Sri+Sumangalodaya+National+School/data=!4m7!3m6!1s0x3ae1727031237db7:0x6e1c944ef3be1874!8m2!3d6.0348933!4d80.2669327!16s%2Fg%2F1hfc1152h!19sChIJt30jMXBy4ToRdBi-806UHG4?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Gintota Zahira Nation School Ground",
+    "latitude": 6.0708059,
+    "longitude": 80.178227,
+    "address": "35CH+87H, Galle",
+    "place_id": "0x3ae176af097d3f03:0x63939f61a02ce678",
+    "url": "https://www.google.com/maps/place/Gintota+Zahira+Nation+School+Ground/data=!4m7!3m6!1s0x3ae176af097d3f03:0x63939f61a02ce678!8m2!3d6.0708059!4d80.178227!16s%2Fg%2F11fxc2kz2q!19sChIJAz99Ca924ToReOYsoGGfk2M?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Balagoda Maha Vidyalaya",
+    "latitude": 6.1156601,
+    "longitude": 80.2037938,
+    "address": "4683+7G7, Poddala",
+    "place_id": "0x3ae170db4c87a8ad:0xae5e7776708f2db1",
+    "url": "https://www.google.com/maps/place/Balagoda+Maha+Vidyalaya/data=!4m7!3m6!1s0x3ae170db4c87a8ad:0xae5e7776708f2db1!8m2!3d6.1156601!4d80.2037938!16s%2Fg%2F1v62g275!19sChIJraiHTNtw4ToRsS2PcHZ3Xq4?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "G/Deerananda Maha Vidyalaya",
+    "latitude": 6.0889494,
+    "longitude": 80.1560648,
+    "address": "35Q4+HCG, Boossa",
+    "place_id": "0x3ae176ee77e49db1:0xd48cc59295efe0b8",
+    "url": "https://www.google.com/maps/place/G%2FDeerananda+Maha+Vidyalaya/data=!4m7!3m6!1s0x3ae176ee77e49db1:0xd48cc59295efe0b8!8m2!3d6.0889494!4d80.1560648!16s%2Fg%2F11hbmdnmpb!19sChIJsZ3kd-524ToRuODvlZLFjNQ?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "G/Hegoda Sooriya Model School",
+    "latitude": 6.0928913,
+    "longitude": 80.1734403,
+    "address": "G/ Hegoda Sooriya Model School, Pinthaliya - Telikada Rd",
+    "place_id": "0x3ae176c4e191a6e1:0xfb53f1cf76d576a7",
+    "url": "https://www.google.com/maps/place/G%2FHegoda+Sooriya+Model+School/data=!4m7!3m6!1s0x3ae176c4e191a6e1:0xfb53f1cf76d576a7!8m2!3d6.0928913!4d80.1734403!16s%2Fg%2F11b6rw40bx!19sChIJ4aaR4cR24ToRp3bVds_xU_s?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "G/Wickramasinghe K.V",
+    "latitude": 6.1392014,
+    "longitude": 80.2418188,
+    "address": "46QR+MPP, Pahala Lelwala, Wanduramba",
+    "place_id": "0x3ae1715cdcdc93a5:0x59f68a9466a0e915",
+    "url": "https://www.google.com/maps/place/G%2FWickramasinghe+K.V/data=!4m7!3m6!1s0x3ae1715cdcdc93a5:0x59f68a9466a0e915!8m2!3d6.1392014!4d80.2418188!16s%2Fg%2F11fn42jst_!19sChIJpZPc3Fxx4ToRFemgZpSK9lk?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "G/Sri Dharmalankara M.V.",
+    "latitude": 6.0852414,
+    "longitude": 80.2944659,
+    "address": "37PV+3QW, B129, Akmeemana",
+    "place_id": "0x3ae16f38671246b3:0xe9b9af50ec46fb22",
+    "url": "https://www.google.com/maps/place/G%2FSri+Dharmalankara+M.V./data=!4m7!3m6!1s0x3ae16f38671246b3:0xe9b9af50ec46fb22!8m2!3d6.0852414!4d80.2944659!16s%2Fg%2F11r97bhmyk!19sChIJs0YSZzhv4ToRIvtG7FCvuek?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Mapalagama Sirisunanda National School",
+    "latitude": 6.2271174,
+    "longitude": 80.2837163,
+    "address": "67GM+RFW, Wanduramba - Ethumale - Yakkatuwa Rd, Mapalagama",
+    "place_id": "0x3ae164aeca093e47:0x8b2175f3874be709",
+    "url": "https://www.google.com/maps/place/Mapalagama+Sirisunanda+National+School/data=!4m7!3m6!1s0x3ae164aeca093e47:0x8b2175f3874be709!8m2!3d6.2271174!4d80.2837163!16s%2Fg%2F11cm8fhm93!19sChIJRz4Jyq5k4ToRCedLh_N1IYs?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Udugama National College - Galle",
+    "latitude": 6.2075887,
+    "longitude": 80.3381953,
+    "address": "685Q+27P, B320, Udugama",
+    "place_id": "0x3ae16443f8dff81f:0xe7c2360591163c0a",
+    "url": "https://www.google.com/maps/place/Udugama+National+College+-+Galle/data=!4m7!3m6!1s0x3ae16443f8dff81f:0xe7c2360591163c0a!8m2!3d6.2075887!4d80.3381953!16s%2Fg%2F11h0ng8dr!19sChIJH_jf-ENk4ToRCjwWkQU2wuc?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Batemulla National School",
+    "latitude": 6.0365125,
+    "longitude": 80.3822031,
+    "address": "29PJ+JV4, Imaduwa",
+    "place_id": "0x3ae16b90b6aaa40f:0x1a8afc695cc52952",
+    "url": "https://www.google.com/maps/place/Batemulla+National+School/data=!4m7!3m6!1s0x3ae16b90b6aaa40f:0x1a8afc695cc52952!8m2!3d6.0365125!4d80.3822031!16s%2Fg%2F11c6v3xstn!19sChIJD6SqtpBr4ToRUinFXGn8iho?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Christ Church Boys' College ගා/ ක්‍රිස්තු දේව පිරිමි විද්‍යාලය",
+    "latitude": 6.1733093,
+    "longitude": 80.1770294,
+    "address": "Hikkaduwa - Baddegama Rd, Baddegama 80200",
+    "place_id": "0x3ae1798f1b748089:0x23379b4adf6700e0",
+    "url": "https://www.google.com/maps/place/Christ+Church+Boys%27+College+%E0%B6%9C%E0%B7%8F%2F+%E0%B6%9A%E0%B7%8A%E2%80%8D%E0%B6%BB%E0%B7%92%E0%B7%83%E0%B7%8A%E0%B6%AD%E0%B7%94+%E0%B6%AF%E0%B7%9A%E0%B7%80+%E0%B6%B4%E0%B7%92%E0%B6%BB%E0%B7%92%E0%B6%B8%E0%B7%92+%E0%B7%80%E0%B7%92%E0%B6%AF%E0%B7%8A%E2%80%8D%E0%B6%BA%E0%B7%8F%E0%B6%BD%E0%B6%BA/data=!4m7!3m6!1s0x3ae1798f1b748089:0x23379b4adf6700e0!8m2!3d6.1733093!4d80.1770294!16s%2Fg%2F1tqnk0y4!19sChIJiYB0G4954ToR4ABn30qbNyM?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Government School",
+    "latitude": 6.436733,
+    "longitude": 80.1364034,
+    "address": "C4PP+MHR, Uthumgama",
+    "place_id": "0x3ae3d303cfaaaaab:0x83e8cfc0056fa482",
+    "url": "https://www.google.com/maps/place/Government+School/data=!4m7!3m6!1s0x3ae3d303cfaaaaab:0x83e8cfc0056fa482!8m2!3d6.436733!4d80.1364034!16s%2Fg%2F11txv1l_b3!19sChIJq6qqzwPT4zoRgqRvBcDP6IM?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Thiththgalla Aththadassi Kanishta Vidyalaya",
+    "latitude": 6.0169975,
+    "longitude": 80.3442353,
+    "address": "288V+QMX, Kathaluwa Thiththagalla Rd, Ahangama 80650",
+    "place_id": "0x3ae16d3ac44a410b:0xe400b115cacdba6",
+    "url": "https://www.google.com/maps/place/Thiththgalla+Aththadassi+Kanishta+Vidyalaya/data=!4m7!3m6!1s0x3ae16d3ac44a410b:0xe400b115cacdba6!8m2!3d6.0169975!4d80.3442353!16s%2Fg%2F11hz_v3s40!19sChIJC0FKxDpt4ToRptusXBELQA4?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Pathawalivitiya Kanishta Vidyalaya",
+    "latitude": 6.1833017,
+    "longitude": 80.2181054,
+    "address": "56M9+86H, Galle",
+    "place_id": "0x3ae17b2651411453:0x43e48495e0eef612",
+    "url": "https://www.google.com/maps/place/Pathawalivitiya+Kanishta+Vidyalaya/data=!4m7!3m6!1s0x3ae17b2651411453:0x43e48495e0eef612!8m2!3d6.1833017!4d80.2181054!16s%2Fg%2F11h5wpsf09!19sChIJUxRBUSZ74ToREvbu4JWE5EM?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Pathana Primary School",
+    "latitude": 6.1414322,
+    "longitude": 80.1260601,
+    "address": "Hikkaduwa - Baddegama Rd, Galle",
+    "place_id": "0x3ae177894526f0f1:0xa3af025fe25ad377",
+    "url": "https://www.google.com/maps/place/Pathana+Primary+School/data=!4m7!3m6!1s0x3ae177894526f0f1:0xa3af025fe25ad377!8m2!3d6.1414322!4d80.1260601!16s%2Fg%2F12hld57_3!19sChIJ8fAmRYl34ToRd9Na4l8Cr6M?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Waththahena Kanishta Vidyalaya",
+    "latitude": 6.1426144,
+    "longitude": 80.3679515,
+    "address": "49V9+25W, Galle",
+    "place_id": "0x3ae1695df7b926bf:0xc23c3053497a3ef9",
+    "url": "https://www.google.com/maps/place/Waththahena+Kanishta+Vidyalaya/data=!4m7!3m6!1s0x3ae1695df7b926bf:0xc23c3053497a3ef9!8m2!3d6.1426144!4d80.3679515!16s%2Fg%2F11h3bgp9sn!19sChIJvya5911p4ToR-T56SVMwPMI?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Malawenna Kanishta Vidyalaya",
+    "latitude": 6.1664109,
+    "longitude": 80.1007632,
+    "address": "Malawenna",
+    "place_id": "0x3ae17969883d6e93:0xc04e440a295ec00b",
+    "url": "https://www.google.com/maps/place/Malawenna+Kanishta+Vidyalaya/data=!4m7!3m6!1s0x3ae17969883d6e93:0xc04e440a295ec00b!8m2!3d6.1664109!4d80.1007632!16s%2Fg%2F11hdynf28v!19sChIJk249iGl54ToRC8BeKQpETsA?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Kobala kanishta vidyalaya",
+    "latitude": 6.0474533,
+    "longitude": 80.3701277,
+    "address": "Mayakaduwa Pagirihena Road",
+    "place_id": "0x3ae16bf493400001:0xcadc26138c162982",
+    "url": "https://www.google.com/maps/place/Kobala+kanishta+vidyalaya/data=!4m7!3m6!1s0x3ae16bf493400001:0xcadc26138c162982!8m2!3d6.0474533!4d80.3701277!16s%2Fg%2F11sd44m3t0!19sChIJAQBAk_Rr4ToRgikWjBMm3Mo?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Nagoda Royal College",
+    "latitude": 6.1939052,
+    "longitude": 80.2769529,
+    "address": "57WG+Q5X, B454, Nagoda",
+    "place_id": "0x3ae164d4cd8f2b79:0xc66cb0eb868cb94b",
+    "url": "https://www.google.com/maps/place/Nagoda+Royal+College/data=!4m7!3m6!1s0x3ae164d4cd8f2b79:0xc66cb0eb868cb94b!8m2!3d6.1939052!4d80.2769529!16s%2Fm%2F0m0n9kc!19sChIJeSuPzdRk4ToRS7mMhuuwbMY?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "G/Ampegama Sri Nandasara Secondary College",
+    "latitude": 6.1912476,
+    "longitude": 80.1419468,
+    "address": "54RR+FQW, Galle - Elpitiya Rd, Ampegama",
+    "place_id": "0x3ae179b9a4a82e19:0x4ef1aa031ea43965",
+    "url": "https://www.google.com/maps/place/G%2FAmpegama+Sri+Nandasara+Secondary+College/data=!4m7!3m6!1s0x3ae179b9a4a82e19:0x4ef1aa031ea43965!8m2!3d6.1912476!4d80.1419468!16s%2Fg%2F11gxgj7g43!19sChIJGS6opLl54ToRZTmkHgOq8U4?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Ampegama Sri Nandasara National College",
+    "latitude": 6.190006,
+    "longitude": 80.1416159,
+    "address": "54RR+2J5, Aluthwala",
+    "place_id": "0x3ae178ffc7d21e65:0x7516153b824ce09f",
+    "url": "https://www.google.com/maps/place/Ampegama+Sri+Nandasara+National+College/data=!4m7!3m6!1s0x3ae178ffc7d21e65:0x7516153b824ce09f!8m2!3d6.190006!4d80.1416159!16s%2Fg%2F1q5bl3r0q!19sChIJZR7Sx_944ToRn-BMgjsVFnU?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "D.S Senanayaka National School",
+    "latitude": 6.4686733,
+    "longitude": 79.9867381,
+    "address": "FX9P+FM9, kiranthidiya Road, Massala, Beruwala., Beruwala",
+    "place_id": "0x3ae22e180144a8f5:0x4f9d9aa8a8a5aaa",
+    "url": "https://www.google.com/maps/place/D.S+Senanayaka+National+School/data=!4m7!3m6!1s0x3ae22e180144a8f5:0x4f9d9aa8a8a5aaa!8m2!3d6.4686733!4d79.9867381!16s%2Fg%2F11clgsqxbt!19sChIJ9ahEARgu4joRqlqKiqrZ-QQ?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Miriswatta National School",
+    "latitude": 6.5498249,
+    "longitude": 80.0299918,
+    "address": "Dodangoda Miriswatta National School, Nagoda - Mathugama - Kalawellawa - Bellapitiya Rd, Kalutara",
+    "place_id": "0x3ae233ecd158d623:0x2018f516fe63798a",
+    "url": "https://www.google.com/maps/place/Miriswatta+National+School/data=!4m7!3m6!1s0x3ae233ecd158d623:0x2018f516fe63798a!8m2!3d6.5498249!4d80.0299918!16s%2Fg%2F11cr_80ct2!19sChIJI9ZY0ewz4joRinlj_hb1GCA?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  },
+  {
+    "name": "Kalutara Vidyalaya",
+    "latitude": 6.5742804,
+    "longitude": 79.964787,
+    "address": "HXF7+PW7, Kalutara",
+    "place_id": "0x3ae236d8118fffaf:0x86b15ecf3882e332",
+    "url": "https://www.google.com/maps/place/Kalutara+Vidyalaya/data=!4m7!3m6!1s0x3ae236d8118fffaf:0x86b15ecf3882e332!8m2!3d6.5742804!4d79.964787!16s%2Fm%2F06w54dq!19sChIJr_-PEdg24joRMuOCOM9esYY?authuser=0&hl=en&g_ep=EgoyMDI2MDgyNi4wIJJjKgBIAVAD&rclk=1"
+  }
+]

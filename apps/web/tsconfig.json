@@ -9,9 +9,11 @@
     "skipLibCheck": true,
     "types": ["vite/client"],
     "rootDirs": ["."],
+    "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@aloysius-g1/ui/*": ["../../packages/ui/src/*"]
+      "@aloysius-g1/ui/*": ["../../packages/ui/src/*"],
+      "@schools/*": ["../map-scraper/*"]
     }
   }
 }

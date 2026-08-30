@@ -32,7 +32,7 @@ export type ForgotPasswordOtpProps = {
  * Replaces the built-in `<ForgotPassword />` view when the email-OTP plugin
  * runs with `passwordReset: true`. On success the address is stored and the
  * user continues on `/auth/reset-password`, which asks for the code and the
- * new password — the reset-link-sent view is skipped entirely.
+ * new password - the reset-link-sent view is skipped entirely.
  *
  * @param className - Additional CSS classes applied to the card.
  */

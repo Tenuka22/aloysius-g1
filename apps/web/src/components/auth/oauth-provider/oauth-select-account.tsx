@@ -57,7 +57,7 @@ const interpolateClient = (template: string, clientName: string) =>
  * then `oauth2.continue({ selected: true })`. Picking the account that is
  * already active skips the switch entirely.
  *
- * This screen deliberately has no sign-out or revoke actions — session
+ * This screen deliberately has no sign-out or revoke actions - session
  * management belongs in security settings.
  */
 export function OAuthSelectAccount({ className }: OAuthSelectAccountProps) {

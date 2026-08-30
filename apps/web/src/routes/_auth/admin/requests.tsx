@@ -131,7 +131,7 @@ const columns = [
     header: "Contact",
     cell: ({ row }: { row: { original: RequestRow } }) => (
       <div className="grid gap-0.5">
-        <span>{row.original.contactPhone || "—"}</span>
+        <span>{row.original.contactPhone || "..."}</span>
         <span className="text-muted-foreground text-xs">{row.original.contactEmail}</span>
       </div>
     ),

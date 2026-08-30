@@ -11,7 +11,7 @@ function SubAdminOverviewPage() {
       <div className="mb-8">
         <p className="text-primary font-bold tracking-widest uppercase text-xs">Sub-admin workspace</p>
         <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">Request handler</h1>
-        <p className="text-muted-foreground">Review and process access and removal requests. You can only see verification numbers — full application data is restricted to administrators.</p>
+        <p className="text-muted-foreground">Review and process access and removal requests. You can only see verification numbers – full application data is restricted to administrators.</p>
       </div>
       <div className="grid gap-4 max-w-2xl">
         <Card>

@@ -56,7 +56,7 @@ export interface OrganizationInvitationEmailProps {
   /**
    * URL where the invitee can review and accept the invitation.
    *
-   * @remarks Pass `{baseUrl}/settings/organizations` — this is where pending
+   * @remarks Pass `{baseUrl}/settings/organizations` - this is where pending
    * organization invitations are listed in the settings UI.
    */
   url: string

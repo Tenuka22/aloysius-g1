@@ -1,5 +1,6 @@
 import { EventPublisher, eventIterator } from "@orpc/server";
 import type { RouterClient } from "@orpc/server";
+import { ORPCError } from "@orpc/client";
 
 import { adminProcedure, subAdminProcedure, protectedProcedure, publicProcedure } from "../index";
 import { randomUUID } from "node:crypto";
@@ -32,7 +33,7 @@ const uniqueSessionCode = async () => {
     const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.sessionCode, sessionCode)).get();
     if (!existing) return sessionCode;
   }
-  throw new Error("Could not allocate an application session code");
+  throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Could not allocate an application session code" });
 };
 const ensureSessionCode = async (row: typeof applications.$inferSelect) => {
   if (row.sessionCode) return row.sessionCode;
@@ -53,8 +54,8 @@ const getApplicationWindow = async () => {
 // Shared request action helpers (used by both admin and subAdmin)
 const rotateRequestKey = async (requestId: string) => {
   const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, requestId)).get();
-  if (!request) throw new Error("Request not found");
-  if (request.requestType !== "access" && request.requestType !== "forgot") throw new Error("Only access and forgot requests can generate a replacement key");
+  if (!request) throw new ORPCError("NOT_FOUND", { message: "Request not found" });
+  if (request.requestType !== "access" && request.requestType !== "forgot") throw new ORPCError("BAD_REQUEST", { message: "Only access and forgot requests can generate a replacement key" });
   const accessKey = createAccessKey();
   await db.update(applications).set({ accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
   await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
@@ -62,8 +63,8 @@ const rotateRequestKey = async (requestId: string) => {
 };
 const deleteAfterRemoval = async (requestId: string) => {
   const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, requestId)).get();
-  if (!request) throw new Error("Removal request not found");
-  if (request.requestType !== "removal") throw new Error("Only removal requests can delete an application");
+  if (!request) throw new ORPCError("NOT_FOUND", { message: "Removal request not found" });
+  if (request.requestType !== "removal") throw new ORPCError("BAD_REQUEST", { message: "Only removal requests can delete an application" });
   await db.delete(applications).where(eq(applications.id, request.applicationId)).run();
   await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
   await publishApplicationChange();
@@ -98,24 +99,24 @@ export const appRouter = {
       const sessionCode = await uniqueSessionCode();
       const now = new Date();
       const window = await getApplicationWindow();
-      if (isSubmissionLocked(window)) throw new Error("New applications can only be created during the configured form window");
+      if (isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "New applications can only be created during the configured form window" });
       const birthCertificateNumber = extractBirthCertificateNumber(input.data);
       const data = withoutSchoolPreferences(input.data);
-      const existing = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get() : null;
-      if (existing) throw new Error("An application already exists for this birth certificate number");
+      const existing = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get() : null;
+      if (existing) throw new ORPCError("CONFLICT", { message: "An application with this birth certificate number has already been submitted. Please check the number and try again." });
       await db.insert(applications).values({ id: randomUUID(), sessionCode, accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), birthCertificateNumber: birthCertificateNumber || null, data, createdAt: now, updatedAt: now });
       await publishApplicationChange();
       return { accessKey, sessionCode, data };
     }),
     lookup: publicProcedure.input(z.object({ sessionCode: z.string().regex(sessionCodePattern) })).handler(async ({ input }) => {
       const row = await db.select({ sessionCode: applications.sessionCode, data: applications.data, submittedAt: applications.submittedAt, updatedAt: applications.updatedAt }).from(applications).where(eq(applications.sessionCode, input.sessionCode.toUpperCase())).get();
-      if (!row) throw new Error("Application session not found");
+      if (!row) throw new ORPCError("NOT_FOUND", { message: "Application session not found" });
       const data = row.data as { applicant?: { fullName?: string } };
       return { sessionCode: row.sessionCode, applicantName: data.applicant?.fullName || "Unnamed applicant", status: row.submittedAt ? "submitted" : "draft", updatedAt: row.updatedAt };
     }),
     get: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db.select().from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
-      if (!row) throw new Error("Application key not found");
+      if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
       return { data: withoutSchoolPreferences(row.data as Record<string, unknown>), updatedAt: row.updatedAt, accessKeyHint: row.accessKeyHint, sessionCode: await ensureSessionCode(row), submittedAt: row.submittedAt };
     }),
     checkBirthCertificate: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1) })).handler(async ({ input }) => {
@@ -132,7 +133,7 @@ export const appRouter = {
       const codeRow = input.sessionCode ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.sessionCode, input.sessionCode.trim().toUpperCase())).get() : null;
       const birthCertificateNumber = input.birthCertificateNumber?.trim().toUpperCase() || keyRow?.birthCertificateNumber || codeRow?.birthCertificateNumber;
       const birthRow = input.birthCertificateNumber ? await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber!)).get() : null;
-      if (keyRow && (codeRow && codeRow.id !== keyRow.id || birthRow && birthRow.id !== keyRow.id)) throw new Error("The supplied identifier belongs to a different application than this access key");
+      if (keyRow && (codeRow && codeRow.id !== keyRow.id || birthRow && birthRow.id !== keyRow.id)) throw new ORPCError("BAD_REQUEST", { message: "The supplied identifier belongs to a different application than this access key" });
       let row = keyRow ?? codeRow ?? birthRow;
       let guardianRow: typeof row = null;
       if (!row && input.guardianNic) {
@@ -143,15 +144,15 @@ export const appRouter = {
       } else if (keyRow && input.guardianNic) {
         const candidates = await db.select({ id: applications.id, birthCertificateNumber: applications.birthCertificateNumber, data: applications.data }).from(applications).all();
         guardianRow = candidates.find((candidate) => String((candidate.data as { guardian?: { nic?: string } }).guardian?.nic ?? "").trim().toUpperCase() === input.guardianNic?.trim().toUpperCase()) ?? null;
-        if (guardianRow && guardianRow.id !== keyRow.id) throw new Error("The supplied guardian NIC belongs to a different application than this access key");
+        if (guardianRow && guardianRow.id !== keyRow.id) throw new ORPCError("BAD_REQUEST", { message: "The supplied guardian NIC belongs to a different application than this access key" });
       }
-      if (!row) throw new Error("No application was found for this birth certificate number");
+      if (!row) throw new ORPCError("NOT_FOUND", { message: "No application was found for this birth certificate number" });
       if (input.requestType !== "submission") {
         const submittedApplication = await db.select({ submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, row.id)).get();
-        if (!submittedApplication?.submittedAt) throw new Error("Access recovery is available only for submitted applications");
+        if (!submittedApplication?.submittedAt) throw new ORPCError("BAD_REQUEST", { message: "Access recovery is available only for submitted applications" });
       }
       const resolvedBirthCertificateNumber = row.birthCertificateNumber || "";
-      if (!resolvedBirthCertificateNumber) throw new Error("This application does not have a birth certificate number yet");
+      if (!resolvedBirthCertificateNumber) throw new ORPCError("BAD_REQUEST", { message: "This application does not have a birth certificate number yet" });
       const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(and(eq(applicationAccessRequests.applicationId, row.id), eq(applicationAccessRequests.requestType, input.requestType))).get();
       if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName?.trim() ?? "", guardianName: input.guardianName?.trim() ?? "", contactEmail: input.contactEmail?.trim().toLowerCase() ?? "", ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), requestType: input.requestType, status: "open", createdAt: new Date(), resolvedAt: null });
       return { submitted: true };
@@ -165,11 +166,11 @@ export const appRouter = {
       const updatedAt = new Date();
       const birthCertificateNumber = extractBirthCertificateNumber(input.data);
       const current = await db.select({ id: applications.id, submittedAt: applications.submittedAt }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
-      if (!current) throw new Error("Application key not found");
+      if (!current) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
       const window = await getApplicationWindow();
-      if (current.submittedAt && isSubmissionLocked(window)) throw new Error("Submitted applications can only be updated during the configured form window");
-      const duplicate = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
-      if (duplicate && duplicate.id !== current?.id) throw new Error("An application already exists for this birth certificate number");
+      if (current.submittedAt && isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "Submitted applications can only be updated during the configured form window" });
+      const duplicate = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get() : null;
+      if (duplicate && duplicate.id !== current?.id) throw new ORPCError("CONFLICT", { message: "An application with this birth certificate number has already been submitted. Please check the number and try again." });
       await db.update(applications).set({ birthCertificateNumber: birthCertificateNumber || null, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).run();
       await publishApplicationChange();
       return { updatedAt };
@@ -177,9 +178,9 @@ export const appRouter = {
     status: publicProcedure.handler(async () => { const window = await getApplicationWindow(); return { submissionLocked: isSubmissionLocked(window), submissionOpensAt: window.opensAt.toISOString(), submissionClosesAt: window.closesAt.toISOString(), environment: env.NODE_ENV }; }),
     submit: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const window = await getApplicationWindow();
-      if (isSubmissionLocked(window)) throw new Error("Submissions are outside the configured form window");
+      if (isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "Submissions are outside the configured form window" });
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
-      if (!row) throw new Error("Application key not found");
+      if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
       await db.update(applications).set({ submittedAt: new Date(), updatedAt: new Date() }).where(eq(applications.id, row.id)).run();
       await publishApplicationChange();
       return { accepted: true };
@@ -196,8 +197,8 @@ export const appRouter = {
       forgotRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "contactEmail", "birthCertificateNumber"])),
       approveSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
-        if (!request) throw new Error("Submission request not found");
-        if (request.requestType !== "submission") throw new Error("Only submission requests can be approved");
+        if (!request) throw new ORPCError("NOT_FOUND", { message: "Submission request not found" });
+        if (request.requestType !== "submission") throw new ORPCError("BAD_REQUEST", { message: "Only submission requests can be approved" });
         await db.update(applications).set({ submittedAt: new Date(), updatedAt: new Date() }).where(eq(applications.id, request.applicationId)).run();
         await db.update(applicationAccessRequests).set({ status: "resolved", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
         await publishApplicationChange();
@@ -205,8 +206,8 @@ export const appRouter = {
       }),
       rejectSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
-        if (!request) throw new Error("Submission request not found");
-        if (request.requestType !== "submission") throw new Error("Only submission requests can be rejected");
+        if (!request) throw new ORPCError("NOT_FOUND", { message: "Submission request not found" });
+        if (request.requestType !== "submission") throw new ORPCError("BAD_REQUEST", { message: "Only submission requests can be rejected" });
         await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, request.id)).run();
         return { rejected: true };
       }),
@@ -214,7 +215,7 @@ export const appRouter = {
     settings: {
       get: adminProcedure.handler(async () => { const window = await getApplicationWindow(); return { opensAt: window.opensAt, closesAt: window.closesAt, updatedAt: window.updatedAt }; }),
       update: adminProcedure.input(z.object({ opensAt: z.coerce.date(), closesAt: z.coerce.date() })).handler(async ({ input }) => {
-        if (!isValidSubmissionWindow(input.opensAt, input.closesAt)) throw new Error("The closing time must be after the opening time");
+        if (!isValidSubmissionWindow(input.opensAt, input.closesAt)) throw new ORPCError("BAD_REQUEST", { message: "The closing time must be after the opening time" });
         const updatedAt = new Date();
         await db.insert(applicationSettings).values({ id: "default", opensAt: input.opensAt, closesAt: input.closesAt, updatedAt }).onConflictDoUpdate({ target: applicationSettings.id, set: { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt } });
         return { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt };
@@ -233,24 +234,24 @@ export const appRouter = {
     application: {
       get: adminProcedure.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
         const row = await db.select().from(applications).where(eq(applications.id, input.id)).get();
-        if (!row) throw new Error("Application not found");
+        if (!row) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
         return { id: row.id, sessionCode: await ensureSessionCode(row), data: withoutSchoolPreferences(row.data as Record<string, unknown>), createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt };
       }),
       update: adminProcedure.input(z.object({ id: z.string().uuid(), data: draftSchema })).handler(async ({ input }) => {
         const updatedAt = new Date();
         const birthCertificateNumber = extractBirthCertificateNumber(input.data);
-        if (!birthCertificateNumber) throw new Error("Birth certificate number is required");
-        const duplicate = await db.select({ id: applications.id }).from(applications).where(eq(applications.birthCertificateNumber, birthCertificateNumber)).get();
-        if (duplicate && duplicate.id !== input.id) throw new Error("An application already exists for this birth certificate number");
+        if (!birthCertificateNumber) throw new ORPCError("BAD_REQUEST", { message: "Birth certificate number is required" });
+        const duplicate = await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get();
+        if (duplicate && duplicate.id !== input.id) throw new ORPCError("CONFLICT", { message: "An application with this birth certificate number has already been submitted. Please check the number and try again." });
         const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.id, input.id)).get();
-        if (!existing) throw new Error("Application not found");
+        if (!existing) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
         await db.update(applications).set({ birthCertificateNumber, data: withoutSchoolPreferences(input.data), updatedAt }).where(eq(applications.id, input.id)).run();
         await publishApplicationChange();
         return { updatedAt };
       }),
       remove: adminProcedure.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
         const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.id, input.id)).get();
-        if (!existing) throw new Error("Application not found");
+        if (!existing) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
         await db.delete(applications).where(eq(applications.id, input.id)).run();
         await publishApplicationChange();
         return { deleted: true };

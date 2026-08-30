@@ -10,6 +10,14 @@ import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { Elysia } from "elysia";
 
+function rpcErrorResponse(error: unknown, status = 500) {
+  const message = error instanceof Error ? error.message : "Internal server error";
+  return new Response(JSON.stringify({ jsonrpc: "2.0", error: { code: status, message } }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
     onError((error) => {
@@ -52,11 +60,16 @@ new Elysia()
   .all(
     "/rpc*",
     async (context) => {
-      const { response } = await rpcHandler.handle(context.request, {
-        prefix: "/rpc",
-        context: await createContext({ context }),
-      });
-      return response ?? new Response("Not Found", { status: 404 });
+      try {
+        const { response } = await rpcHandler.handle(context.request, {
+          prefix: "/rpc",
+          context: await createContext({ context }),
+        });
+        return response ?? new Response("Not Found", { status: 404 });
+      } catch (err) {
+        console.error("[rpc]", err);
+        return rpcErrorResponse(err);
+      }
     },
     {
       parse: "none",

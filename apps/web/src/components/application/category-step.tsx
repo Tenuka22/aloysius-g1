@@ -15,11 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-g1/ui/components/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@aloysius-g1/ui/components/tooltip";
 import { SchoolMapPicker } from "./school-map-picker";
-import { scoreCategory, documentMarks61, additionalDocsMarks61, electoralMarks61, proximityMarks61, proximityMarks, yearsFromDate, yearsBetween, deedAgeWeight, OL_CEILINGS, AL_CEILINGS, gradeRate, SPORTS_LEVEL_MARKS, LEADERSHIP_ROLE_MARKS, SIBLING_PREFECT_LEVEL_MARKS, SIBLING_EXAM_MARKS, MAIN_DOCUMENT_MARKS_63, STUDENT_SOCIETIES_ROLE_MARKS, OTHER_ACTIVITY_MARKS, DEGREE_MARKS } from "@/lib/scoring";
+import { scoreCategory, documentMarks61, additionalDocsMarks61, electoralMarks61, proximityMarks61, proximityMarks, yearsFromDate, yearsBetween, deedAgeWeight, OL_CEILINGS, AL_CEILINGS, gradeRate, SPORTS_LEVEL_MARKS, LEADERSHIP_ROLE_MARKS, SIBLING_PREFECT_LEVEL_MARKS, SIBLING_EXAM_MARKS, MAIN_DOCUMENT_MARKS_63, STUDENT_SOCIETIES_ROLE_MARKS, OTHER_ACTIVITY_MARKS, DEGREE_MARKS, electoralYearsRegistered } from "@/lib/scoring";
 
 const CATEGORY_LABELS: Record<CategoryType, string> = {
   "6.1": "6.1 – Residence Verification & Proximity",
-  "6.2": "6.2 – Alumi",
+  "6.2": "6.2 – Alumni",
   "6.3": "6.3 – Siblings",
   "6.4": "6.4 – Period of Service & Distance",
   "6.5": "6.5 – Transfer Applications",
@@ -28,11 +28,27 @@ const CATEGORY_LABELS: Record<CategoryType, string> = {
 
 const TAB_LABELS: Record<CategoryType, string> = {
   "6.1": "Residence & Proximity",
-  "6.2": "Alumi",
+  "6.2": "Alumni",
   "6.3": "Siblings",
   "6.4": "Service & Distance",
   "6.5": "Transfer",
   "6.6": "Foreign Employment",
+};
+
+const CATEGORY_META: Record<CategoryType, { description: string; maxMarks: number }> = {
+  "6.1": { description: "Residence documents, electoral registration, and home-to-school proximity.", maxMarks: 100 },
+  "6.2": { description: "The parent’s education, achievements, association service, and school contributions.", maxMarks: 100 },
+  "6.3": { description: "Sibling study history, achievements, residence evidence, and proximity.", maxMarks: 100 },
+  "6.4": { description: "Government service period, difficult service, leave, and service distances.", maxMarks: 100 },
+  "6.5": { description: "Transfer distance, service history, recency, leave, and school proximity.", maxMarks: 100 },
+  "6.6": { description: "Continuous foreign employment, purpose, and home-to-school proximity.", maxMarks: 100 },
+};
+
+const PROXIMITY_CATEGORY_CONFIG: Partial<Record<CategoryType, { marksPerSchool: number; maxMarks: number }>> = {
+  "6.1": { marksPerSchool: 5, maxMarks: 50 },
+  "6.3": { marksPerSchool: 3, maxMarks: 30 },
+  "6.5": { marksPerSchool: 3, maxMarks: 30 },
+  "6.6": { marksPerSchool: 3.5, maxMarks: 35 },
 };
 
 const MAIN_DOCUMENT_OPTIONS = [
@@ -58,7 +74,7 @@ const ADDITIONAL_DOC_OPTIONS = [
 
 const YEAR_OPTIONS = [0, 1, 2, 3, 4, 5];
 
-const ELECTORAL_YEAR_OPTIONS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025] as const;
+const ELECTORAL_YEAR_OPTIONS = [2020, 2021, 2022, 2023, 2024] as const;
 
 const OL_SUBJECT_OPTIONS = [
   ["6", "6 subjects"],
@@ -388,10 +404,6 @@ function Category61Fields({
   const addlMarks = additionalDocsMarks61(inputs);
   const electoral = electoralMarks61(inputs);
   const prox = proximityMarks61(inputs);
-  const mother = inputs.electoralMotherSince ? Math.min(5, 2025 - inputs.electoralMotherSince) : 0;
-  const father = inputs.electoralFatherSince ? Math.min(5, 2025 - inputs.electoralFatherSince) : 0;
-  const electoralMotherMarks = mother * 2.5;
-  const electoralFatherMarks = father * 2.5;
   const deedYears = yearsFromDate(inputs.deedTransferDate);
   const deedWeight = deedAgeWeight(deedYears);
   const deedPct = Math.round(deedWeight * 100);
@@ -690,12 +702,12 @@ function Category62Fields({
       </div>
 
       {/* Grade 5 Scholarship */}
-      <div className="grid gap-1.5">
+      <div className="col-span-2 grid content-start gap-2 rounded-xl border border-border/70 bg-muted/10 p-3 sm:flex sm:items-center sm:justify-between sm:gap-4 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Grade 5 Scholarship</span>
           <MarkBadge marks={scholarshipMarks} max={3} hint={"Passed = 3 marks\nNot passed = 0 marks"} />
         </div>
-        <label className="mt-1 flex items-center gap-2 self-end text-sm">
+        <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
             className="size-4"
             checked={inputs.grade5ScholarshipPassed === true}
@@ -706,7 +718,7 @@ function Category62Fields({
       </div>
 
       {/* G.C.E. (O/L) */}
-      <div className="grid gap-1.5">
+      <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">G.C.E. (O/L) result</span>
           <MarkBadge marks={(() => { let m = 0; const c = inputs.olSubjectCount; const t = c != null ? OL_CEILINGS[c] : undefined; if (t && c != null) { for (const g of ["S","C","B","A"]) { m += (inputs[`olGrade${g}` as "olGradeS"] ?? 0) * gradeRate(t, c, g); } } return Math.min(m, 10); })()} max={10} hint={"Marks per subject by grade:\n• S: varies by subject count\n• C: varies by subject count\n• B/D: varies by subject count\n• A: 9 subjects only\n\nMax 10 marks"} />
@@ -731,7 +743,7 @@ function Category62Fields({
       </div>
 
       {/* G.C.E. (A/L) */}
-      <div className="grid gap-1.5">
+      <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">G.C.E. (A/L) result</span>
           <MarkBadge marks={(() => { let m = 0; const c = inputs.alSubjectCount; const t = c != null ? AL_CEILINGS[c] : undefined; if (t && c != null) { for (const g of ["S","C","B","A"]) { m += (inputs[`alGrade${g}` as "alGradeS"] ?? 0) * gradeRate(t, c, g); } } return Math.min(m, 12); })()} max={12} hint={"Marks per subject by grade:\n• S: 2.00 (3 subj) / 1.50 (4 subj)\n• C: 2.66 (3 subj) / 2.00 (4 subj)\n• B: 3.33 (3 subj) / 2.50 (4 subj)\n• A: 4.00 (3 subj) / 3.00 (4 subj)\n\nMax 12 marks"} />
@@ -907,7 +919,7 @@ function Category62Fields({
           <span className="text-sm font-medium">Diploma / Higher Diploma</span>
           <MarkBadge marks={diplomaMarks} max={2} hint={"Diploma / Higher Diploma / NVQ 5, 6\n(More than 2 years): 2 marks\n\nOtherwise: 0 marks"} />
         </div>
-        <label className="mt-1 flex items-center gap-2 self-end text-sm">
+        <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
             className="size-4"
             checked={inputs.hasDiploma === true}
@@ -949,7 +961,7 @@ function Category62Fields({
           <span className="text-sm font-medium">Contribution to School Projects</span>
           <MarkBadge marks={projectMarks} max={5} hint={"Contributed to school projects:\n5 marks\n\nOtherwise: 0 marks"} />
         </div>
-        <label className="mt-1 flex items-center gap-2 self-end text-sm">
+        <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
             className="size-4"
             checked={inputs.schoolProjectsContribution === true}
@@ -980,10 +992,10 @@ function Category63Fields({
   const supportMarks = inputs.parentsSupportRendered ? 4 : 0;
   const cocurricularTotal = Math.min(prefectMarks + examMarks + praiseworthyMarks + supportMarks, 10);
   const documentMarks = Math.min(MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0, 10);
-  const mother = inputs.electoralMotherSince ? Math.min(5, 2025 - inputs.electoralMotherSince) : 0;
-  const father = inputs.electoralFatherSince ? Math.min(5, 2025 - inputs.electoralFatherSince) : 0;
+  const mother = electoralYearsRegistered(inputs.electoralMotherSince);
+  const father = electoralYearsRegistered(inputs.electoralFatherSince);
   const electoralMarks = Math.min((mother + father) * 2, 20);
-  const prox = proximityMarks61(inputs);
+  const prox = proximityMarks(inputs, 3, 30);
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
@@ -1003,7 +1015,7 @@ function Category63Fields({
           <span className="text-sm font-medium">Sibling studied at applied school</span>
           <MarkBadge marks={studiedHereMarks} max={5} hint={"If sibling studied at St. Aloysius:\n5 marks\n\nOtherwise: 0 marks"} />
         </div>
-        <label className="mt-1 flex items-center gap-2 self-end text-sm">
+        <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
             className="size-4"
             checked={inputs.siblingStudiedAtAppliedSchool === true}
@@ -1145,12 +1157,12 @@ function Category64Fields({
   const locationMap: Record<string, number> = { "same-school": 10, zone: 7.5, province: 5, "education-institution": 2.5 };
   const locationMarks = Math.min(locationMap[inputs.serviceLocationLevel ?? ""] ?? 0, 10);
   const resKm = inputs.residenceToSchoolKm;
-  let residenceDistance = 4;
+  let residenceDistance = 0;
   if (resKm != null && resKm <= 1) residenceDistance = 10;
   else if (resKm != null && resKm <= 3) residenceDistance = 8;
   else if (resKm != null && resKm <= 5) residenceDistance = 6;
   const workKm = inputs.workplaceToSchoolKm;
-  let workplaceDistance = 5;
+  let workplaceDistance = 0;
   if (workKm != null && workKm >= 100) workplaceDistance = 25;
   else if (workKm != null && workKm >= 70) workplaceDistance = 20;
   else if (workKm != null && workKm >= 40) workplaceDistance = 15;
@@ -1284,11 +1296,13 @@ function Category65Fields({
   else if (prevYears >= 1) previousPeriodMarks = 5;
   const elapsed = yearsFromDate(inputs.transferDate);
   let elapsedMarks = 0;
-  if (elapsed <= 1) elapsedMarks = 5;
-  else if (elapsed <= 2) elapsedMarks = 4;
-  else if (elapsed <= 3) elapsedMarks = 3;
-  else if (elapsed <= 4) elapsedMarks = 2;
-  else if (elapsed <= 5) elapsedMarks = 1;
+  if (inputs.transferDate) {
+    if (elapsed <= 1) elapsedMarks = 5;
+    else if (elapsed <= 2) elapsedMarks = 4;
+    else if (elapsed <= 3) elapsedMarks = 3;
+    else if (elapsed <= 4) elapsedMarks = 2;
+    else if (elapsed <= 5) elapsedMarks = 1;
+  }
   const leaveMarks = Math.min((inputs.unutilizedLeaveYears ?? 0) * 2, 10);
   const prox = proximityMarks(inputs, 3, 30);
   return (
@@ -1469,16 +1483,29 @@ function CategoryCard({
   const score = scoreCategory(category);
   const hasCenter = centerLat != null && centerLng != null;
   const locked = category.locked;
+  const proximityConfig = PROXIMITY_CATEGORY_CONFIG[category.categoryType];
   return (
     <Card className={locked ? "border-muted bg-muted/30" : ""}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {CATEGORY_LABELS[category.categoryType]}
-          {occurrence != null && (
-            <span className="text-muted-foreground font-normal"> – entry {occurrence}</span>
-          )}
-          {locked && <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">Locked</span>}
-        </CardTitle>
+      <CardHeader className="border-b bg-muted/20">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="grid min-w-0 gap-1">
+            <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Marking category</span>
+            <CardTitle className="flex flex-wrap items-center gap-2">
+              {CATEGORY_LABELS[category.categoryType]}
+              {occurrence != null && (
+                <span className="text-muted-foreground font-normal"> – entry {occurrence}</span>
+              )}
+              {locked && <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">Locked</span>}
+            </CardTitle>
+            <CardDescription>{CATEGORY_META[category.categoryType].description}</CardDescription>
+          </div>
+          <div className="grid shrink-0 gap-0.5 rounded-lg border bg-background px-3 py-2 text-right">
+            <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Indicative score</span>
+            <strong className="font-mono text-lg tabular-nums">
+              {score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}<span className="text-sm font-normal text-muted-foreground"> / {CATEGORY_META[category.categoryType].maxMarks}</span>
+            </strong>
+          </div>
+        </div>
         <CardAction className="flex gap-1">
           <Button
             type="button"
@@ -1508,11 +1535,19 @@ function CategoryCard({
             {category.categoryType === "6.6" && <Category66Fields category={category} onChange={onUpdate} />}
           </>
         )}
-        {hasCenter && (category.categoryType === "6.1" || category.categoryType === "6.3") ? (
+        {proximityConfig && hasCenter ? (
           <div className="grid gap-2 border-t pt-5">
-            <p className="text-sm font-medium">Nearby schools</p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="grid gap-1">
+                <p className="text-sm font-medium">Nearby schools</p>
+                <p className="text-xs text-muted-foreground">Select every school that is within the radius shown on the map.</p>
+              </div>
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                {selectedSchoolIds.length} selected · {proximityConfig.marksPerSchool} marks each
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground">
-              Select the schools within reach of the home location. Choices apply to this category&apos;s proximity scoring.
+              The applied school is highlighted and cannot be selected as a nearby school. Your choices feed the {proximityConfig.maxMarks}-mark proximity section.
             </p>
             {locked ? (
               <p className="text-sm text-muted-foreground">
@@ -1526,7 +1561,7 @@ function CategoryCard({
                 centerLng={centerLng}
                 selectedIds={selectedSchoolIds}
                 highlightSchoolId="st-aloysius-galle"
-                marksPerSchool={category.categoryType === "6.1" ? 5 : category.categoryType === "6.3" ? 3 : category.categoryType === "6.5" ? 3 : category.categoryType === "6.6" ? 3.5 : 5}
+                marksPerSchool={proximityConfig.marksPerSchool}
                 onToggle={(schoolId) =>
                   onUpdate({
                     schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
@@ -1537,11 +1572,11 @@ function CategoryCard({
               />
             )}
           </div>
-        ) : (
+        ) : proximityConfig ? (
           <p className="rounded-lg border p-4 text-sm text-muted-foreground">
             Complete the location step to choose nearby schools for this category.
           </p>
-        )}
+        ) : null}
         <div className="grid gap-2 border-t pt-5">
           <p className="text-sm font-medium">Example marks – {CATEGORY_LABELS[category.categoryType]}</p>
           <div className="grid gap-1">
@@ -1580,23 +1615,35 @@ export function CategoryStep() {
   }
 
   const firstTypeWithEntries = CATEGORY_TYPES.find((t) => (categoriesByType.get(t)?.length ?? 0) > 0) ?? CATEGORY_TYPES[0];
+  const categoryCount = draft.categories.length;
 
   return (
-    <div className="grid gap-6 max-w-[860px]">
-      <div className="mb-1">
-        <h3 className="font-heading text-2xl">Marking scheme categories</h3>
-        <p className="text-sm text-muted-foreground">
-          Add every circular category that applies to your application. A category can be added more than once, for
-          example one entry per parent&apos;s service record, and each entry lists the schools near the home location.
-        </p>
+    <div className="grid w-full gap-6">
+      <div className="grid gap-4">
+        <div>
+          <h3 className="font-heading text-2xl">Marking scheme categories</h3>
+          <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+            Choose only the circular categories that describe your application. Each category is scored separately out of 100, and you can add a category more than once when the scheme asks for separate records.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{categoryCount}</span>
+            <div className="grid gap-0.5">
+              <strong className="text-sm">{categoryCount === 1 ? "category" : "categories"} selected</strong>
+              <span className="text-xs text-muted-foreground">Add or remove entries as you gather documents.</span>
+            </div>
+          </div>
+          <span className="text-xs font-semibold text-primary">Your draft saves after every change</span>
+        </div>
       </div>
 
       <Tabs defaultValue={firstTypeWithEntries}>
-        <TabsList className="flex-wrap h-auto gap-1">
+        <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-muted/60 p-1">
           {CATEGORY_TYPES.map((type) => {
             const count = categoriesByType.get(type)?.length ?? 0;
             return (
-              <TabsTrigger key={type} value={type} className="text-xs">
+              <TabsTrigger key={type} value={type} className="shrink-0 text-xs">
                 {TAB_LABELS[type]}{count > 0 ? ` (${count})` : ""}
               </TabsTrigger>
             );

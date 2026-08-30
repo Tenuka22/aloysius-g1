@@ -5,14 +5,14 @@ The auto-save indicator shows "Saved locally" immediately even when the user mak
 
 ## Scope
 3 forms use TanStack Form:
-1. **`application-form.tsx`** — 18 fields (applicant, guardian, residence steps), auto-save, hydration sync, step navigation
-2. **`sign-in-form.tsx`** — 2 fields (email, password), simple submit
-3. **`sign-up-form.tsx`** — 3 fields (name, email, password), simple submit
+1. **`application-form.tsx`** – 18 fields (applicant, guardian, residence steps), auto-save, hydration sync, step navigation
+2. **`sign-in-form.tsx`** – 2 fields (email, password), simple submit
+3. **`sign-up-form.tsx`** – 3 fields (name, email, password), simple submit
 
 Supporting infrastructure to delete:
-- `lib/form-context.ts` — wraps `createFormHookContexts` from TanStack Form
-- `lib/app-form.ts` — wraps `createFormHook` from TanStack Form  
-- `components/form-fields.tsx` — `App*` field components (keep `Field`/`FieldGroup` re-exports from `@aloysius-g1/ui`)
+- `lib/form-context.ts` – wraps `createFormHookContexts` from TanStack Form
+- `lib/app-form.ts` – wraps `createFormHook` from TanStack Form  
+- `components/form-fields.tsx` – `App*` field components (keep `Field`/`FieldGroup` re-exports from `@aloysius-g1/ui`)
 
 ## Step 1: Install react-hook-form + zod resolver
 ```bash
@@ -38,7 +38,7 @@ const form = useForm<ApplicationDraft>({
 const watchedValues = form.watch();
 const formSnapshot = useMemo(() => JSON.stringify(watchedValues), [watchedValues]);
 ```
-This is a proper subscription — fires on every value change, no commit-phase issues.
+This is a proper subscription – fires on every value change, no commit-phase issues.
 
 ### Hydration sync via `reset`
 ```ts
@@ -46,7 +46,7 @@ This is a proper subscription — fires on every value change, no commit-phase i
 form.reset(latest); // React Hook Form's reset replaces form state entirely
 ```
 
-### Field rendering — replace `form.Field` render-prop with `Controller`
+### Field rendering – replace `form.Field` render-prop with `Controller`
 Before (TanStack Form):
 ```tsx
 <form.Field name="applicant.fullName">
@@ -69,9 +69,9 @@ After (React Hook Form):
 
 ### Step-specific changes
 
-**ApplicantStep** — 7 fields → 7 `<Controller>`s
-**GuardianStep** — 5 fields → 5 `<Controller>`s  
-**ResidenceStep** — 6 fields → 6 `<Controller>`s, plus `form.setValue` for same-as-permanent copy
+**ApplicantStep** – 7 fields → 7 `<Controller>`s
+**GuardianStep** – 5 fields → 5 `<Controller>`s  
+**ResidenceStep** – 6 fields → 6 `<Controller>`s, plus `form.setValue` for same-as-permanent copy
 
 ### Next step / submit
 ```ts
@@ -90,7 +90,7 @@ Or since we validate externally via `getNextStepReason`, just advance directly a
 
 ## Step 3: Rewrite `sign-in-form.tsx` and `sign-up-form.tsx`
 
-Simple forms — replace `useAppForm` with `useForm` from react-hook-form + `Controller` for each field.
+Simple forms – replace `useAppForm` with `useForm` from react-hook-form + `Controller` for each field.
 
 ## Step 4: Delete TanStack Form infrastructure
 - Delete `lib/form-context.ts`
@@ -99,7 +99,7 @@ Simple forms — replace `useAppForm` with `useForm` from react-hook-form + `Con
 - Remove `@tanstack/react-form` from `apps/web/package.json`
 
 ## Step 5: Update tests
-- `application-form.test.tsx` — no changes needed (tests interact via screen queries, not form internals)
+- `application-form.test.tsx` – no changes needed (tests interact via screen queries, not form internals)
 - Run `bun x tsc --noEmit -p apps/web` for type checking
 - Run `bun x vitest run` for all tests
 
@@ -116,5 +116,5 @@ Simple forms — replace `useAppForm` with `useForm` from react-hook-form + `Con
 
 ## Risk
 - `application-form.tsx` is ~1857 lines and the core of the app. Every field must be carefully migrated.
-- The auto-save and hydration sync effects are complex — must preserve exact behavior.
+- The auto-save and hydration sync effects are complex – must preserve exact behavior.
 - Test suite (42 tests in application-form.test.tsx) must stay green.

@@ -33,7 +33,7 @@ export type RegenerateBackupCodesDialogProps = {
 /**
  * Replace the existing backup codes with a fresh set.
  *
- * The new codes are shown once, in component state only — closing the dialog
+ * The new codes are shown once, in component state only - closing the dialog
  * is the point of no return, which is why the copy button sits right there.
  *
  * @param open - Whether the dialog is open.

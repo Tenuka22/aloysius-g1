@@ -12,7 +12,7 @@ import {
  * Better Auth withholds the session when a second factor is required and
  * answers with `{ twoFactorRedirect: true, twoFactorMethods }` instead, so no
  * sign-in strategy may navigate to `redirectTo` unconditionally. This hook is
- * the single place that decision lives — every password-based form calls it
+ * the single place that decision lives - every password-based form calls it
  * from `onSuccess`.
  *
  * The enabled methods are stashed in session storage (names only, never a

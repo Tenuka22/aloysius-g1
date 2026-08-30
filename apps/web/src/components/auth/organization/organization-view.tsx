@@ -26,7 +26,7 @@ export type OrganizationViewProps = {
 }
 
 /**
- * Compact organization row: logo, primary name, secondary slug — analogous to `UserView`.
+ * Compact organization row: logo, primary name, secondary slug - analogous to `UserView`.
  */
 export function OrganizationView({
   className,

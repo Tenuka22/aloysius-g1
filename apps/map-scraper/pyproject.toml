@@ -1,0 +1,9 @@
+[project]
+name = "galle-school-map-scraper"
+version = "0.1.0"
+description = "Extract Galle government schools and generate the web school catalog"
+requires-python = ">=3.12"
+dependencies = [
+    "pypdf>=5.0.0",
+    "scrapling[fetchers]>=0.4.9",
+]

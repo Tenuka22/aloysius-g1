@@ -45,7 +45,7 @@ function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () 
       const result = await client.subAdmin.rotateKey({ requestId: item.id });
       setGeneratedKey(result.accessKey);
       setQrKey(result.accessKey);
-      toast.success("New key generated — show the QR to the parent");
+      toast.success("New key generated – show the QR to the parent");
       onAction();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not generate key");
@@ -92,7 +92,7 @@ function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () 
       </AlertDialog>
       {generatedKey && (
         <div className="grid gap-2 p-4 border rounded-[10px] border-primary/35 bg-primary/7 mt-2">
-          <strong className="font-semibold text-sm">One-time display — show QR to parent</strong>
+          <strong className="font-semibold text-sm">One-time display – show QR to parent</strong>
           <code className="text-[1.1rem] font-bold break-all">{generatedKey}</code>
           <Button variant="secondary" type="button" onClick={() => setQrKey(generatedKey)}><QrCode size={16} /> Show QR code</Button>
         </div>

@@ -90,7 +90,7 @@ describe("applicantSectionComplete", () => {
   it("is incomplete for undefined applicant", () => expect(applicantSectionComplete(undefined)).toBe(false));
 });
 
-describe("getNextStepReason — step 0 (location)", () => {
+describe("getNextStepReason – step 0 (location)", () => {
   test.each([
     ["map approved even without coordinates", { locationCanProceed: true, location: { latitude: null, longitude: null } }, LOCATION_REASON],
     ["map approved with coordinates", { locationCanProceed: true, location: { latitude: 7.29, longitude: 80.63 } }, ""],
@@ -104,7 +104,7 @@ describe("getNextStepReason — step 0 (location)", () => {
   ])("%s", (_label, deps, expected) => expect(getNextStepReason({ step: 0, ...deps })).toBe(expected));
 });
 
-describe("getNextStepReason — step 1 (applicant) exhaustive combinations", () => {
+describe("getNextStepReason – step 1 (applicant) exhaustive combinations", () => {
   const genders = ["", "Female", "Male"];
   const religions = ["", "Catholic", "Christian", "Buddhist", "Islam"];
   const datesOfBirth = ["", "2019-01-01", "2021-01-31", "2022-01-31", "2022-02-01", "2023-12-31"];
@@ -151,7 +151,7 @@ describe("getNextStepReason — step 1 (applicant) exhaustive combinations", () 
   it(`exercised every combination (${combinationCount})`, () => expect(combinationCount).toBe(2 * 3 * 5 * 6 * 2 * 2 * 3));
 });
 
-describe("getNextStepReason — step 2 (guardian)", () => {
+describe("getNextStepReason – step 2 (guardian)", () => {
   const fullGuardian = { relationship: "Mother", fullName: "Jane Doe", nic: "912345678V", phone: "+94712345678" };
   test.each([
     ["all fields provided proceeds", { guardian: fullGuardian }, ""],
@@ -169,7 +169,7 @@ describe("getNextStepReason — step 2 (guardian)", () => {
     expect(getNextStepReason({ step: 2, ...deps })).toBe(expected));
 });
 
-describe("getNextStepReason — step 4 (categories)", () => {
+describe("getNextStepReason – step 4 (categories)", () => {
   test.each([
     ["no categories blocked", [], CATEGORIES_REASON],
     ["missing categories blocked", undefined, CATEGORIES_REASON],
@@ -179,7 +179,7 @@ describe("getNextStepReason — step 4 (categories)", () => {
     expect(getNextStepReason({ step: 4, categories })).toBe(expected));
 });
 
-describe("getNextStepReason — step 5 (declaration) exhaustive", () => {
+describe("getNextStepReason – step 5 (declaration) exhaustive", () => {
   test.each([
     ["confirmed true, consent true proceeds", { confirmed: true, consent: true }, ""],
     ["confirmed true, consent false blocked", { confirmed: true, consent: false }, DECLARATION_REASON],
@@ -190,7 +190,7 @@ describe("getNextStepReason — step 5 (declaration) exhaustive", () => {
     expect(getNextStepReason({ step: 5, declaration })).toBe(expected));
 });
 
-describe("getNextStepReason — other steps", () => {
+describe("getNextStepReason – other steps", () => {
   test.each([3, 6, -1, 99])("step %d always proceeds", (step) =>
     expect(getNextStepReason({ step })).toBe(""));
   it("respects no other step's rules", () =>

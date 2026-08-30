@@ -1,0 +1,1 @@
+DROP INDEX `applications_birth_certificate_number_unique`;

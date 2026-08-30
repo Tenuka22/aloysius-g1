@@ -31,7 +31,7 @@ beforeEach(() => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   1. CATEGORY CRUD — add → update → remove → verify scores
+   1. CATEGORY CRUD - add → update → remove → verify scores
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Category CRUD during wizard", () => {
@@ -50,12 +50,12 @@ describe("Category CRUD during wizard", () => {
     const [id1, id2] = useApplicationStore.getState().categories.map((c) => c.id);
 
     useApplicationStore.getState().updateCategoryInputs(id1!, { mainDocumentType: "title-deed-applicant" });
-    useApplicationStore.getState().updateCategoryInputs(id2!, { periodOfServiceYears: 5 });
+    useApplicationStore.getState().updateCategoryInputs(id2!, { serviceStartDate: "2021-09-01" });
 
     const cats = useApplicationStore.getState().categories;
     expect(cats[0]?.scoringInputs.mainDocumentType).toBe("title-deed-applicant");
-    expect(cats[0]?.scoringInputs.periodOfServiceYears).toBeUndefined();
-    expect(cats[1]?.scoringInputs.periodOfServiceYears).toBe(5);
+    expect(cats[0]?.scoringInputs.serviceStartDate).toBeUndefined();
+    expect(cats[1]?.scoringInputs.serviceStartDate).toBe("2021-09-01");
     expect(cats[1]?.scoringInputs.mainDocumentType).toBeUndefined();
   });
 
@@ -80,7 +80,7 @@ describe("Category CRUD during wizard", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   2. SCORE CONSISTENCY — updating inputs changes scores
+   2. SCORE CONSISTENCY - updating inputs changes scores
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Score consistency", () => {
@@ -88,37 +88,40 @@ describe("Score consistency", () => {
     const cat: CategoryApplication = {
       id: "s1",
       categoryType: "6.1",
-      scoringInputs: { mainDocumentType: "title-deed-applicant", schoolsWithinRadius: [] },
+      locked: false,
+      scoringInputs: { mainDocumentType: "title-deed-applicant", deedTransferDate: "2020-01-01", schoolsWithinRadius: [] },
     };
     const score = scoreCategory(cat);
     expect(score.breakdown.some((b) => b.label === "Main residence document" && b.marks === 20)).toBe(true);
   });
 
-  it("removing a school from schoolsWithinRadius reduces proximity score", () => {
+  it("removing a school from schoolsWithinRadius increases proximity score", () => {
     const withSchools: CategoryApplication = {
       id: "s2",
       categoryType: "6.1",
+      locked: false,
       scoringInputs: { mainDocumentType: "other-documents", schoolsWithinRadius: ["s1", "s2", "s3"] },
     };
     const withoutSchools: CategoryApplication = {
       id: "s3",
       categoryType: "6.1",
+      locked: false,
       scoringInputs: { mainDocumentType: "other-documents", schoolsWithinRadius: [] },
     };
-    expect(scoreCategory(withSchools).total).toBeGreaterThan(scoreCategory(withoutSchools).total);
+    expect(scoreCategory(withoutSchools).total).toBeGreaterThan(scoreCategory(withSchools).total);
   });
 
   it("category total never exceeds 100", () => {
     const cat: CategoryApplication = {
       id: "s4",
       categoryType: "6.1",
+      locked: false,
       scoringInputs: {
         mainDocumentType: "title-deed-applicant",
         additionalDocs: ["nic", "driving-license", "landline-bill", "marriage-certificate", "life-insurance-policy", "school-leaving-certificate", "child-birth-certificate", "vehicle-registration", "bank-passbook"],
-        yearsRegistered: 5,
-        electoralMotherYears: 5,
-        electoralFatherYears: 5,
-        schoolCount: 50,
+        deedTransferDate: "2021-09-01",
+        electoralMotherSince: 2020,
+        electoralFatherSince: 2020,
         schoolsWithinRadius: ["s1", "s2", "s3", "s4", "s5"],
       },
     };
@@ -129,7 +132,8 @@ describe("Score consistency", () => {
     const cat: CategoryApplication = {
       id: "s5",
       categoryType: "6.4",
-      scoringInputs: { periodOfServiceYears: 10, difficultServiceType: "current" },
+      locked: false,
+      scoringInputs: { serviceStartDate: "2016-09-01", difficultServiceType: "current" },
     };
     const score = scoreCategory(cat);
     expect(score.breakdown.some((b) => b.label.includes("Difficult") && b.marks === 25)).toBe(true);
@@ -139,6 +143,7 @@ describe("Score consistency", () => {
     const cat: CategoryApplication = {
       id: "s6",
       categoryType: "6.2",
+      locked: false,
       scoringInputs: {
         olSubjectCount: 9,
         olGradeA: 9,
@@ -153,7 +158,7 @@ describe("Score consistency", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   3. LOCATION HISTORY — accumulation and capping
+   3. LOCATION HISTORY - accumulation and capping
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Location history accumulation", () => {
@@ -210,7 +215,7 @@ describe("Location history accumulation", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   4. NORMALIZATION — corrupt drafts are repaired on rehydrate
+   4. NORMALIZATION - corrupt drafts are repaired on rehydrate
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Normalization on rehydrate", () => {
@@ -231,13 +236,13 @@ describe("Normalization on rehydrate", () => {
 
   it("valid category entries are preserved with defaults", () => {
     const draft = normalizeDraft({
-      categories: [{ categoryType: "6.1" }, { id: "x", categoryType: "6.4", scoringInputs: { periodOfServiceYears: 3 } }] as unknown,
+      categories: [{ categoryType: "6.1" }, { id: "x", categoryType: "6.4", scoringInputs: { serviceStartDate: "2023-09-01" } }] as unknown,
     });
     expect(draft.categories).toHaveLength(2);
     expect(draft.categories[0]?.categoryType).toBe("6.1");
     expect(draft.categories[0]?.id).toMatch(/6\.1-/);
     expect(draft.categories[1]?.id).toBe("x");
-    expect(draft.categories[1]?.scoringInputs.periodOfServiceYears).toBe(3);
+    expect(draft.categories[1]?.scoringInputs.serviceStartDate).toBe("2023-09-01");
   });
 
   it("missing deviceLocationHistory becomes empty array", () => {
@@ -269,7 +274,7 @@ describe("Normalization on rehydrate", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   5. DRAFT PERSISTENCE — zustand persist middleware
+   5. DRAFT PERSISTENCE - zustand persist middleware
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Draft persistence to localStorage", () => {
@@ -309,7 +314,7 @@ describe("Step navigation", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   7. MULTI-CATEGORY SCORING — multiple types sum independently
+   7. MULTI-CATEGORY SCORING - multiple types sum independently
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Multi-category scoring", () => {
@@ -344,7 +349,7 @@ describe("Multi-category scoring", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   8. UPDATED AT TIMESTAMP — set on every updateDraft call
+   8. UPDATED AT TIMESTAMP - set on every updateDraft call
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Updated-at timestamp", () => {

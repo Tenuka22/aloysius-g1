@@ -72,7 +72,7 @@ export const themePlugin = createAuthPlugin(
     const base = coreThemePlugin({ setTheme: () => {}, ...rest })
     return {
       ...base,
-      // Slot components always call `plugin.useTheme()` — invoking the hook
+      // Slot components always call `plugin.useTheme()` - invoking the hook
       // inside their render keeps it in scope of any `<ThemeProvider>` the
       // consumer mounts. On the static branch the factory re-runs on every
       // parent render, so the synthesized closure stays in sync with the

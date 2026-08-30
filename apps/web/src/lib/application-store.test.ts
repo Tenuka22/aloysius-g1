@@ -59,10 +59,10 @@ describe("normalizeDraft", () => {
     expect(normalizeDraft({ categories: "nope" as unknown as CategoryApplication[] }).categories).toEqual([]));
   it("drops junk entries and invalid category types", () => {
     const result = normalizeDraft({
-      categories: [null, 42, "junk", { categoryType: "6.9" }, { id: "kept-1", categoryType: "6.5", scoringInputs: { periodOfServiceYears: 3 } }] as unknown as CategoryApplication[],
+      categories: [null, 42, "junk", { categoryType: "6.9" },         { id: "kept-1", categoryType: "6.5", scoringInputs: { serviceStartDate: "2023-09-01" } }] as unknown as CategoryApplication[],
     });
     expect(result.categories.map((category) => category.id)).toEqual(["kept-1"]);
-    expect(result.categories[0]?.scoringInputs).toEqual({ periodOfServiceYears: 3 });
+    expect(result.categories[0]?.scoringInputs).toEqual({ serviceStartDate: "2023-09-01" });
   });
   it("synthesizes ids for entries with missing ids and defaults scoringInputs to an object", () => {
     const result = normalizeDraft({
@@ -305,9 +305,9 @@ describe("useApplicationStore category actions", () => {
     useApplicationStore.getState().addCategory("6.1");
     useApplicationStore.getState().addCategory("6.4");
     const targetId = useApplicationStore.getState().categories.find((category) => category.categoryType === "6.4")?.id ?? "";
-    useApplicationStore.getState().updateCategoryInputs(targetId, { periodOfServiceYears: 12, difficultServiceType: "current" });
+    useApplicationStore.getState().updateCategoryInputs(targetId, { serviceStartDate: "2014-09-01", difficultServiceType: "current" });
     const categories = useApplicationStore.getState().categories;
-    expect(categories.find((category) => category.id === targetId)?.scoringInputs).toEqual({ periodOfServiceYears: 12, difficultServiceType: "current" });
+    expect(categories.find((category) => category.id === targetId)?.scoringInputs).toEqual({ serviceStartDate: "2014-09-01", difficultServiceType: "current" });
     const other = categories.find((category) => category.id !== targetId);
     expect(other?.scoringInputs).toEqual({});
   });
@@ -323,7 +323,7 @@ describe("useApplicationStore persistence", () => {
     useApplicationStore.getState().addCategory("6.4");
     useApplicationStore.getState().updateCategoryInputs(
       useApplicationStore.getState().categories[0]?.id ?? "",
-      { periodOfServiceYears: 7 },
+      { serviceStartDate: "2019-09-01" },
     );
     const raw = localStorage.getItem(APPLICATION_DRAFT_STORAGE_KEY);
     expect(raw).not.toBeNull();
@@ -331,7 +331,7 @@ describe("useApplicationStore persistence", () => {
     const persistedCategories = parsed.state?.categories ?? [];
     expect(persistedCategories).toHaveLength(1);
     expect(persistedCategories[0]?.categoryType).toBe("6.4");
-    expect(persistedCategories[0]?.scoringInputs).toEqual({ periodOfServiceYears: 7 });
+    expect(persistedCategories[0]?.scoringInputs).toEqual({ serviceStartDate: "2019-09-01" });
   });
 
   it("clears the persisted draft on reset", () => {
@@ -350,7 +350,7 @@ describe("useApplicationStore persistence", () => {
         state: {
           currentStep: 4,
           categories: [
-            { id: "kept-1", categoryType: "6.6", scoringInputs: { periodAbroadYears: 4 } },
+            { id: "kept-1", categoryType: "6.6", scoringInputs: { abroadStartDate: "2022-09-01", abroadEndDate: "2026-09-01" } },
             { categoryType: "6.9" },
           ],
         },
@@ -361,6 +361,6 @@ describe("useApplicationStore persistence", () => {
     const state = useApplicationStore.getState();
     expect(state.currentStep).toBe(4);
     expect(state.categories).toHaveLength(1);
-    expect(state.categories[0]).toEqual({ id: "kept-1", categoryType: "6.6", scoringInputs: { periodAbroadYears: 4 } });
+    expect(state.categories[0]).toEqual({ id: "kept-1", categoryType: "6.6", scoringInputs: { abroadStartDate: "2022-09-01", abroadEndDate: "2026-09-01" }, locked: false });
   });
 });

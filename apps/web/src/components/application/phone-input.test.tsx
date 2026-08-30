@@ -86,7 +86,7 @@ describe("PhoneInput", () => {
 
   it("shows the saved value hint", () => {
     const { container } = render(<PhoneInput value="+94712345678" onChange={vi.fn()} />);
-    expect(container.textContent).toContain("Saved as +94 712 345 678");
+    expect(container.textContent).toContain("Saved as +94 71 234 5678");
   });
 
   it("does not show the saved value hint when empty", () => {

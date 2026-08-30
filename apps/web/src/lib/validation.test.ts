@@ -154,13 +154,13 @@ describe("declarationStepSchema", () => {
 const validCategory = {
   id: "category-1",
   categoryType: "6.1",
-  scoringInputs: { mainDocumentType: "title-deed", yearsRegistered: 5, additionalDocs: ["nic"] },
+  scoringInputs: { mainDocumentType: "title-deed", deedTransferDate: "2021-09-01", additionalDocs: ["nic"] },
 };
 
 describe("scoringInputsSchema", () => {
   it("accepts an empty object", () => expect(scoringInputsSchema.safeParse({}).success).toBe(true));
   it("coerces numeric fields from strings", () =>
-    expect(scoringInputsSchema.parse({ yearsRegistered: "5", schoolsRadiusKm: "1.5" })).toEqual({ yearsRegistered: 5, schoolsRadiusKm: 1.5 }));
+    expect(scoringInputsSchema.parse({ electoralMotherSince: "2020", schoolsRadiusKm: "1.5" })).toEqual({ electoralMotherSince: 2020, schoolsRadiusKm: 1.5 }));
   it("accepts every difficult service type", () => {
     for (const difficultServiceType of ["current", "previous", "none"]) {
       expect(scoringInputsSchema.safeParse({ difficultServiceType }).success).toBe(true);

@@ -11,6 +11,10 @@ function formatPhoneDisplay(value: string, country: Country): string {
   const code = getCountryCallingCode(country);
   if (!value.startsWith(`+${code}`)) return value;
   const rest = value.slice(code.length + 1);
+  if (country === "LK" && rest.length === 9) {
+    const grouped = rest.replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
+    return `+${code} ${grouped}`;
+  }
   const grouped = rest.replace(/(\d{3})(?=\d)/g, "$1 ");
   return `+${code} ${grouped}`;
 }

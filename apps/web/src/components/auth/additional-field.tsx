@@ -77,7 +77,7 @@ function formatTime(date: Date) {
 /**
  * Icon-only copy button used as an `InputGroupAddon`. `getValue` is invoked
  * lazily on click so the button copies the input's *live* value rather than a
- * stale snapshot — important when paired with editable inputs.
+ * stale snapshot - important when paired with editable inputs.
  */
 function CopyButton({
   getValue,
@@ -527,7 +527,7 @@ function DateInput({ name, field, isPending }: AdditionalFieldProps) {
       <div className="relative flex gap-2">
         {/* Visually-hidden input so required constraint validation fires on submit.
             onInvalid suppresses the native browser balloon and routes the message
-            through the styled <FieldError> below — matching the pattern used by
+            through the styled <FieldError> below - matching the pattern used by
             the Name / Email / Password fields in the sign-up form. */}
         <input
           aria-label={typeof field.label === "string" ? field.label : name}

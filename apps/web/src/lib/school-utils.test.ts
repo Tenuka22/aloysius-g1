@@ -47,7 +47,7 @@ describe("getSchoolsWithinRadius", () => {
   it("attaches distanceKm matching haversineDistanceKm", () => {
     const results = getSchoolsWithinRadius(centerLat, centerLng, 5);
     const richmond = results.find((school) => school.id === "richmond-galle");
-    expect(richmond?.distanceKm).toBeCloseTo(haversineDistanceKm(centerLat, centerLng, 6.0562, 80.2205), 9);
+    expect(richmond?.distanceKm).toBeCloseTo(haversineDistanceKm(centerLat, centerLng, 6.052348, 80.204162), 9);
   });
 
   it("returns nothing for radius 0", () => {

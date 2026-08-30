@@ -47,11 +47,11 @@ function AdminPage() {
   }
 
   const metrics = [
-    ["Applications", overview.data?.total ?? "—", ShieldCheck],
-    ["Drafts", overview.data?.drafts ?? "—", FileWarning],
-    ["Submitted", overview.data?.submitted ?? "—", CheckCircle2],
-    ["Incomplete", overview.data?.incomplete ?? "—", AlertTriangle],
-    ["Invalid emails", overview.data?.invalidEmail ?? "—", AlertTriangle],
+    ["Applications", overview.data?.total ?? "...", ShieldCheck],
+    ["Drafts", overview.data?.drafts ?? "...", FileWarning],
+    ["Submitted", overview.data?.submitted ?? "...", CheckCircle2],
+    ["Incomplete", overview.data?.incomplete ?? "...", AlertTriangle],
+    ["Invalid emails", overview.data?.invalidEmail ?? "...", AlertTriangle],
   ] as const;
 
   const sidebarNav = <>

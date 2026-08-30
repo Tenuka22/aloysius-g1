@@ -17,8 +17,8 @@ export type TwoFactorSettingsProps = {
 /**
  * Security-settings card for enrolling in and managing two-factor auth.
  *
- * Reads `user.twoFactorEnabled` from the session — the field the Better Auth
- * two-factor plugin adds — so the card reflects enrollment without an extra
+ * Reads `user.twoFactorEnabled` from the session - the field the Better Auth
+ * two-factor plugin adds - so the card reflects enrollment without an extra
  * request.
  *
  * @param className - Additional CSS classes applied to the card.

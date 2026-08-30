@@ -67,7 +67,7 @@ const steps = ["Location", "Applicant", "Parent / guardian", "Residence", "Categ
 
 const CATEGORY_LABELS: Record<CategoryType, string> = {
   "6.1": "6.1 – Residence Verification & Proximity",
-  "6.2": "6.2 – Alumi",
+  "6.2": "6.2 – Alumni",
   "6.3": "6.3 – Siblings",
   "6.4": "6.4 – Period of Service & Distance",
   "6.5": "6.5 – Transfer Applications",
@@ -143,7 +143,7 @@ function StepIndicator({
   const progress = Math.round((current / (stepLabels.length - 1)) * 100);
   return (
     <>
-      <div className="flex items-center justify-between gap-4 px-8 pt-6 pb-4">
+      <div className="flex items-center justify-between gap-4 px-5 pb-4 pt-6 md:px-8">
         <div>
           <p className="text-xs text-muted-foreground">
             Step {current + 1} of {stepLabels.length}
@@ -159,7 +159,7 @@ function StepIndicator({
         />
       </div>
       <nav
-        className="flex gap-1 overflow-auto border-b px-8 py-3"
+        className="flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8"
         aria-label="Form steps"
       >
         {stepLabels.map((step, index) => (
@@ -211,7 +211,8 @@ function BirthCertificateField({
       const result = await client.application.checkBirthCertificate({
         birthCertificateNumber: number,
       });
-      set({ duplicateBirthCertificate: result.exists, bcDialogOpen: reveal ? result.exists : draft.bcDialogOpen });
+      if (reveal) set({ duplicateBirthCertificate: result.exists, bcDialogOpen: result.exists });
+      else set({ duplicateBirthCertificate: result.exists });
     } catch (error) {
       console.error("checkBirthCertificate failed:", error);
       set({ duplicateBirthCertificate: false, bcDialogOpen: false });
@@ -326,6 +327,7 @@ function BirthCertificateField({
                 <PhoneInput
                   value={draft.bcContactPhone}
                   onChange={(value) => set({ bcContactPhone: value })}
+                  placeholder="Contact phone number"
                 />
                 <Button
                   type="button"
@@ -410,7 +412,7 @@ function ApplicantStep({
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-5 max-w-[780px]">
+    <div className="grid max-w-[1080px] grid-cols-2 gap-5">
       <div className="col-span-2 mb-4">
         <h3 className="font-heading text-2xl">Tell us about the applicant</h3>
         <p className="text-sm text-muted-foreground">
@@ -556,7 +558,7 @@ function GuardianStep({
     !nicValue || /^\d{12}$/.test(nicValue) || /^\d{9}[VX]$/.test(nicValue);
 
   return (
-    <div className="grid grid-cols-2 gap-5 max-w-[780px]">
+    <div className="grid max-w-[1080px] grid-cols-2 gap-5">
       <div className="col-span-2 mb-4">
         <h3 className="font-heading text-2xl">Parent or guardian details</h3>
         <p className="text-sm text-muted-foreground">
@@ -708,7 +710,7 @@ function ResidenceStep({
     set({ residence: { ...draft.residence, ...residence } } as Partial<ApplicationDraft>);
 
   return (
-    <div className="grid grid-cols-2 gap-5 max-w-[780px]">
+    <div className="grid max-w-[1080px] grid-cols-2 gap-5">
       <div className="col-span-2 mb-4">
         <h3 className="font-heading text-2xl">Where does the family live?</h3>
         <p className="text-sm text-muted-foreground">
@@ -875,7 +877,7 @@ function DeclarationStep({
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   return (
-    <div className="max-w-[700px] grid gap-5">
+    <div className="grid max-w-[920px] gap-5">
       <div className="mb-4">
         <h3 className="font-heading text-2xl">Confirm before review</h3>
         <p className="text-sm text-muted-foreground">
@@ -981,7 +983,7 @@ function ReviewStep({
   const rows = [...sections, ...categoryRows];
 
   return (
-    <div className="max-w-[780px]">
+    <div className="max-w-[1080px]">
       <div className="mb-4">
         <h3 className="font-heading text-2xl">Review your draft</h3>
         <p className="text-sm text-muted-foreground">
@@ -1020,6 +1022,7 @@ export function ApplicationForm({
 }) {
   const draft = useApplicationStore();
   const saveQueue = useRef(Promise.resolve());
+  const restorePromise = useRef<Promise<void> | null>(null);
   const navigate = useNavigate();
 
   const set = (patch: Partial<ApplicationDraft>) => draft.updateDraft(patch);
@@ -1086,6 +1089,7 @@ export function ApplicationForm({
             const merged: Partial<ApplicationDraft> = serverHasData || !localHasData ? latest : {};
             set({
               ...merged,
+              accessKey: key || latest.accessKey || draft.accessKey,
               sessionCode: restoredSessionCode || draft.sessionCode,
               submittedAt: result.submittedAt ? String(result.submittedAt) : null,
             });
@@ -1156,7 +1160,7 @@ export function ApplicationForm({
         if (!cancelled) set({ hydrated: true });
       }
     };
-    void restore();
+    restorePromise.current = restore();
     return () => {
       cancelled = true;
     };
@@ -1181,14 +1185,22 @@ export function ApplicationForm({
 
   const current = draft.currentStep;
 
-  const saveToServer = async () => {
+  const saveToServer = async (showFeedback = true) => {
     const operation = saveQueue.current.then(async () => {
-      const data = normalizeDraft(draft);
-      set({ saveStatus: "Saving\u2026" });
+      const currentDraft = useApplicationStore.getState();
+      const data = normalizeDraft(currentDraft);
+      const saveStartedAt = Date.now();
+      set({ saveStatus: "Saving…" });
       if (adminApplicationId)
         await client.admin.application.update({ id: adminApplicationId, data });
-      else if (draft.accessKey)
-        await client.application.update({ accessKey: draft.accessKey, data });
+      else if (currentDraft.accessKey)
+        await client.application.update({ accessKey: currentDraft.accessKey, data });
+      const remainingFeedbackMs = 120 - (Date.now() - saveStartedAt);
+      if (showFeedback && remainingFeedbackMs > 0) {
+        const { promise, resolve } = Promise.withResolvers<void>();
+        setTimeout(resolve, remainingFeedbackMs);
+        await promise;
+      }
       set({ saveStatus: "Saved securely" });
     });
     saveQueue.current = operation.catch(() => undefined);
@@ -1217,10 +1229,20 @@ export function ApplicationForm({
   const submitApplication = async () => {
     try {
       set({ isSubmitting: true, submitError: "" });
-      await saveToServer();
-      if (!draft.accessKey) return;
-      set({ saveStatus: "Submitting\u2026" });
-      await client.application.submit({ accessKey: draft.accessKey });
+      if (restorePromise.current) await restorePromise.current;
+      let accessKey = useApplicationStore.getState().accessKey;
+      if (!accessKey && !adminApplicationId && !readOnly) {
+        const result = await client.application.create({ data: normalizeDraft(useApplicationStore.getState()) });
+        accessKey = result.accessKey;
+        localStorage.setItem("aloysius-g1-application-key", result.accessKey);
+        localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
+        set({ accessKey: result.accessKey, sessionCode: result.sessionCode });
+      }
+      await saveToServer(false);
+      accessKey = useApplicationStore.getState().accessKey || accessKey;
+      if (!accessKey) throw new Error("Could not create a secure application draft");
+      set({ saveStatus: "Submitting…" });
+      await client.application.submit({ accessKey });
       set({ submittedAt: new Date().toISOString(), saveStatus: "Submitted" });
     } catch (error) {
       set({ saveStatus: "" });
@@ -1290,23 +1312,19 @@ export function ApplicationForm({
   const isNextDisabled = Boolean(nextDisabledReason);
 
   return (
-    <main className="min-h-[calc(100svh-4rem)] px-5 pt-14 pb-20 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_30rem)]">
+    <main className="min-h-[calc(100svh-4rem)] bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--primary)_10%,transparent),transparent_34rem)] px-4 pb-20 pt-8 sm:px-6 sm:pt-12">
 
-      <section className="mx-auto max-w-[1120px]">
-        <div className="flex justify-between gap-8 items-start mb-9">
-          <div className="min-w-0 flex-1">
-            <p className="text-primary font-bold tracking-widest uppercase text-xs">
-              G1 2026 intake
-            </p>
-            <h1 className="font-heading text-[clamp(2.4rem,5vw,4.5rem)] leading-none tracking-tight mt-1 mb-4">
+      <section className="mx-auto max-w-[1320px]">
+        <div className="mb-9 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.38fr)]">
+          <div className="min-w-0">
+            <h1 className="font-heading text-[clamp(2.35rem,5vw,4.5rem)] leading-[0.98] tracking-[-0.03em]">
               Applicant information
             </h1>
-            <p className="max-w-[42rem] text-muted-foreground text-[1.05rem]">
-              Complete the details at your own pace. Your progress is saved
-              securely and can be reopened with your session code and access key.
+            <p className="mt-4 max-w-[48rem] text-[1.05rem] leading-relaxed text-muted-foreground">
+              G1 2026 intake · Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.
             </p>
             {(draft.sessionCode || draft.accessKey) && (
-              <div className="grid grid-cols-2 gap-3 mt-5 max-w-[900px]">
+              <div className="mt-5 grid max-w-[900px] grid-cols-1 gap-3 sm:grid-cols-2">
                 {draft.sessionCode && (
                   <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
                     <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
@@ -1360,21 +1378,33 @@ export function ApplicationForm({
               </div>
             )}
           </div>
-          <div className="inline-flex items-center gap-1.5 text-primary text-[0.85rem] whitespace-nowrap">
-            <ShieldCheck size={17} />{" "}
-            {draft.accessKey ? "Saved to database" : "Connecting to database"}
+          <div className="grid gap-3 rounded-2xl border border-primary/20 bg-card/85 p-5 shadow-[0_14px_32px_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
+            <div className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              <span>Application status</span>
+              <ShieldCheck className="text-primary" size={17} />
+            </div>
+            <strong className="font-heading text-2xl">Step {current + 1} of {steps.length}</strong>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Keep going one section at a time. You can leave and return with the access key above.
+            </p>
+            <div className="flex items-center gap-2 border-t pt-3 text-sm text-primary">
+              <span className="size-2 rounded-full bg-primary" aria-hidden="true" />
+              {draft.saveStatus === "Saved securely"
+                ? "Saved"
+                : draft.saveStatus || (draft.accessKey ? "Connected to secure draft" : "Connecting to secure draft")}
+            </div>
           </div>
         </div>
       </section>
 
-      <Card className="mx-auto max-w-[1120px] overflow-hidden shadow-[0_20px_45px_color-mix(in_oklch,var(--foreground)_8%,transparent)]">
+      <Card className="mx-auto max-w-[1320px] overflow-hidden shadow-[0_20px_45px_color-mix(in_oklch,var(--foreground)_8%,transparent)]">
         <StepIndicator
           current={current}
           steps={steps}
           onStepClick={(index) => draft.setStep(index)}
         />
 
-        <CardContent className="p-9 min-h-[440px]">
+        <CardContent className="min-h-[440px] p-5 md:p-9">
           {current === 0 && (
             <LocationStepCard
               draft={draft}
@@ -1407,7 +1437,7 @@ export function ApplicationForm({
           )}
         </CardContent>
 
-        <div className="flex items-center justify-between gap-4 border-t px-8 py-6">
+        <div className="flex flex-col items-stretch justify-between gap-4 border-t px-5 py-5 sm:flex-row sm:items-center md:px-8 md:py-6">
           {draft.submitError && (
             <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 max-w-md">
               <TriangleAlert size={16} className="shrink-0 mt-0.5 text-destructive" />
@@ -1415,44 +1445,82 @@ export function ApplicationForm({
             </div>
           )}
           {draft.submittedAt && !draft.submissionLocked ? (
-            <div className="p-6">
-              <strong className="text-lg">
-                Application submitted successfully.
-              </strong>
-              <div className="grid gap-3 max-w-[42rem] my-4 p-4 rounded-xl border border-primary/30 bg-primary/7">
-                <span className="text-muted-foreground text-sm">
-                  Keep this application key safe. You need it to view or update
-                  this child&apos;s application.
-                </span>
-                <code className="block break-all p-3 rounded-lg bg-background text-[0.85rem]">
-                  {draft.accessKey}
-                </code>
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-secondary text-secondary-foreground px-4 py-2 text-sm font-medium"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    copyWithFeedback("keycard", draft.accessKey);
-                  }}
-                >
-                  {draft.copiedField === "keycard" ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy key</>}
-                </button>
+            <div className="grid w-full gap-6 p-6 sm:p-8 lg:p-10">
+              <div className="flex items-start gap-4 rounded-2xl border border-primary/25 bg-primary/8 p-5 sm:p-6">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                  <Check size={23} strokeWidth={2.5} />
+                </div>
+                <div className="grid gap-1">
+                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                    Submission complete
+                  </span>
+                  <strong className="font-heading text-2xl leading-tight sm:text-3xl">
+                    Application submitted successfully.
+                  </strong>
+                  <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+                    Your application is safely recorded. Keep the access key below
+                    so you can return to this child&apos;s application later.
+                  </p>
+                </div>
               </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-secondary text-secondary-foreground px-4 py-2 text-sm font-medium"
-                  onClick={() => void navigate({ to: "/" })}
-                >
+
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.65fr)]">
+                <section className="grid gap-4 rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6" aria-labelledby="submitted-access-key-heading">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="grid gap-1">
+                      <div className="flex items-center gap-2 text-primary">
+                        <KeyRound size={18} />
+                        <h2 id="submitted-access-key-heading" className="text-base font-semibold text-foreground">
+                          Your access key
+                        </h2>
+                      </div>
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        This key lets you view or update this child&apos;s application.
+                      </p>
+                    </div>
+                    <ShieldCheck className="mt-0.5 shrink-0 text-primary" size={19} aria-hidden="true" />
+                  </div>
+                  <code className="block overflow-x-auto rounded-xl bg-background px-4 py-3 font-mono text-sm font-semibold leading-relaxed tracking-wide text-foreground ring-1 ring-border/70">
+                    {draft.accessKey}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyWithFeedback("keycard", draft.accessKey);
+                    }}
+                  >
+                    {draft.copiedField === "keycard" ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy key</>}
+                  </Button>
+                </section>
+
+                <aside className="grid content-start gap-4 rounded-2xl border border-border bg-muted/20 p-5 sm:p-6" aria-labelledby="submitted-next-steps-heading">
+                  <div className="grid gap-1">
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Next steps</span>
+                    <h2 id="submitted-next-steps-heading" className="font-heading text-xl">Keep your application within reach</h2>
+                  </div>
+                  <ol className="grid gap-3 text-sm">
+                    <li className="flex items-start gap-3">
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-bold text-primary">1</span>
+                      <span className="leading-relaxed text-muted-foreground">Copy or store the access key somewhere safe.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-bold text-primary">2</span>
+                      <span className="leading-relaxed text-muted-foreground">Use it with your session code to return to this application.</span>
+                    </li>
+                  </ol>
+                </aside>
+              </div>
+
+              <div className="flex flex-wrap gap-3 border-t pt-5">
+                <Button type="button" variant="secondary" onClick={() => void navigate({ to: "/" })}>
                   <House size={17} /> Back to home
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium"
-                  onClick={startAnotherApplication}
-                >
+                </Button>
+                <Button type="button" onClick={startAnotherApplication}>
                   <UserPlus size={17} /> Apply for another child
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -1462,7 +1530,7 @@ export function ApplicationForm({
                   <Check size={15} /> Saved locally
                 </span>
               )}
-              <div className="flex gap-3 ml-auto">
+              <div className="ml-auto flex gap-3">
                 {current > 0 && (
                   <Button variant="secondary" onClick={back}>
                     <ArrowLeft size={17} /> Back
@@ -1483,6 +1551,7 @@ export function ApplicationForm({
                       !draft.declaration.confirmed ||
                       !draft.declaration.consent
                     }
+                    aria-label={collectionOnly ? "Update application — submission opens 9 Sep 2026" : undefined}
                     onClick={() => void submitApplication()}
                   >
                     {collectionOnly ? (

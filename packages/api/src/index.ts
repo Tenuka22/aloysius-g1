@@ -1,4 +1,5 @@
-import { ORPCError, os } from "@orpc/server";
+import { os } from "@orpc/server";
+import { ORPCError } from "@orpc/client";
 
 import type { Context } from "./context";
 import { hasAdminRole, hasSubAdminRole } from "./auth-policy";

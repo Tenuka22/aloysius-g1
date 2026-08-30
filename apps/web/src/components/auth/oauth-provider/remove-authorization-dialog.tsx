@@ -35,7 +35,7 @@ export type RemoveAuthorizationDialogProps = {
  * Confirmation for removing every consent record tied to one OAuth client.
  *
  * The copy is deliberate: Better Auth's consent deletion removes the stored
- * approval, so the application must ask again — it does not revoke access or
+ * approval, so the application must ask again - it does not revoke access or
  * refresh tokens that were already issued.
  */
 export function RemoveAuthorizationDialog({

@@ -123,6 +123,7 @@ const validApplicant = {
 const validGuardian = {
   relationship: "Father",
   fullName: "Kamal Perera",
+  sinhalaName: "",
   nic: "199012345678",
   phone: "+94712345678",
   whatsappPhone: "",
@@ -137,6 +138,10 @@ const validResidence = {
   dsDivision: "Colombo",
   gnDivision: "Mirihana",
   electoralDistrict: "Colombo",
+  districtSearch: "",
+  dsSearch: "",
+  gnSearch: "",
+  electoralSearch: "",
 };
 
 const validDeclaration = { confirmed: true, consent: true };
@@ -146,6 +151,7 @@ const validCategories: typeof emptyDraft.categories = [
     id: "cat-1",
     categoryType: "6.1",
     scoringInputs: { mainDocumentType: "title-deed-applicant", schoolsWithinRadius: ["school-1"] },
+    locked: false,
   },
 ];
 
@@ -159,7 +165,7 @@ const fullValidDraft = {
   categories: validCategories,
 };
 
-describe("ApplicationForm — step 0 (location)", () => {
+describe("ApplicationForm – step 0 (location)", () => {
   it("blocks Continue until a location is ready", async () => {
     await renderForm();
     const continueButton = screen.getByRole("button", { name: /continue/i });
@@ -171,7 +177,7 @@ describe("ApplicationForm — step 0 (location)", () => {
   });
 });
 
-describe("ApplicationForm — step 1 (applicant) gating", () => {
+describe("ApplicationForm – step 1 (applicant) gating", () => {
   it("blocks a female applicant with the fields reason", async () => {
     setStore({ currentStep: 1, applicant: { ...validApplicant, gender: "Female" } });
     await renderForm();
@@ -226,7 +232,7 @@ describe("ApplicationForm — step 1 (applicant) gating", () => {
   });
 });
 
-describe("ApplicationForm — step 2 (guardian) gating", () => {
+describe("ApplicationForm – step 2 (guardian) gating", () => {
   const fullGuardian = { ...emptyDraft.guardian, relationship: "Mother", fullName: "Jane Doe", nic: "199012345678", phone: "+94712345678" };
 
   it("blocks an invalid guardian NIC", async () => {
@@ -250,7 +256,7 @@ describe("ApplicationForm — step 2 (guardian) gating", () => {
   });
 });
 
-describe("ApplicationForm — step 4 (categories) gating", () => {
+describe("ApplicationForm – step 4 (categories) gating", () => {
   it("blocks until at least one category is selected", async () => {
     setStore({ currentStep: 4 });
     await renderForm();
@@ -269,9 +275,38 @@ describe("ApplicationForm — step 4 (categories) gating", () => {
     expect(screen.getByText(/interview panel/)).toBeInTheDocument();
     expect(screen.getByText("Indicative total")).toBeInTheDocument();
   });
+
+  it("renders nearby-school maps for foreign employment and uses the sibling proximity scale", async () => {
+    const foreignCategory = {
+      ...validCategories[0],
+      id: "foreign-category",
+      categoryType: "6.6" as const,
+      scoringInputs: { schoolsWithinRadius: [] },
+    };
+    setStore({
+      ...fullValidDraft,
+      currentStep: 4,
+      selectedLocation: { ...emptyDraft.selectedLocation, latitude: 6.038, longitude: 80.219 },
+      categories: [foreignCategory],
+    });
+    await renderForm();
+    expect(screen.getByTestId("school-map-picker")).toBeInTheDocument();
+    expect(screen.getByText(/35-mark proximity section/)).toBeInTheDocument();
+
+    const siblingCategory = {
+      ...foreignCategory,
+      id: "sibling-category",
+      categoryType: "6.3" as const,
+      scoringInputs: { schoolsWithinRadius: ["school-1"] },
+    };
+    setStore({ categories: [siblingCategory] });
+    await userEvent.click(screen.getByRole("tab", { name: /siblings/i }));
+    expect(screen.getByRole("button", { name: "27 / 30" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "45 / 30" })).not.toBeInTheDocument();
+  });
 });
 
-describe("ApplicationForm — step 5 (declaration) gating", () => {
+describe("ApplicationForm – step 5 (declaration) gating", () => {
   it("blocks until the declaration is confirmed and consented", async () => {
     setStore({ currentStep: 5, declaration: { confirmed: false, consent: false } });
     await renderForm();
@@ -283,7 +318,7 @@ describe("ApplicationForm — step 5 (declaration) gating", () => {
   });
 });
 
-describe("ApplicationForm — location history capture", () => {
+describe("ApplicationForm – location history capture", () => {
   const mapPoint = { label: "Selected location", address: "1 Temple Road", latitude: 6.0343, longitude: 80.217, source: "map" };
   const deviceFix = { label: "Your location", address: "", latitude: 6.0562, longitude: 80.2205, source: "device" };
   const addressTyping = { label: "", address: "typed text", latitude: null, longitude: null, source: "manual" };
@@ -336,7 +371,7 @@ describe("ApplicationForm — location history capture", () => {
   });
 });
 
-describe("ApplicationForm — keys", () => {
+describe("ApplicationForm – keys", () => {
   it("copies the access key and shows feedback", async () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
@@ -360,7 +395,7 @@ describe("ApplicationForm — keys", () => {
   });
 });
 
-describe("ApplicationForm — step 3 (residence)", () => {
+describe("ApplicationForm – step 3 (residence)", () => {
   it("enables Continue even with empty residence fields", async () => {
     setStore({ currentStep: 3 });
     await renderForm();
@@ -390,7 +425,7 @@ describe("ApplicationForm — step 3 (residence)", () => {
   });
 });
 
-describe("ApplicationForm — step 6 (review)", () => {
+describe("ApplicationForm – step 6 (review)", () => {
   it("renders a summary for every section", async () => {
     setStore({ ...fullValidDraft, currentStep: 6 });
     await renderReview();
@@ -447,7 +482,7 @@ describe("ApplicationForm — step 6 (review)", () => {
   });
 });
 
-describe("ApplicationForm — submit flow", () => {
+describe("ApplicationForm – submit flow", () => {
   it("submits successfully and shows the success view", async () => {
     setStore({ ...fullValidDraft, currentStep: 6 });
     const user = userEvent.setup();
@@ -466,7 +501,7 @@ describe("ApplicationForm — submit flow", () => {
   });
 });
 
-describe("ApplicationForm — submit a restored application", () => {
+describe("ApplicationForm – submit a restored application", () => {
   it("submits a fully valid restored draft", async () => {
     localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
     localStorage.setItem("aloysius-g1-application-session-code", MOCK_SESSION_CODE);
@@ -485,7 +520,7 @@ describe("ApplicationForm — submit a restored application", () => {
   });
 });
 
-describe("ApplicationForm — state transitions", () => {
+describe("ApplicationForm – state transitions", () => {
   it("returns to the previous step with the Back button", async () => {
     setStore({ currentStep: 1 });
     await renderForm();
@@ -500,7 +535,7 @@ describe("ApplicationForm — state transitions", () => {
     await user.click(screen.getByRole("button", { name: /parent \/ guardian/i }));
     await waitFor(() => expect(screen.getByText("NIC number")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: /applicant/i }));
-    expect(screen.getByText("Full name")).toBeInTheDocument();
+    expect(screen.getByText("Full name in English")).toBeInTheDocument();
   });
 
   it("resets the draft and navigates home when starting another application", async () => {
@@ -530,7 +565,7 @@ describe("ApplicationForm — state transitions", () => {
   });
 });
 
-describe("ApplicationForm — server errors", () => {
+describe("ApplicationForm – server errors", () => {
   it("resets the draft when create fails", async () => {
     createMock.mockReset().mockRejectedValue(new Error("Database unavailable"));
     await renderForm();
@@ -572,15 +607,15 @@ describe("ApplicationForm — server errors", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   FORM FIELD INTERACTIONS — actual typing into inputs
+   FORM FIELD INTERACTIONS - actual typing into inputs
    ════════════════════════════════════════════════════════════════════════════ */
 
-describe("ApplicationForm — form field typing", () => {
+describe("ApplicationForm – form field typing", () => {
   it("types into the applicant full name field and updates the store", async () => {
     setStore({ currentStep: 1, applicant: { ...validApplicant, fullName: "" } });
     const user = userEvent.setup();
     await renderForm();
-    const input = screen.getByLabelText(/full name/i);
+    const input = screen.getByLabelText(/full name in english/i);
     await user.type(input, "Tenuka");
     expect(useApplicationStore.getState().applicant.fullName).toBe("Tenuka");
   });
@@ -639,7 +674,7 @@ describe("ApplicationForm — form field typing", () => {
    DECLARATION CHECKBOX CLICKS
    ════════════════════════════════════════════════════════════════════════════ */
 
-describe("ApplicationForm — declaration checkbox clicks", () => {
+describe("ApplicationForm – declaration checkbox clicks", () => {
   it("clicking confirm checkbox toggles declaration.confirmed", async () => {
     setStore({ currentStep: 5, declaration: { confirmed: false, consent: false } });
     const user = userEvent.setup();
@@ -675,7 +710,7 @@ describe("ApplicationForm — declaration checkbox clicks", () => {
    SUBMISSION LOCKED STATE
    ════════════════════════════════════════════════════════════════════════════ */
 
-describe("ApplicationForm — submission locked state", () => {
+describe("ApplicationForm – submission locked state", () => {
   it("shows the locked banner when submission is outside the window", async () => {
     statusMock.mockResolvedValue({
       submissionLocked: true,
@@ -723,7 +758,7 @@ describe("ApplicationForm — submission locked state", () => {
    SUBMISSION REQUEST DIALOG
    ════════════════════════════════════════════════════════════════════════════ */
 
-describe("ApplicationForm — submission request dialog", () => {
+describe("ApplicationForm – submission request dialog", () => {
   const { requestAccessMock } = vi.hoisted(() => ({ requestAccessMock: vi.fn() }));
 
   it("shows the approval request form when submit fails with window closed error", async () => {
@@ -750,7 +785,9 @@ describe("ApplicationForm — submission request dialog", () => {
     await user.type(screen.getByPlaceholderText(/full name/i), "Test User");
     await user.type(screen.getByPlaceholderText(/phone/i), "0712345678");
     await user.click(screen.getByRole("button", { name: /send approval request/i }));
-    expect(await screen.findByText(/approval request sent/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText(/request approval to submit/i)).not.toBeInTheDocument();
+    });
   });
 
   it("hides the approval request form when Cancel is clicked", async () => {
@@ -769,7 +806,7 @@ describe("ApplicationForm — submission request dialog", () => {
    BIRTH CERTIFICATE DUPLICATE DRAWER
    ════════════════════════════════════════════════════════════════════════════ */
 
-describe("ApplicationForm — birth certificate duplicate drawer", () => {
+describe("ApplicationForm – birth certificate duplicate drawer", () => {
   it("opens the drawer and shows removal form when duplicate detected", async () => {
     checkBirthCertificateMock.mockResolvedValue({ exists: true });
     setStore({ currentStep: 1, applicant: { ...validApplicant, birthCertificateNumber: "DUP123" } });
@@ -801,6 +838,7 @@ describe("ApplicationForm — birth certificate duplicate drawer", () => {
     // Fill the removal form
     await user.type(screen.getByPlaceholderText(/applicant name/i), "Test Applicant");
     await user.type(screen.getByPlaceholderText(/guardian name/i), "Test Guardian");
+    await user.type(screen.getByPlaceholderText(/contact phone/i), "+94712345678");
     // The removal button should be enabled now (all 3 fields filled)
     const removeButton = screen.getByRole("button", { name: /request record removal/i });
     expect(removeButton).toBeEnabled();
@@ -832,7 +870,7 @@ describe("ApplicationForm — birth certificate duplicate drawer", () => {
    SELECT DROPDOWN INTERACTIONS
    ════════════════════════════════════════════════════════════════════════════ */
 
-describe("ApplicationForm — select dropdown interactions", () => {
+describe("ApplicationForm – select dropdown interactions", () => {
   it("selecting Female gender shows the blocked message", async () => {
     setStore({ currentStep: 1, applicant: { ...validApplicant, gender: "" } });
     const user = userEvent.setup();
@@ -849,7 +887,7 @@ describe("ApplicationForm — select dropdown interactions", () => {
     const options = document.body.querySelectorAll('[role="option"]');
     let femaleOption: HTMLElement | null = null;
     options.forEach((opt) => {
-      if (/female/i.test(opt.textContent ?? "")) femaleOption = opt;
+      if (/female/i.test(opt.textContent ?? "")) femaleOption = opt as HTMLElement;
     });
     expect(femaleOption).not.toBeNull();
     await user.click(femaleOption!);
@@ -871,7 +909,7 @@ describe("ApplicationForm — select dropdown interactions", () => {
     const options = document.body.querySelectorAll('[role="option"]');
     let christianOption: HTMLElement | null = null;
     options.forEach((opt) => {
-      if (/christian/i.test(opt.textContent ?? "")) christianOption = opt;
+      if (/christian/i.test(opt.textContent ?? "")) christianOption = opt as HTMLElement;
     });
     expect(christianOption).not.toBeNull();
     await user.click(christianOption!);
@@ -893,7 +931,7 @@ describe("ApplicationForm — select dropdown interactions", () => {
     const options = document.body.querySelectorAll('[role="option"]');
     let motherOption: HTMLElement | null = null;
     options.forEach((opt) => {
-      if (/mother/i.test(opt.textContent ?? "")) motherOption = opt;
+      if (/mother/i.test(opt.textContent ?? "")) motherOption = opt as HTMLElement;
     });
     expect(motherOption).not.toBeNull();
     await user.click(motherOption!);

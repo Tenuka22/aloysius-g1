@@ -94,6 +94,7 @@ const applicant = {
 const guardian = {
   relationship: "Father",
   fullName: "Kamal Perera",
+  sinhalaName: "",
   nic: "199012345678",
   phone: "+94712345678",
   whatsappPhone: "",
@@ -108,6 +109,10 @@ const residence = {
   dsDivision: "Galle",
   gnDivision: "Galle",
   electoralDistrict: "Galle",
+  districtSearch: "",
+  dsSearch: "",
+  gnSearch: "",
+  electoralSearch: "",
 };
 
 const declaration = { confirmed: true, consent: true };
@@ -149,7 +154,7 @@ beforeEach(() => {
    1. FULL HAPPY-PATH USER JOURNEY
    ════════════════════════════════════════════════════════════════════════════ */
 
-describe("Full user journey — fresh application", () => {
+describe("Full user journey – fresh application", () => {
   it("navigates all 7 steps and reaches review", async () => {
     // Step 0: Location
     setStore({ location: { ...emptyDraft.location, ...loc } });
@@ -189,10 +194,10 @@ describe("Full user journey — fresh application", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   2. USER STUCK MIDWAY — goes back, changes data, comes forward
+   2. USER STUCK MIDWAY - goes back, changes data, comes forward
    ════════════════════════════════════════════════════════════════════════════ */
 
-describe("User stuck midway — back and forth", () => {
+describe("User stuck midway – back and forth", () => {
   it("goes back from step 1 to step 0, then forward again", async () => {
     const user = userEvent.setup();
     setStore({
@@ -234,7 +239,7 @@ describe("User stuck midway — back and forth", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   3. RANDOM NAVIGATION — clicking back/forward non-linearly
+   3. RANDOM NAVIGATION - clicking back/forward non-linearly
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Random navigation", () => {
@@ -276,7 +281,7 @@ describe("Random navigation", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   4. ABANDON AND RESUME — store persists draft across render cycles
+   4. ABANDON AND RESUME - store persists draft across render cycles
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Abandon and resume", () => {
@@ -321,7 +326,7 @@ describe("Abandon and resume", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   5. CATEGORY DUPLICATES — adding same type multiple times
+   5. CATEGORY DUPLICATES - adding same type multiple times
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Category duplicates", () => {
@@ -392,7 +397,7 @@ describe("Category duplicates", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   6. INDICATIVE MARKS — verify baseline notice is user-visible
+   6. INDICATIVE MARKS - verify baseline notice is user-visible
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Indicative marks notice", () => {
@@ -405,13 +410,14 @@ describe("Indicative marks notice", () => {
           id: "cat-int-1",
           categoryType: "6.1",
           scoringInputs: { mainDocumentType: "title-deed-applicant", schoolsWithinRadius: ["school-1"] },
+          locked: false,
         },
       ],
     });
     render(<ApplicationForm />);
     await screen.findByRole("button", { name: /continue/i });
 
-    expect(screen.getByText("Example marks — 6.1 – Residence Verification & Proximity")).toBeInTheDocument();
+    expect(screen.getByText("Example marks – 6.1 – Residence Verification & Proximity")).toBeInTheDocument();
     expect(screen.getByText("Indicative total")).toBeInTheDocument();
     expect(screen.getByText(/baseline estimate/)).toBeInTheDocument();
     expect(screen.getByText(/interview panel/)).toBeInTheDocument();
@@ -422,6 +428,7 @@ describe("Indicative marks notice", () => {
       id: "cat-int-2",
       categoryType: "6.1",
       scoringInputs: { mainDocumentType: "title-deed-applicant", schoolsWithinRadius: ["school-1"] },
+      locked: false,
     };
     setStore({
       currentStep: 6,
@@ -475,7 +482,7 @@ describe("Declaration consent gating", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   8. REVIEW EDIT BUTTONS — clicking jumps to correct step
+   8. REVIEW EDIT BUTTONS - clicking jumps to correct step
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Review edit jumps", () => {
@@ -491,6 +498,7 @@ describe("Review edit jumps", () => {
         id: "cat-review-1",
         categoryType: "6.1" as const,
         scoringInputs: { mainDocumentType: "title-deed-applicant" as const, schoolsWithinRadius: ["school-1"] },
+        locked: false,
       },
     ],
   };
@@ -517,7 +525,7 @@ describe("Review edit jumps", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   9. SUBMIT FLOW — mock create → submit → success message
+   9. SUBMIT FLOW - mock create → submit → success message
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Submit flow", () => {
@@ -546,7 +554,7 @@ describe("Submit flow", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
-   10. LOCATION HISTORY — device fix and manual selection
+   10. LOCATION HISTORY - device fix and manual selection
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("Location history in form", () => {

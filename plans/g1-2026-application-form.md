@@ -17,17 +17,17 @@ Provide a persistent G1 2026 application flow for multiple children. Each child 
 
 ## Form sequence (7 steps)
 
-1. **Application location** — Browser geolocation is requested automatically when available. Permission is required before continuing when the browser supports geolocation. If geolocation is unavailable, manual address or map selection is allowed. The true device location and user-selected location are stored separately. The user-selected location (not the device location) is used as the center for school proximity calculations.
-2. **Applicant** — Full name, Sinhala name, gender, religion, education medium, date of birth, and birth certificate number.
-3. **Parent or guardian** — Mother, Father, or Guardian; full name, NIC, phone, WhatsApp phone, and email.
-4. **Residence** — Permanent/current addresses, same-address synchronization, district, DS division, GN division, and electoral district comboboxes backed by cached administrative data.
-5. **Categories** — Marking scheme category selection and per-category scoring inputs. User selects one or more categories (6.1, 6.4, 6.5, 6.6) and fills in the required scoring inputs for each. Each category includes a map-based school picker.
-6. **Declaration** — Accuracy confirmation and consent.
-7. **Review** — Complete read-only summary with working edit actions, including all category data.
+1. **Application location** – Browser geolocation is requested automatically whenever no saved latitude/longitude exists, whether for a new or an existing application (unless the user has manually set a location). Permission is required before continuing when the browser supports geolocation. If geolocation is unavailable, manual address or map selection is allowed. The map is always clickable regardless of geolocation permission status. The true device location and user-selected location are stored separately. The user-selected location (not the device location) is used as the center for school proximity calculations.
+2. **Applicant** – Full name, Sinhala name, gender, religion, education medium, date of birth, and birth certificate number.
+3. **Parent or guardian** – Mother, Father, or Guardian; full name, NIC, phone, WhatsApp phone, and email.
+4. **Residence** – Permanent/current addresses, same-address synchronization, district, DS division, GN division, and electoral district comboboxes backed by cached administrative data.
+5. **Categories** – Marking scheme category selection and per-category scoring inputs. User selects one or more categories (6.1, 6.4, 6.5, 6.6) and fills in the required scoring inputs for each. Each category includes a map-based school picker.
+6. **Declaration** – Accuracy confirmation and consent.
+7. **Review** – Complete read-only summary with working edit actions, including all category data.
 
 School preferences remain excluded because this is a boys’ school; the category step replaces any generic school-selection concept.
 
-## Category step (step index 4) — detailed design
+## Category step (step index 4) – detailed design
 
 ### Phase A: Category picker
 
@@ -44,16 +44,16 @@ User sees checkboxes for four marking scheme categories. Any combination may be 
 
 Fields derive from `plans/g1-2026-marking-scheme.md`.
 
-**6.1 — Residence Verification:**
+**6.1 – Residence Verification:**
 
 - Main document type (dropdown: title deed applicant / title deed parents / lease deed / municipal or DS certificate / other documents)
 - Years registered at residence (number)
 - Additional documents (checkboxes: NIC, driving license, landline bill, marriage certificate, life insurance policy, school leaving certificate, child birth certificate, vehicle registration/license/insurance, bank passbook)
-- Electoral register — mother years (0–5)
-- Electoral register — father years (0–5)
+- Electoral register – mother years (0–5)
+- Electoral register – father years (0–5)
 - **Schools within radius** (map picker)
 
-**6.4 — Period of Service:**
+**6.4 – Period of Service:**
 
 - Period of service years (number)
 - Difficult service type (radio: currently working / previously worked / none)
@@ -65,7 +65,7 @@ Fields derive from `plans/g1-2026-marking-scheme.md`.
 - Distance: current workplace to applied school (km number)
 - **Schools within radius** (map picker)
 
-**6.5 — Transfer Applications:**
+**6.5 – Transfer Applications:**
 
 - Distance previous workplace to new workplace (km number)
 - Period of service (years number)
@@ -74,7 +74,7 @@ Fields derive from `plans/g1-2026-marking-scheme.md`.
 - Unutilized leave years count (0–5)
 - **Schools within radius** (map picker)
 
-**6.6 — Foreign Employment:**
+**6.6 – Foreign Employment:**
 
 - Period spent abroad continuously with the child up to arrival (years number)
 - Employment purpose (radio: board executive duties / personal employment / Sri Lankan government needs / education-professional development)
@@ -109,7 +109,7 @@ Scoring helpers live in `school-utils.ts` (haversineDistance, getSchoolsWithinRa
 - Catholic and Christian applicants cannot continue.
 - Education medium is Sinhala or Tamil only.
 - G1 date-of-birth validation uses the circular’s requirement: the child must be at least five years old by 31 January 2027.
-- Birth certificate numbers are required and unique in the database.
+- Birth certificate numbers are required and unique among submitted applications. Multiple drafts may share a birth certificate number, but only one submitted application per number is allowed.
 - Submissions are locked in production until 9 September 2026.
 - Submitted applications can be updated until 11 September 2026.
 - At least one category must be selected before advancing past the category step.
@@ -170,6 +170,28 @@ The application has four distinct state layers: route state (the active key and 
 - Production submission locking is separate from draft persistence; collection mode no longer claims that server synchronization is disabled.
 
 Remaining architectural risks are document storage/metadata, payload integrity signing, and cross-device key recovery.
+
+## Recent changes
+
+### Auto-location request logic
+
+`autoRequestLocation` fires whenever there is no saved latitude/longitude in the draft, regardless of whether the application is new or updating. The `!accessKey` guard was removed. The Next button at step 0 still checks `locationIsReady` via `getNextStepReason` so the user must confirm a location before advancing.
+
+### Map always clickable
+
+The map's `onSelect` handler no longer checks `permissionDenied`. Users can always click the map to place a location pin even after denying or ignoring browser geolocation permission.
+
+### ORPCError for descriptive server errors
+
+All user-facing `throw new Error(...)` calls in the API router (`packages/api/src/routers/index.ts`) were replaced with `throw new ORPCError(code, { message })` using codes like `CONFLICT`, `NOT_FOUND`, and `BAD_REQUEST`. This ensures error messages pass through to the client as human-readable strings instead of being swallowed as "Internal server error".
+
+### Error display UI
+
+The submit-error display in `application-form.tsx` was upgraded from a plain `<p>` to a styled card with a `TriangleAlert` warning icon and bordered container, using `break-words` for long messages.
+
+### Location address text wrapping
+
+The location step's address text and search input changed from `truncate` to `break-words` to handle long or unbreakable strings that previously overflowed their containers.
 
 ## Database-first draft sessions and cross-device recovery
 
@@ -342,8 +364,8 @@ The admin panel includes a separate appeals queue for applicants who cannot safe
 
 ### Implemented duplicate birth-certificate and lost-key recovery
 
-- Pre-create checks against existing birth-certificate numbers.
-- Matching numbers surface an existing-application notice instead of a second record.
+- Pre-create checks against existing birth-certificate numbers among submitted applications only.
+- Matching submitted-application numbers surface an existing-application notice instead of a second record.
 - Key holders reopen profiles via the verified access-key route.
 - Keyless users submit recovery requests with name and contact email.
 - Admins review requests, generate replacements once, or dismiss.
@@ -361,7 +383,7 @@ The admin panel includes a separate appeals queue for applicants who cannot safe
 
 ## Duplicate birth certificate and record removal
 
-- Matching birth certificate numbers block second applications.
+- Matching birth certificate numbers in submitted applications block second submissions.
 - Existing keys or QR codes only open/edit the existing application.
 - Removal goes through a separate school-review request with name and contact email; never automatic deletion or key recovery.
 - Admins review, contact users, and delete only after confirming legal and operational appropriateness, then mark resolved.

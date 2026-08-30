@@ -8,7 +8,7 @@ import { twoFactorPlugin } from "./two-factor-plugin"
  * Whether two-factor management should ask for the account password.
  *
  * Better Auth's `allowPasswordless` option only waives the password for
- * accounts that have no credential account — a passkey-only user has no
+ * accounts that have no credential account - a passkey-only user has no
  * password to type. Reading the linked accounts keeps the UI in step with
  * that rule instead of guessing from the option alone.
  */

@@ -17,7 +17,7 @@ function renderDialog(props: { applicantName?: string } = {}) {
   return { onForgot, onOpenChange, ...utils };
 }
 
-describe("AccessRecoveryDialog — submit gating", () => {
+describe("AccessRecoveryDialog – submit gating", () => {
   beforeEach(() => {
     requestAccessMock.mockReset();
     requestAccessMock.mockResolvedValue({ submitted: true });
@@ -42,7 +42,7 @@ describe("AccessRecoveryDialog — submit gating", () => {
   });
 });
 
-describe("AccessRecoveryDialog — session mode", () => {
+describe("AccessRecoveryDialog – session mode", () => {
   beforeEach(() => {
     requestAccessMock.mockReset();
     requestAccessMock.mockResolvedValue({ submitted: true });
@@ -61,6 +61,7 @@ describe("AccessRecoveryDialog — session mode", () => {
       guardianNic: undefined,
       applicantName: "",
       contactPhone: "+94712345678",
+      requestType: "forgot",
     });
     expect(await screen.findByRole("status")).toHaveTextContent("Request sent. An administrator will contact you");
   });
@@ -77,11 +78,12 @@ describe("AccessRecoveryDialog — session mode", () => {
   });
 });
 
-describe("AccessRecoveryDialog — birth certificate mode", () => {
+describe("AccessRecoveryDialog – birth certificate mode", () => {
   it("submits the birth certificate number", async () => {
     const user = userEvent.setup();
     renderDialog();
-    await user.selectOptions(screen.getByLabelText("Recovery method"), "birth");
+    await user.click(screen.getByRole("combobox", { name: "Recovery method" }));
+    await user.click(await screen.findByRole("option", { name: "Birth certificate number" }));
     const submit = screen.getByRole("button", { name: /forget key and request help/i });
     expect(submit).toBeDisabled();
     await user.type(screen.getByPlaceholderText("Birth certificate number"), "ABC1234567");
@@ -92,15 +94,16 @@ describe("AccessRecoveryDialog — birth certificate mode", () => {
         expect.objectContaining({ birthCertificateNumber: "ABC1234567", sessionCode: undefined, guardianNic: undefined }),
       ),
     );
-    expect(requestAccessMock.mock.calls[0][0].requestType).toBeUndefined();
+    expect(requestAccessMock.mock.calls[0][0].requestType).toBe("forgot");
   });
 });
 
-describe("AccessRecoveryDialog — guardian NIC mode", () => {
+describe("AccessRecoveryDialog – guardian NIC mode", () => {
   it("requires both the NIC and the applicant name", async () => {
     const user = userEvent.setup();
     renderDialog({ applicantName: "Ashan Perera" });
-    await user.selectOptions(screen.getByLabelText("Recovery method"), "guardian");
+    await user.click(screen.getByRole("combobox", { name: "Recovery method" }));
+    await user.click(await screen.findByRole("option", { name: "Guardian NIC and applicant name" }));
     const submit = screen.getByRole("button", { name: /forget key and request help/i });
     expect(submit).toBeDisabled();
     await user.type(screen.getByPlaceholderText("Contact phone number"), "0712345678");
@@ -115,17 +118,20 @@ describe("AccessRecoveryDialog — guardian NIC mode", () => {
   });
 });
 
-describe("AccessRecoveryDialog — mode switching", () => {
+describe("AccessRecoveryDialog – mode switching", () => {
   it("switches between session, birth certificate, and guardian modes", async () => {
     const user = userEvent.setup();
     renderDialog();
     expect(screen.getByPlaceholderText("Session code")).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText("Recovery method"), "birth");
+    await user.click(screen.getByRole("combobox", { name: "Recovery method" }));
+    await user.click(await screen.findByRole("option", { name: "Birth certificate number" }));
     expect(screen.getByPlaceholderText("Birth certificate number")).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText("Recovery method"), "guardian");
+    await user.click(screen.getByRole("combobox", { name: "Recovery method" }));
+    await user.click(await screen.findByRole("option", { name: "Guardian NIC and applicant name" }));
     expect(screen.getByPlaceholderText("Guardian NIC")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Applicant name")).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText("Recovery method"), "session");
+    await user.click(screen.getByRole("combobox", { name: "Recovery method" }));
+    await user.click(await screen.findByRole("option", { name: "Session code" }));
     expect(screen.getByPlaceholderText("Session code")).toBeInTheDocument();
   });
 
@@ -133,7 +139,8 @@ describe("AccessRecoveryDialog — mode switching", () => {
     requestAccessMock.mockRejectedValue(new Error("Guardian NIC not found"));
     const user = userEvent.setup();
     renderDialog({ applicantName: "Ashan Perera" });
-    await user.selectOptions(screen.getByLabelText("Recovery method"), "guardian");
+    await user.click(screen.getByRole("combobox", { name: "Recovery method" }));
+    await user.click(await screen.findByRole("option", { name: "Guardian NIC and applicant name" }));
     await user.type(screen.getByPlaceholderText("Contact phone number"), "0712345678");
     await user.type(screen.getByPlaceholderText("Guardian NIC"), "901234567V");
     await user.click(screen.getByRole("button", { name: /forget key and request help/i }));
@@ -148,7 +155,8 @@ describe("AccessRecoveryDialog — mode switching", () => {
     await user.type(screen.getByPlaceholderText("Contact phone number"), "0712345678");
     await user.click(screen.getByRole("button", { name: /forget key and request help/i }));
     expect(await screen.findByRole("status")).toHaveTextContent("Not found");
-    await user.selectOptions(screen.getByLabelText("Recovery method"), "birth");
+    await user.click(screen.getByRole("combobox", { name: "Recovery method" }));
+    await user.click(await screen.findByRole("option", { name: "Birth certificate number" }));
     expect(screen.getByRole("status")).toHaveTextContent("Not found");
   });
 });

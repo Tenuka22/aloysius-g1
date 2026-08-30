@@ -104,6 +104,13 @@ describe("isValidSubmissionWindow (admin setting)", () => {
 describe("withoutSchoolPreferences", () => {
   it("removes the schools key and preserves everything else", () =>
     expect(withoutSchoolPreferences({ applicant: { fullName: "A" }, schools: ["S1", "S2"], location: { label: "L" } })).toEqual({ applicant: { fullName: "A" }, location: { label: "L" } }));
+  it("preserves nearby-school selections nested in marking categories", () =>
+    expect(withoutSchoolPreferences({
+      categories: [{ categoryType: "6.6", scoringInputs: { schoolsWithinRadius: ["school-1"] } }],
+      schools: ["legacy-school"],
+    })).toEqual({
+      categories: [{ categoryType: "6.6", scoringInputs: { schoolsWithinRadius: ["school-1"] } }],
+    }));
   it("returns an empty object for empty input", () => expect(withoutSchoolPreferences({})).toEqual({}));
 });
 
@@ -114,7 +121,7 @@ describe("extractBirthCertificateNumber", () => {
   it("returns the raw value when not a string", () => expect(extractBirthCertificateNumber({ applicant: { birthCertificateNumber: 42 } })).toBe("42"));
 });
 
-describe("applicationValidationErrors — every branch", () => {
+describe("applicationValidationErrors – every branch", () => {
   it("flags every missing field on an empty draft", () => {
     expect(applicationValidationErrors({})).toEqual(["missing_full_name", "missing_birth_certificate", "missing_date_of_birth", "missing_location"]);
   });
@@ -166,7 +173,7 @@ describe("applicationValidationErrors — every branch", () => {
     })).toEqual([]));
 });
 
-describe("accessRequestIssues — every rule", () => {
+describe("accessRequestIssues – every rule", () => {
   it("requires at least one identifier", () => {
     expect(accessRequestIssues({ requestType: "access" }).some((issue) => issue.message.includes("birth certificate number, session code"))).toBe(true);
   });

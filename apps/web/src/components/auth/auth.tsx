@@ -48,7 +48,7 @@ const AUTH_VIEWS: Partial<Record<AuthView, ComponentType<AuthProps>>> = {
  * Render the appropriate authentication view based on the provided `view` or `path`.
  *
  * Resolution order:
- *   1. Plugin overrides (`plugin.views.auth[currentView]`) — first registered wins.
+ *   1. Plugin overrides (`plugin.views.auth[currentView]`) - first registered wins.
  *   2. Plugin fallbacks (`plugin.fallbackViews.auth.signIn`) when password auth is off.
  *   3. Built-in views.
  *
@@ -100,7 +100,7 @@ export function Auth({
     return null
   }
 
-  // 1. Plugin overrides (`views.auth[currentView]`) — first plugin wins,
+  // 1. Plugin overrides (`views.auth[currentView]`) - first plugin wins,
   //    including over built-in views. Resolves the view key from `view`,
   //    then `authView` (built-in path match), then plugin-introduced paths
   //    (e.g. `magicLink` → `/auth/magic-link`).
@@ -128,7 +128,7 @@ export function Auth({
     )
   }
 
-  // 2. Plugin fallbacks — only when the built-in `signIn` isn't viable
+  // 2. Plugin fallbacks - only when the built-in `signIn` isn't viable
   //    (password auth is off). Used by `magicLinkPlugin` to render the
   //    magic-link form as the primary passwordless sign-in surface.
   if (authView === "signIn" && !emailAndPassword?.enabled) {

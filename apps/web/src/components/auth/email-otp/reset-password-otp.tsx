@@ -46,7 +46,7 @@ export type ResetPasswordOtpProps = {
  * Reset a password with an emailed code.
  *
  * Replaces the built-in `<ResetPassword />` view when the email-OTP plugin
- * runs with `passwordReset: true`. There is no token in the URL — the code
+ * runs with `passwordReset: true`. There is no token in the URL - the code
  * and the new password are submitted together. The address comes from the
  * forgot-password step, and is asked for again when it isn't there (e.g. the
  * user finishes on another tab).

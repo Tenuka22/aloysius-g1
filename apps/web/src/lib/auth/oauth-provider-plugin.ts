@@ -20,7 +20,7 @@ export const oauthProviderPlugin = createAuthPlugin(
         auth: {
           oauthConsent: OAuthConsent,
           // A route of its own rather than an override of the built-in
-          // `signUp` view — ordinary sign-up stays untouched.
+          // `signUp` view - ordinary sign-up stays untouched.
           oauthSignUp: OAuthSignUp,
           oauthSelectAccount: OAuthSelectAccount
         }

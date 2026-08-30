@@ -46,7 +46,7 @@ export type EmailOtpProps = {
  * Passwordless sign-in with an emailed one-time code.
  *
  * Two steps on one route: enter an email, then enter the code that arrives.
- * The email step never reveals whether an account exists — the server decides
+ * The email step never reveals whether an account exists - the server decides
  * whether the code creates an account, mirroring `emailOTP({ disableSignUp })`.
  *
  * @param socialLayout - Provider button layout.

@@ -72,7 +72,7 @@ export function OAuthSignUp({
   const oauthContinue = useOAuthContinue(oauthClient)
 
   // The account already exists at this point, so retrying continuation is the
-  // only sensible recovery — never send the user back through the form.
+  // only sensible recovery - never send the user back through the form.
   if (isCreated) {
     return (
       <Card className={cn("w-full max-w-sm", className)}>

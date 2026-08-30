@@ -12,7 +12,7 @@ import { cn } from "@aloysius-g1/ui/lib/utils"
 export type OtpFieldProps = {
   /** Visible label rendered above the slots. */
   label: string
-  /** Number of slots — keep in sync with the server's code length. */
+  /** Number of slots - keep in sync with the server's code length. */
   length: number
   value: string
   onChange: (value: string) => void
@@ -24,7 +24,7 @@ export type OtpFieldProps = {
   name?: string
 }
 
-/** Strip everything the numeric slots can't hold — pasted codes often carry spaces or dashes. */
+/** Strip everything the numeric slots can't hold - pasted codes often carry spaces or dashes. */
 function normalizeCode(value: string) {
   return value.replace(/\D/g, "")
 }
