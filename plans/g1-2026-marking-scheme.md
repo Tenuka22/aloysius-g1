@@ -2,7 +2,7 @@
 
 ---
 
-## 6.2 Educational Qualifications & Co-Curricular Achievements — Alumni (Maximum Marks 100)
+## 6.2 Alumi (Maximum Marks 100)
 
 Applies to children of past pupils of the school. Marks derive from the parent-applicant's own record at the school.
 
@@ -12,20 +12,20 @@ Two marks per year the applicant received education at the school, up to thirtee
 
 ### 6.2.2 Educational achievements during the school period (Maximum Marks 25)
 
-**Grade 5 Scholarship Examination** — passed (Marks 03)
+**Grade 5 Scholarship Examination** – passed (Marks 03)
 
-**G.C.E. (O/L)** (Maximum Marks 10) — marks per subject by grade and subject count:
+**G.C.E. (O/L)** (Maximum Marks 10) – marks per subject by grade and subject count:
 
 | Grade | 6 subjects | 8 subjects | 9 subjects |
 |---|---|---|---|
 | S | 0.66 (all-S ≈ 04) | 0.51 (all-S ≈ 04) | 0.44 (all-S ≈ 04) |
 | C | 1.33 (all-C ≈ 08) | 1.00 (all-C ≈ 08) | 0.66 (all-C ≈ 06) |
 | B / D | 1.66 (all ≈ 10) | 1.25 (all ≈ 10) | 0.88 (all-B ≈ 08) |
-| A | — | — | 1.11 (all-A ≈ 10) |
+| A | – | – | 1.11 (all-A ≈ 10) |
 
 > Bracketed values show the ceiling reached when every subject holds that grade.
 
-**G.C.E. (A/L)** (Maximum Marks 12) — marks per subject by grade and syllabus:
+**G.C.E. (A/L)** (Maximum Marks 12) – marks per subject by grade and syllabus:
 
 | Grade | 3 subjects (New Syllabus) | 4 subjects (Old Syllabus) |
 |---|---|---|
@@ -36,7 +36,7 @@ Two marks per year the applicant received education at the school, up to thirtee
 
 ### 6.2.3 Co-curricular achievements during the school period (Maximum Marks 25)
 
-**Sports and co-curricular skills** (Marks 10) — per achievement by highest competition level:
+**Sports and co-curricular skills** (Marks 10) – per achievement by highest competition level:
 
 | Level | Marks |
 |---|---|
@@ -47,7 +47,7 @@ Two marks per year the applicant received education at the school, up to thirtee
 | National | 4.75 |
 | International | 5 |
 
-**Leadership qualities** (Marks 05) — role held:
+**Leadership qualities** (Marks 05) – role held:
 
 | Role | Marks |
 |---|---|
@@ -59,7 +59,62 @@ Two marks per year the applicant received education at the school, up to thirtee
 | First Team Sports Vice-Captain | 1.5 |
 | First Team Sports Captain | 2 |
 
-> The circular lists sub-section caps of 10 + 5 against a section maximum of 25; remaining weight is reserved for additional co-curricular evidence assessed at interview.
+**Student Societies** (Marks 05):
+
+| Role | Marks |
+|---|---|
+| Committee Member | 0.5 |
+| Vice President / Vice Secretary / Vice Treasurer | 0.75 |
+| President / Secretary / Treasurer | 1 |
+
+**Other Activities** (Marks 05):
+
+| Activity | Marks |
+|---|---|
+| Junior Band Leader | 2 |
+| Junior Band Member | 1 |
+| Senior Band Leader | 2 |
+| Senior Band Member | 1 |
+| Scout Leader | 2 |
+| Scout Member | 1 |
+| Cub Scout | 1 |
+| Cadet Team Leader | 2 |
+| Cadet Team Member | 1 |
+| Debating Team Leader | 2 |
+| Debating Team Member | 1 |
+| St. John Ambulance Leader | 2 |
+| St. John Ambulance Member | 1 |
+| Other | 1 |
+
+### 6.2.4 Past Pupils' Association Representation (Maximum Marks 10)
+
+**Life Membership** (Marks: 01 × 10 = 10)
+
+**Number of years holding membership** (Marks: 0.5 × 20 = 10)
+
+**Committee Membership Marks** (Marks: 0.25 × 4 = 1) — (Max Marks: 03)
+
+**Executive Office Post** (Marks: 1.5 × 2 = 3)
+
+### 6.2.5 Degrees Obtained from Universities under the University Grants Commission (Maximum Marks 05)
+
+| Qualification | Marks |
+|---|---|
+| First degree from a university approved by the University Grants Commission | 03 |
+| Postgraduate Degree | 04 |
+| Doctorate (Ph.D.) | 05 |
+| Chartered Professional Degree (Lawyer, Accountant, Doctor, etc.) / NVQ 7 | 03 |
+
+### 6.2.6 Diploma / Higher Diploma / NVQ 5, 6 (More than 2 years) (Maximum Marks 02)
+
+### 6.2.7 Contribution to School Activities (Maximum Marks 02)
+
+- Sports Meet – Marks: 0.5
+- Shramadana (Community Service) – Marks: 0.5
+
+### 6.2.8 Contribution to School Projects (Maximum Marks 05)
+
+### Grand Total: 100 Marks
 
 ---
 
@@ -74,8 +129,8 @@ Two marks per year the applicant received education at the school, up to thirtee
 | 1.2.2 | Registered residents of the feeder area included in electoral register / birth certificate / electoral register minimum 5 years | 15 |
 | 1.3 | Lease deed in applicant's name (as of 2026.06.30) | 10 |
 | 1.4 | Certificate issued by Municipal Commissioner / Divisional Secretary in applicant's or spouse's name only, if over 10 years / Certificate issued by Estate Superintendent and Divisional Secretary | 05 |
-| 1.5 | Other acceptable documents (Electricity / Water / Assessment tax bills / Birth certificate in applicant's or spouse's name / Acre tax bills) — 1 × 4 | 04 |
-| 1.6 | In applicant's parents' name if over 6 years (Minimum Mark 3) — 0.5 × 4 | 02 |
+| 1.5 | Other acceptable documents (Electricity / Water / Assessment tax bills / Birth certificate in applicant's or spouse's name / Acre tax bills) – 1 × 4 | 04 |
+| 1.6 | In applicant's parents' name if over 6 years (Minimum Mark 3) – 0.5 × 4 | 02 |
 
 ### B) Additional documents confirming residence (Maximum Marks 5)
 
@@ -133,9 +188,9 @@ Schools within radius:
 
 ### 6.4.2 Difficult Service (Maximum Marks 25)
 
-#### 6.4.2. Difficult Service — if currently working (5 × 5) (Marks 25)
+#### 6.4.2. Difficult Service – if currently working (5 × 5) (Marks 25)
 
-#### 6.4.2. I. Difficult Service — if previously worked (3 × 5) (Marks 15)
+#### 6.4.2. I. Difficult Service – if previously worked (3 × 5) (Marks 15)
 
 **OR**
 
@@ -197,9 +252,9 @@ Schools within radius:
 
 Two marks per sibling currently studying at the school, up to ten siblings.
 
-**1(b)** If applying for admission to the school where the sibling studied — (Marks 05)
+**1(b)** If applying for admission to the school where the sibling studied – (Marks 05)
 
-**1(c)** If two or more siblings are applying to other grades of the same school — (Marks 05)
+**1(c)** If two or more siblings are applying to other grades of the same school – (Marks 05)
 
 **1(d) Co-curricular achievements and Primary / Junior prefect posts of siblings** (Maximum Marks 10)
 
@@ -214,7 +269,7 @@ Primary & Junior prefect skills (Marks 2):
 | National | 1.75 |
 | International | 2 |
 
-Scholarship (Marks 0.5) / O/L (Marks 01) / A/L (Marks 1.5) — block maximum (Marks 2):
+Scholarship (Marks 0.5) / O/L (Marks 01) / A/L (Marks 1.5) – block maximum (Marks 2):
 
 | Achievement | Marks |
 |---|---|
@@ -222,9 +277,9 @@ Scholarship (Marks 0.5) / O/L (Marks 01) / A/L (Marks 1.5) — block maximum (Ma
 | G.C.E. (O/L) qualified | 01 |
 | G.C.E. (A/L) qualified | 1.5 |
 
-Praiseworthy achievements (Prefect / Student Leader / Band Leader) — (Marks 2)
+Praiseworthy achievements (Prefect / Student Leader / Band Leader) – (Marks 2)
 
-Support rendered by parents — (Marks 04)
+Support rendered by parents – (Marks 04)
 
 ### 2. Documents confirming residence (Maximum Marks 10)
 

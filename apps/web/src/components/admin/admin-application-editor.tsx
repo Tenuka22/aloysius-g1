@@ -26,7 +26,7 @@ const sections = [
 
 const CATEGORY_LABELS: Record<CategoryType, string> = {
   "6.1": "6.1 – Residence Verification & Proximity",
-  "6.2": "6.2 – Educational Qualifications & Co-Curricular Achievements",
+  "6.2": "6.2 – Alumi",
   "6.3": "6.3 – Siblings",
   "6.4": "6.4 – Period of Service & Distance",
   "6.5": "6.5 – Transfer Applications",
@@ -47,32 +47,64 @@ const LEADERSHIP_ROLES = [
   "first-team-vice-captain",
   "first-team-captain",
 ] as const;
+const STUDENT_SOCIETIES_ROLES = ["none", "committee-member", "vice-president", "president"] as const;
+const OTHER_ACTIVITIES = [
+  "none",
+  "junior-band-leader",
+  "junior-band-member",
+  "senior-band-leader",
+  "senior-band-member",
+  "scout-leader",
+  "scout-member",
+  "cub-scout",
+  "cadet-team-leader",
+  "cadet-team-member",
+  "debating-team-leader",
+  "debating-team-member",
+  "st-john-ambulance-leader",
+  "st-john-ambulance-member",
+  "other",
+] as const;
+const DEGREE_LEVELS = ["none", "first-degree", "postgraduate", "doctorate", "chartered-professional"] as const;
 
-type CategoryTextFieldKey = "mainDocumentType" | "documentOwnership" | "serviceLocationLevel";
-type CategoryNumberFieldKey = "yearsRegistered" | "electoralMotherYears" | "electoralFatherYears" | "schoolsRadiusKm" | "periodOfServiceYears" | "difficultServiceDistanceKm" | "difficultServiceExtraPeriods" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "previousWorkplacePeriodYears" | "transferElapsedYears" | "periodAbroadYears" | "alumniYearsAtSchool" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "sportsCount" | "siblingsCurrentlyStudyingCount" | "siblingPrefectCount";
+type CategoryTextFieldKey = "mainDocumentType" | "documentOwnership" | "serviceLocationLevel" | "studentSocietiesRole" | "otherActivity" | "otherActivityName" | "highestDegree";
+type CategoryDateFieldKey = "deedTransferDate" | "serviceStartDate" | "previousWorkplaceStartDate" | "transferDate" | "abroadStartDate" | "abroadEndDate" | "alumniStartDate" | "alumniEndDate" | "pastPupilsMembershipStart" | "pastPupilsMembershipEnd";
+type CategoryNumberFieldKey = "electoralMotherSince" | "electoralFatherSince" | "schoolsRadiusKm" | "difficultServiceDistanceKm" | "difficultServiceExtraPeriods" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "sportsCount" | "siblingsCurrentlyStudyingCount" | "siblingPrefectCount";
+type CategoryBooleanFieldKey = "grade5ScholarshipPassed" | "pastPupilsLifeMember" | "pastPupilsCommitteeMember" | "pastPupilsExecutiveOffice" | "hasDiploma" | "sportsMeetContribution" | "shramadanaContribution" | "schoolProjectsContribution";
 
 const CATEGORY_TEXT_FIELDS: Array<[CategoryTextFieldKey, string]> = [
   ["mainDocumentType", "Main document type"],
   ["documentOwnership", "Document ownership"],
   ["serviceLocationLevel", "Service location level"],
+  ["studentSocietiesRole", "Student societies role"],
+  ["otherActivity", "Other activity"],
+  ["otherActivityName", "Other activity name"],
+  ["highestDegree", "Highest degree"],
+];
+
+const CATEGORY_DATE_FIELDS: Array<[CategoryDateFieldKey, string]> = [
+  ["deedTransferDate", "Deed transfer date"],
+  ["serviceStartDate", "Service start date"],
+  ["previousWorkplaceStartDate", "Previous workplace start date"],
+  ["transferDate", "Transfer date"],
+  ["abroadStartDate", "Abroad start date"],
+  ["abroadEndDate", "Abroad end date"],
+  ["alumniStartDate", "Alumni start date"],
+  ["alumniEndDate", "Alumni end date"],
+  ["pastPupilsMembershipStart", "Past Pupils membership start date"],
+  ["pastPupilsMembershipEnd", "Past Pupils membership end date"],
 ];
 
 const CATEGORY_NUMBER_FIELDS: Array<[CategoryNumberFieldKey, string]> = [
-  ["yearsRegistered", "Years registered"],
-  ["electoralMotherYears", "Electoral mother years"],
-  ["electoralFatherYears", "Electoral father years"],
+  ["electoralMotherSince", "Electoral mother year"],
+  ["electoralFatherSince", "Electoral father year"],
   ["schoolsRadiusKm", "Schools radius km"],
-  ["periodOfServiceYears", "Period of service years"],
   ["difficultServiceDistanceKm", "Difficult service distance km"],
   ["difficultServiceExtraPeriods", "Difficult service extra periods"],
   ["unutilizedLeaveYears", "Unutilized leave years"],
   ["residenceToSchoolKm", "Residence to school km"],
   ["workplaceToSchoolKm", "Workplace to school km"],
   ["previousWorkplaceDistanceKm", "Previous workplace distance km"],
-  ["previousWorkplacePeriodYears", "Previous workplace period years"],
-  ["transferElapsedYears", "Transfer elapsed years"],
-  ["periodAbroadYears", "Period abroad years"],
-  ["alumniYearsAtSchool", "Alumni years at school"],
   ["olSubjectCount", "O/L subject count"],
   ["olGradeS", "O/L S passes"],
   ["olGradeC", "O/L C passes"],
@@ -88,16 +120,28 @@ const CATEGORY_NUMBER_FIELDS: Array<[CategoryNumberFieldKey, string]> = [
   ["siblingPrefectCount", "Sibling prefect achievement count"],
 ];
 
+const CATEGORY_BOOLEAN_FIELDS: Array<[CategoryBooleanFieldKey, string]> = [
+  ["grade5ScholarshipPassed", "Grade 5 Scholarship passed"],
+  ["pastPupilsLifeMember", "Past Pupils life member"],
+  ["pastPupilsCommitteeMember", "Past Pupils committee member"],
+  ["pastPupilsExecutiveOffice", "Past Pupils executive office"],
+  ["hasDiploma", "Has Diploma / Higher Diploma"],
+  ["sportsMeetContribution", "Sports Meet contribution"],
+  ["shramadanaContribution", "Shramadana contribution"],
+  ["schoolProjectsContribution", "School Projects contribution"],
+];
+
 const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["mainDocumentType", "Main document type"],
   ["documentOwnership", "Document ownership"],
-  ["yearsRegistered", "Years registered"],
+  ["deedTransferDate", "Deed transfer date"],
   ["additionalDocs", "Additional docs"],
-  ["electoralMotherYears", "Electoral mother years"],
-  ["electoralFatherYears", "Electoral father years"],
+  ["electoralMotherSince", "Electoral mother year"],
+  ["electoralFatherSince", "Electoral father year"],
   ["schoolsRadiusKm", "Schools radius km"],
   ["grade5ScholarshipPassed", "Grade 5 Scholarship passed"],
-  ["alumniYearsAtSchool", "Alumni years at school"],
+  ["alumniStartDate", "Alumni start date"],
+  ["alumniEndDate", "Alumni end date"],
   ["olSubjectCount", "O/L subject count"],
   ["olGradeS", "O/L S passes"],
   ["olGradeC", "O/L C passes"],
@@ -111,6 +155,19 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["sportsLevel", "Sports level"],
   ["sportsCount", "Sports achievements count"],
   ["leadershipRole", "Leadership role"],
+  ["studentSocietiesRole", "Student societies role"],
+  ["otherActivity", "Other activity"],
+  ["otherActivityName", "Other activity name"],
+  ["pastPupilsLifeMember", "Past Pupils life member"],
+  ["pastPupilsMembershipStart", "Past Pupils membership start date"],
+  ["pastPupilsMembershipEnd", "Past Pupils membership end date"],
+  ["pastPupilsCommitteeMember", "Past Pupils committee member"],
+  ["pastPupilsExecutiveOffice", "Past Pupils executive office"],
+  ["highestDegree", "Highest degree"],
+  ["hasDiploma", "Has Diploma / Higher Diploma"],
+  ["sportsMeetContribution", "Sports Meet contribution"],
+  ["shramadanaContribution", "Shramadana contribution"],
+  ["schoolProjectsContribution", "School Projects contribution"],
   ["siblingsCurrentlyStudyingCount", "Siblings currently studying"],
   ["siblingStudiedAtAppliedSchool", "Sibling studied at applied school"],
   ["twoOrMoreSiblingsApplying", "Two or more siblings applying"],
@@ -119,7 +176,7 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["siblingExamAchievement", "Sibling exam achievement"],
   ["siblingPraiseworthyAchievement", "Sibling praiseworthy achievement"],
   ["parentsSupportRendered", "Parent support rendered"],
-  ["periodOfServiceYears", "Period of service years"],
+  ["serviceStartDate", "Service start date"],
   ["difficultServiceType", "Difficult service type"],
   ["difficultServiceDistanceKm", "Difficult service distance km"],
   ["difficultServiceExtraPeriods", "Difficult service extra periods"],
@@ -128,9 +185,10 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["residenceToSchoolKm", "Residence to school km"],
   ["workplaceToSchoolKm", "Workplace to school km"],
   ["previousWorkplaceDistanceKm", "Previous workplace distance km"],
-  ["previousWorkplacePeriodYears", "Previous workplace period years"],
-  ["transferElapsedYears", "Transfer elapsed years"],
-  ["periodAbroadYears", "Period abroad years"],
+  ["previousWorkplaceStartDate", "Previous workplace start date"],
+  ["transferDate", "Transfer date"],
+  ["abroadStartDate", "Abroad start date"],
+  ["abroadEndDate", "Abroad end date"],
   ["employmentPurpose", "Employment purpose"],
 ];
 
@@ -230,7 +288,7 @@ export function AdminApplicationView({ id }: { id: string }) {
             <div className="grid gap-4">
               {data.categories.length === 0 && <p className="text-muted-foreground">No categories selected.</p>}
               {data.categories.map((category) => <div className="border rounded-xl p-4" key={category.id}>
-                <h4>{CATEGORY_LABELS[category.categoryType]} — {scoreCategory(category).total}/100</h4>
+                <h4>{CATEGORY_LABELS[category.categoryType]} – {scoreCategory(category).total}/100</h4>
                 {SCORING_INPUT_SUMMARY_ROWS.map(([key, label]) => {
                   const raw = category.scoringInputs[key];
                   if (raw == null) return null;
@@ -328,22 +386,22 @@ function AdminCategoryEditor({ category, onPatch, onRemove }: { category: Catego
   const inputs = category.scoringInputs;
   const patch = (partial: Partial<ScoringInputs>) => onPatch(category.id, partial);
   return <div className="grid gap-3 p-4 border rounded-[10px]">
-    <div className="flex items-center justify-between gap-3"><h4>{CATEGORY_LABELS[category.categoryType]} — {scoreCategory(category).total}/100</h4><Button variant="secondary" onClick={onRemove}><X size={16} /> Remove</Button></div>
+    <div className="flex items-center justify-between gap-3"><h4>{CATEGORY_LABELS[category.categoryType]} – {scoreCategory(category).total}/100</h4><Button variant="secondary" onClick={onRemove}><X size={16} /> Remove</Button></div>
     <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
       {CATEGORY_TEXT_FIELDS.map(([key, label]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{label}</span><Input type="text" value={inputs[key] ?? ""} onChange={(event) => patch(fieldPatch(key, event.target.value))} /></label>)}
       {CATEGORY_NUMBER_FIELDS.map(([key, label]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{label}</span><Input type="number" step="any" value={inputs[key] ?? ""} onChange={(event) => patch(fieldPatch(key, parseScoringNumber(event.target.value)))} /></label>)}
+      {CATEGORY_DATE_FIELDS.map(([key, label]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{label}</span><Input type="date" value={(inputs[key] as string) ?? ""} onChange={(event) => patch({ [key]: event.target.value || undefined })} /></label>)}
+      {CATEGORY_BOOLEAN_FIELDS.map(([key, label]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{label}</span><Input type="text" value={inputs[key] === true ? "yes" : ""} onChange={(event) => patch({ [key]: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>)}
       <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Additional docs</span><Input type="text" value={(inputs.additionalDocs ?? []).join(", ")} onChange={(event) => { const docs = event.target.value.split(",").map((doc) => doc.trim()).filter(Boolean); patch({ additionalDocs: docs.length > 0 ? docs : undefined }); }} /></label>
       <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Difficult service type</span><Input type="text" value={inputs.difficultServiceType ?? ""} onChange={(event) => patch({ difficultServiceType: parseScoringEnum(event.target.value, DIFFICULT_SERVICE_TYPES) })} /></label>
       <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Employment purpose</span><Input type="text" value={inputs.employmentPurpose ?? ""} onChange={(event) => patch({ employmentPurpose: parseScoringEnum(event.target.value, EMPLOYMENT_PURPOSES) })} /></label>
       <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sports level</span><Input type="text" value={inputs.sportsLevel ?? ""} onChange={(event) => patch({ sportsLevel: parseScoringEnum(event.target.value, SPORTS_LEVELS) })} /></label>
       <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Leadership role</span><Input type="text" value={inputs.leadershipRole ?? ""} onChange={(event) => patch({ leadershipRole: parseScoringEnum(event.target.value, LEADERSHIP_ROLES) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Student societies role</span><Input type="text" value={inputs.studentSocietiesRole ?? ""} onChange={(event) => patch({ studentSocietiesRole: parseScoringEnum(event.target.value, STUDENT_SOCIETIES_ROLES) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Other activity</span><Input type="text" value={inputs.otherActivity ?? ""} onChange={(event) => patch({ otherActivity: parseScoringEnum(event.target.value, OTHER_ACTIVITIES) })} /></label>
+      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Highest degree</span><Input type="text" value={inputs.highestDegree ?? ""} onChange={(event) => patch({ highestDegree: parseScoringEnum(event.target.value, DEGREE_LEVELS) })} /></label>
       <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sibling prefect level</span><Input type="text" value={inputs.siblingPrefectLevel ?? ""} onChange={(event) => patch({ siblingPrefectLevel: parseScoringEnum(event.target.value, SPORTS_LEVELS) })} /></label>
       <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sibling exam achievement</span><Input type="text" value={inputs.siblingExamAchievement ?? ""} onChange={(event) => patch({ siblingExamAchievement: parseScoringEnum(event.target.value, SIBLING_EXAM_ACHIEVEMENTS) })} /></label>
-      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sibling studied at applied school (yes)</span><Input type="text" value={inputs.siblingStudiedAtAppliedSchool === true ? "yes" : ""} onChange={(event) => patch({ siblingStudiedAtAppliedSchool: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
-      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Two or more siblings applying (yes)</span><Input type="text" value={inputs.twoOrMoreSiblingsApplying === true ? "yes" : ""} onChange={(event) => patch({ twoOrMoreSiblingsApplying: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
-      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Sibling praiseworthy achievement (yes)</span><Input type="text" value={inputs.siblingPraiseworthyAchievement === true ? "yes" : ""} onChange={(event) => patch({ siblingPraiseworthyAchievement: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
-      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Parent support rendered (yes)</span><Input type="text" value={inputs.parentsSupportRendered === true ? "yes" : ""} onChange={(event) => patch({ parentsSupportRendered: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
-      <label className="grid gap-1"><span className="text-muted-foreground text-[0.78rem] font-semibold">Grade 5 Scholarship passed</span><Input type="text" value={inputs.grade5ScholarshipPassed === true ? "yes" : ""} onChange={(event) => patch({ grade5ScholarshipPassed: event.target.value.trim().toLowerCase() === "yes" ? true : undefined })} /></label>
     </div>
     <p className="text-muted-foreground text-[0.82rem]">Schools selected: {schoolsSelectedSummary(inputs.schoolsWithinRadius)}</p>
   </div>;

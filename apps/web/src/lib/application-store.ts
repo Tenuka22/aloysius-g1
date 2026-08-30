@@ -15,13 +15,13 @@ export type CategoryType = (typeof CATEGORY_TYPES)[number];
 export type ScoringInputs = {
   mainDocumentType?: string;
   documentOwnership?: string;
-  yearsRegistered?: number;
+  deedTransferDate?: string;
   additionalDocs?: string[];
-  electoralMotherYears?: number;
-  electoralFatherYears?: number;
+  electoralMotherSince?: number;
+  electoralFatherSince?: number;
   schoolsWithinRadius?: string[];
   schoolsRadiusKm?: number;
-  periodOfServiceYears?: number;
+  serviceStartDate?: string;
   difficultServiceType?: "current" | "previous" | "none";
   difficultServiceDistanceKm?: number;
   difficultServiceExtraPeriods?: number;
@@ -30,11 +30,13 @@ export type ScoringInputs = {
   residenceToSchoolKm?: number;
   workplaceToSchoolKm?: number;
   previousWorkplaceDistanceKm?: number;
-  previousWorkplacePeriodYears?: number;
-  transferElapsedYears?: number;
-  periodAbroadYears?: number;
+  previousWorkplaceStartDate?: string;
+  transferDate?: string;
+  abroadStartDate?: string;
+  abroadEndDate?: string;
   employmentPurpose?: "board" | "personal" | "government" | "education";
-  alumniYearsAtSchool?: number;
+  alumniStartDate?: string;
+  alumniEndDate?: string;
   grade5ScholarshipPassed?: boolean;
   olSubjectCount?: number;
   olGradeS?: number;
@@ -49,6 +51,19 @@ export type ScoringInputs = {
   sportsLevel?: string;
   sportsCount?: number;
   leadershipRole?: string;
+  studentSocietiesRole?: string;
+  otherActivity?: string;
+  otherActivityName?: string;
+  pastPupilsLifeMember?: boolean;
+  pastPupilsMembershipStart?: string;
+  pastPupilsMembershipEnd?: string;
+  pastPupilsCommitteeMember?: boolean;
+  pastPupilsExecutiveOffice?: boolean;
+  highestDegree?: string;
+  hasDiploma?: boolean;
+  sportsMeetContribution?: boolean;
+  shramadanaContribution?: boolean;
+  schoolProjectsContribution?: boolean;
   siblingsCurrentlyStudyingCount?: number;
   siblingStudiedAtAppliedSchool?: boolean;
   twoOrMoreSiblingsApplying?: boolean;
@@ -63,6 +78,7 @@ export type CategoryApplication = {
   id: string;
   categoryType: CategoryType;
   scoringInputs: ScoringInputs;
+  locked: boolean;
 };
 
 export type ApplicationDraft = {
@@ -82,6 +98,7 @@ export type ApplicationDraft = {
   guardian: {
     relationship: string;
     fullName: string;
+    sinhalaName: string;
     nic: string;
     phone: string;
     whatsappPhone: string;
@@ -95,12 +112,42 @@ export type ApplicationDraft = {
     dsDivision: string;
     gnDivision: string;
     electoralDistrict: string;
+    districtSearch: string;
+    dsSearch: string;
+    gnSearch: string;
+    electoralSearch: string;
   };
   declaration: { confirmed: boolean; consent: boolean };
   categories: CategoryApplication[];
   deviceLocationHistory: LocationDraft[];
   userLocationHistory: LocationDraft[];
   lastSavedAt: string | null;
+  accessKey: string;
+  sessionCode: string;
+  duplicateBirthCertificate: boolean;
+  locationCanProceed: boolean;
+  submittedAt: string | null;
+  submissionLocked: boolean;
+  submissionOpensAt: string;
+  submissionClosesAt: string;
+  hydrated: boolean;
+  saveStatus: string;
+  submitError: string;
+  isSubmitting: boolean;
+  copiedField: string | null;
+  showSubmissionRequest: boolean;
+  requestName: string;
+  requestPhone: string;
+  requestSaving: boolean;
+  bcDialogOpen: boolean;
+  bcApplicantName: string;
+  bcGuardianName: string;
+  bcContactPhone: string;
+  bcRequestState: string;
+  districtSearch: string;
+  dsSearch: string;
+  gnSearch: string;
+  electoralSearch: string;
 };
 
 export const emptyDraft: ApplicationDraft = {
@@ -109,13 +156,39 @@ export const emptyDraft: ApplicationDraft = {
   defaultLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
   selectedLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
   applicant: { fullName: "", sinhalaName: "", gender: "", religion: "", educationMedium: "", dateOfBirth: "", birthCertificateNumber: "" },
-  guardian: { relationship: "", fullName: "", nic: "", phone: "", whatsappPhone: "", email: "" },
-  residence: { permanentAddress: "", currentAddress: "", sameAsPermanent: false, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "" },
+  guardian: { relationship: "", fullName: "", sinhalaName: "", nic: "", phone: "", whatsappPhone: "", email: "" },
+  residence: { permanentAddress: "", currentAddress: "", sameAsPermanent: false, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "", districtSearch: "", dsSearch: "", gnSearch: "", electoralSearch: "" },
   declaration: { confirmed: false, consent: false },
   categories: [],
   deviceLocationHistory: [],
   userLocationHistory: [],
   lastSavedAt: null,
+  accessKey: "",
+  sessionCode: "",
+  duplicateBirthCertificate: false,
+  locationCanProceed: false,
+  submittedAt: null,
+  submissionLocked: false,
+  submissionOpensAt: "",
+  submissionClosesAt: "",
+  hydrated: false,
+  saveStatus: "",
+  submitError: "",
+  isSubmitting: false,
+  copiedField: null,
+  showSubmissionRequest: false,
+  requestName: "",
+  requestPhone: "",
+  requestSaving: false,
+  bcDialogOpen: false,
+  bcApplicantName: "",
+  bcGuardianName: "",
+  bcContactPhone: "",
+  bcRequestState: "",
+  districtSearch: "",
+  dsSearch: "",
+  gnSearch: "",
+  electoralSearch: "",
 };
 
 export const LOCATION_HISTORY_LIMIT = 25;
@@ -161,7 +234,7 @@ export function applyLocationChange(
 
 export function createCategory(categoryType: CategoryType, existingCount = 0): CategoryApplication {
   const id = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${categoryType}-${existingCount}`;
-  return { id, categoryType, scoringInputs: {} };
+  return { id, categoryType, scoringInputs: {}, locked: false };
 }
 
 export function normalizeCategories(input: unknown): CategoryApplication[] {
@@ -181,7 +254,7 @@ export function normalizeCategories(input: unknown): CategoryApplication[] {
       typeof rawScoringInputs === "object" && rawScoringInputs !== null && !Array.isArray(rawScoringInputs)
         ? ({ ...(rawScoringInputs as ScoringInputs) } as ScoringInputs)
         : {};
-    categories.push({ id, categoryType: categoryType as CategoryType, scoringInputs });
+    categories.push({ id, categoryType: categoryType as CategoryType, scoringInputs, locked: candidate["locked"] === true });
   }
   return categories;
 }

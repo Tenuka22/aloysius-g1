@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { useForm } from "@tanstack/react-form";
-import type { AnyFieldApi, ReactFormExtendedApi } from "@tanstack/react-form";
-import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus, TriangleAlert } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { CategoryStep } from "./category-step";
@@ -58,7 +56,6 @@ import {
 import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
 import { PhoneInput } from "@/components/application/phone-input";
 import { DISTRICTS, DIVISIONAL_SECRETARIATS, ELECTORAL_CONSTITUENCIES, GN_DIVISIONS } from "@/lib/divisions";
-import { useAppForm } from "@/lib/app-form";
 import {
   applicantStepSchema,
   guardianStepSchema,
@@ -66,14 +63,11 @@ import {
   declarationStepSchema,
 } from "@/lib/validation";
 
-// biome-ignore lint/suspicious/noExplicitAny: internal step components need the React form type with .Field
-type AppForm = ReactFormExtendedApi<ApplicationDraft, any, any, any, any, any, any, any, any, any, any, any>;
-
 const steps = ["Location", "Applicant", "Parent / guardian", "Residence", "Categories", "Declaration", "Review"];
 
 const CATEGORY_LABELS: Record<CategoryType, string> = {
   "6.1": "6.1 – Residence Verification & Proximity",
-  "6.2": "6.2 – Educational Qualifications & Co-Curricular Achievements",
+  "6.2": "6.2 – Alumi",
   "6.3": "6.3 – Siblings",
   "6.4": "6.4 – Period of Service & Distance",
   "6.5": "6.5 – Transfer Applications",
@@ -85,12 +79,18 @@ function categorySummary(category: CategoryApplication): string {
   const parts: string[] = [];  if (inputs.mainDocumentType) parts.push(`Main document: ${inputs.mainDocumentType}`);
   if (inputs.difficultServiceType) parts.push(`Difficult service: ${inputs.difficultServiceType}`);
   if (inputs.employmentPurpose) parts.push(`Employment purpose: ${inputs.employmentPurpose}`);
-  if (inputs.periodAbroadYears != null) parts.push(`Period abroad: ${inputs.periodAbroadYears} years`);
+  if (inputs.abroadStartDate && inputs.abroadEndDate) {
+    const days = Math.round(Math.abs(new Date(inputs.abroadEndDate).getTime() - new Date(inputs.abroadStartDate).getTime()) / 86400000);
+    parts.push(`Period abroad: ~${Math.round(days / 365)} years`);
+  }
   if (inputs.residenceToSchoolKm != null) parts.push(`Residence to school: ${inputs.residenceToSchoolKm} km`);
   if (inputs.workplaceToSchoolKm != null) parts.push(`Workplace to school: ${inputs.workplaceToSchoolKm} km`);
   if (inputs.previousWorkplaceDistanceKm != null)
     parts.push(`Previous workplace: ${inputs.previousWorkplaceDistanceKm} km`);
-  if (inputs.alumniYearsAtSchool != null) parts.push(`Alumni years at school: ${inputs.alumniYearsAtSchool}`);
+  if (inputs.alumniStartDate && inputs.alumniEndDate) {
+    const days = Math.round(Math.abs(new Date(inputs.alumniEndDate).getTime() - new Date(inputs.alumniStartDate).getTime()) / 86400000);
+    parts.push(`Alumni years at school: ~${Math.round(days / 365)}`);
+  }
   if (inputs.grade5ScholarshipPassed) parts.push("Grade 5 Scholarship passed");
   if (inputs.olSubjectCount != null)
     parts.push(
@@ -129,15 +129,6 @@ function categorySummary(category: CategoryApplication): string {
   parts.push(`${schools} ${schools === 1 ? "school" : "schools"} within radius`);
   parts.push(`Marks (indicative): ${scoreCategory(category).total}`);
   return parts.join(" · ");
-}
-function FieldErrorDisplay({ field }: { field: AnyFieldApi }) {
-  const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-  if (!isInvalid || !field.state.meta.errors?.length) return null;
-  return (
-    <p className="text-sm text-destructive">
-      {field.state.meta.errors.map((e) => e?.message).join(", ")}
-    </p>
-  );
 }
 
 function StepIndicator({
@@ -202,58 +193,28 @@ function StepIndicator({
 }
 
 function BirthCertificateField({
-  form,
-  onDuplicateChange,
+  draft,
+  set,
 }: {
-  form: AppForm;
-  onDuplicateChange?: (duplicate: boolean) => void;
+  draft: ApplicationDraft;
+  set: (patch: Partial<ApplicationDraft>) => void;
 }) {
-  const [duplicate, setDuplicate] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [applicantName, setApplicantName] = useState("");
-  const [guardianName, setGuardianName] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
-  const [requestState, setRequestState] = useState("");
   const checkTimer = useRef<number | undefined>(undefined);
-
-  const existingApplicantName = String(
-    form.state.values.applicant?.fullName ?? "",
-  );
-  const existingGuardianName = String(
-    form.state.values.guardian?.fullName ?? "",
-  );
-  const existingContactPhone = String(
-    form.state.values.guardian?.phone ?? "",
-  );
-
-  useEffect(() => {
-    if (existingApplicantName)
-      setApplicantName((c) => c || existingApplicantName);
-    if (existingGuardianName)
-      setGuardianName((c) => c || existingGuardianName);
-    if (existingContactPhone)
-      setContactPhone((c) => c || existingContactPhone);
-  }, [existingApplicantName, existingGuardianName, existingContactPhone]);
 
   const check = async (value: string, reveal = true) => {
     const number = value.trim();
     if (!number) {
-      setDuplicate(false);
-      setDialogOpen(false);
-      onDuplicateChange?.(false);
+      set({ duplicateBirthCertificate: false, bcDialogOpen: false });
       return;
     }
     try {
       const result = await client.application.checkBirthCertificate({
         birthCertificateNumber: number,
       });
-      setDuplicate(result.exists);
-      if (reveal) setDialogOpen(result.exists);
-      onDuplicateChange?.(result.exists);
-    } catch {
-      setDuplicate(false);
-      setDialogOpen(false);
-      onDuplicateChange?.(false);
+      set({ duplicateBirthCertificate: result.exists, bcDialogOpen: reveal ? result.exists : draft.bcDialogOpen });
+    } catch (error) {
+      console.error("checkBirthCertificate failed:", error);
+      set({ duplicateBirthCertificate: false, bcDialogOpen: false });
     }
   };
 
@@ -262,9 +223,7 @@ function BirthCertificateField({
     checkTimer.current = window.setTimeout(() => void check(value, false), 250);
   };
 
-  const watchedValue = String(
-    form.state.values.applicant?.birthCertificateNumber ?? "",
-  );
+  const watchedValue = String(draft.applicant.birthCertificateNumber ?? "");
   useEffect(() => {
     scheduleCheck(watchedValue);
     const watcher = window.setInterval(
@@ -279,134 +238,128 @@ function BirthCertificateField({
 
   const requestRemoval = async (birthCertificateNumber: string) => {
     try {
-      setRequestState("Sending removal request\u2026");
+      set({ bcRequestState: "Sending removal request\u2026" });
       await client.application.requestAccess({
         birthCertificateNumber,
-        applicantName,
-        guardianName,
-        contactPhone,
+        applicantName: draft.bcApplicantName || draft.applicant.fullName,
+        guardianName: draft.bcGuardianName || draft.guardian.fullName,
+        contactPhone: draft.bcContactPhone || draft.guardian.phone,
         requestType: "removal",
       });
-      setRequestState(
-        "Removal request sent. The school will review it and contact you before taking action.",
-      );
+      set({
+        bcRequestState:
+          "Removal request sent. The school will review it and contact you before taking action.",
+      });
     } catch (error) {
-      setRequestState(
-        error instanceof Error ? error.message : "Could not send the request",
-      );
+      set({
+        bcRequestState:
+          error instanceof Error ? error.message : "Could not send the request",
+      });
     }
   };
 
   return (
-    <form.Field name="applicant.birthCertificateNumber">
-      {(field: AnyFieldApi) => (
-        <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-          <FieldLabel htmlFor="applicant.birthCertificateNumber">
-            Birth certificate number
-          </FieldLabel>
-          <div className="flex gap-2">
-            <Input
-              className={`flex-1 ${duplicate ? "border-destructive ring-destructive/20" : ""}`}
-              id="applicant.birthCertificateNumber"
-              name="applicant.birthCertificateNumber"
-              value={field.state.value}
-              placeholder="Enter birth certificate number"
-              onChange={(e) => {
-                field.handleChange(e.target.value);
-                setRequestState("");
-                scheduleCheck(e.target.value);
-              }}
-              onBlur={field.handleBlur}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              title="Check this birth certificate number again"
-              onClick={() => void check(field.state.value, false)}
-            >
-              <RotateCcw size={14} /> Refresh
-            </Button>
-          </div>
-          <Drawer open={dialogOpen} onOpenChange={setDialogOpen}>
-            {duplicate && (
-              <DrawerTrigger className="border-0 bg-transparent p-0 text-destructive text-sm underline w-fit">
-                View existing application options
-              </DrawerTrigger>
-            )}
-            <FieldErrorDisplay field={field} />
-            <DrawerContent className="p-6">
-              <DrawerHeader>
-                <DrawerTitle>Existing application found</DrawerTitle>
-                <DrawerDescription>
-                  An application already exists for this birth certificate
-                  number. Open the existing student profile instead of creating
-                  another record.
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="grid gap-4">
-                <section className="grid gap-2">
-                  <h3 className="text-base font-semibold">
-                    Ask the school to remove this record
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Only the school can approve removal after checking the
-                    record and contacting the family.
-                  </p>
-                  <div className="grid gap-2">
-                    <Input
-                      value={applicantName}
-                      onChange={(e) => setApplicantName(e.target.value)}
-                      placeholder="Applicant name"
-                    />
-                    <Input
-                      value={guardianName}
-                      onChange={(e) => setGuardianName(e.target.value)}
-                      placeholder="Guardian name"
-                    />
-                    <PhoneInput
-                      value={contactPhone}
-                      onChange={setContactPhone}
-                    />
-                    <Button
-                      type="button"
-                      disabled={
-                        !applicantName.trim() ||
-                        !guardianName.trim() ||
-                        !contactPhone.trim()
-                      }
-                      onClick={() => void requestRemoval(field.state.value)}
-                    >
-                      Request record removal
-                    </Button>
-                  </div>
-                  {requestState && (
-                    <p className="text-sm text-muted-foreground" role="status">
-                      {requestState}
-                    </p>
-                  )}
-                </section>
+    <Field>
+      <FieldLabel htmlFor="applicant.birthCertificateNumber">
+        Birth certificate number
+      </FieldLabel>
+      <div className="flex gap-2">
+        <Input
+          className={`flex-1 ${draft.duplicateBirthCertificate ? "border-destructive ring-destructive/20" : ""}`}
+          id="applicant.birthCertificateNumber"
+          name="applicant.birthCertificateNumber"
+          value={draft.applicant.birthCertificateNumber}
+          placeholder="Enter birth certificate number"
+          onChange={(e) => {
+            set({
+              applicant: { ...draft.applicant, birthCertificateNumber: e.target.value },
+              bcRequestState: "",
+            });
+            scheduleCheck(e.target.value);
+          }}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          title="Check this birth certificate number again"
+          onClick={() => void check(draft.applicant.birthCertificateNumber, false)}
+        >
+          <RotateCcw size={14} /> Refresh
+        </Button>
+      </div>
+      <Drawer open={draft.bcDialogOpen} onOpenChange={(open) => set({ bcDialogOpen: open })}>
+        {draft.duplicateBirthCertificate && (
+          <DrawerTrigger className="border-0 bg-transparent p-0 text-destructive text-sm underline w-fit">
+            View existing application options
+          </DrawerTrigger>
+        )}
+        <DrawerContent className="p-6">
+          <DrawerHeader>
+            <DrawerTitle>Existing application found</DrawerTitle>
+            <DrawerDescription>
+              An application already exists for this birth certificate
+              number. Open the existing student profile instead of creating
+              another record.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="grid gap-4">
+            <section className="grid gap-2">
+              <h3 className="text-base font-semibold">
+                Ask the school to remove this record
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Only the school can approve removal after checking the
+                record and contacting the family.
+              </p>
+              <div className="grid gap-2">
+                <Input
+                  value={draft.bcApplicantName}
+                  onChange={(e) => set({ bcApplicantName: e.target.value })}
+                  placeholder="Applicant name"
+                />
+                <Input
+                  value={draft.bcGuardianName}
+                  onChange={(e) => set({ bcGuardianName: e.target.value })}
+                  placeholder="Guardian name"
+                />
+                <PhoneInput
+                  value={draft.bcContactPhone}
+                  onChange={(value) => set({ bcContactPhone: value })}
+                />
+                <Button
+                  type="button"
+                  disabled={
+                    !draft.bcApplicantName.trim() ||
+                    !draft.bcGuardianName.trim() ||
+                    !draft.bcContactPhone.trim()
+                  }
+                  onClick={() => void requestRemoval(draft.applicant.birthCertificateNumber)}
+                >
+                  Request record removal
+                </Button>
               </div>
-            </DrawerContent>
-          </Drawer>
-        </Field>
-      )}
-    </form.Field>
+              {draft.bcRequestState && (
+                <p className="text-sm text-muted-foreground" role="status">
+                  {draft.bcRequestState}
+                </p>
+              )}
+            </section>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </Field>
   );
 }
 
 function LocationStepCard({
   draft,
   readOnly,
-  setSection,
-  onLocationCanProceed,
-  autoRequestLocation = true,
+  set,
 }: {
   draft: ApplicationDraft;
   readOnly: boolean;
-  setSection: (section: keyof ApplicationDraft, value: unknown) => void;
-  onLocationCanProceed: (canProceed: boolean) => void;
-  autoRequestLocation?: boolean;
+  set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   return (
     <div className="grid gap-4">
@@ -419,24 +372,30 @@ function LocationStepCard({
       </div>
       <LocationStep
         readOnly={readOnly}
-        autoRequestLocation={autoRequestLocation}
+        autoRequestLocation={
+          !readOnly &&
+          draft.location?.latitude == null &&
+          draft.selectedLocation?.latitude == null
+        }
         value={draft.location ?? emptyDraft.location}
         defaultValue={draft.defaultLocation ?? emptyDraft.defaultLocation}
         deviceLocationHistory={draft.deviceLocationHistory ?? []}
         userLocationHistory={draft.userLocationHistory ?? []}
-        onAvailabilityChange={onLocationCanProceed}
+        onAvailabilityChange={(canProceed) => set({ locationCanProceed: canProceed })}
         onChange={(value, defaultValue) => {
           if (readOnly) return;
-          setSection("location", value);
-          setSection("selectedLocation", value);
-          if (defaultValue) setSection("defaultLocation", defaultValue);
           const histories = applyLocationChange(draft, value, defaultValue);
-          if (histories.deviceLocationHistory !== draft.deviceLocationHistory) {
-            setSection("deviceLocationHistory", histories.deviceLocationHistory);
-          }
-          if (histories.userLocationHistory !== draft.userLocationHistory) {
-            setSection("userLocationHistory", histories.userLocationHistory);
-          }
+          set({
+            location: value,
+            selectedLocation: value,
+            ...(defaultValue ? { defaultLocation: defaultValue } : {}),
+            ...(histories.deviceLocationHistory !== draft.deviceLocationHistory
+              ? { deviceLocationHistory: histories.deviceLocationHistory }
+              : {}),
+            ...(histories.userLocationHistory !== draft.userLocationHistory
+              ? { userLocationHistory: histories.userLocationHistory }
+              : {}),
+          });
         }}
       />
     </div>
@@ -444,15 +403,11 @@ function LocationStepCard({
 }
 
 function ApplicantStep({
-  form,
   draft,
-  setSection,
-  onDuplicateChange,
+  set,
 }: {
-  form: AppForm;
   draft: ApplicationDraft;
-  setSection: (section: keyof ApplicationDraft, value: unknown) => void;
-  onDuplicateChange?: (duplicate: boolean) => void;
+  set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   return (
     <div className="grid grid-cols-2 gap-5 max-w-[780px]">
@@ -463,76 +418,53 @@ function ApplicantStep({
         </p>
       </div>
 
-      <form.Field name="applicant.fullName">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="applicant.fullName">Full name</FieldLabel>
-            <Input
-              id="applicant.fullName"
-              value={field.state.value}
-              placeholder="Enter full name"
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="applicant.fullName">Full name in English</FieldLabel>
+        <Input
+          id="applicant.fullName"
+          value={draft.applicant.fullName}
+          placeholder="Enter full name"
+          onChange={(e) => set({ applicant: { ...draft.applicant, fullName: e.target.value } })}
+        />
+      </Field>
 
-      <form.Field name="applicant.sinhalaName">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="applicant.sinhalaName">
-              Name in Sinhala
-            </FieldLabel>
-            <Input
-              id="applicant.sinhalaName"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-            <a
-              className="text-xs text-primary underline underline-offset-1 hover:text-primary/80"
-              href="https://www.helakuru.lk/keyboard"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Need a Sinhala phonetic keyboard? Open Helakuru
-            </a>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="applicant.sinhalaName">
+          Full name in Sinhala
+        </FieldLabel>
+        <Input
+          id="applicant.sinhalaName"
+          value={draft.applicant.sinhalaName}
+          onChange={(e) => set({ applicant: { ...draft.applicant, sinhalaName: e.target.value } })}
+        />
+        <a
+          className="text-xs text-primary underline underline-offset-1 hover:text-primary/80"
+          href="https://www.helakuru.lk/keyboard"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Need a Sinhala phonetic keyboard? Open Helakuru
+        </a>
+      </Field>
 
-      <form.Field name="applicant.gender">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="applicant.gender">Gender</FieldLabel>
-            <Select
-              value={field.state.value || ""}
-              onValueChange={(value) => {
-                field.handleChange(value);
-                setSection("applicant", { ...draft.applicant, gender: value });
-              }}
-            >
-              <SelectTrigger
-                id="applicant.gender"
-                className="w-full"
-                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-              >
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Female">Female</SelectItem>
-                <SelectItem value="Male">Male</SelectItem>
-              </SelectContent>
-            </Select>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="applicant.gender">Gender</FieldLabel>
+        <Select
+          value={draft.applicant.gender || ""}
+          onValueChange={(value) => set({ applicant: { ...draft.applicant, gender: value ?? "" } })}
+        >
+          <SelectTrigger
+            id="applicant.gender"
+            className="w-full"
+          >
+            <SelectValue placeholder="Select gender" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Female">Female</SelectItem>
+            <SelectItem value="Male">Male</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
 
       {draft.applicant.gender === "Female" && (
         <p className="col-span-2 text-sm text-destructive">
@@ -541,35 +473,26 @@ function ApplicantStep({
         </p>
       )}
 
-      <form.Field name="applicant.religion">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="applicant.religion">Religion</FieldLabel>
-            <Select
-              value={field.state.value || ""}
-              onValueChange={(value) => {
-                field.handleChange(value);
-                setSection("applicant", { ...draft.applicant, religion: value });
-              }}
-            >
-              <SelectTrigger
-                id="applicant.religion"
-                className="w-full"
-                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-              >
-                <SelectValue placeholder="Select religion" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Catholic">Catholic</SelectItem>
-                <SelectItem value="Christian">Christian</SelectItem>
-                <SelectItem value="Buddhist">Buddhist</SelectItem>
-                <SelectItem value="Islam">Islam</SelectItem>
-              </SelectContent>
-            </Select>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="applicant.religion">Religion</FieldLabel>
+        <Select
+          value={draft.applicant.religion || ""}
+          onValueChange={(value) => set({ applicant: { ...draft.applicant, religion: value ?? "" } })}
+        >
+          <SelectTrigger
+            id="applicant.religion"
+            className="w-full"
+          >
+            <SelectValue placeholder="Select religion" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Catholic">Catholic</SelectItem>
+            <SelectItem value="Christian">Christian</SelectItem>
+            <SelectItem value="Buddhist">Buddhist</SelectItem>
+            <SelectItem value="Islam">Islam</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
 
       {draft.applicant.religion === "Christian" && (
         <p className="col-span-2 text-sm text-destructive">
@@ -577,74 +500,61 @@ function ApplicantStep({
         </p>
       )}
 
-      <form.Field name="applicant.educationMedium">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="applicant.educationMedium">
-              Education medium
-            </FieldLabel>
-            <Select
-              value={field.state.value || ""}
-              onValueChange={(value) => {
-                field.handleChange(value);
-                setSection("applicant", {
-                  ...draft.applicant,
-                  educationMedium: value,
-                });
-              }}
-            >
-              <SelectTrigger
-                id="applicant.educationMedium"
-                className="w-full"
-                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-              >
-                <SelectValue placeholder="Select medium" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Sinhala">Sinhala</SelectItem>
-                <SelectItem value="Tamil">Tamil</SelectItem>
-              </SelectContent>
-            </Select>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="applicant.educationMedium">
+          Education medium
+        </FieldLabel>
+        <Select
+          value={draft.applicant.educationMedium || ""}
+          onValueChange={(value) => set({ applicant: { ...draft.applicant, educationMedium: value ?? "" } })}
+        >
+          <SelectTrigger
+            id="applicant.educationMedium"
+            className="w-full"
+          >
+            <SelectValue placeholder="Select medium" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Sinhala">Sinhala</SelectItem>
+            <SelectItem value="Tamil">Tamil</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
 
-      <form.Field name="applicant.dateOfBirth">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="applicant.dateOfBirth">
-              Date of birth
-            </FieldLabel>
-            <Input
-              id="applicant.dateOfBirth"
-              type="date"
-              max={G1_DOB_CUTOFF()}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-            <FieldDescription>
-              The child must be at least five years old by 31 January 2027.
-            </FieldDescription>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="applicant.dateOfBirth">
+          Date of birth
+        </FieldLabel>
+        <Input
+          id="applicant.dateOfBirth"
+          type="date"
+          max={G1_DOB_CUTOFF()}
+          value={draft.applicant.dateOfBirth}
+          onChange={(e) => set({ applicant: { ...draft.applicant, dateOfBirth: e.target.value } })}
+        />
+        <FieldDescription>
+          The child must be at least five years old by 31 January 2027.
+        </FieldDescription>
+      </Field>
 
       <div className="col-span-2">
-        <BirthCertificateField form={form} onDuplicateChange={onDuplicateChange} />
+        <BirthCertificateField draft={draft} set={set} />
       </div>
     </div>
   );
 }
 
 function GuardianStep({
-  form,
+  draft,
+  set,
 }: {
-  form: AppForm;
+  draft: ApplicationDraft;
+  set: (patch: Partial<ApplicationDraft>) => void;
 }) {
+  const nicValue = String(draft.guardian.nic || "").trim().toUpperCase();
+  const nicValid =
+    !nicValue || /^\d{12}$/.test(nicValue) || /^\d{9}[VX]$/.test(nicValue);
+
   return (
     <div className="grid grid-cols-2 gap-5 max-w-[780px]">
       <div className="col-span-2 mb-4">
@@ -655,136 +565,108 @@ function GuardianStep({
         </p>
       </div>
 
-      <form.Field name="guardian.relationship">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="guardian.relationship">
-              Relationship to applicant
-            </FieldLabel>
-            <Select
-              value={field.state.value || ""}
-              onValueChange={(value) => field.handleChange(value)}
-            >
-              <SelectTrigger
-                id="guardian.relationship"
-                className="w-full"
-                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-              >
-                <SelectValue placeholder="Select relationship" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Mother">Mother</SelectItem>
-                <SelectItem value="Father">Father</SelectItem>
-                <SelectItem value="Guardian">Guardian</SelectItem>
-              </SelectContent>
-            </Select>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="guardian.relationship">
+          Relationship to applicant
+        </FieldLabel>
+        <Select
+          value={draft.guardian.relationship || ""}
+          onValueChange={(value) => set({ guardian: { ...draft.guardian, relationship: value ?? "" } })}
+        >
+          <SelectTrigger
+            id="guardian.relationship"
+            className="w-full"
+          >
+            <SelectValue placeholder="Select relationship" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Mother">Mother</SelectItem>
+            <SelectItem value="Father">Father</SelectItem>
+            <SelectItem value="Guardian">Guardian</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
 
-      <form.Field name="guardian.fullName">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="guardian.fullName">Full name</FieldLabel>
-            <Input
-              id="guardian.fullName"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="guardian.fullName">Full name in English</FieldLabel>
+        <Input
+          id="guardian.fullName"
+          value={draft.guardian.fullName}
+          onChange={(e) => set({ guardian: { ...draft.guardian, fullName: e.target.value } })}
+        />
+      </Field>
 
-      <form.Field name="guardian.nic">
-        {(field: AnyFieldApi) => {
-          const value = String(field.state.value || "").trim().toUpperCase();
-          const valid =
-            !value || /^\d{12}$/.test(value) || /^\d{9}[VX]$/.test(value);
-          return (
-            <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-              <FieldLabel htmlFor="guardian.nic">NIC number</FieldLabel>
-              <Input
-                id="guardian.nic"
-                value={field.state.value}
-                placeholder="e.g. 123456789V or 200012345678"
-                maxLength={12}
-                autoCapitalize="characters"
-                spellCheck={false}
-                onBlur={field.handleBlur}
-                onChange={(e) =>
-                  field.handleChange(e.target.value.toUpperCase())
-                }
-                aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-              />
-              {!valid && (
-                <p className="text-sm text-destructive">
-                  Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12
-                  digits.
-                </p>
-              )}
-              <FieldErrorDisplay field={field} />
-            </Field>
-          );
-        }}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="guardian.sinhalaName">Full name in Sinhala</FieldLabel>
+        <Input
+          id="guardian.sinhalaName"
+          value={draft.guardian.sinhalaName}
+          onChange={(e) => set({ guardian: { ...draft.guardian, sinhalaName: e.target.value } })}
+        />
+        <a
+          className="text-xs text-primary underline underline-offset-1 hover:text-primary/80"
+          href="https://www.helakuru.lk/keyboard"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Need a Sinhala phonetic keyboard? Open Helakuru
+        </a>
+      </Field>
 
-      <form.Field name="guardian.phone">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="guardian.phone">Phone number</FieldLabel>
-            <PhoneInput
-              value={field.state.value || ""}
-              onChange={field.handleChange}
-            />
-            <FieldErrorDisplay field={field} />
-          </Field>
+      <Field>
+        <FieldLabel htmlFor="guardian.nic">NIC number</FieldLabel>
+        <Input
+          id="guardian.nic"
+          value={draft.guardian.nic}
+          placeholder="e.g. 123456789V or 200012345678"
+          maxLength={12}
+          autoCapitalize="characters"
+          spellCheck={false}
+          onChange={(e) =>
+            set({ guardian: { ...draft.guardian, nic: e.target.value.toUpperCase() } })
+          }
+        />
+        {!nicValid && (
+          <p className="text-sm text-destructive">
+            Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12
+            digits.
+          </p>
         )}
-      </form.Field>
+      </Field>
 
-      <form.Field name="guardian.email">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="guardian.email">Email address</FieldLabel>
-            <Input
-              id="guardian.email"
-              type="email"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="guardian.phone">Phone number</FieldLabel>
+        <PhoneInput
+          value={draft.guardian.phone || ""}
+          onChange={(value) => set({ guardian: { ...draft.guardian, phone: value } })}
+        />
+      </Field>
+
+      <Field>
+        <FieldLabel htmlFor="guardian.email">Email address</FieldLabel>
+        <Input
+          id="guardian.email"
+          type="email"
+          value={draft.guardian.email}
+          onChange={(e) => set({ guardian: { ...draft.guardian, email: e.target.value } })}
+        />
+      </Field>
     </div>
   );
 }
 
 function ResidenceStep({
-  form,
   draft,
-  setSection,
+  set,
 }: {
-  form: AppForm;
   draft: ApplicationDraft;
-  setSection: (section: keyof ApplicationDraft, value: unknown) => void;
+  set: (patch: Partial<ApplicationDraft>) => void;
 }) {
-  const [sameAsPermanent, setSameAsPermanent] = useState(
-    draft.residence.sameAsPermanent,
-  );
-  useEffect(() => {
-    setSameAsPermanent(draft.residence.sameAsPermanent);
-  }, [draft.residence.sameAsPermanent]);
-
-  const [districtSearch, setDistrictSearch] = useState("");
-  const [dsSearch, setDsSearch] = useState("");
-  const [gnSearch, setGnSearch] = useState("");
-  const [electoralSearch, setElectoralSearch] = useState("");
+  const sameAsPermanent = draft.residence.sameAsPermanent;
+  const districtSearch = draft.residence.districtSearch;
+  const dsSearch = draft.residence.dsSearch;
+  const gnSearch = draft.residence.gnSearch;
+  const electoralSearch = draft.residence.electoralSearch;
 
   const normalize = (value: string) => value.trim().toLocaleLowerCase();
   const filterOptions = (values: string[], search: string) => {
@@ -804,50 +686,26 @@ function ResidenceStep({
       d.id === draft.residence.dsDivision,
   );
 
-  const districtOptions = useMemo(
-    () => filterOptions(DISTRICTS.map((d) => d.en), districtSearch),
-    [districtSearch],
+  const districtOptions = filterOptions(DISTRICTS.map((d) => d.en), districtSearch);
+  const dsOptions = filterOptions(
+    DIVISIONAL_SECRETARIATS.filter(
+      (d) => !selectedDistrict || d.districtId === selectedDistrict.id,
+    ).map((d) => d.en),
+    dsSearch,
   );
-  const dsOptions = useMemo(
-    () =>
-      filterOptions(
-        DIVISIONAL_SECRETARIATS.filter(
-          (d) => !selectedDistrict || d.districtId === selectedDistrict.id,
-        ).map((d) => d.en),
-        dsSearch,
-      ),
-    [dsSearch, selectedDistrict?.id],
+  const gnOptions = filterOptions(
+    GN_DIVISIONS.filter(
+      (d) => !selectedDs || d.dsId === selectedDs.id,
+    ).map((d) => d.en),
+    gnSearch,
   );
-  const gnOptions = useMemo(
-    () =>
-      filterOptions(
-        GN_DIVISIONS.filter(
-          (d) => !selectedDs || d.dsId === selectedDs.id,
-        ).map((d) => d.en),
-        gnSearch,
-      ),
-    [gnSearch, selectedDs?.id],
-  );
-  const electoralOptions = useMemo(
-    () =>
-      filterOptions(
-        ELECTORAL_CONSTITUENCIES.map((c) => c.en),
-        electoralSearch,
-      ),
-    [electoralSearch],
+  const electoralOptions = filterOptions(
+    ELECTORAL_CONSTITUENCIES.map((c) => c.en),
+    electoralSearch,
   );
 
-  const copyPermanent = (checked: boolean) => {
-    setSameAsPermanent(checked);
-    const residence = form.state.values.residence;
-    const updated = {
-      ...residence,
-      sameAsPermanent: checked,
-      currentAddress: checked ? residence.permanentAddress : residence.currentAddress,
-    };
-    if (checked) form.setFieldValue("residence.currentAddress", residence.permanentAddress);
-    setSection("residence", updated);
-  };
+  const setResidence = (residence: Partial<ApplicationDraft["residence"]>) =>
+    set({ residence: { ...draft.residence, ...residence } } as Partial<ApplicationDraft>);
 
   return (
     <div className="grid grid-cols-2 gap-5 max-w-[780px]">
@@ -860,202 +718,161 @@ function ResidenceStep({
         </p>
       </div>
 
-      <form.Field name="residence.permanentAddress">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="residence.permanentAddress">
-              Permanent address
-            </FieldLabel>
-            <Input
-              id="residence.permanentAddress"
-              value={field.state.value}
-              placeholder="House number, street, town"
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="residence.permanentAddress">
+          Permanent address
+        </FieldLabel>
+        <Input
+          id="residence.permanentAddress"
+          value={draft.residence.permanentAddress}
+          placeholder="House number, street, town"
+          onChange={(e) => setResidence({ permanentAddress: e.target.value })}
+        />
+      </Field>
 
-      <form.Field name="residence.currentAddress">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="residence.currentAddress">
-              Current address
-            </FieldLabel>
-            <Input
-              id="residence.currentAddress"
-              value={field.state.value}
-              placeholder="Current address"
-              disabled={sameAsPermanent}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              aria-invalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="residence.currentAddress">
+          Current address
+        </FieldLabel>
+        <Input
+          id="residence.currentAddress"
+          value={draft.residence.currentAddress}
+          placeholder="Current address"
+          disabled={sameAsPermanent}
+          onChange={(e) => setResidence({ currentAddress: e.target.value })}
+        />
+      </Field>
 
       <div className="col-span-2">
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
             className="size-5"
             checked={sameAsPermanent}
-            onCheckedChange={(checked) => copyPermanent(checked === true)}
+            onCheckedChange={(checked) => {
+              const c = checked === true;
+              setResidence({
+                sameAsPermanent: c,
+                currentAddress: c ? draft.residence.permanentAddress : draft.residence.currentAddress,
+              });
+            }}
           />
           Current address is the same as permanent address
         </label>
       </div>
 
-      <form.Field name="residence.district">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="residence.district">District</FieldLabel>
-            <input
-              id="residence.district"
-              list="district-options"
-              value={field.state.value || districtSearch}
-              placeholder="Search district"
-              onBlur={field.handleBlur}
-              onChange={(e) => {
-                setDistrictSearch(e.target.value);
-                const match = districtOptions.find(
-                  (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
-                );
-                if (match) {
-                  field.handleChange(match);
-                  setSection("residence", {
-                    ...form.state.values.residence,
-                    district: match,
-                    dsDivision: "",
-                    gnDivision: "",
-                  });
-                }
-              }}
-              className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-            />
-            <datalist id="district-options">
-              {districtOptions.map((opt) => (
-                <option key={opt} value={opt} />
-              ))}
-            </datalist>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="residence.district">District</FieldLabel>
+        <input
+          id="residence.district"
+          list="district-options"
+          value={districtSearch}
+          placeholder="Search district"
+          onChange={(e) => {
+            if (!e.target.value) {
+              setResidence({ districtSearch: e.target.value, district: "", dsDivision: "", gnDivision: "" });
+              return;
+            }
+            const match = districtOptions.find(
+              (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
+            );
+            setResidence({
+              districtSearch: e.target.value,
+              ...(match ? { district: match, dsDivision: "", gnDivision: "" } : {}),
+            });
+          }}
+          className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+        />
+        <datalist id="district-options">
+          {districtOptions.map((opt) => (
+            <option key={opt} value={opt} />
+          ))}
+        </datalist>
+      </Field>
 
-      <form.Field name="residence.dsDivision">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="residence.dsDivision">
-              Divisional Secretariat division
-            </FieldLabel>
-            <input
-              id="residence.dsDivision"
-              list="ds-options"
-              value={field.state.value || dsSearch}
-              placeholder="Search DS division"
-              onBlur={field.handleBlur}
-              onChange={(e) => {
-                setDsSearch(e.target.value);
-                const match = dsOptions.find(
-                  (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
-                );
-                if (match) {
-                  field.handleChange(match);
-                  setSection("residence", {
-                    ...form.state.values.residence,
-                    dsDivision: match,
-                    gnDivision: "",
-                  });
-                }
-              }}
-              className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-            />
-            <datalist id="ds-options">
-              {dsOptions.map((opt) => (
-                <option key={opt} value={opt} />
-              ))}
-            </datalist>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="residence.dsDivision">
+          Divisional Secretariat division
+        </FieldLabel>
+        <input
+          id="residence.dsDivision"
+          list="ds-options"
+          value={dsSearch}
+          placeholder="Search DS division"
+          onChange={(e) => {
+            const match = dsOptions.find(
+              (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
+            );
+            setResidence({
+              dsSearch: e.target.value,
+              ...(match ? { dsDivision: match, gnDivision: "" } : {}),
+            });
+          }}
+          className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+        />
+        <datalist id="ds-options">
+          {dsOptions.map((opt) => (
+            <option key={opt} value={opt} />
+          ))}
+        </datalist>
+      </Field>
 
-      <form.Field name="residence.gnDivision">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="residence.gnDivision">
-              Grama Niladhari division
-            </FieldLabel>
-            <input
-              id="residence.gnDivision"
-              list="gn-options"
-              value={field.state.value || gnSearch}
-              placeholder="Search GN division"
-              onBlur={field.handleBlur}
-              onChange={(e) => {
-                setGnSearch(e.target.value);
-                const match = gnOptions.find(
-                  (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
-                );
-                if (match) field.handleChange(match);
-              }}
-              className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-            />
-            <datalist id="gn-options">
-              {gnOptions.map((opt) => (
-                <option key={opt} value={opt} />
-              ))}
-            </datalist>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="residence.gnDivision">
+          Grama Niladhari division
+        </FieldLabel>
+        <input
+          id="residence.gnDivision"
+          list="gn-options"
+          value={gnSearch}
+          placeholder="Search GN division"
+          onChange={(e) => {
+            const match = gnOptions.find(
+              (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
+            );
+            setResidence({ gnSearch: e.target.value, ...(match ? { gnDivision: match } : {}) });
+          }}
+          className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+        />
+        <datalist id="gn-options">
+          {gnOptions.map((opt) => (
+            <option key={opt} value={opt} />
+          ))}
+        </datalist>
+      </Field>
 
-      <form.Field name="residence.electoralDistrict">
-        {(field: AnyFieldApi) => (
-          <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-            <FieldLabel htmlFor="residence.electoralDistrict">
-              Electoral district
-            </FieldLabel>
-            <input
-              id="residence.electoralDistrict"
-              list="electoral-options"
-              value={field.state.value || electoralSearch}
-              placeholder="Search electoral district"
-              onBlur={field.handleBlur}
-              onChange={(e) => {
-                setElectoralSearch(e.target.value);
-                const match = electoralOptions.find(
-                  (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
-                );
-                if (match) field.handleChange(match);
-              }}
-              className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-            />
-            <datalist id="electoral-options">
-              {electoralOptions.map((opt) => (
-                <option key={opt} value={opt} />
-              ))}
-            </datalist>
-            <FieldErrorDisplay field={field} />
-          </Field>
-        )}
-      </form.Field>
+      <Field>
+        <FieldLabel htmlFor="residence.electoralDistrict">
+          Electoral district
+        </FieldLabel>
+        <input
+          id="residence.electoralDistrict"
+          list="electoral-options"
+          value={electoralSearch}
+          placeholder="Search electoral district"
+          onChange={(e) => {
+            const match = electoralOptions.find(
+              (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
+            );
+            setResidence({ electoralSearch: e.target.value, ...(match ? { electoralDistrict: match } : {}) });
+          }}
+          className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+        />
+        <datalist id="electoral-options">
+          {electoralOptions.map((opt) => (
+            <option key={opt} value={opt} />
+          ))}
+        </datalist>
+      </Field>
     </div>
   );
 }
 
 function DeclarationStep({
   draft,
-  setSection,
+  set,
 }: {
   draft: ApplicationDraft;
-  setSection: (section: keyof ApplicationDraft, value: unknown) => void;
+  set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   return (
     <div className="max-w-[700px] grid gap-5">
@@ -1072,10 +889,7 @@ function DeclarationStep({
           className="size-5 mt-0.5"
           checked={draft.declaration.confirmed}
           onCheckedChange={(checked) =>
-            setSection("declaration", {
-              ...draft.declaration,
-              confirmed: checked === true,
-            })
+            set({ declaration: { ...draft.declaration, confirmed: checked === true } })
           }
         />
         I confirm that the information I provide is accurate to the best of my
@@ -1087,10 +901,7 @@ function DeclarationStep({
           className="size-5 mt-0.5"
           checked={draft.declaration.consent}
           onCheckedChange={(checked) =>
-            setSection("declaration", {
-              ...draft.declaration,
-              consent: checked === true,
-            })
+            set({ declaration: { ...draft.declaration, consent: checked === true } })
           }
         />
         I consent to this information being used to prepare the G1 2026 intake
@@ -1107,71 +918,66 @@ function ReviewStep({
   draft: ApplicationDraft;
   onNavigateToStep: (step: number) => void;
 }) {
-  const sections: [string, string, number][] = useMemo(
-    () => [
-      ["Location", draft.location.address || "Not selected", 0],
-      ["Applicant full name", draft.applicant.fullName || "Not completed", 1],
-      ["Name in Sinhala", draft.applicant.sinhalaName || "Not completed", 1],
-      ["Gender", draft.applicant.gender || "Not selected", 1],
-      ["Religion", draft.applicant.religion || "Not selected", 1],
-      [
-        "Education medium",
-        draft.applicant.educationMedium || "Not selected",
-        1,
-      ],
-      ["Date of birth", draft.applicant.dateOfBirth || "Not completed", 1],
-      [
-        "Birth certificate number",
-        draft.applicant.birthCertificateNumber || "Not completed",
-        1,
-      ],
-      ["Relationship", draft.guardian.relationship || "Not selected", 2],
-      ["Guardian name", draft.guardian.fullName || "Not completed", 2],
-      ["Guardian NIC", draft.guardian.nic || "Not completed", 2],
-      ["Phone number", draft.guardian.phone || "Not completed", 2],
-      ["Guardian email", draft.guardian.email || "Not completed", 2],
-      [
-        "Permanent address",
-        draft.residence.permanentAddress || "Not completed",
-        3,
-      ],
-      [
-        "Current address",
-        draft.residence.currentAddress || "Not completed",
-        3,
-      ],
-      ["District", draft.residence.district || "Not selected", 3],
-      [
-        "Divisional Secretariat division",
-        draft.residence.dsDivision || "Not selected",
-        3,
-      ],
-      [
-        "Grama Niladhari division",
-        draft.residence.gnDivision || "Not selected",
-        3],
-      [
-        "Electoral district",
-        draft.residence.electoralDistrict || "Not selected",
-        3,
-      ],
+  const sections: [string, string, number][] = [
+    ["Location", draft.location.address || "Not selected", 0],
+    ["Full name in English", draft.applicant.fullName || "Not completed", 1],
+    ["Full name in Sinhala", draft.applicant.sinhalaName || "Not completed", 1],
+    ["Gender", draft.applicant.gender || "Not selected", 1],
+    ["Religion", draft.applicant.religion || "Not selected", 1],
+    [
+      "Education medium",
+      draft.applicant.educationMedium || "Not selected",
+      1,
     ],
-    [draft],
-  );
+    ["Date of birth", draft.applicant.dateOfBirth || "Not completed", 1],
+    [
+      "Birth certificate number",
+      draft.applicant.birthCertificateNumber || "Not completed",
+      1,
+    ],
+    ["Relationship", draft.guardian.relationship || "Not selected", 2],
+    ["Guardian name", draft.guardian.fullName || "Not completed", 2],
+    ["Guardian name in Sinhala", draft.guardian.sinhalaName || "Not completed", 2],
+    ["Guardian NIC", draft.guardian.nic || "Not completed", 2],
+    ["Phone number", draft.guardian.phone || "Not completed", 2],
+    ["Guardian email", draft.guardian.email || "Not completed", 2],
+    [
+      "Permanent address",
+      draft.residence.permanentAddress || "Not completed",
+      3,
+    ],
+    [
+      "Current address",
+      draft.residence.currentAddress || "Not completed",
+      3,
+    ],
+    ["District", draft.residence.district || "Not selected", 3],
+    [
+      "Divisional Secretariat division",
+      draft.residence.dsDivision || "Not selected",
+      3,
+    ],
+    [
+      "Grama Niladhari division",
+      draft.residence.gnDivision || "Not selected",
+      3],
+    [
+      "Electoral district",
+      draft.residence.electoralDistrict || "Not selected",
+      3,
+    ],
+  ];
 
-  const categoryRows: [string, string, number][] = useMemo(
-    () =>
-      draft.categories.length > 0
-        ? draft.categories.map(
-            (category): [string, string, number] => [
-              CATEGORY_LABELS[category.categoryType],
-              categorySummary(category),
-              4,
-            ],
-          )
-        : [["Categories", "None selected", 4]],
-    [draft.categories],
-  );
+  const categoryRows: [string, string, number][] =
+    draft.categories.length > 0
+      ? draft.categories.map(
+          (category): [string, string, number] => [
+            CATEGORY_LABELS[category.categoryType],
+            categorySummary(category),
+            4,
+          ],
+        )
+      : [["Categories", "None selected", 4]];
   const rows = [...sections, ...categoryRows];
 
   return (
@@ -1213,70 +1019,25 @@ export function ApplicationForm({
   readOnly?: boolean;
 }) {
   const draft = useApplicationStore();
-  const [hydrated, setHydrated] = useState(false);
-  const [accessKey, setAccessKey] = useState(
-    () =>
-      new URLSearchParams(window.location.search).get("key") ??
-      localStorage.getItem("aloysius-g1-application-key") ??
-      "",
-  );
-  const [sessionCode, setSessionCode] = useState(
-    () =>
-      new URLSearchParams(window.location.search).get("code") ??
-      localStorage.getItem("aloysius-g1-application-session-code") ??
-      "",
-  );
-  const [saveStatus, setSaveStatus] = useState("");
-  const [submitError, setSubmitError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionOpensAt, setSubmissionOpensAt] = useState("");
-  const [submissionClosesAt, setSubmissionClosesAt] = useState("");
-  const [savedSnapshot, setSavedSnapshot] = useState("");
-  const [locationCanProceed, setLocationCanProceed] = useState(false);
-  const [duplicate, setDuplicate] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [submissionLocked, setSubmissionLocked] = useState(false);
-  const [submittedAt, setSubmittedAt] = useState<Date | null>(null);
-  const [showSubmissionRequest, setShowSubmissionRequest] = useState(false);
-  const [requestName, setRequestName] = useState("");
-  const [requestPhone, setRequestPhone] = useState("");
-  const [requestSaving, setRequestSaving] = useState(false);
   const saveQueue = useRef(Promise.resolve());
   const navigate = useNavigate();
-  const collectionOnly = submissionLocked && submittedAt !== null;
 
-  const form = useForm({
-    defaultValues: draft as ApplicationDraft,
-    onSubmit: ({ value }) =>
-      draft.updateDraft(value as Partial<ApplicationDraft>),
-  });
+  const set = (patch: Partial<ApplicationDraft>) => draft.updateDraft(patch);
 
-  const formSnapshot = useSyncExternalStore(
-    (cb) => {
-      const subscription = form.store.subscribe(cb);
-      return () => subscription.unsubscribe();
-    },
-    () => JSON.stringify(form.state.values),
-  );
-
-  useEffect(() => {
-    const parsed = JSON.parse(formSnapshot) as Partial<ApplicationDraft>;
-    // Skip when zustand already holds the same data (ignoring lastSavedAt)
-    // to avoid an infinite loop: updateDraft always sets a new lastSavedAt,
-    // which changes draft (the useForm defaultValues), which triggers
-    // formApi.update to reset form values, which changes formSnapshot.
-    const current = useApplicationStore.getState();
-    const { lastSavedAt: _ls1, ...parsedClean } = parsed;
-    const { lastSavedAt: _ls2, ...currentClean } = current;
-    if (JSON.stringify(parsedClean) === JSON.stringify(currentClean)) return;
-    draft.updateDraft(parsed);
-  }, [formSnapshot]);
+  const collectionOnly = draft.submissionLocked && draft.submittedAt !== null;
 
   useEffect(() => {
     let cancelled = false;
     const restore = async () => {
-      const key = accessKey;
+      const key =
+        new URLSearchParams(window.location.search).get("key") ??
+        localStorage.getItem("aloysius-g1-application-key") ??
+        "";
+      const code =
+        new URLSearchParams(window.location.search).get("code") ??
+        localStorage.getItem("aloysius-g1-application-session-code") ??
+        "";
+      if (key || code) set({ accessKey: key, sessionCode: code });
       let dataLoaded = false;
       try {
         if (adminApplicationId) {
@@ -1287,10 +1048,7 @@ export function ApplicationForm({
             const latest = normalizeDraft(
               result.data as Partial<ApplicationDraft>,
             );
-            draft.updateDraft(latest);
-            form.reset(latest);
-            setSavedSnapshot(JSON.stringify(latest));
-            setSubmittedAt(result.submittedAt || null);
+            set({ ...latest, submittedAt: result.submittedAt ? String(result.submittedAt) : null });
             dataLoaded = true;
           }
         } else if (key) {
@@ -1307,7 +1065,6 @@ export function ApplicationForm({
               ) ||
               "";
             if (restoredSessionCode) {
-              setSessionCode(restoredSessionCode);
               localStorage.setItem(
                 "aloysius-g1-application-session-code",
                 restoredSessionCode,
@@ -1326,22 +1083,17 @@ export function ApplicationForm({
               latest.guardian.fullName ||
               latest.residence.permanentAddress,
             );
-            if (serverHasData || !localHasData) {
-              draft.updateDraft(latest);
-              form.reset(latest);
-              setSavedSnapshot(JSON.stringify(latest));
-            } else {
-              form.reset(local as ApplicationDraft);
-              setSavedSnapshot(JSON.stringify(local));
-            }
-            setSubmittedAt(result.submittedAt || null);
+            const merged: Partial<ApplicationDraft> = serverHasData || !localHasData ? latest : {};
+            set({
+              ...merged,
+              sessionCode: restoredSessionCode || draft.sessionCode,
+              submittedAt: result.submittedAt ? String(result.submittedAt) : null,
+            });
             dataLoaded = true;
           }
         } else if (!adminApplicationId && !readOnly) {
           const result = await client.application.create({ data: {} });
           if (!cancelled) {
-            setAccessKey(result.accessKey);
-            setSessionCode(result.sessionCode);
             localStorage.setItem(
               "aloysius-g1-application-key",
               result.accessKey,
@@ -1370,37 +1122,38 @@ export function ApplicationForm({
             const latest = normalizeDraft(
               result.data as Partial<ApplicationDraft>,
             );
-            draft.updateDraft(latest);
-            form.reset(latest);
-            setSavedSnapshot(JSON.stringify(latest));
-            setSubmittedAt(null);
+            set({
+              ...latest,
+              accessKey: result.accessKey,
+              sessionCode: result.sessionCode,
+              submittedAt: null,
+            });
             dataLoaded = true;
           }
         }
         try {
           const status = await client.application.status();
           if (!cancelled) {
-            setSubmissionLocked(status.submissionLocked);
-            setSubmissionOpensAt(status.submissionOpensAt);
-            setSubmissionClosesAt(status.submissionClosesAt);
+            set({
+              submissionLocked: status.submissionLocked,
+              submissionOpensAt: status.submissionOpensAt,
+              submissionClosesAt: status.submissionClosesAt,
+            });
           }
         } catch {
           if (!cancelled) {
-            setSubmissionLocked(true);
+            set({ submissionLocked: true });
           }
         }
       } catch {
         if (!cancelled && !dataLoaded) {
           draft.reset();
-          setAccessKey("");
-          setSessionCode("");
           localStorage.removeItem("aloysius-g1-application-key");
           localStorage.removeItem("aloysius-g1-application-session-code");
-          setSubmissionLocked(true);
-          setSubmittedAt(null);
+          set({ accessKey: "", sessionCode: "", submissionLocked: true, submittedAt: null });
         }
       } finally {
-        if (!cancelled) setHydrated(true);
+        if (!cancelled) set({ hydrated: true });
       }
     };
     void restore();
@@ -1409,24 +1162,34 @@ export function ApplicationForm({
     };
   }, []);
 
-  const current = draft.currentStep;
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastSavedSnapshot = useRef("");
 
-  const setSection = (section: keyof ApplicationDraft, value: unknown) =>
-    draft.updateDraft({ [section]: value } as Partial<ApplicationDraft>);
+  useEffect(() => {
+    if (!draft.hydrated || !draft.accessKey) return;
+    const snapshot = JSON.stringify(normalizeDraft(draft));
+    if (snapshot === lastSavedSnapshot.current) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      lastSavedSnapshot.current = snapshot;
+      void saveToServer();
+    }, 1500);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, [draft.categories, draft.applicant, draft.guardian, draft.residence, draft.declaration, draft.currentStep, draft.hydrated, draft.accessKey]);
+
+  const current = draft.currentStep;
 
   const saveToServer = async () => {
     const operation = saveQueue.current.then(async () => {
-      const data = normalizeDraft({
-        ...(form.state.values as ApplicationDraft),
-        ...draft,
-      });
-      setSaveStatus("Saving\u2026");
+      const data = normalizeDraft(draft);
+      set({ saveStatus: "Saving\u2026" });
       if (adminApplicationId)
         await client.admin.application.update({ id: adminApplicationId, data });
-      else if (accessKey)
-        await client.application.update({ accessKey, data });
-      setSavedSnapshot(JSON.stringify(data));
-      setSaveStatus("Saved securely");
+      else if (draft.accessKey)
+        await client.application.update({ accessKey: draft.accessKey, data });
+      set({ saveStatus: "Saved securely" });
     });
     saveQueue.current = operation.catch(() => undefined);
     return operation;
@@ -1436,61 +1199,55 @@ export function ApplicationForm({
   const next = async () => {
     if (nextDisabledReason) return;
     try {
-      setSubmitError("");
-      await form.handleSubmit();
+      set({ submitError: "" });
       const nextStep = Math.min(current + 1, steps.length - 1);
       draft.setStep(nextStep);
       await saveToServer();
     } catch (error) {
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : "Could not save this step. Please try again.",
-      );
+      set({
+        submitError:
+          error instanceof Error
+            ? error.message
+            : "Could not save this step. Please try again.",
+      });
       draft.setStep(current);
     }
   };
 
-  const hasUnsavedChanges =
-    !accessKey || JSON.stringify(form.state.values) !== savedSnapshot;
-
   const submitApplication = async () => {
     try {
-      setIsSubmitting(true);
-      setSubmitError("");
-      if (hasUnsavedChanges) await saveToServer();
-      if (!accessKey) return;
-      setSaveStatus("Submitting…");
-      await client.application.submit({ accessKey });
-      setSubmitted(true);
-      setSubmittedAt(new Date());
-      setSaveStatus("Submitted");
+      set({ isSubmitting: true, submitError: "" });
+      await saveToServer();
+      if (!draft.accessKey) return;
+      set({ saveStatus: "Submitting\u2026" });
+      await client.application.submit({ accessKey: draft.accessKey });
+      set({ submittedAt: new Date().toISOString(), saveStatus: "Submitted" });
     } catch (error) {
-      setSaveStatus("");
+      set({ saveStatus: "" });
       if (error instanceof Error && error.message.includes("Submissions are outside the configured form window")) {
-        setShowSubmissionRequest(true);
+        set({ showSubmissionRequest: true });
       } else {
-        setSubmitError(
-          error instanceof Error
-            ? error.message
-            : "Could not submit the application. Please try again.",
-        );
+        set({
+          submitError:
+            error instanceof Error
+              ? error.message
+              : "Could not submit the application. Please try again.",
+        });
       }
     } finally {
-      setIsSubmitting(false);
+      set({ isSubmitting: false });
     }
   };
 
   const submitApprovalRequest = async () => {
     try {
-      setRequestSaving(true);
-      await client.application.requestAccess({ accessKey, applicantName: requestName.trim(), contactPhone: requestPhone.trim(), requestType: "submission" });
-      setShowSubmissionRequest(false);
-      setSaveStatus("Approval request sent");
+      set({ requestSaving: true });
+      await client.application.requestAccess({ accessKey: draft.accessKey, applicantName: draft.requestName.trim(), contactPhone: draft.requestPhone.trim(), requestType: "submission" });
+      set({ showSubmissionRequest: false, saveStatus: "Approval request sent" });
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Could not send the approval request");
+      set({ submitError: error instanceof Error ? error.message : "Could not send the approval request" });
     } finally {
-      setRequestSaving(false);
+      set({ requestSaving: false });
     }
   };
 
@@ -1506,14 +1263,14 @@ export function ApplicationForm({
   const copyWithFeedback = (label: string, value: string) => {
     void navigator.clipboard?.writeText(value).then(
       () => {
-        setCopiedField(label);
-        setTimeout(() => setCopiedField(null), 2000);
+        set({ copiedField: label });
+        setTimeout(() => set({ copiedField: null }), 2000);
       },
       () => undefined,
     );
   };
 
-  if (!hydrated)
+  if (!draft.hydrated)
     return (
       <div className="grid place-items-center min-h-[50vh] text-muted-foreground">
         Restoring your draft\u2026
@@ -1522,11 +1279,11 @@ export function ApplicationForm({
 
   const nextDisabledReason = getNextStepReason({
     step: current,
-    locationCanProceed,
+    locationCanProceed: draft.locationCanProceed,
     location: draft.location,
-    duplicateBirthCertificate: duplicate,
-    applicant: form.state.values.applicant,
-    guardian: form.state.values.guardian,
+    duplicateBirthCertificate: draft.duplicateBirthCertificate,
+    applicant: draft.applicant,
+    guardian: draft.guardian,
     categories: draft.categories,
     declaration: draft.declaration,
   });
@@ -1548,9 +1305,9 @@ export function ApplicationForm({
               Complete the details at your own pace. Your progress is saved
               securely and can be reopened with your session code and access key.
             </p>
-            {(sessionCode || accessKey) && (
+            {(draft.sessionCode || draft.accessKey) && (
               <div className="grid grid-cols-2 gap-3 mt-5 max-w-[900px]">
-                {sessionCode && (
+                {draft.sessionCode && (
                   <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
                     <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
                       <span>Session code</span>
@@ -1560,14 +1317,14 @@ export function ApplicationForm({
                         aria-label="Copy session code"
                         onClick={(e) => {
                           e.stopPropagation();
-                          copyWithFeedback("session", sessionCode);
+                          copyWithFeedback("session", draft.sessionCode);
                         }}
                       >
-                        {copiedField === "session" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
+                        {draft.copiedField === "session" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
                       </button>
                     </div>
                     <code className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
-                      {sessionCode}
+                      {draft.sessionCode}
                     </code>
                     <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
                       Memorise this code to find this child&apos;s application
@@ -1575,7 +1332,7 @@ export function ApplicationForm({
                     </span>
                   </div>
                 )}
-                {accessKey && (
+                {draft.accessKey && (
                   <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
                     <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
                       <span>Access key</span>
@@ -1585,14 +1342,14 @@ export function ApplicationForm({
                         aria-label="Copy access key"
                         onClick={(e) => {
                           e.stopPropagation();
-                          copyWithFeedback("key", accessKey);
+                          copyWithFeedback("key", draft.accessKey);
                         }}
                       >
-                        {copiedField === "key" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
+                        {draft.copiedField === "key" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
                       </button>
                     </div>
                     <code className="block break-all text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
-                      {accessKey}
+                      {draft.accessKey}
                     </code>
                     <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
                       This key authorizes you to view, change, and edit this
@@ -1605,7 +1362,7 @@ export function ApplicationForm({
           </div>
           <div className="inline-flex items-center gap-1.5 text-primary text-[0.85rem] whitespace-nowrap">
             <ShieldCheck size={17} />{" "}
-            {accessKey ? "Saved to database" : "Connecting to database"}
+            {draft.accessKey ? "Saved to database" : "Connecting to database"}
           </div>
         </div>
       </section>
@@ -1622,36 +1379,25 @@ export function ApplicationForm({
             <LocationStepCard
               draft={draft}
               readOnly={readOnly}
-              setSection={setSection}
-              onLocationCanProceed={setLocationCanProceed}
-              autoRequestLocation={
-                !readOnly &&
-                !accessKey &&
-                !adminApplicationId &&
-                draft.location?.latitude == null &&
-                draft.selectedLocation?.latitude == null
-              }
+              set={set}
             />
           )}
           {current === 1 && (
             <ApplicantStep
-              form={form}
               draft={draft}
-              setSection={setSection}
-              onDuplicateChange={setDuplicate}
+              set={set}
             />
           )}
-          {current === 2 && <GuardianStep form={form} />}
+          {current === 2 && <GuardianStep draft={draft} set={set} />}
           {current === 3 && (
             <ResidenceStep
-              form={form}
               draft={draft}
-              setSection={setSection}
+              set={set}
             />
           )}
           {current === 4 && <CategoryStep />}
           {current === 5 && (
-            <DeclarationStep draft={draft} setSection={setSection} />
+            <DeclarationStep draft={draft} set={set} />
           )}
           {current === 6 && (
             <ReviewStep
@@ -1662,10 +1408,13 @@ export function ApplicationForm({
         </CardContent>
 
         <div className="flex items-center justify-between gap-4 border-t px-8 py-6">
-          {submitError && (
-            <p className="text-sm text-destructive">{submitError}</p>
+          {draft.submitError && (
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 max-w-md">
+              <TriangleAlert size={16} className="shrink-0 mt-0.5 text-destructive" />
+              <p className="text-sm text-destructive break-words">{draft.submitError}</p>
+            </div>
           )}
-          {submitted ? (
+          {draft.submittedAt && !draft.submissionLocked ? (
             <div className="p-6">
               <strong className="text-lg">
                 Application submitted successfully.
@@ -1676,17 +1425,17 @@ export function ApplicationForm({
                   this child&apos;s application.
                 </span>
                 <code className="block break-all p-3 rounded-lg bg-background text-[0.85rem]">
-                  {accessKey}
+                  {draft.accessKey}
                 </code>
                 <button
                   type="button"
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-secondary text-secondary-foreground px-4 py-2 text-sm font-medium"
                   onClick={(e) => {
                     e.stopPropagation();
-                    copyWithFeedback("keycard", accessKey);
+                    copyWithFeedback("keycard", draft.accessKey);
                   }}
                 >
-                  {copiedField === "keycard" ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy key</>}
+                  {draft.copiedField === "keycard" ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy key</>}
                 </button>
               </div>
               <div className="flex gap-3">
@@ -1729,11 +1478,10 @@ export function ApplicationForm({
                 ) : (
                   <Button
                     disabled={
-                      isSubmitting ||
+                      draft.isSubmitting ||
                       collectionOnly ||
                       !draft.declaration.confirmed ||
-                      !draft.declaration.consent ||
-                      (submittedAt !== null && !hasUnsavedChanges)
+                      !draft.declaration.consent
                     }
                     onClick={() => void submitApplication()}
                   >
@@ -1741,7 +1489,7 @@ export function ApplicationForm({
                       <>
                         <Clock3 size={17} /> Submission opens 9 Sep 2026
                       </>
-                    ) : submittedAt ? (
+                    ) : draft.submittedAt ? (
                       "Update application"
                     ) : (
                       "Submit application"
@@ -1759,11 +1507,10 @@ export function ApplicationForm({
           </div>
         )}
 
-        {current === steps.length - 1 && !collectionOnly && !isSubmitting && (() => {
+        {current === steps.length - 1 && !collectionOnly && !draft.isSubmitting && (() => {
           const reasons: string[] = [];
           if (!draft.declaration.confirmed) reasons.push("Confirm that the information is correct");
           if (!draft.declaration.consent) reasons.push("Give consent to process the data");
-          if (submittedAt !== null && !hasUnsavedChanges && reasons.length === 0) reasons.push("No changes to save");
           if (reasons.length === 0) return null;
           return (
             <div className="flex items-center gap-2 px-(--card-spacing) py-2 text-sm text-muted-foreground border-t">
@@ -1780,12 +1527,12 @@ export function ApplicationForm({
               <span className="text-muted-foreground">
                 Your draft is saved locally and synchronized with the server.
                 The form window is{" "}
-                {submissionOpensAt
-                  ? new Date(submissionOpensAt).toLocaleString()
+                {draft.submissionOpensAt
+                  ? new Date(draft.submissionOpensAt).toLocaleString()
                   : "not yet configured"}{" "}
                 to{" "}
-                {submissionClosesAt
-                  ? new Date(submissionClosesAt).toLocaleString()
+                {draft.submissionClosesAt
+                  ? new Date(draft.submissionClosesAt).toLocaleString()
                   : "not configured"}
                 .
               </span>
@@ -1800,7 +1547,7 @@ export function ApplicationForm({
           </div>
         )}
 
-        {showSubmissionRequest && (
+        {draft.showSubmissionRequest && (
           <div className="flex items-start gap-3 px-(--card-spacing) py-4 bg-primary/8 border-t border-primary/20">
             <ShieldCheck size={18} className="mt-0.5" />
             <div className="grid gap-3 flex-1">
@@ -1812,25 +1559,25 @@ export function ApplicationForm({
               <div className="grid gap-2 max-w-md">
                 <Input
                   placeholder="Your full name"
-                  value={requestName}
-                  onChange={(e) => setRequestName(e.target.value)}
+                  value={draft.requestName}
+                  onChange={(e) => set({ requestName: e.target.value })}
                 />
                 <Input
                   placeholder="Contact phone number"
-                  value={requestPhone}
-                  onChange={(e) => setRequestPhone(e.target.value)}
+                  value={draft.requestPhone}
+                  onChange={(e) => set({ requestPhone: e.target.value })}
                 />
               </div>
               <div className="flex gap-2">
                 <Button
-                  disabled={requestSaving || !requestName.trim() || !requestPhone.trim()}
+                  disabled={draft.requestSaving || !draft.requestName.trim() || !draft.requestPhone.trim()}
                   onClick={() => void submitApprovalRequest()}
                 >
-                  {requestSaving ? "Sending…" : "Send approval request"}
+                  {draft.requestSaving ? "Sending\u2026" : "Send approval request"}
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => setShowSubmissionRequest(false)}
+                  onClick={() => set({ showSubmissionRequest: false })}
                 >
                   Cancel
                 </Button>
