@@ -163,9 +163,10 @@ describe("Score consistency", () => {
 
 describe("Location history accumulation", () => {
   it("multiple different locations accumulate in user history", () => {
-    let draft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory"> = {
+    let draft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory" | "defaultLocations"> = {
       deviceLocationHistory: [],
       userLocationHistory: [],
+      defaultLocations: [],
     };
     draft = applyLocationChange(draft, point(6.1, 80.1));
     draft = applyLocationChange(draft, point(6.2, 80.2));
@@ -175,9 +176,10 @@ describe("Location history accumulation", () => {
   });
 
   it("identical consecutive selections are deduped", () => {
-    let draft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory"> = {
+    let draft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory" | "defaultLocations"> = {
       deviceLocationHistory: [],
       userLocationHistory: [],
+      defaultLocations: [],
     };
     for (let i = 0; i < 5; i++) draft = applyLocationChange(draft, point(6.1, 80.1));
     expect(draft.userLocationHistory).toHaveLength(1);
@@ -196,7 +198,7 @@ describe("Location history accumulation", () => {
   it("device fix with defaultValue records into both deviceHistory and userHistory", () => {
     const fix = point(7.0, 81.0, { source: "device", label: "GPS" });
     const draft = applyLocationChange(
-      { deviceLocationHistory: [], userLocationHistory: [] },
+      { deviceLocationHistory: [], userLocationHistory: [], defaultLocations: [] },
       fix,
       fix,
     );
@@ -206,7 +208,7 @@ describe("Location history accumulation", () => {
 
   it("map selection without defaultValue goes into userHistory only", () => {
     const draft = applyLocationChange(
-      { deviceLocationHistory: [], userLocationHistory: [] },
+      { deviceLocationHistory: [], userLocationHistory: [], defaultLocations: [] },
       point(7.0, 81.0),
     );
     expect(draft.userLocationHistory).toHaveLength(1);

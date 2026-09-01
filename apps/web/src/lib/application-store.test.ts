@@ -25,9 +25,10 @@ describe("emptyDraft", () => {
   it("has step 0, empty strings and nulls", () => {
     expect(emptyDraft.currentStep).toBe(0);
     expect(emptyDraft.lastSavedAt).toBeNull();
-    for (const section of ["location", "defaultLocation", "selectedLocation"]) {
+    for (const section of ["location", "selectedLocation"]) {
       expect(emptyDraft[section as keyof ApplicationDraft]).toMatchObject({ label: "", address: "", latitude: null, longitude: null, source: "" });
     }
+    expect(emptyDraft.defaultLocations).toEqual([]);
     expect(emptyDraft.applicant).toMatchObject({ fullName: "", sinhalaName: "", gender: "", religion: "", educationMedium: "", dateOfBirth: "", birthCertificateNumber: "" });
     expect(emptyDraft.guardian).toMatchObject({ relationship: "", fullName: "", nic: "", phone: "", whatsappPhone: "", email: "" });
     expect(emptyDraft.residence).toMatchObject({ permanentAddress: "", currentAddress: "", sameAsPermanent: false, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "" });
@@ -132,21 +133,25 @@ describe("prependLocationHistory", () => {
 });
 
 describe("applyLocationChange", () => {
-  const baseDraft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory"> = {
+  const baseDraft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory" | "defaultLocations"> = {
     deviceLocationHistory: [],
     userLocationHistory: [],
+    defaultLocations: [],
   };
 
-  it("records a device fix into the device history when defaultValue is present", () => {
+  it("records a device fix into the device history and defaultLocations when defaultValue is present", () => {
     const fix = point(6.05, 80.22, { source: "device", label: "Your location" });
     const result = applyLocationChange(baseDraft, fix, fix);
     expect(result.deviceLocationHistory).toHaveLength(1);
     expect(result.deviceLocationHistory[0]).toMatchObject({ latitude: 6.05, source: "device" });
+    expect(result.defaultLocations).toHaveLength(1);
+    expect(result.defaultLocations[0]).toMatchObject({ latitude: 6.05, source: "device" });
   });
 
-  it("does not touch device history without a defaultValue (map/manual selection)", () => {
+  it("does not touch device history or defaultLocations without a defaultValue (map/manual selection)", () => {
     const result = applyLocationChange(baseDraft, point(6.03, 80.21));
     expect(result.deviceLocationHistory).toEqual([]);
+    expect(result.defaultLocations).toEqual([]);
   });
 
   it("records any coordinate-bearing selection into the user history", () => {
@@ -189,6 +194,7 @@ describe("applyLocationChange", () => {
     draft = applyLocationChange(draft, mapPickTwo);
     expect(draft.deviceLocationHistory.map((entry) => entry.latitude)).toEqual([1]);
     expect(draft.userLocationHistory.map((entry) => entry.latitude)).toEqual([4, 3, 2, 1]);
+    expect(draft.defaultLocations.map((entry) => entry.latitude)).toEqual([1]);
   });
 
   it("never exceeds the history limit across many changes", () => {

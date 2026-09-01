@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { ArrowLeft, Eye, Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, Pencil, ShieldCheck, Trash2, Clock } from "lucide-react";
 import { consumeEventIterator } from "@orpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-g1/ui/components/card";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Badge } from "@aloysius-g1/ui/components/badge";
+import { useAdminPreferences } from "@/lib/admin-preferences";
 import { Input } from "@aloysius-g1/ui/components/input";
 import {
   DataTable,
@@ -89,7 +90,7 @@ function ActionsMenu({ item, onDeleted }: { item: ApplicationRow; onDeleted: () 
           <DropdownMenuItem render={<Link to="/admin/applications/$id" params={{ id: item.id }} />}>
             <Eye size={15} /> View
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link to="/admin/applications/$id?mode=edit" params={{ id: item.id }} />}>
+          <DropdownMenuItem render={<Link to="/admin/applications/$id" params={{ id: item.id }} search={{ mode: "edit" }} />}>
             <Pencil size={15} /> Edit
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -161,9 +162,10 @@ const columns = [
 function AdminApplicationsPage() {
   const { session } = Route.useRouteContext();
   const location = useLocation();
+  const prefs = useAdminPreferences();
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>(prefs.applicationsSort ? [prefs.applicationsSort] : []);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(prefs.applicationsStatusFilter !== "all" ? [{ id: "status", value: prefs.applicationsStatusFilter }] : []);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
@@ -216,6 +218,21 @@ function AdminApplicationsPage() {
           <span className="w-2 h-2 rounded-full bg-current shadow-[0_0_0_0.2rem_color-mix(in_oklch,currentColor_15%,transparent)]" /> Live via SSE
         </span>
       </div>
+      {prefs.recentlyViewed.length > 0 && (
+        <Card className="mb-4">
+          <CardContent className="py-3">
+            <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5"><Clock size={12} /> Recently viewed</p>
+            <div className="flex flex-wrap gap-2">
+              {prefs.recentlyViewed.map((entry) => (
+                <Link key={entry.id} to="/admin/applications/$id" params={{ id: entry.id }} className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs hover:bg-accent transition-colors">
+                  <span className="font-medium">{entry.name}</span>
+                  <span className="text-muted-foreground">{new Date(entry.viewedAt).toLocaleDateString()}</span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <Card className="mb-4">
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
@@ -236,8 +253,17 @@ function AdminApplicationsPage() {
             sorting={sorting}
             columnFilters={columnFilters}
             onPaginationChange={setPagination}
-            onSortingChange={setSorting}
-            onColumnFiltersChange={setColumnFilters}
+            onSortingChange={(updater) => {
+              const next = typeof updater === "function" ? updater(sorting) : updater;
+              setSorting(next);
+              prefs.setApplicationsSort(next[0] ?? null);
+            }}
+            onColumnFiltersChange={(updater) => {
+              const next = typeof updater === "function" ? updater(columnFilters) : updater;
+              setColumnFilters(next);
+              const statusVal = next.find((f) => f.id === "status")?.value;
+              prefs.setApplicationsStatusFilter(typeof statusVal === "string" ? statusVal : "all");
+            }}
             toolbar={(table) => {
               const filters = table.getState().columnFilters;
               const isFiltered = filters.length > 0;

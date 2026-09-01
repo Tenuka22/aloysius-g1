@@ -15,7 +15,8 @@
     "db:migrate:deploy": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate",
-    "db:auth": "bun scripts/generate-auth-schema.ts"
+    "db:auth": "bun scripts/generate-auth-schema.ts",
+    "db:seed": "bun --env-file ../../apps/server/.env src/seed.ts"
   },
   "dependencies": {
     "@aloysius-g1/env": "workspace:*",

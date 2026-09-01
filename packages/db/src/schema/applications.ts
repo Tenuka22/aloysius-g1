@@ -15,4 +15,5 @@ export const applications = sqliteTable("applications", {
   isBanned: integer("is_banned", { mode: "boolean" }).notNull().default(false),
   banReason: text("ban_reason"),
   admissionUpdatedAt: integer("admission_updated_at", { mode: "timestamp_ms" }),
+  flags: text("flags", { mode: "json" }).notNull().default("[]"),
 });

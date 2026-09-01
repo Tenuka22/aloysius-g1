@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus, TriangleAlert } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
@@ -21,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@aloysius-g1/ui/components/card";
+import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
@@ -380,7 +382,7 @@ function LocationStepCard({
           draft.selectedLocation?.latitude == null
         }
         value={draft.location ?? emptyDraft.location}
-        defaultValue={draft.defaultLocation ?? emptyDraft.defaultLocation}
+        defaultValue={draft.defaultLocations[0] ?? emptyDraft.location}
         deviceLocationHistory={draft.deviceLocationHistory ?? []}
         userLocationHistory={draft.userLocationHistory ?? []}
         onAvailabilityChange={(canProceed) => set({ locationCanProceed: canProceed })}
@@ -390,7 +392,9 @@ function LocationStepCard({
           set({
             location: value,
             selectedLocation: value,
-            ...(defaultValue ? { defaultLocation: defaultValue } : {}),
+            ...(histories.defaultLocations !== draft.defaultLocations
+              ? { defaultLocations: histories.defaultLocations }
+              : {}),
             ...(histories.deviceLocationHistory !== draft.deviceLocationHistory
               ? { deviceLocationHistory: histories.deviceLocationHistory }
               : {}),
@@ -920,6 +924,13 @@ function ReviewStep({
   draft: ApplicationDraft;
   onNavigateToStep: (step: number) => void;
 }) {
+  const marksQuery = useQuery({
+    queryKey: ["application-marks", draft.accessKey],
+    queryFn: () => client.application.getMarks({ accessKey: draft.accessKey }),
+    enabled: Boolean(draft.accessKey),
+    staleTime: 60_000,
+  });
+  const adminMarks = marksQuery.data ?? [];
   const sections: [string, string, number][] = [
     ["Location", draft.location.address || "Not selected", 0],
     ["Full name in English", draft.applicant.fullName || "Not completed", 1],
@@ -1009,6 +1020,78 @@ function ReviewStep({
           </button>
         </div>
       ))}
+
+      {draft.submittedAt && (
+        <div className="mt-6">
+          <div className="flex items-center gap-3 mb-3">
+            <h4 className="font-heading text-lg">Mark Allocation</h4>
+            {adminMarks.length === 0 && (
+              <Badge variant="secondary">Admin marks pending</Badge>
+            )}
+          </div>
+          {draft.categories.length > 0 ? (
+            <div className="grid gap-3">
+              {draft.categories.map((category) => {
+                const autoScore = scoreCategory(category);
+                const adminMark = adminMarks.find((m) => m.categoryType === category.categoryType);
+                return (
+                  <div
+                    className="flex items-center justify-between gap-4 rounded-lg border p-3"
+                    key={category.categoryType}
+                  >
+                    <div className="grid gap-0.5">
+                      <span className="text-xs text-muted-foreground">
+                        {CATEGORY_LABELS[category.categoryType]}
+                      </span>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span>
+                          Indicative: <strong>{autoScore.total}</strong>
+                        </span>
+                        {adminMark != null && (
+                          <span className="text-primary font-semibold">
+                            Admin: <strong>{adminMark.total}</strong>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {adminMark != null ? (
+                      <Badge variant="default">Scored</Badge>
+                    ) : (
+                      <Badge variant="outline">Pending</Badge>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <span className="text-sm font-semibold">Total</span>
+                <div className="flex items-center gap-4 text-sm">
+                  <span>
+                    Indicative:{" "}
+                    <strong>
+                      {draft.categories.reduce(
+                        (sum, c) => sum + scoreCategory(c).total,
+                        0,
+                      )}
+                    </strong>
+                  </span>
+                  {adminMarks.length > 0 && (
+                    <span className="text-primary font-semibold">
+                      Admin:{" "}
+                      <strong>
+                        {adminMarks.reduce((sum, m) => sum + m.total, 0)}
+                      </strong>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No categories selected.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

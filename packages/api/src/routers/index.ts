@@ -6,7 +6,7 @@ import { adminProcedure, subAdminProcedure, protectedProcedure, publicProcedure 
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
-import { applicationAccessRequests, applicationSettings, applications } from "@aloysius-g1/db";
+import { applicationAccessRequests, applicationMarks, applicationSettings, applications } from "@aloysius-g1/db";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { env } from "@aloysius-g1/env/server";
 import {
@@ -93,14 +93,28 @@ const applicationRecord = (row: typeof applications.$inferSelect) => {
   return { id: row.id, sessionCode: row.sessionCode, applicantName: data?.applicant?.fullName || "Unnamed applicant", status: row.submittedAt ? "submitted" : "draft", createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt, accessKeyHint: row.accessKeyHint, validationErrors: applicationValidationErrors(data) };
 };
 const admissionStatusSchema = z.enum(["pending", "verified", "fake"]);
+const applicationIdSchema = z.string().trim().min(1);
 const admissionsListInput = paginationInput.extend({
-  earlyAccess: z.boolean().default(false),
   status: z.enum(["all", "pending", "verified", "fake", "banned"]).default("all"),
 });
 const admissionSummaryDataSchema = z.object({
   applicant: z.object({ fullName: z.string().optional() }).optional(),
   categories: z.array(z.object({ categoryType: z.string().optional() }).passthrough()).optional(),
 }).passthrough();
+const flagsSchema = z.array(z.object({ type: z.string(), key: z.string(), label: z.string() }));
+const parseFlags = (raw: unknown) => {
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      const result = flagsSchema.safeParse(parsed);
+      return result.success ? result.data : [];
+    } catch {
+      return [];
+    }
+  }
+  const result = flagsSchema.safeParse(raw);
+  return result.success ? result.data : [];
+};
 const admissionSummary = (row: typeof applications.$inferSelect) => {
   const parsed = admissionSummaryDataSchema.safeParse(row.data);
   const data = parsed.success ? parsed.data : undefined;
@@ -119,6 +133,7 @@ const admissionSummary = (row: typeof applications.$inferSelect) => {
     isBanned: row.isBanned,
     banReason: row.banReason,
     admissionUpdatedAt: row.admissionUpdatedAt,
+    flags: parseFlags(row.flags),
   };
 };
 const ensureAdmissionsAccess = async (earlyAccess: boolean) => {
@@ -222,6 +237,12 @@ export const appRouter = {
       await publishApplicationChange();
       return { accepted: true };
     }),
+    getMarks: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
+      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
+      if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
+      const marks = await db.select().from(applicationMarks).where(eq(applicationMarks.applicationId, row.id)).all();
+      return marks;
+    }),
   },
   admin: {
     accessRequests: {
@@ -265,7 +286,6 @@ export const appRouter = {
     }),
     admissions: {
       list: adminProcedure.input(admissionsListInput).handler(async ({ input }) => {
-        await ensureAdmissionsAccess(input.earlyAccess);
         const query = input.query.toLowerCase();
         const rows = await db.select().from(applications).where(isNotNull(applications.submittedAt)).all();
         const filtered = rows
@@ -280,29 +300,89 @@ export const appRouter = {
         const start = (input.page - 1) * input.pageSize;
         return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
     }),
-      get: adminProcedure.input(z.object({ id: z.string().uuid(), earlyAccess: z.boolean().default(false) })).handler(async ({ input }) => {
-        await ensureAdmissionsAccess(input.earlyAccess);
+      get: adminProcedure.input(z.object({ id: applicationIdSchema })).handler(async ({ input }) => {
         const row = await db.select().from(applications).where(eq(applications.id, input.id)).get();
         if (!row || !row.submittedAt) throw new ORPCError("NOT_FOUND", { message: "Submitted application not found" });
         return { ...admissionSummary(row), data: withoutSchoolPreferences(row.data as Record<string, unknown>), createdAt: row.createdAt };
     }),
       updateReview: adminProcedure.input(z.object({
-        id: z.string().uuid(),
+        id: applicationIdSchema,
         admissionStatus: admissionStatusSchema,
         interviewNotes: z.string().trim().max(5000).default(""),
         isBanned: z.boolean().default(false),
         banReason: z.string().trim().max(500).optional(),
-        earlyAccess: z.boolean().default(false),
+        flags: z.array(z.object({ type: z.string(), key: z.string(), label: z.string() })).default([]),
       }).superRefine((input, context) => {
         if (input.isBanned && !input.banReason) context.addIssue({ code: "custom", path: ["banReason"], message: "A reason is required when banning an applicant" });
       })).handler(async ({ input }) => {
-        await ensureAdmissionsAccess(input.earlyAccess);
         const row = await db.select({ id: applications.id, submittedAt: applications.submittedAt }).from(applications).where(eq(applications.id, input.id)).get();
         if (!row || !row.submittedAt) throw new ORPCError("NOT_FOUND", { message: "Submitted application not found" });
         const admissionUpdatedAt = new Date();
-        await db.update(applications).set({ admissionStatus: input.admissionStatus, interviewNotes: input.interviewNotes, isBanned: input.isBanned, banReason: input.isBanned ? input.banReason ?? null : null, admissionUpdatedAt }).where(eq(applications.id, input.id)).run();
-        return { admissionStatus: input.admissionStatus, interviewNotes: input.interviewNotes, isBanned: input.isBanned, banReason: input.isBanned ? input.banReason ?? null : null, admissionUpdatedAt };
+        await db.update(applications).set({ admissionStatus: input.admissionStatus, interviewNotes: input.interviewNotes, isBanned: input.isBanned, banReason: input.isBanned ? input.banReason ?? null : null, admissionUpdatedAt, flags: JSON.stringify(input.flags) }).where(eq(applications.id, input.id)).run();
+        return { admissionStatus: input.admissionStatus, interviewNotes: input.interviewNotes, isBanned: input.isBanned, banReason: input.isBanned ? input.banReason ?? null : null, admissionUpdatedAt, flags: input.flags };
     }),
+      saveAdminLocation: adminProcedure.input(z.object({
+        id: applicationIdSchema,
+        lat: z.number(),
+        lng: z.number(),
+        label: z.string().default("Admin-adjusted location"),
+        mapQuery: z.string().optional(),
+      })).handler(async ({ input }) => {
+        const row = await db.select({ id: applications.id, data: applications.data }).from(applications).where(eq(applications.id, input.id)).get();
+        if (!row) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
+        const data = (row.data ?? {}) as Record<string, unknown>;
+        const userLocationHistory = (Array.isArray(data.userLocationHistory) ? data.userLocationHistory : []) as Array<Record<string, unknown>>;
+        const newLocation = {
+          id: randomUUID(),
+          lat: input.lat,
+          lng: input.lng,
+          label: input.label,
+          source: "admin" as const,
+          createdAt: new Date().toISOString(),
+          ...(input.mapQuery ? { mapQuery: input.mapQuery } : {}),
+        };
+        const updatedData = { ...data, userLocationHistory: [newLocation, ...userLocationHistory] };
+        await db.update(applications).set({ data: updatedData, updatedAt: new Date() }).where(eq(applications.id, input.id)).run();
+        return { userLocationHistory: updatedData.userLocationHistory };
+      }),
+      saveInterviewEdits: adminProcedure.input(z.object({
+        id: applicationIdSchema,
+        interviewEdits: z.array(z.object({ field: z.string(), label: z.string(), previousValue: z.string(), newValue: z.string(), editedAt: z.string() })),
+      })).handler(async ({ input }) => {
+        const row = await db.select({ id: applications.id, data: applications.data }).from(applications).where(eq(applications.id, input.id)).get();
+        if (!row) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
+        const data = (row.data ?? {}) as Record<string, unknown>;
+        const updatedData = { ...data, interviewEdits: input.interviewEdits };
+        await db.update(applications).set({ data: updatedData, updatedAt: new Date() }).where(eq(applications.id, input.id)).run();
+        return { interviewEdits: input.interviewEdits };
+      }),
+      getMarks: adminProcedure.input(z.object({ applicationId: applicationIdSchema })).handler(async ({ input }) => {
+        const marks = await db.select().from(applicationMarks).where(eq(applicationMarks.applicationId, input.applicationId)).all();
+        return marks;
+      }),
+      saveMarks: adminProcedure.input(z.object({
+        applicationId: applicationIdSchema,
+        categoryType: z.string().min(1),
+        breakdown: z.array(z.object({ label: z.string(), marks: z.number(), max: z.number() })),
+        total: z.number(),
+      })).handler(async ({ input }) => {
+        const existing = await db.select({ id: applicationMarks.id }).from(applicationMarks)
+          .where(and(eq(applicationMarks.applicationId, input.applicationId), eq(applicationMarks.categoryType, input.categoryType)))
+          .get();
+        const now = new Date();
+        if (existing) {
+          await db.update(applicationMarks).set({ breakdown: input.breakdown, total: input.total, updatedAt: now })
+            .where(eq(applicationMarks.id, existing.id)).run();
+          return { id: existing.id, updatedAt: now };
+        }
+        const id = randomUUID();
+        await db.insert(applicationMarks).values({ id, applicationId: input.applicationId, categoryType: input.categoryType, breakdown: input.breakdown, total: input.total, createdAt: now, updatedAt: now }).run();
+        return { id, updatedAt: now };
+      }),
+      deleteMarks: adminProcedure.input(z.object({ applicationId: applicationIdSchema, categoryType: z.string().min(1) })).handler(async ({ input }) => {
+        await db.delete(applicationMarks).where(and(eq(applicationMarks.applicationId, input.applicationId), eq(applicationMarks.categoryType, input.categoryType))).run();
+        return { deleted: true };
+      }),
     },
     applications: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default(""), sort: z.string().default("updatedAt"), sortDir: z.enum(["asc", "desc"]).default("desc"), status: z.enum(["all", "draft", "submitted", "invalid"]).default("all") })).handler(async ({ input }) => {
       const all = (await db.select().from(applications).all()).map(applicationRecord).filter((record) => { if (input.query && !record.applicantName.toLowerCase().includes(input.query.toLowerCase()) && !record.sessionCode.toLowerCase().includes(input.query.toLowerCase()) && !record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase())) return false; if (input.status !== "all") { if (input.status === "invalid" && record.validationErrors.length === 0) return false; if (input.status !== "invalid" && record.status !== input.status) return false; } return true; }).sort((a, b) => { const av = (a as unknown as Record<string, unknown>)[input.sort]; const bv = (b as unknown as Record<string, unknown>)[input.sort]; const cmp = String(av ?? "").localeCompare(String(bv ?? ""), undefined, { numeric: true }); return input.sortDir === "desc" ? -cmp : cmp; });
@@ -310,12 +390,12 @@ export const appRouter = {
       return { total: all.length, page: input.page, pageSize: input.pageSize, items: all.slice(start, start + input.pageSize) };
     }),
     application: {
-      get: adminProcedure.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
+      get: adminProcedure.input(z.object({ id: applicationIdSchema })).handler(async ({ input }) => {
         const row = await db.select().from(applications).where(eq(applications.id, input.id)).get();
         if (!row) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
         return { id: row.id, sessionCode: await ensureSessionCode(row), data: withoutSchoolPreferences(row.data as Record<string, unknown>), createdAt: row.createdAt, updatedAt: row.updatedAt, submittedAt: row.submittedAt };
       }),
-      update: adminProcedure.input(z.object({ id: z.string().uuid(), data: draftSchema })).handler(async ({ input }) => {
+      update: adminProcedure.input(z.object({ id: applicationIdSchema, data: draftSchema })).handler(async ({ input }) => {
         const updatedAt = new Date();
         const birthCertificateNumber = extractBirthCertificateNumber(input.data);
         if (!birthCertificateNumber) throw new ORPCError("BAD_REQUEST", { message: "Birth certificate number is required" });
@@ -327,7 +407,7 @@ export const appRouter = {
         await publishApplicationChange();
         return { updatedAt };
       }),
-      remove: adminProcedure.input(z.object({ id: z.string().uuid() })).handler(async ({ input }) => {
+      remove: adminProcedure.input(z.object({ id: applicationIdSchema })).handler(async ({ input }) => {
         const existing = await db.select({ id: applications.id }).from(applications).where(eq(applications.id, input.id)).get();
         if (!existing) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
         await db.delete(applications).where(eq(applications.id, input.id)).run();

@@ -346,7 +346,7 @@ describe("ApplicationForm – location history capture", () => {
     const data = currentDraftData();
     expect(data.deviceLocationHistory).toHaveLength(1);
     expect(data.deviceLocationHistory[0]).toMatchObject({ latitude: 6.0562, source: "device" });
-    expect(data.defaultLocation).toMatchObject({ latitude: 6.0562 });
+    expect(data.defaultLocations[0]).toMatchObject({ latitude: 6.0562 });
     expect(data.userLocationHistory).toHaveLength(1);
   });
 

@@ -419,6 +419,6 @@ describe("scoreCategory dispatcher", () => {
   it("keeps totals non-negative for nonsensical negative inputs", () => {
     expect(scoreCategory64({ serviceStartDate: undefined }).total).toBe(0);
     expect(scoreCategory61({ schoolsWithinRadius: schools(2), additionalDocs: [] }).total).toBeGreaterThanOrEqual(0);
-    expect(applyLocationChange({ deviceLocationHistory: [], userLocationHistory: [] }, { label: "", address: "", latitude: null, longitude: null, source: "" }).userLocationHistory.length).toBe(0);
+    expect(applyLocationChange({ deviceLocationHistory: [], userLocationHistory: [], defaultLocations: [] }, { label: "", address: "", latitude: null, longitude: null, source: "" }).userLocationHistory.length).toBe(0);
   });
 });

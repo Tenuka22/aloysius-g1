@@ -9,6 +9,7 @@ import * as schema from "./schema";
 export { applications } from "./schema/applications";
 export { applicationSettings } from "./schema/application-settings";
 export { applicationAccessRequests } from "./schema/application-access-requests";
+export { applicationMarks } from "./schema/application-marks";
 
 export function createDb() {
   const configuredPath = env.DATABASE_URL.replace(/^file:/, "");

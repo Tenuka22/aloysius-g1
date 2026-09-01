@@ -6,7 +6,7 @@ export type LocationDraft = {
   address: string;
   latitude: number | null;
   longitude: number | null;
-  source: "manual" | "device" | "map" | "";
+  source: "manual" | "device" | "map" | "network" | "admin" | "";
 };
 
 export const CATEGORY_TYPES = ["6.1", "6.2", "6.3", "6.4", "6.5", "6.6"] as const;
@@ -84,7 +84,7 @@ export type CategoryApplication = {
 export type ApplicationDraft = {
   currentStep: number;
   location: LocationDraft;
-  defaultLocation: LocationDraft;
+  defaultLocations: LocationDraft[];
   selectedLocation: LocationDraft;
   applicant: {
     fullName: string;
@@ -148,12 +148,21 @@ export type ApplicationDraft = {
   dsSearch: string;
   gnSearch: string;
   electoralSearch: string;
+  interviewEdits: InterviewEdit[];
+};
+
+export type InterviewEdit = {
+  field: string;
+  label: string;
+  previousValue: string;
+  newValue: string;
+  editedAt: string;
 };
 
 export const emptyDraft: ApplicationDraft = {
   currentStep: 0,
   location: { label: "", address: "", latitude: null, longitude: null, source: "" },
-  defaultLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
+  defaultLocations: [],
   selectedLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
   applicant: { fullName: "", sinhalaName: "", gender: "", religion: "", educationMedium: "", dateOfBirth: "", birthCertificateNumber: "" },
   guardian: { relationship: "", fullName: "", sinhalaName: "", nic: "", phone: "", whatsappPhone: "", email: "" },
@@ -189,6 +198,7 @@ export const emptyDraft: ApplicationDraft = {
   dsSearch: "",
   gnSearch: "",
   electoralSearch: "",
+  interviewEdits: [],
 };
 
 export const LOCATION_HISTORY_LIMIT = 25;
@@ -205,7 +215,7 @@ function normalizeLocationHistory(input: unknown): LocationDraft[] {
       address: typeof candidate.address === "string" ? candidate.address : "",
       latitude: candidate.latitude,
       longitude: candidate.longitude,
-      source: typeof candidate.source === "string" && ["manual", "device", "map"].includes(candidate.source) ? (candidate.source as LocationDraft["source"]) : "map",
+      source: typeof candidate.source === "string" && ["manual", "device", "map", "network", "admin"].includes(candidate.source) ? (candidate.source as LocationDraft["source"]) : "map",
     });
     if (history.length >= LOCATION_HISTORY_LIMIT) break;
   }
@@ -219,17 +229,23 @@ export function prependLocationHistory(list: LocationDraft[], entry: LocationDra
 }
 
 export function applyLocationChange(
-  draft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory">,
+  draft: Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory" | "defaultLocations">,
   value: LocationDraft,
   defaultValue?: LocationDraft,
-): Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory"> {
+): Pick<ApplicationDraft, "deviceLocationHistory" | "userLocationHistory" | "defaultLocations"> {
   let deviceLocationHistory = draft.deviceLocationHistory;
   let userLocationHistory = draft.userLocationHistory;
-  if (defaultValue) deviceLocationHistory = prependLocationHistory(deviceLocationHistory, defaultValue);
+  let defaultLocations = draft.defaultLocations;
+  if (defaultValue) {
+    deviceLocationHistory = prependLocationHistory(deviceLocationHistory, defaultValue);
+    if (defaultValue.latitude != null && defaultValue.longitude != null) {
+      defaultLocations = prependLocationHistory(defaultLocations, defaultValue);
+    }
+  }
   if (value.latitude != null && value.longitude != null) {
     userLocationHistory = prependLocationHistory(userLocationHistory, value);
   }
-  return { deviceLocationHistory, userLocationHistory };
+  return { deviceLocationHistory, userLocationHistory, defaultLocations };
 }
 
 export function createCategory(categoryType: CategoryType, existingCount = 0): CategoryApplication {
@@ -260,11 +276,19 @@ export function normalizeCategories(input: unknown): CategoryApplication[] {
 }
 
 export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefined): ApplicationDraft {
+  const raw = input as Record<string, unknown> | null | undefined;
+  let defaultLocations: LocationDraft[] = Array.isArray(input?.defaultLocations) ? normalizeLocationHistory(input?.defaultLocations) : [];
+  if (defaultLocations.length === 0 && raw && typeof raw["defaultLocation"] === "object" && raw["defaultLocation"] !== null && !Array.isArray(raw["defaultLocation"])) {
+    const loc = raw["defaultLocation"] as Partial<LocationDraft>;
+    if (typeof loc.latitude === "number" && typeof loc.longitude === "number") {
+      defaultLocations = [{ label: typeof loc.label === "string" ? loc.label : "", address: typeof loc.address === "string" ? loc.address : "", latitude: loc.latitude, longitude: loc.longitude, source: typeof loc.source === "string" && ["manual", "device", "map", "network"].includes(loc.source) ? (loc.source as LocationDraft["source"]) : "device" }];
+    }
+  }
   return {
     ...emptyDraft,
     ...input,
     location: { ...emptyDraft.location, ...input?.location },
-    defaultLocation: { ...emptyDraft.defaultLocation, ...input?.defaultLocation },
+    defaultLocations,
     selectedLocation: { ...emptyDraft.selectedLocation, ...input?.selectedLocation },
     applicant: { ...emptyDraft.applicant, ...input?.applicant },
     guardian: { ...emptyDraft.guardian, ...input?.guardian },
@@ -273,6 +297,7 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
     categories: normalizeCategories(input?.categories),
     deviceLocationHistory: normalizeLocationHistory(input?.deviceLocationHistory),
     userLocationHistory: normalizeLocationHistory(input?.userLocationHistory),
+    interviewEdits: Array.isArray(input?.interviewEdits) ? input.interviewEdits : [],
   };
 }
 

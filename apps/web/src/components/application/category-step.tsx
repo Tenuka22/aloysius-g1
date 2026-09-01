@@ -392,7 +392,7 @@ function AdditionalDocsCheckboxGroup({
   );
 }
 
-function Category61Fields({
+export function Category61Fields({
   category,
   onChange,
 }: {
@@ -633,7 +633,7 @@ function GradeCounts({
   );
 }
 
-function Category62Fields({
+export function Category62Fields({
   category,
   onChange,
 }: {
@@ -974,7 +974,7 @@ function Category62Fields({
   );
 }
 
-function Category63Fields({
+export function Category63Fields({
   category,
   onChange,
 }: {
@@ -1131,7 +1131,7 @@ function Category63Fields({
   );
 }
 
-function Category64Fields({
+export function Category64Fields({
   category,
   onChange,
 }: {
@@ -1380,7 +1380,7 @@ function Category65Fields({
   );
 }
 
-function Category66Fields({
+export function Category66Fields({
   category,
   onChange,
 }: {

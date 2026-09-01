@@ -40,6 +40,7 @@
     "db:generate": "nx run-many -t db:generate --projects=@aloysius-g1/db",
     "db:migrate": "nx run-many -t db:migrate --projects=@aloysius-g1/db",
     "db:auth": "nx run-many -t db:auth --projects=@aloysius-g1/db",
+    "db:seed": "nx run-many -t db:seed --projects=@aloysius-g1/db",
     "podman:build": "podman compose -f docker-compose.yml build",
     "podman:up": "podman compose -f docker-compose.yml up -d --build",
     "podman:down": "podman compose -f docker-compose.yml down",
