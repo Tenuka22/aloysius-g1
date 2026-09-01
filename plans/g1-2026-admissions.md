@@ -283,9 +283,48 @@ All field edits during interview are recorded as observations:
 ### Location edit mode
 
 - Toggle button to enable map editing
-- Draggable marker for latest selected location
+- Click-to-place marker (no dragging) for admin location adjustment
 - Visual indicator during edit mode
-- Changes logged as interview observations
+- Admin locations saved with `source: "admin"` to distinguish from user selections
+- Admin locations shown in separate section with amber highlight
+
+### Dedicated API endpoints for interview data
+
+- `saveAdminLocation` - saves admin-adjusted location directly to `data.userLocationHistory`
+- `saveInterviewEdits` - saves interview edits array to `data.interviewEdits`
+- Both bypass birth certificate validation (unlike `admin.application.update`)
+
+## Known issues and missing logic
+
+### Critical
+
+1. **Auto-save race conditions** - Flag toggle useEffect fires on every change, causing multiple rapid API calls
+2. **Missing useEffect dependency** - `reviewMutation` not in dependency array of flag auto-save effect
+3. **Cache invalidation** - `setQueryData` used without `invalidateQueries`, may cause stale cache
+
+### High
+
+4. **Duplicate marks queries** - Both `CategoryScoringCard` and `MarkAllocationEditor` fetch same data
+5. **No loading state for flag save** - No visual feedback during auto-save
+6. **Category 6.5 not handled** - Falls through to default generic fields
+7. **Empty onChange handlers** - Category fields receive `() => {}`, making "Edit inputs" non-functional
+8. **Ban dialog validation** - Confirm may proceed without re-validating cleared reason field
+
+### Medium
+
+9. **Duplicate flag building logic** - `buildFlags()` and `saveReview()` have identical code
+10. **MarkAllocationEditor unused** - Component defined but never rendered
+11. **No distance feedback during edit** - New location doesn't show calculated distance
+12. **Client-side timestamps** - Interview edits use client clock instead of server time
+13. **No debouncing for flag toggles** - Each toggle fires immediate save request
+
+### Low
+
+14. **Mark input doesn't enforce max value** - Users can type values exceeding max
+15. **Hardcoded zoom levels** - Magic numbers in map configuration
+16. **Missing accessibility labels** - Interactive elements lack aria-labels
+17. **No optimistic updates** - All mutations wait for server response
+18. **Interview notes character count** - Shows used, not remaining
 
 ## Security considerations
 
