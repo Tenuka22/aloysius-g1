@@ -21,7 +21,7 @@ Provide a persistent G1 2026 application flow for multiple children. Each child 
 2. **Applicant** – Full name, Sinhala name, gender, religion, education medium, date of birth, and birth certificate number.
 3. **Parent or guardian** – Mother, Father, or Guardian; full name, NIC, phone, WhatsApp phone, and email.
 4. **Residence** – Permanent/current addresses, same-address synchronization, district, DS division, GN division, and electoral district comboboxes backed by cached administrative data.
-5. **Categories** – Marking scheme category selection and per-category scoring inputs. User selects one or more categories (6.1, 6.4, 6.5, 6.6) and fills in the required scoring inputs for each. Each category includes a map-based school picker.
+5. **Categories** – Marking scheme category selection and per-category scoring inputs. User selects one or more categories (6.1, 6.2, 6.3, 6.4, 6.5, 6.6) and fills in the required scoring inputs for each. Each category includes a map-based school picker.
 6. **Declaration** – Accuracy confirmation and consent.
 7. **Review** – Complete read-only summary with working edit actions, including all category data.
 
@@ -31,11 +31,13 @@ School preferences remain excluded because this is a boys’ school; the categor
 
 ### Phase A: Category picker
 
-User sees checkboxes for four marking scheme categories. Any combination may be selected (unlimited). Each selected category expands into its own sub-form below the picker.
+User sees checkboxes for six marking scheme categories. Any combination may be selected (unlimited). Each selected category expands into its own sub-form below the picker.
 
 | Category | Name | Max Marks |
 |----------|------|-----------|
 | 6.1 | Residence Verification & Proximity | 100 |
+| 6.2 | Alumni | 100 |
+| 6.3 | Siblings | 100 |
 | 6.4 | Period of Service & Distance | 100 |
 | 6.5 | Transfer Applications | 100 |
 | 6.6 | Foreign Employment & Proximity | 100 |
@@ -51,6 +53,36 @@ Fields derive from `plans/g1-2026-marking-scheme.md`.
 - Additional documents (checkboxes: NIC, driving license, landline bill, marriage certificate, life insurance policy, school leaving certificate, child birth certificate, vehicle registration/license/insurance, bank passbook)
 - Electoral register – mother years (0–5)
 - Electoral register – father years (0–5)
+- **Schools within radius** (map picker)
+
+**6.2 – Alumni:**
+
+- Years educated at school (start date, end date)
+- Grade 5 Scholarship passed (checkbox)
+- G.C.E. (O/L) – subject count, grade counts per S/C/B/A
+- G.C.E. (A/L) – subject count, grade counts per S/C/B/A
+- Sports / co-curricular – highest level, achievement count
+- Leadership role (select)
+- Student Societies role (select)
+- Other Activities (select)
+- Past Pupils' Association – life membership, membership dates, committee member, executive office
+- Highest degree obtained (select)
+- Diploma / higher diploma (checkbox)
+- Sports Meet contribution (checkbox)
+- Shramadana contribution (checkbox)
+- School projects contribution (checkbox)
+
+**6.3 – Siblings:**
+
+- Siblings currently studying count (number)
+- Sibling studied at applied school (checkbox)
+- Two or more siblings applying (checkbox)
+- Sibling prefect skill level and count
+- Sibling examination achievement (select)
+- Praiseworthy achievement (checkbox)
+- Parents support rendered (checkbox)
+- Residence document type (select)
+- Electoral register – mother years, father years
 - **Schools within radius** (map picker)
 
 **6.4 – Period of Service:**

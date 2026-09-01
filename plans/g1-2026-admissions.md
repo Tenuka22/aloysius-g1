@@ -286,7 +286,9 @@ All field edits during interview are recorded as observations:
 - Click-to-place marker (no dragging) for admin location adjustment
 - Visual indicator during edit mode
 - Admin locations saved with `source: "admin"` to distinguish from user selections
-- Admin locations shown in separate section with amber highlight
+- Admin-adjusted location replaces the last user-selected pin in "User selected locations" (display-level replacement, original data not overridden)
+- Each new admin save replaces the previous admin pin (only the most recent admin location is shown)
+- Admin pin retains amber border/highlight and "Admin" badge for visual distinction
 
 ### Dedicated API endpoints for interview data
 
@@ -306,7 +308,7 @@ All field edits during interview are recorded as observations:
 
 4. **Duplicate marks queries** - Both `CategoryScoringCard` and `MarkAllocationEditor` fetch same data
 5. **No loading state for flag save** - No visual feedback during auto-save
-6. **Category 6.5 not handled** - Falls through to default generic fields
+6. **Category 6.5 not handled** - `Category65Fields` exists in `category-step.tsx` but is not exported or imported; falls through to default generic fields in both `admissions.$id.$categoryId.tsx` and `admin-application-editor.tsx`
 7. **Empty onChange handlers** - Category fields receive `() => {}`, making "Edit inputs" non-functional
 8. **Ban dialog validation** - Confirm may proceed without re-validating cleared reason field
 

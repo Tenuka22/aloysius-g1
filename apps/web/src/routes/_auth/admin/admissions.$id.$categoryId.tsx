@@ -338,9 +338,15 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
     return result;
   }, [draft]);
 
-  const selectedPoints = useMemo(() => points.filter((p) => p.group === "selected"), [points]);
+  const selectedPoints = useMemo(() => {
+    const selected = points.filter((p) => p.group === "selected");
+    const admin = points.filter((p) => p.group === "admin");
+    if (admin.length > 0 && selected.length > 0) {
+      return [...selected.slice(0, -1), admin[0]];
+    }
+    return selected;
+  }, [points]);
   const truePoints = useMemo(() => points.filter((p) => p.group === "true"), [points]);
-  const adminPoints = useMemo(() => points.filter((p) => p.group === "admin"), [points]);
   const lastSelected = selectedPoints[selectedPoints.length - 1];
   const lastTrue = truePoints[truePoints.length - 1];
 
@@ -497,12 +503,7 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
               )}
             </div>
           </div>
-          {adminPoints.length > 0 && (
-            <div className="grid gap-3">
-              <h3 className="text-sm font-semibold">Admin adjusted locations</h3>
-              <ul className="grid max-h-[260px] gap-2 overflow-y-auto">{renderLocationList(adminPoints)}</ul>
-            </div>
-          )}
+
           <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 p-3 flex items-center gap-3">
             <span className="inline-block size-2.5 rounded-full bg-amber-500" />
             <span className="text-sm font-semibold">St. Aloysius&apos; College</span>
