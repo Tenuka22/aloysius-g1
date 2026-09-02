@@ -130,6 +130,8 @@ Final interview recording section:
 - **Ban controls**: Ban/unban applicant with required reason
 
 - **Save review button**: Saves status, notes, flags, and ban state to database
+  - Shows "Save review" when review has not been saved
+  - Shows "Update review" after successful save
 
 ## Flagging system
 
@@ -289,6 +291,13 @@ All field edits during interview are recorded as observations:
 - Admin-adjusted location replaces the last user-selected pin in "User selected locations" (display-level replacement, original data not overridden)
 - Each new admin save replaces the previous admin pin (only the most recent admin location is shown)
 - Admin pin retains amber border/highlight and "Admin" badge for visual distinction
+
+### Save review button state
+
+- Button text changes based on review save state:
+  - "Save review" when review has not been saved
+  - "Update review" after successful save
+- State resets when save is triggered again
 
 ### Dedicated API endpoints for interview data
 

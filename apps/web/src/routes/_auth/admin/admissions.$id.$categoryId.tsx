@@ -6,8 +6,9 @@ import { Circle, CircleMarker, MapContainer, Marker, Polyline, TileLayer, Toolti
 import L, { DivIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { client, orpc } from "@/utils/orpc";
-import { normalizeDraft, type ApplicationDraft, type InterviewEdit } from "@/lib/application-store";
+import { normalizeDraft, type ApplicationDraft, type InterviewEdit, type LocationDraft, type ScoringInputs } from "@/lib/application-store";
 import { scoreCategory } from "@/lib/scoring";
+import { CATEGORY_MAX_MARKS } from "@/lib/marking-scheme";
 import { findSchoolById, haversineDistanceKm } from "@/lib/school-utils";
 import { toast } from "sonner";
 import { Badge } from "@aloysius-g1/ui/components/badge";
@@ -23,15 +24,15 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@aloys
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-g1/ui/components/tabs";
 import { DISTRICTS, DIVISIONAL_SECRETARIATS, ELECTORAL_CONSTITUENCIES, GN_DIVISIONS } from "@/lib/divisions";
 import { type AdmissionStatus, type AdmissionDetail, type FlagEntry, CATEGORY_LABELS } from "./admissions";
-import { Category61Fields, Category62Fields, Category63Fields, Category64Fields, Category66Fields } from "@/components/application/category-step";
+import { Category61Fields, Category62Fields, Category63Fields, Category64Fields, Category65Fields, Category66Fields } from "@/components/application/category-step";
 
 const CATEGORY_META: Record<string, { description: string; maxMarks: number }> = {
-  "6.1": { description: "Residence documents, electoral registration, and home-to-school proximity.", maxMarks: 100 },
-  "6.2": { description: "The parent's education, achievements, association service, and school contributions.", maxMarks: 100 },
-  "6.3": { description: "Sibling study history, achievements, residence evidence, and proximity.", maxMarks: 100 },
-  "6.4": { description: "Government service period, difficult service, leave, and service distances.", maxMarks: 100 },
-  "6.5": { description: "Transfer distance, service history, recency, leave, and school proximity.", maxMarks: 100 },
-  "6.6": { description: "Continuous foreign employment, purpose, and home-to-school proximity.", maxMarks: 100 },
+  "6.1": { description: "Residence documents, electoral registration, and home-to-school proximity.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.2": { description: "The parent's education, achievements, association service, and school contributions.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.3": { description: "Sibling study history, achievements, residence evidence, and proximity.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.4": { description: "Government service period, difficult service, leave, and service distances.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.5": { description: "Transfer distance, service history, recency, leave, and school proximity.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.6": { description: "Continuous foreign employment, purpose, and home-to-school proximity.", maxMarks: CATEGORY_MAX_MARKS },
 };
 
 export const Route = createFileRoute("/_auth/admin/admissions/$id/$categoryId")({ component: AdmissionWorkspacePage });
@@ -315,218 +316,357 @@ function MapClickHandler({ editMode, onMapClickRef }: { editMode: boolean; onMap
 
 function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag, onSaveAdminLocation }: { draft: ApplicationDraft; flaggedLocations: Set<string>; onToggleLocationFlag: (id: string) => void; onSaveAdminLocation: (lat: number, lng: number) => void }) {
   const [editMode, setEditMode] = useState(false);
-  const [adjustedLocation, setAdjustedLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const lastSelectedRef = useRef<HTMLLIElement>(null);
-  const lastTrueRef = useRef<HTMLLIElement>(null);
+  const [pendingPin, setPendingPin] = useState<{ lat: number; lng: number } | null>(null);
 
   const editModeRef = useRef(editMode);
   editModeRef.current = editMode;
   const onMapClickRef = useRef<(lat: number, lng: number) => void>(() => {});
-  onMapClickRef.current = (lat: number, lng: number) => {
-    if (editModeRef.current) setAdjustedLocation({ lat, lng });
-  };
+  onMapClickRef.current = (lat, lng) => { if (editModeRef.current) setPendingPin({ lat, lng }); };
 
-  const points = useMemo(() => {
-    const candidates: Array<readonly [string, string, typeof draft.selectedLocation, "selected" | "true" | "admin"]> = [
-      ["selected", "Selected application location", draft.selectedLocation, "selected"],
-      ["location", "Application location", draft.location, "selected"],
-      ...draft.defaultLocations.map((entry, index) => [`browser-${index}`, `Browser location ${index + 1}`, entry, "true"] as const),
-      ...draft.userLocationHistory.map((entry, index) => [`selected-history-${index}`, `Previously selected pin ${index + 1}`, entry, entry.source === "admin" ? "admin" : "selected"] as const),
-      ...draft.deviceLocationHistory.map((entry, index) => [`device-history-${index}`, `Previous device fix ${index + 1}`, entry, "true"] as const),
-    ];
-    const result = candidates.flatMap(([id, label, entry, group]) => entry.latitude != null && entry.longitude != null ? [{ id, label, address: entry.address || entry.label || "Location without address", latitude: entry.latitude, longitude: entry.longitude, source: entry.source || "unknown", group }] : []);
-    return result;
+  // ─── Build a stable flat list of all evidence points ───────────────────────
+  // Each point gets a stable string ID — using UUID from DB when available, else a deterministic prefix+index.
+  const allPoints = useMemo(() => {
+    const pts: LocationEvidence[] = [];
+
+    const addPoint = (stableId: string, label: string, entry: LocationDraft | null | undefined, group: LocationEvidence["group"]) => {
+      if (!entry || entry.latitude == null || entry.longitude == null) return;
+      pts.push({
+        id: entry.id ?? stableId,
+        label,
+        address: entry.address || entry.label || "Location without address",
+        latitude: entry.latitude,
+        longitude: entry.longitude,
+        source: entry.source || "unknown",
+        group,
+      });
+    };
+
+    // Primary applicant-submitted locations
+    addPoint("applicant-selected", "Selected application location", draft.selectedLocation, "selected");
+    addPoint("applicant-detected", "Application location (auto-detected)", draft.location, "selected");
+
+    // Browser-provided default locations
+    draft.defaultLocations.forEach((entry, i) => addPoint(`browser-${i}`, `Browser location ${i + 1}`, entry, "true"));
+
+    // User location history — admin entries get group "admin", user pins get "selected"
+    draft.userLocationHistory.forEach((entry, i) => {
+      const isAdmin = entry.source === "admin";
+      addPoint(entry.id ?? `user-history-${i}`, isAdmin ? "Admin-adjusted location" : `Previously selected pin ${i + 1}`, entry, isAdmin ? "admin" : "selected");
+    });
+
+    // Device GPS history
+    draft.deviceLocationHistory.forEach((entry, i) => addPoint(entry.id ?? `device-${i}`, `Device GPS fix ${i + 1}`, entry, "true"));
+
+    return pts;
   }, [draft]);
 
-  const selectedPoints = useMemo(() => {
-    const selected = points.filter((p) => p.group === "selected");
-    const admin = points.filter((p) => p.group === "admin");
-    if (admin.length > 0 && selected.length > 0) {
-      return [...selected.slice(0, -1), admin[0]];
-    }
-    return selected;
-  }, [points]);
-  const truePoints = useMemo(() => points.filter((p) => p.group === "true"), [points]);
-  const lastSelected = selectedPoints[selectedPoints.length - 1];
-  const lastTrue = truePoints[truePoints.length - 1];
+  // ─── Derive logical groups ──────────────────────────────────────────────────
+  const adminPin = useMemo(() => allPoints.find(p => p.group === "admin") ?? null, [allPoints]);
+  const userSelectedPins = useMemo(() => allPoints.filter(p => p.group === "selected"), [allPoints]);
+  const truePins = useMemo(() => allPoints.filter(p => p.group === "true"), [allPoints]);
 
-  const defaultVisible = useMemo(() => {
+  // The "effective" home location: admin override replaces the last user-selected pin
+  const effectivePin = useMemo(() => adminPin ?? (userSelectedPins.length > 0 ? userSelectedPins[userSelectedPins.length - 1] : null), [adminPin, userSelectedPins]);
+
+  // What appears in the "User selected locations" list — admin override replaces the last user pin
+  const displayedSelectedPins = useMemo(() => {
+    if (adminPin && userSelectedPins.length > 0) {
+      // Replace the last user pin with the admin pin in display
+      return [...userSelectedPins.slice(0, -1), adminPin];
+    }
+    if (adminPin) return [adminPin];
+    return userSelectedPins;
+  }, [adminPin, userSelectedPins]);
+
+  // ─── Visibility (which pins are checked & shown on map) ─────────────────────
+  const initialVisibleIds = useMemo(() => {
     const ids = new Set<string>();
-    if (lastSelected) ids.add(lastSelected.id);
+    if (effectivePin) ids.add(effectivePin.id);
+    const lastTrue = truePins[truePins.length - 1];
     if (lastTrue) ids.add(lastTrue.id);
     return ids;
-  }, [lastSelected, lastTrue]);
+  }, []); // only on mount — user controls checkboxes after that
 
-  const [visibleLocationIds, setVisibleLocationIds] = useState<Set<string>>(defaultVisible);
+  const [visibleIds, setVisibleIds] = useState<Set<string>>(initialVisibleIds);
 
+  // When the admin saves a location the effectivePin id changes — ensure the new pin is visible
+  const prevEffectiveId = useRef<string | null>(effectivePin?.id ?? null);
   useEffect(() => {
-    setVisibleLocationIds(defaultVisible);
-  }, [defaultVisible]);
+    const cur = effectivePin?.id ?? null;
+    if (cur && cur !== prevEffectiveId.current) {
+      setVisibleIds(prev => {
+        const next = new Set(prev);
+        // Remove the old effective pin so it doesn't ghost-linger
+        if (prevEffectiveId.current) next.delete(prevEffectiveId.current);
+        next.add(cur);
+        return next;
+      });
+    }
+    prevEffectiveId.current = cur;
+  }, [effectivePin?.id]);
 
-  useEffect(() => {
-    if (lastSelectedRef.current) lastSelectedRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [selectedPoints.length]);
+  const toggleVisible = (id: string, checked: boolean) => setVisibleIds(prev => {
+    const next = new Set(prev);
+    checked ? next.add(id) : next.delete(id);
+    return next;
+  });
 
-  useEffect(() => {
-    if (lastTrueRef.current) lastTrueRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [truePoints.length]);
+  const visiblePoints = useMemo(() => allPoints.filter(p => visibleIds.has(p.id)), [allPoints, visibleIds]);
 
-  const visiblePoints = useMemo(() => points.filter((point) => visibleLocationIds.has(point.id)), [points, visibleLocationIds]);
-  const lastPoint = points[points.length - 1];
-  const editPosition: [number, number] = adjustedLocation
-    ? [adjustedLocation.lat, adjustedLocation.lng]
-    : lastSelected
-      ? [lastSelected.latitude, lastSelected.longitude]
+  // ─── Map edit state ─────────────────────────────────────────────────────────
+  const editPosition: [number, number] = pendingPin
+    ? [pendingPin.lat, pendingPin.lng]
+    : effectivePin
+      ? [effectivePin.latitude, effectivePin.longitude]
       : [SCHOOL_COORDS.lat, SCHOOL_COORDS.lng];
-  const homeToSchoolKm = lastPoint ? haversineDistanceKm(lastPoint.latitude, lastPoint.longitude, SCHOOL_COORDS.lat, SCHOOL_COORDS.lng) : null;
+
+  const homeToSchoolKm = effectivePin
+    ? haversineDistanceKm(effectivePin.latitude, effectivePin.longitude, SCHOOL_COORDS.lat, SCHOOL_COORDS.lng)
+    : null;
 
   const handleDone = () => {
-    if (adjustedLocation) {
-      onSaveAdminLocation(adjustedLocation.lat, adjustedLocation.lng);
-      setAdjustedLocation(null);
+    if (pendingPin) {
+      onSaveAdminLocation(pendingPin.lat, pendingPin.lng);
+      setPendingPin(null);
     }
     setEditMode(false);
   };
 
-  const toggleLocation = (id: string, checked: boolean) => setVisibleLocationIds((current) => {
-    const next = new Set(current);
-    if (checked) next.add(id); else next.delete(id);
-    return next;
-  });
+  const handleCancelEdit = () => {
+    setPendingPin(null);
+    setEditMode(false);
+  };
 
-  const renderLocationList = (items: LocationEvidence[], listRef?: React.RefObject<HTMLLIElement | null>) => items.map((point, idx) => {
-    const globalIdx = points.indexOf(point);
-    const isLast = lastPoint && point.id === lastPoint.id;
-    const color = LOCATION_COLORS[globalIdx % LOCATION_COLORS.length];
-    const distToSchool = haversineDistanceKm(point.latitude, point.longitude, SCHOOL_COORDS.lat, SCHOOL_COORDS.lng);
-    const isVisible = visibleLocationIds.has(point.id);
+  // ─── Render helpers ─────────────────────────────────────────────────────────
+  const renderPin = (point: LocationEvidence, isLastInGroup: boolean) => {
+    const globalIdx = allPoints.findIndex(p => p.id === point.id);
+    const isEffective = effectivePin?.id === point.id;
+    const isAdmin = point.group === "admin";
     const isFlagged = flaggedLocations.has(point.id);
-    const isLastInList = idx === items.length - 1;
-    const isAdmin = point.source === "admin";
+    const isChecked = visibleIds.has(point.id);
+    const color = LOCATION_COLORS[globalIdx % LOCATION_COLORS.length];
+    const dist = haversineDistanceKm(point.latitude, point.longitude, SCHOOL_COORDS.lat, SCHOOL_COORDS.lng);
+
     return (
-      <li key={point.id} ref={isLastInList ? listRef : undefined} className={`rounded-lg border p-3 ${isFlagged ? "border-red-300 bg-red-50/50 dark:bg-red-950/20" : ""} ${isLastInList ? "ring-2 ring-primary/30" : ""} ${isAdmin ? "border-amber-300 bg-amber-50/50 dark:bg-amber-950/20" : ""}`}>
-        <label htmlFor={`location-${point.id}`} className="flex items-start gap-3">
-          <Checkbox id={`location-${point.id}`} checked={isVisible} onCheckedChange={(checked) => toggleLocation(point.id, checked === true)} />
+      <li
+        key={point.id}
+        className={[
+          "rounded-lg border p-3 transition-colors",
+          isFlagged ? "border-red-300 bg-red-50/50 dark:bg-red-950/20" : "",
+          isAdmin ? "border-amber-300 bg-amber-50/50 dark:bg-amber-950/20" : "",
+          isEffective && !isFlagged && !isAdmin ? "ring-2 ring-primary/30 border-primary/30" : "",
+        ].join(" ")}
+      >
+        <label htmlFor={`loc-${point.id}`} className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            id={`loc-${point.id}`}
+            checked={isChecked}
+            onCheckedChange={checked => toggleVisible(point.id, checked === true)}
+          />
           <span className="min-w-0 flex-1">
-            <span className="flex items-center gap-2 text-sm font-semibold">
-              <span className="inline-block size-2.5 rounded-full" style={{ backgroundColor: color.fill }} />
+            <span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+              <span className="inline-block size-2.5 shrink-0 rounded-full" style={{ backgroundColor: color.fill }} />
               {point.label}
-              {isLast && <Badge variant="default" className="text-[0.6rem] px-1.5 py-0">Latest</Badge>}
+              {isEffective && <Badge variant="default" className="text-[0.6rem] px-1.5 py-0">Active</Badge>}
               {isAdmin && <Badge variant="outline" className="text-[0.6rem] px-1.5 py-0 border-amber-500 text-amber-600">Admin</Badge>}
               {isFlagged && <Badge variant="destructive" className="text-[0.6rem] px-1.5 py-0">Flagged</Badge>}
-              <Badge variant="outline" className="text-[0.6rem] px-1.5 py-0 ml-auto">{distToSchool.toFixed(2)} km</Badge>
+              <Badge variant="outline" className="text-[0.6rem] px-1.5 py-0 ml-auto">{dist.toFixed(2)} km</Badge>
             </span>
-            <span className="block truncate text-xs text-muted-foreground">{point.address}</span>
-            <span className="mt-1 block font-mono text-[0.7rem] text-muted-foreground">{point.source}</span>
+            <span className="block truncate text-xs text-muted-foreground mt-0.5">{point.address}</span>
+            <span className="mt-0.5 block font-mono text-[0.65rem] text-muted-foreground/70">{point.source} · {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}</span>
             <a
               href={`https://earth.google.com/web/search/${point.latitude},${point.longitude}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-block text-[0.7rem] text-blue-600 hover:underline dark:text-blue-400"
+              className="mt-0.5 inline-block text-[0.65rem] text-blue-600 hover:underline dark:text-blue-400"
             >
-              Open in Google Earth
+              Open in Google Earth ↗
             </a>
           </span>
-          <button type="button" onClick={() => onToggleLocationFlag(point.id)} className={`rounded-md p-1 transition-colors ${isFlagged ? "bg-red-100 text-red-600 hover:bg-red-200" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} title={isFlagged ? "Remove flag" : "Flag as suspicious"}>
+          <button
+            type="button"
+            onClick={() => onToggleLocationFlag(point.id)}
+            className={`shrink-0 rounded-md p-1 transition-colors ${isFlagged ? "bg-red-100 text-red-600 hover:bg-red-200" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            title={isFlagged ? "Remove flag" : "Flag as suspicious"}
+          >
             <Flag size={12} />
           </button>
         </label>
       </li>
     );
-  });
+  };
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div><CardTitle>Location evidence</CardTitle><CardDescription>Each circle is centred on St. Aloysius&apos; College with radius equal to the distance from each home to the school.</CardDescription></div>
-          <Button size="sm" variant={editMode ? "default" : "outline"} onClick={() => editMode ? handleDone() : setEditMode(true)}>
-            {editMode ? <><Check size={14} /> Done</> : <><Pencil size={14} /> Edit location</>}
-          </Button>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>Location evidence</CardTitle>
+            <CardDescription>
+              Each circle is centred on St. Aloysius&apos; College with radius equal to the distance from each home to the school.
+              {homeToSchoolKm != null && (
+                <span className="ml-2 font-semibold text-primary">{homeToSchoolKm.toFixed(2)} km from school</span>
+              )}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            {editMode ? (
+              <>
+                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                  <X size={14} /> Cancel
+                </Button>
+                <Button size="sm" variant="default" onClick={handleDone} disabled={!pendingPin}>
+                  <Check size={14} /> Save location
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+                <Pencil size={14} /> {adminPin ? "Replace admin location" : "Set admin location"}
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="grid gap-5">
-        {points.length === 0 ? <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">No coordinates were captured for this application.</div> : <>
-          <div className="relative overflow-hidden rounded-xl border" aria-label="Applicant location evidence map">
-            <MapContainer center={[SCHOOL_COORDS.lat, SCHOOL_COORDS.lng]} zoom={15} scrollWheelZoom className="z-0 h-[420px] w-full max-md:h-[320px]">
-              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <SchoolCircles points={visiblePoints} />
-              <MapClickHandler editMode={editMode} onMapClickRef={onMapClickRef} />
+        {allPoints.length === 0 ? (
+          <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+            No coordinates were captured for this application.
+          </div>
+        ) : (
+          <>
+            {/* Map */}
+            <div className="relative overflow-hidden rounded-xl border" aria-label="Applicant location evidence map">
+              <MapContainer center={[SCHOOL_COORDS.lat, SCHOOL_COORDS.lng]} zoom={13} scrollWheelZoom className="z-0 h-[420px] w-full max-md:h-[320px]">
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <SchoolCircles points={visiblePoints} />
+                <MapClickHandler editMode={editMode} onMapClickRef={onMapClickRef} />
 
-              {visiblePoints.map((point) => {
-                const globalIdx = points.findIndex((p) => p.id === point.id);
-                const color = RADIUS_COLORS[globalIdx % RADIUS_COLORS.length];
-                return (
-                  <Polyline key={`line-${point.id}`} positions={[[point.latitude, point.longitude], [SCHOOL_COORDS.lat, SCHOOL_COORDS.lng]]} pathOptions={{ color, weight: 1.5, opacity: 0.5, dashArray: "4 4" }} />
-                );
-              })}
+                {visiblePoints.map(point => {
+                  const globalIdx = allPoints.findIndex(p => p.id === point.id);
+                  const color = RADIUS_COLORS[globalIdx % RADIUS_COLORS.length];
+                  return (
+                    <Polyline
+                      key={`line-${point.id}`}
+                      positions={[[point.latitude, point.longitude], [SCHOOL_COORDS.lat, SCHOOL_COORDS.lng]]}
+                      pathOptions={{ color, weight: 1.5, opacity: 0.5, dashArray: "4 4" }}
+                    />
+                  );
+                })}
 
-              <Marker position={[SCHOOL_COORDS.lat, SCHOOL_COORDS.lng]} icon={iconSchool} zIndexOffset={800}>
-                <LeafletTooltip direction="top" offset={[0, -12]} opacity={1}>St. Aloysius&apos; College</LeafletTooltip>
-              </Marker>
+                <Marker position={[SCHOOL_COORDS.lat, SCHOOL_COORDS.lng]} icon={iconSchool} zIndexOffset={800}>
+                  <LeafletTooltip direction="top" offset={[0, -12]} opacity={1}>St. Aloysius&apos; College</LeafletTooltip>
+                </Marker>
 
-              {visiblePoints.map((point) => {
-                const globalIdx = points.findIndex((p) => p.id === point.id);
-                const isLast = lastPoint && point.id === lastPoint.id;
-                const color = LOCATION_COLORS[globalIdx % LOCATION_COLORS.length];
-                const opacity = isLast ? 0.95 : 0.5;
-                const r = isLast ? 10 : 7;
-                const distToSchool = haversineDistanceKm(point.latitude, point.longitude, SCHOOL_COORDS.lat, SCHOOL_COORDS.lng);
-                return (
-                  <CircleMarker key={point.id} center={[point.latitude, point.longitude]} radius={r} pathOptions={{ color: color.border, fillColor: color.fill, fillOpacity: opacity, weight: 3 }}>
-                    <LeafletTooltip direction="top"><strong>{point.label}</strong><br />{distToSchool.toFixed(1)} km to school{isLast ? " (latest)" : ""}</LeafletTooltip>
+                {visiblePoints.map(point => {
+                  const globalIdx = allPoints.findIndex(p => p.id === point.id);
+                  const isEffective = effectivePin?.id === point.id;
+                  const isAdmin = point.group === "admin";
+                  const color = isAdmin
+                    ? { border: "#b45309", fill: "#f59e0b" }
+                    : LOCATION_COLORS[globalIdx % LOCATION_COLORS.length];
+                  const r = isEffective ? 11 : 7;
+                  const fillOpacity = isEffective ? 0.95 : 0.55;
+                  const dist = haversineDistanceKm(point.latitude, point.longitude, SCHOOL_COORDS.lat, SCHOOL_COORDS.lng);
+                  return (
+                    <CircleMarker
+                      key={point.id}
+                      center={[point.latitude, point.longitude]}
+                      radius={r}
+                      pathOptions={{ color: color.border, fillColor: color.fill, fillOpacity, weight: isEffective ? 3 : 2 }}
+                    >
+                      <LeafletTooltip direction="top">
+                        <strong>{point.label}</strong><br />
+                        {dist.toFixed(1)} km to school{isEffective ? " (active)" : ""}{isAdmin ? " · Admin override" : ""}
+                      </LeafletTooltip>
+                    </CircleMarker>
+                  );
+                })}
+
+                {/* Pending pin while in edit mode */}
+                {editMode && (
+                  <CircleMarker
+                    center={editPosition}
+                    radius={12}
+                    pathOptions={{ color: "#c2410c", fillColor: "#f97316", fillOpacity: pendingPin ? 0.9 : 0.4, weight: 3, dashArray: pendingPin ? undefined : "4 4" }}
+                  >
+                    <LeafletTooltip direction="top" permanent={!pendingPin}>
+                      {pendingPin ? "New admin location — click Save location" : "Click map to set admin location"}
+                    </LeafletTooltip>
                   </CircleMarker>
-                );
-              })}
+                )}
+              </MapContainer>
 
               {editMode && (
-                <CircleMarker center={editPosition} radius={10} pathOptions={{ color: "#c2410c", fillColor: "#f97316", fillOpacity: 0.9, weight: 3 }} />
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500] bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg pointer-events-none">
+                  {pendingPin ? "📍 New location set — click Save location above" : "🖱 Click anywhere on the map to pin the admin location"}
+                </div>
               )}
-            </MapContainer>
-            {editMode && (
-              <div className="absolute top-4 right-4 z-500 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg">
-                Click anywhere on the map to set the location
+            </div>
+
+            {/* Location lists */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              {/* User selected + admin override */}
+              <div className="grid gap-2">
+                <h3 className="text-sm font-semibold">
+                  User selected locations
+                  {adminPin && <Badge variant="outline" className="ml-2 border-amber-500 text-amber-600 text-[0.6rem]">Admin override active</Badge>}
+                </h3>
+                {displayedSelectedPins.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No user-selected locations.</p>
+                ) : (
+                  <ul className="grid max-h-[280px] gap-2 overflow-y-auto pr-1">
+                    {displayedSelectedPins.map((p, i) => renderPin(p, i === displayedSelectedPins.length - 1))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Device/browser true locations */}
+              <div className="grid gap-2">
+                <h3 className="text-sm font-semibold">Device &amp; browser locations</h3>
+                {truePins.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No device/browser locations captured.</p>
+                ) : (
+                  <ul className="grid max-h-[280px] gap-2 overflow-y-auto pr-1">
+                    {truePins.map((p, i) => renderPin(p, i === truePins.length - 1))}
+                  </ul>
+                )}
+              </div>
+            </div>
+
+            {/* School row */}
+            <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 p-3 flex items-center gap-3">
+              <span className="inline-block size-2.5 rounded-full bg-amber-500" />
+              <span className="text-sm font-semibold">St. Aloysius&apos; College</span>
+              <Badge variant="outline" className="text-[0.6rem] px-1.5 py-0">School</Badge>
+              <span className="ml-auto text-xs text-muted-foreground">{SCHOOL_COORDS.lat.toFixed(5)}, {SCHOOL_COORDS.lng.toFixed(5)}</span>
+            </div>
+
+            {/* Flagged locations summary */}
+            {flaggedLocations.size > 0 && (
+              <div className="rounded-lg border border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/20 p-3">
+                <p className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2 mb-2">
+                  <Flag size={14} /> Flagged locations ({flaggedLocations.size})
+                </p>
+                <div className="grid gap-1">
+                  {Array.from(flaggedLocations).map(locId => {
+                    const loc = allPoints.find(p => p.id === locId);
+                    return loc ? (
+                      <div key={locId} className="flex items-center justify-between py-1">
+                        <span className="text-xs">{loc.label}</span>
+                        <Button size="sm" variant="ghost" onClick={() => onToggleLocationFlag(locId)} className="text-red-600 hover:text-red-700 h-6 px-2">
+                          <X size={12} /> Remove
+                        </Button>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               </div>
             )}
-          </div>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="grid gap-3">
-              <h3 className="text-sm font-semibold">User selected locations</h3>
-              {selectedPoints.length === 0 ? <p className="text-xs text-muted-foreground">No user-selected locations.</p> : (
-                <ul className="grid max-h-[260px] gap-2 overflow-y-auto">{renderLocationList(selectedPoints, lastSelectedRef)}</ul>
-              )}
-            </div>
-            <div className="grid gap-3">
-              <h3 className="text-sm font-semibold">User true locations</h3>
-              {truePoints.length === 0 ? <p className="text-xs text-muted-foreground">No device/browser locations captured.</p> : (
-                <ul className="grid max-h-[260px] gap-2 overflow-y-auto">{renderLocationList(truePoints, lastTrueRef)}</ul>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 p-3 flex items-center gap-3">
-            <span className="inline-block size-2.5 rounded-full bg-amber-500" />
-            <span className="text-sm font-semibold">St. Aloysius&apos; College</span>
-            <Badge variant="outline" className="text-[0.6rem] px-1.5 py-0">School</Badge>
-            <span className="ml-auto text-xs text-muted-foreground">{SCHOOL_COORDS.lat.toFixed(5)}, {SCHOOL_COORDS.lng.toFixed(5)}</span>
-          </div>
-          {flaggedLocations.size > 0 && (
-            <div className="rounded-lg border border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/20 p-3">
-              <p className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2 mb-2"><Flag size={14} /> Flagged locations ({flaggedLocations.size})</p>
-              <div className="grid gap-1">
-                {Array.from(flaggedLocations).map((locId) => {
-                  const loc = points.find((p) => p.id === locId);
-                  return loc ? (
-                    <div key={locId} className="flex items-center justify-between py-1">
-                      <span className="text-xs">{loc.label}</span>
-                      <Button size="sm" variant="ghost" onClick={() => onToggleLocationFlag(locId)} className="text-red-600 hover:text-red-700 h-6 px-2"><X size={12} /> Remove</Button>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            </div>
-          )}
-        </>}
+          </>
+        )}
       </CardContent>
     </Card>
   );
@@ -559,7 +699,7 @@ function BanDialog({ open, onOpenChange, onConfirm, applicantName, reason, onRea
 type EditableBreakdown = { label: string; marks: number; max: number };
 type EditableCategory = { categoryType: string; breakdown: EditableBreakdown[]; total: number };
 
-function CategoryScoringCard({ applicationId, category, autoScore, draft, flaggedInputs, onToggleInputFlag }: { applicationId: string; category: ApplicationDraft["categories"][0]; autoScore: ReturnType<typeof scoreCategory> | null; draft: ApplicationDraft; flaggedInputs: Set<string>; onToggleInputFlag: (key: string) => void }) {
+function CategoryScoringCard({ applicationId, category, autoScore, draft, flaggedInputs, onToggleInputFlag, homeLocation, onSaveInterviewEdits }: { applicationId: string; category: ApplicationDraft["categories"][0]; autoScore: ReturnType<typeof scoreCategory> | null; draft: ApplicationDraft; flaggedInputs: Set<string>; onToggleInputFlag: (key: string) => void; homeLocation: { lat: number; lng: number } | null; onSaveInterviewEdits: (edits: InterviewEdit[]) => void }) {
   const queryClient = useQueryClient();
 
   const existingMarks = useQuery({
@@ -578,15 +718,65 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
 
   const [breakdown, setBreakdown] = useState<EditableBreakdown[]>([]);
   const [inputsEditable, setInputsEditable] = useState(false);
+  const [editedInputs, setEditedInputs] = useState<ScoringInputs>(() => ({ ...category.scoringInputs }));
+  const originalInputsRef = useRef<ScoringInputs>({ ...category.scoringInputs });
+
+  useEffect(() => {
+    setEditedInputs({ ...category.scoringInputs });
+    originalInputsRef.current = { ...category.scoringInputs };
+  }, [category.id]);
+
+  const editedCategory = useMemo(() => ({ ...category, scoringInputs: editedInputs }), [category, editedInputs]);
+  const editedAutoScore = useMemo(() => scoreCategory(editedCategory), [editedCategory]);
 
   useEffect(() => {
     if (!autoScore) return;
     if (savedMark) {
       setBreakdown(savedMark.breakdown.map((r) => ({ label: r.label, marks: r.marks, max: r.max })));
     } else {
-      setBreakdown(autoScore.breakdown.map((r) => ({ ...r })));
+      setBreakdown(editedAutoScore.breakdown.map((r) => ({ ...r })));
     }
-  }, [autoScore, savedMark]);
+  }, [autoScore, savedMark, editedAutoScore]);
+
+  const inputChanges = useMemo(() => {
+    const changes: Array<{ key: string; label: string; oldValue: string; newValue: string }> = [];
+    const orig = originalInputsRef.current;
+    for (const [key, newVal] of Object.entries(editedInputs)) {
+      const oldVal = (orig as Record<string, unknown>)[key];
+      const oldStr = formatFieldValue(key, oldVal);
+      const newStr = formatFieldValue(key, newVal);
+      if (oldStr !== newStr) {
+        changes.push({ key, label: formatFieldName(key), oldValue: oldStr, newValue: newStr });
+      }
+    }
+    return changes;
+  }, [editedInputs]);
+
+  const handleInputPatch = (patch: Partial<ScoringInputs>) => {
+    setEditedInputs((prev) => {
+      const next = { ...prev, ...patch };
+      const edits: InterviewEdit[] = [];
+      for (const [key, newVal] of Object.entries(patch)) {
+        const oldVal = (prev as Record<string, unknown>)[key];
+        const oldStr = formatFieldValue(key, oldVal);
+        const newStr = formatFieldValue(key, newVal);
+        if (oldStr !== newStr) {
+          edits.push({
+            field: `category.${category.categoryType}.scoringInputs.${key}`,
+            label: formatFieldName(key),
+            previousValue: oldStr,
+            newValue: newStr,
+            editedAt: new Date().toISOString(),
+          });
+        }
+      }
+      if (edits.length > 0) {
+        onSaveInterviewEdits([...draft.interviewEdits, ...edits]);
+      }
+      saveScoringInputsMutation.mutate(next);
+      return next;
+    });
+  };
 
   const saveMarksMutation = useMutation({
     mutationFn: () =>
@@ -603,6 +793,16 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
     onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save marks"),
   });
 
+  const saveScoringInputsMutation = useMutation({
+    mutationFn: (scoringInputs: ScoringInputs) =>
+      client.admin.admissions.saveScoringInputs({ id: applicationId, categoryId: category.id, scoringInputs }),
+    onSuccess: () => {
+      const queryKey = orpc.admin.admissions.get.queryOptions({ input: { id: applicationId } }).queryKey;
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save scoring inputs"),
+  });
+
   const updateMarks = (idx: number, val: string) => {
     setBreakdown((prev) => {
       const next = [...prev];
@@ -613,19 +813,22 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
 
   const total = breakdown.reduce((s, r) => s + r.marks, 0);
   const hasExceeded = breakdown.some((r) => r.marks > r.max);
-  const hasChanges = autoScore ? breakdown.some((r, i) => r.marks !== autoScore.breakdown[i]?.marks) || total !== autoScore.total : false;
+  const hasMarkChanges = autoScore ? breakdown.some((r, i) => r.marks !== autoScore.breakdown[i]?.marks) || total !== autoScore.total : false;
+  const hasInputChanges = inputChanges.length > 0;
 
   const renderFields = () => {
-    const onChange = () => {};
+    const flagProps = { flaggedInputs, onToggleInputFlag };
+    const locProps = homeLocation ? { centerLat: homeLocation.lat, centerLng: homeLocation.lng } : {};
     switch (category.categoryType) {
-      case "6.1": return <Category61Fields category={category} onChange={onChange} />;
-      case "6.2": return <Category62Fields category={category} onChange={onChange} />;
-      case "6.3": return <Category63Fields category={category} onChange={onChange} />;
-      case "6.4": return <Category64Fields category={category} onChange={onChange} />;
-      case "6.6": return <Category66Fields category={category} onChange={onChange} />;
+      case "6.1": return <Category61Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} />;
+      case "6.2": return <Category62Fields category={editedCategory} onChange={handleInputPatch} {...flagProps} />;
+      case "6.3": return <Category63Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} />;
+      case "6.4": return <Category64Fields category={editedCategory} onChange={handleInputPatch} {...flagProps} />;
+      case "6.5": return <Category65Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} />;
+      case "6.6": return <Category66Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} />;
       default: return (
         <div className="grid gap-x-5 gap-y-1 sm:grid-cols-2">
-          {Object.entries(category.scoringInputs).map(([key, value]) => (
+          {Object.entries(editedInputs).map(([key, value]) => (
             <DataRow key={key} label={formatFieldName(key)} value={formatFieldValue(key, value)} fieldKey={key} flagged={flaggedInputs.has(key)} onFlag={() => onToggleInputFlag(key)} />
           ))}
         </div>
@@ -641,13 +844,14 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
             <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Marking category</span>
             <CardTitle className="flex flex-wrap items-center gap-2">
               {CATEGORY_LABELS[category.categoryType]}
+              {hasInputChanges && <Badge variant="secondary">Inputs modified</Badge>}
             </CardTitle>
             <CardDescription>{CATEGORY_META[category.categoryType]?.description}</CardDescription>
           </div>
           <div className="grid shrink-0 gap-0.5 rounded-lg border bg-background px-3 py-2 text-right">
             <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Indicative score</span>
             <strong className="font-mono text-lg tabular-nums">
-              {autoScore?.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}<span className="text-sm font-normal text-muted-foreground"> / 100</span>
+              {editedAutoScore.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}<span className="text-sm font-normal text-muted-foreground"> / 100</span>
             </strong>
           </div>
         </div>
@@ -655,10 +859,62 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
       <CardContent className="grid gap-5">
         <div className="grid gap-3 rounded-xl border border-border p-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold">Scoring inputs</h4>
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              Scoring inputs
+              {hasInputChanges && <Badge variant="secondary" className="text-[0.6rem]">{inputChanges.length} changed</Badge>}
+            </h4>
             <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setInputsEditable((v) => !v)}>{inputsEditable ? "View only" : "Edit inputs"}</button>
           </div>
           {renderFields()}
+
+          {hasInputChanges && (
+            <div className="mt-2 pt-2 border-t">
+              <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 mb-1"><Pencil size={10} /> Modified inputs ({inputChanges.length})</p>
+              <div className="grid gap-1">
+                {inputChanges.map((change) => (
+                  <div key={change.key} className="flex items-center justify-between gap-2 rounded-md bg-amber-50 dark:bg-amber-950/20 px-2 py-1.5">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[0.7rem] font-semibold text-amber-700 dark:text-amber-300">{change.label}</span>
+                      <div className="flex items-center gap-1.5 text-[0.65rem]">
+                        <span className="text-muted-foreground line-through truncate">{change.oldValue || "(empty)"}</span>
+                        <span className="text-muted-foreground">→</span>
+                        <span className="font-medium text-amber-700 dark:text-amber-300 truncate">{change.newValue || "(empty)"}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onToggleInputFlag(change.key)}
+                      className={`shrink-0 rounded-md p-1 transition-colors ${flaggedInputs.has(change.key) ? "bg-red-100 text-red-600 hover:bg-red-200" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                      title={flaggedInputs.has(change.key) ? "Remove flag" : "Flag as suspicious"}
+                    >
+                      <Flag size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-2 pt-2 border-t">
+            <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1 mb-1"><Flag size={10} /> Flag inputs</p>
+            <div className="flex flex-wrap gap-1">
+              {Object.keys(editedInputs).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onToggleInputFlag(key)}
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[0.65rem] transition-colors ${
+                    flaggedInputs.has(key)
+                      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  }`}
+                >
+                  <Flag size={9} /> {formatFieldName(key)}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {flaggedInputs.size > 0 && (
             <div className="mt-2 pt-2 border-t">
               <p className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1 mb-1"><Flag size={10} /> Flagged inputs ({flaggedInputs.size})</p>
@@ -677,10 +933,10 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold">Mark allocation</h4>
             <div className="flex items-center gap-2">
-              {autoScore && <Badge variant="outline">Indicative: {autoScore.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Badge>}
-              {hasChanges && <Badge variant="secondary">Modified</Badge>}
+              {hasInputChanges && <Badge variant="secondary">Inputs changed</Badge>}
+              {hasMarkChanges && <Badge variant="secondary">Marks modified</Badge>}
               {hasExceeded && <Badge variant="destructive">Exceeds max</Badge>}
-              <Badge variant={hasChanges ? "default" : "outline"}>Admin: {total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Badge>
+              <Badge variant={hasMarkChanges ? "default" : "outline"}>Admin: {total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Badge>
             </div>
           </div>
           {breakdown.length === 0 ? (
@@ -698,7 +954,7 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
                 </thead>
                 <tbody>
                   {breakdown.map((row, idx) => {
-                    const autoMarks = autoScore?.breakdown[idx]?.marks ?? 0;
+                    const autoMarks = editedAutoScore.breakdown[idx]?.marks ?? autoScore?.breakdown[idx]?.marks ?? 0;
                     const exceeds = row.marks > row.max;
                     const matches = row.marks === autoMarks;
                     let bg = "";
@@ -740,32 +996,30 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
           )}
           <div className="flex items-center gap-3 border-t pt-3">
             <Button size="sm" disabled={saveMarksMutation.isPending || hasExceeded} onClick={() => saveMarksMutation.mutate()}><Save size={15} /> {saveMarksMutation.isPending ? "Saving…" : "Save marks"}</Button>
-            <Button size="sm" variant="outline" onClick={() => setBreakdown(autoScore ? autoScore.breakdown.map((r) => ({ ...r })) : [])}><RotateCcw size={15} /> Reset</Button>
+            <Button size="sm" variant="outline" onClick={() => setBreakdown(editedAutoScore.breakdown.map((r) => ({ ...r })) )}><RotateCcw size={15} /> Reset</Button>
           </div>
         </div>
 
-        {autoScore && (
-          <div className="grid gap-2 border-t pt-5">
-            <p className="text-sm font-medium">Example marks – {CATEGORY_LABELS[category.categoryType]}</p>
-            <div className="grid gap-1">
-              {autoScore.breakdown.map((row) => (
-                <div key={row.label} className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="text-muted-foreground">{row.label}</span>
-                  <span className="font-mono tabular-nums">
-                    {row.marks.toLocaleString(undefined, { maximumFractionDigits: 2 })} / {row.max}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-baseline justify-between gap-3 border-t pt-2 text-base font-semibold">
-              <span>Indicative total</span>
-              <span className="font-mono tabular-nums">{autoScore.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              This is a baseline estimate calculated from the answers. The interview panel checks original documents and may adjust these marks at the interview.
-            </p>
+        <div className="grid gap-2 border-t pt-5">
+          <p className="text-sm font-medium">Example marks – {CATEGORY_LABELS[category.categoryType]}</p>
+          <div className="grid gap-1">
+            {editedAutoScore.breakdown.map((row) => (
+              <div key={row.label} className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">{row.label}</span>
+                <span className="font-mono tabular-nums">
+                  {row.marks.toLocaleString(undefined, { maximumFractionDigits: 2 })} / {row.max}
+                </span>
+              </div>
+            ))}
           </div>
-        )}
+          <div className="flex items-baseline justify-between gap-3 border-t pt-2 text-base font-semibold">
+            <span>Indicative total</span>
+            <span className="font-mono tabular-nums">{editedAutoScore.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            This is a baseline estimate calculated from the answers. The interview panel checks original documents and may adjust these marks at the interview.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -996,6 +1250,7 @@ function AdmissionWorkspacePage() {
   const [banned, setBanned] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [reviewSaved, setReviewSaved] = useState(false);
 
   const [editFieldOpen, setEditFieldOpen] = useState(false);
   const [editFieldConfig, setEditFieldConfig] = useState<{ label: string; fieldKey?: string; section: string; path: string; currentValue: string } | null>(null);
@@ -1075,6 +1330,7 @@ function AdmissionWorkspacePage() {
     mutationFn: (input: { admissionStatus: AdmissionStatus; interviewNotes: string; isBanned: boolean; banReason?: string; flags: Array<{ type: string; key: string; label: string }> }) =>
       client.admin.admissions.updateReview({ id, ...input }),
     onSuccess: async () => {
+      setReviewSaved(true);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.list.key() }),
         queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.get.queryOptions({ input: { id } }).queryKey }),
@@ -1085,6 +1341,7 @@ function AdmissionWorkspacePage() {
   });
 
   const saveReview = (isBanned: boolean = banned) => {
+    setReviewSaved(false);
     const flags = [
       ...Array.from(flaggedFields).map((key) => ({ type: "field", key, label: key.replace(/\./g, " ").replace(/([A-Z])/g, " $1").trim() })),
       ...Array.from(flaggedInputs).map((key) => ({ type: "input", key, label: key.replace(/([A-Z])/g, " $1").trim() })),
@@ -1102,6 +1359,15 @@ function AdmissionWorkspacePage() {
 
   const draftInput = data?.data as Partial<ApplicationDraft> | undefined;
   const draft = normalizeDraft(draftInput);
+
+  const effectiveHomeLocation = useMemo(() => {
+    const history = draft.userLocationHistory ?? [];
+    const adminEntry = history.find((e) => e.source === "admin");
+    const userEntries = history.filter((e) => e.source !== "admin");
+    const pin = adminEntry ?? (userEntries.length > 0 ? userEntries[userEntries.length - 1] : null);
+    if (!pin || pin.latitude == null || pin.longitude == null) return null;
+    return { lat: pin.latitude, lng: pin.longitude };
+  }, [draft.userLocationHistory]);
 
   const interviewEditsMutation = useMutation({
     mutationFn: (patch: { interviewEdits: InterviewEdit[] }) =>
@@ -1301,7 +1567,7 @@ function AdmissionWorkspacePage() {
         )}
 
         {activeStep === 2 && activeCategory && (
-          <CategoryScoringCard applicationId={data.id} category={activeCategory} autoScore={activeAutoScore} draft={draft} flaggedInputs={flaggedInputs} onToggleInputFlag={toggleInputFlag} />
+          <CategoryScoringCard applicationId={data.id} category={activeCategory} autoScore={activeAutoScore} draft={draft} flaggedInputs={flaggedInputs} onToggleInputFlag={toggleInputFlag} homeLocation={effectiveHomeLocation} onSaveInterviewEdits={(edits) => interviewEditsMutation.mutate({ interviewEdits: edits })} />
         )}
 
         {activeStep === 2 && !activeCategory && (
@@ -1393,7 +1659,7 @@ function AdmissionWorkspacePage() {
               {banned && <div className="flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive"><Ban size={16} className="mt-0.5 shrink-0" /><span><strong>Applicant banned.</strong> {banReason || "No reason recorded."}</span></div>}
               {reviewMutation.error && <p className="text-sm text-destructive" role="alert">{reviewMutation.error instanceof Error ? reviewMutation.error.message : "Could not save review"}</p>}
               <div className="flex flex-wrap items-center gap-3 border-t pt-4">
-                <Button disabled={reviewMutation.isPending} onClick={() => saveReview()}><Check size={17} /> {reviewMutation.isPending ? "Saving…" : "Save review"}</Button>
+                <Button disabled={reviewMutation.isPending} onClick={() => saveReview()}><Check size={17} /> {reviewMutation.isPending ? "Saving…" : reviewSaved ? "Update review" : "Save review"}</Button>
                 {banned ? (
                   <Button variant="secondary" disabled={reviewMutation.isPending} onClick={() => { setBanned(false); saveReview(false); }}><X size={17} /> Remove ban</Button>
                 ) : (
