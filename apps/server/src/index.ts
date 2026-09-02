@@ -2,6 +2,7 @@ import { createContext } from "@aloysius-g1/api/context";
 import { appRouter } from "@aloysius-g1/api/routers/index";
 import { createAuth, ensureSiteAdmin } from "@aloysius-g1/auth";
 import { env } from "@aloysius-g1/env/server";
+import { backup } from "@aloysius-g1/db/scripts/backup";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
@@ -87,3 +88,15 @@ Bun.serve({
 });
 
 console.log("Server is running on http://localhost:3000");
+
+// Periodic backup every 6 hours
+const SIX_HOURS = 6 * 60 * 60 * 1000;
+setInterval(() => {
+  try {
+    backup();
+    console.log("[backup] periodic backup completed");
+  } catch (err) {
+    console.error("[backup] periodic backup failed:", err);
+  }
+}, SIX_HOURS);
+console.log("[backup] scheduled periodic backup every 6 hours");
