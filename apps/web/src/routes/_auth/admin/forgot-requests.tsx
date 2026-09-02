@@ -89,28 +89,30 @@ function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () 
   );
 }
 
-const columns = [
-  {
-    accessorKey: "applicantName",
-    header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Applicant" />,
-    cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="font-medium">{row.original.applicantName || "Unnamed"}</span>,
-  },
-  {
-    accessorKey: "birthCertificateNumber",
-    header: "Birth certificate",
-    cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-xs">{row.original.birthCertificateNumber}</span>,
-  },
-  {
-    accessorKey: "createdAt",
-    header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Requested" />,
-    cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }: { row: { original: ForgotRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onAction={() => void requests.refetch()} /></div>,
-  },
-];
+function useColumns(onRefetch: () => void) {
+  return [
+    {
+      accessorKey: "applicantName",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Applicant" />,
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="font-medium">{row.original.applicantName || "Unnamed"}</span>,
+    },
+    {
+      accessorKey: "birthCertificateNumber",
+      header: "Birth certificate",
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-xs">{row.original.birthCertificateNumber}</span>,
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Requested" />,
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onAction={onRefetch} /></div>,
+    },
+  ];
+}
 
 function AdminForgotRequestsPage() {
   const { session } = Route.useRouteContext();
@@ -138,10 +140,11 @@ function AdminForgotRequestsPage() {
     return () => { controller.abort(); cancel(); };
   }, [session.data?.user.role, requests]);
 
-  if (session.data?.user.role !== "admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Admin access required</CardTitle><CardDescription className="leading-relaxed">Your account does not have permission to view requests.</CardDescription></CardHeader><Button variant="default" className="w-fit" render={<Link to="/dashboard" />}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
+  if (session.data?.user.role !== "admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Admin access required</CardTitle><CardDescription className="leading-relaxed">Your account does not have permission to view requests.</CardDescription></CardHeader><Button variant="default" className="w-fit" render={<Link to="/dashboard" />} nativeButton={false}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
 
   const items = (requests.data?.items ?? []) as ForgotRequestRow[];
   const pageCount = requests.data ? Math.ceil(requests.data.total / requests.data.pageSize) : 0;
+  const columns = useColumns(() => void requests.refetch());
 
   return (
     <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
@@ -151,7 +154,7 @@ function AdminForgotRequestsPage() {
           <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">Forgot key requests</h1>
           <p className="text-muted-foreground">Parents who lost their access key request a replacement.</p>
         </div>
-        <Button variant="secondary" render={<Link to="/admin/applications" />}>Back to applications</Button>
+        <Button variant="secondary" render={<Link to="/admin/applications" />} nativeButton={false}>Back to applications</Button>
       </div>
       <Card>
         <CardHeader>
