@@ -1309,14 +1309,19 @@ function AdmissionWorkspacePage() {
       setBanned(data.isBanned);
       setBanReason(data.banReason ?? "");
       savedFlagsRef.current = JSON.stringify(data.flags ?? []);
+      const hasExistingReview = data.interviewNotes?.trim() || data.flags?.length || data.admissionStatus !== "pending";
+      setReviewSaved(hasExistingReview);
     }
   }, [data]);
+
+  const isManualSaveRef = useRef(false);
 
   useEffect(() => {
     if (!data) return;
     const currentFlags = JSON.stringify(buildFlags());
     if (currentFlags === savedFlagsRef.current) return;
     savedFlagsRef.current = currentFlags;
+    isManualSaveRef.current = false;
     reviewMutation.mutate({
       admissionStatus: status,
       interviewNotes: notes.trim(),
@@ -1330,17 +1335,24 @@ function AdmissionWorkspacePage() {
     mutationFn: (input: { admissionStatus: AdmissionStatus; interviewNotes: string; isBanned: boolean; banReason?: string; flags: Array<{ type: string; key: string; label: string }> }) =>
       client.admin.admissions.updateReview({ id, ...input }),
     onSuccess: async () => {
-      setReviewSaved(true);
+      if (isManualSaveRef.current) {
+        setReviewSaved(true);
+        isManualSaveRef.current = false;
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.list.key() }),
         queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.get.queryOptions({ input: { id } }).queryKey }),
       ]);
       toast.success("Admissions review saved");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save admissions review"),
+    onError: (error) => {
+      isManualSaveRef.current = false;
+      toast.error(error instanceof Error ? error.message : "Could not save admissions review");
+    },
   });
 
   const saveReview = (isBanned: boolean = banned) => {
+    isManualSaveRef.current = true;
     setReviewSaved(false);
     const flags = [
       ...Array.from(flaggedFields).map((key) => ({ type: "field", key, label: key.replace(/\./g, " ").replace(/([A-Z])/g, " $1").trim() })),
