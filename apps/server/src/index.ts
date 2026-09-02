@@ -2,21 +2,13 @@ import { createContext } from "@aloysius-g1/api/context";
 import { appRouter } from "@aloysius-g1/api/routers/index";
 import { createAuth, ensureSiteAdmin } from "@aloysius-g1/auth";
 import { env } from "@aloysius-g1/env/server";
-import { cors } from "@elysiajs/cors";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { Elysia } from "elysia";
-
-function rpcErrorResponse(error: unknown, status = 500) {
-  const message = error instanceof Error ? error.message : "Internal server error";
-  return new Response(JSON.stringify({ jsonrpc: "2.0", error: { code: status, message } }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
@@ -41,54 +33,57 @@ const apiHandler = new OpenAPIHandler(appRouter, {
 const auth = createAuth();
 await ensureSiteAdmin(auth);
 
-new Elysia()
-  .use(
-    cors({
-      origin: env.CORS_ORIGIN,
-      methods: ["GET", "POST", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-      credentials: true,
-    }),
-  )
-  .all("/api/auth/*", async (context) => {
-    const { request, status } = context;
-    if (["POST", "GET"].includes(request.method)) {
-      return auth.handler(request);
-    }
-    return status(405);
-  })
-  .all(
-    "/rpc*",
-    async (context) => {
-      try {
-        const { response } = await rpcHandler.handle(context.request, {
-          prefix: "/rpc",
-          context: await createContext({ context }),
-        });
-        return response ?? new Response("Not Found", { status: 404 });
-      } catch (err) {
-        console.error("[rpc]", err);
-        return rpcErrorResponse(err);
-      }
-    },
-    {
-      parse: "none",
-    },
-  )
-  .all(
-    "/api-reference*",
-    async (context) => {
-      const { response } = await apiHandler.handle(context.request, {
-        prefix: "/api-reference",
-        context: await createContext({ context }),
-      });
-      return response ?? new Response("Not Found", { status: 404 });
-    },
-    {
-      parse: "none",
-    },
-  )
-  .get("/", () => "OK")
-  .listen(3000, () => {
-    console.log("Server is running on http://localhost:3000");
+const app = new Hono();
+
+app.use(
+  "/*",
+  cors({
+    origin: env.CORS_ORIGIN,
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
+
+app.all("/api/auth/*", async (c) => {
+  if (["POST", "GET"].includes(c.req.method)) {
+    const response = await auth.handler(c.req.raw);
+    return c.newResponse(response.body, response);
+  }
+  return c.text("Method Not Allowed", 405);
+});
+
+app.use("/*", async (c, next) => {
+  const context = await createContext({ context: c });
+
+  const rpcResult = await rpcHandler.handle(c.req.raw, {
+    prefix: "/rpc",
+    context,
   });
+  if (rpcResult.matched) {
+    return c.newResponse(rpcResult.response.body, rpcResult.response);
+  }
+
+  const apiResult = await apiHandler.handle(c.req.raw, {
+    prefix: "/api-reference",
+    context,
+  });
+  if (apiResult.matched) {
+    return c.newResponse(apiResult.response.body, apiResult.response);
+  }
+
+  await next();
+});
+
+app.get("/", (c) => c.text("OK"));
+
+export default {
+  fetch: app.fetch,
+};
+
+Bun.serve({
+  fetch: app.fetch,
+  port: 3000,
+});
+
+console.log("Server is running on http://localhost:3000");

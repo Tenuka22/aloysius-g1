@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@aloysius-g1/config": "workspace:*",
-    "elysia": "catalog:",
+    "hono": "catalog:",
     "typescript": "catalog:"
   }
 }

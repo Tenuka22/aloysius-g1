@@ -14,14 +14,12 @@
     "@aloysius-g1/auth": "workspace:*",
     "@aloysius-g1/db": "workspace:*",
     "@aloysius-g1/env": "workspace:*",
-    "@elysiajs/cors": "^1.4.2",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
-    "@sinclair/typebox": "^0.34.52",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
-    "elysia": "catalog:",
+    "hono": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
