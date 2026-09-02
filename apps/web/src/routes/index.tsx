@@ -23,6 +23,7 @@ export function HomeComponent() {
   const [applicationCount, setApplicationCount] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [manageKeysOpen, setManageKeysOpen] = useState(false);
   const [loadKeyOpen, setLoadKeyOpen] = useState(false);
   const [loadKeyInput, setLoadKeyInput] = useState("");
@@ -241,7 +242,7 @@ export function HomeComponent() {
             {isAdmin && <Button type="button" variant="secondary" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => window.location.assign("/admin")}><ShieldCheck size={18} /> Admin panel</Button>}
             <Button type="button" variant="secondary" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => setManageKeysOpen(true)} disabled={keys.length === 0}><KeyRound size={18} /> Manage saved keys</Button>
             <Button type="button" variant="secondary" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => setQrImportOpen(true)}><Upload size={18} /> Import QR image</Button>
-            <Button type="button" variant="outline" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => { if (keys[0]) setRecoveryKey(keys[0]); }} disabled={!keys[0]}><Trash2 size={18} /> Forgot a key?</Button>
+            <Button type="button" variant="outline" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => { setRecoveryKey(keys[0] ?? null); setRecoveryOpen(true); }}><Trash2 size={18} /> Forgot a key?</Button>
           </div>
         </section>
       <Dialog open={qrImportOpen} onOpenChange={(open) => { if (!open) { stopCamera(); setQrImportOpen(false); } }}>
@@ -324,7 +325,7 @@ export function HomeComponent() {
           </Card>;
         })}</div>
       </section>}
-      <AccessRecoveryDialog applicantName={recoveryKey ? records[recoveryKey]?.name : undefined} open={Boolean(recoveryKey)} onOpenChange={(open) => { if (!open) setRecoveryKey(null); }} onForgot={() => { if (!recoveryKey) return; const forgottenKey = recoveryKey; const remaining = keys.filter((key) => key !== forgottenKey); localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(remaining)); if (localStorage.getItem("aloysius-g1-application-key") === forgottenKey) localStorage.removeItem("aloysius-g1-application-key"); setKeys(remaining); setRecoveryKey(null); }} />
+      <AccessRecoveryDialog applicantName={recoveryKey ? records[recoveryKey]?.name : undefined} open={recoveryOpen} onOpenChange={(open) => { if (!open) { setRecoveryKey(null); setRecoveryOpen(false); } }} onForgot={() => { if (recoveryKey) { const remaining = keys.filter((key) => key !== recoveryKey); localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(remaining)); if (localStorage.getItem("aloysius-g1-application-key") === recoveryKey) localStorage.removeItem("aloysius-g1-application-key"); setKeys(remaining); } setRecoveryKey(null); setRecoveryOpen(false); }} />
       <AlertDialog open={removeKey !== null} onOpenChange={(open) => { if (!open) setRemoveKey(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Forget this application key?</AlertDialogTitle><AlertDialogDescription>This removes the key from this device only. The application remains safely stored in the database and can be loaded again with its session code and access key.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (removeKey) removeApplication(removeKey); }}>Forget key</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
 
       <Dialog open={manageKeysOpen} onOpenChange={setManageKeysOpen}>
