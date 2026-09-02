@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Clock3, Copy, House, KeyRound, RotateCcw, ShieldCheck, UserPlus, TriangleAlert } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Copy, FileSearch, House, KeyRound, RotateCcw, ShieldCheck, ShieldX, UserPlus, TriangleAlert } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { CategoryStep } from "./category-step";
@@ -1022,75 +1022,156 @@ function ReviewStep({
       ))}
 
       {draft.submittedAt && (
-        <div className="mt-6">
-          <div className="flex items-center gap-3 mb-3">
-            <h4 className="font-heading text-lg">Mark Allocation</h4>
-            {adminMarks.length === 0 && (
-              <Badge variant="secondary">Admin marks pending</Badge>
-            )}
-          </div>
-          {draft.categories.length > 0 ? (
-            <div className="grid gap-3">
-              {draft.categories.map((category) => {
-                const autoScore = scoreCategory(category);
-                const adminMark = adminMarks.find((m) => m.categoryType === category.categoryType);
-                return (
-                  <div
-                    className="flex items-center justify-between gap-4 rounded-lg border p-3"
-                    key={category.categoryType}
-                  >
-                    <div className="grid gap-0.5">
-                      <span className="text-xs text-muted-foreground">
-                        {CATEGORY_LABELS[category.categoryType]}
-                      </span>
-                      <div className="flex items-center gap-3 text-sm">
-                        <span>
-                          Indicative: <strong>{autoScore.total}</strong>
-                        </span>
-                        {adminMark != null && (
-                          <span className="text-primary font-semibold">
-                            Admin: <strong>{adminMark.total}</strong>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {adminMark != null ? (
-                      <Badge variant="default">Scored</Badge>
-                    ) : (
-                      <Badge variant="outline">Pending</Badge>
-                    )}
-                  </div>
-                );
-              })}
-              <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <span className="text-sm font-semibold">Total</span>
-                <div className="flex items-center gap-4 text-sm">
-                  <span>
-                    Indicative:{" "}
-                    <strong>
-                      {draft.categories.reduce(
-                        (sum, c) => sum + scoreCategory(c).total,
-                        0,
-                      )}
-                    </strong>
-                  </span>
-                  {adminMarks.length > 0 && (
-                    <span className="text-primary font-semibold">
-                      Admin:{" "}
-                      <strong>
-                        {adminMarks.reduce((sum, m) => sum + m.total, 0)}
-                      </strong>
-                    </span>
-                  )}
-                </div>
+        <>
+          <div className="mt-8 grid gap-4 rounded-xl border border-primary/25 bg-primary/5 p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Admission review</span>
+                <h4 className="font-heading text-lg">Application Review Status</h4>
+              </div>
+              <div className="flex items-center gap-2">
+                {draft.isBanned ? (
+                  <Badge variant="destructive" className="text-sm px-3 py-1">Banned</Badge>
+                ) : draft.admissionStatus === "verified" ? (
+                  <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-sm px-3 py-1">Verified</Badge>
+                ) : draft.admissionStatus === "fake" ? (
+                  <Badge variant="destructive" className="text-sm px-3 py-1">Flagged</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-sm px-3 py-1">Pending review</Badge>
+                )}
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No categories selected.
-            </p>
-          )}
-        </div>
+
+            {draft.isBanned && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="flex items-center gap-2 font-semibold mb-1"><ShieldX size={15} /> Application Banned</div>
+                <p>{draft.banReason || "No specific reason provided."}</p>
+              </div>
+            )}
+
+            {draft.admissionStatus === "verified" && (
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-700 dark:text-emerald-400">
+                <div className="flex items-center gap-2 font-semibold"><Check size={15} /> This application has been verified by an administrator.</div>
+              </div>
+            )}
+
+            {draft.admissionStatus === "fake" && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                <div className="flex items-center gap-2 font-semibold"><TriangleAlert size={15} /> This application has been flagged for review.</div>
+              </div>
+            )}
+
+            {draft.flags && draft.flags.length > 0 && (
+              <div className="grid gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+                <span className="text-xs font-semibold text-destructive uppercase tracking-wider">
+                  Observations ({draft.flags.length})
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {draft.flags.map((f, i) => (
+                    <Badge key={i} variant="outline" className="border-destructive/40 text-destructive text-xs">
+                      {f.label || f.key}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {draft.interviewNotes && (
+              <div className="grid gap-1 rounded-lg border border-border bg-card p-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admin Notes</span>
+                <p className="text-sm whitespace-pre-wrap text-foreground">{draft.interviewNotes}</p>
+              </div>
+            )}
+
+            {draft.interviewEdits && draft.interviewEdits.length > 0 && (
+              <div className="grid gap-2 rounded-lg border border-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 p-3">
+                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                  Changes made by admin ({draft.interviewEdits.length})
+                </span>
+                <div className="grid gap-1.5 max-h-48 overflow-y-auto">
+                  {draft.interviewEdits.map((edit, i) => (
+                    <div key={i} className="flex flex-wrap items-center gap-2 text-xs border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
+                      <strong className="text-foreground">{edit.label}:</strong>
+                      <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
+                      <span>→</span>
+                      <span className="font-semibold text-primary">{edit.newValue || "(empty)"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6">
+            <div className="flex items-center gap-3 mb-3">
+              <h4 className="font-heading text-lg">Mark Allocation</h4>
+              {adminMarks.length === 0 && (
+                <Badge variant="secondary">Admin marks pending</Badge>
+              )}
+            </div>
+            {draft.categories.length > 0 ? (
+              <div className="grid gap-3">
+                {draft.categories.map((category) => {
+                  const autoScore = scoreCategory(category);
+                  const adminMark = adminMarks.find((m) => m.categoryType === category.categoryType);
+                  return (
+                    <div
+                      className="flex items-center justify-between gap-4 rounded-lg border p-3"
+                      key={category.categoryType}
+                    >
+                      <div className="grid gap-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {CATEGORY_LABELS[category.categoryType]}
+                        </span>
+                        <div className="flex items-center gap-3 text-sm">
+                          <span>
+                            Indicative: <strong>{autoScore.total}</strong>
+                          </span>
+                          {adminMark != null && (
+                            <span className="text-primary font-semibold">
+                              Admin: <strong>{adminMark.total}</strong>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {adminMark != null ? (
+                        <Badge variant="default">Scored</Badge>
+                      ) : (
+                        <Badge variant="outline">Pending</Badge>
+                      )}
+                    </div>
+                  );
+                })}
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                  <span className="text-sm font-semibold">Total</span>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span>
+                      Indicative:{" "}
+                      <strong>
+                        {draft.categories.reduce(
+                          (sum, c) => sum + scoreCategory(c).total,
+                          0,
+                        )}
+                      </strong>
+                    </span>
+                    {adminMarks.length > 0 && (
+                      <span className="text-primary font-semibold">
+                        Admin:{" "}
+                        <strong>
+                          {adminMarks.reduce((sum, m) => sum + m.total, 0)}
+                        </strong>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No categories selected.
+              </p>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
@@ -1111,6 +1192,14 @@ export function ApplicationForm({
   const set = (patch: Partial<ApplicationDraft>) => draft.updateDraft(patch);
 
   const collectionOnly = draft.submissionLocked && draft.submittedAt !== null;
+
+  const marksQuery = useQuery({
+    queryKey: ["application-marks", draft.accessKey],
+    queryFn: () => client.application.getMarks({ accessKey: draft.accessKey }),
+    enabled: Boolean(draft.accessKey && draft.submittedAt),
+    staleTime: 60_000,
+  });
+  const adminMarks = marksQuery.data ?? [];
 
   useEffect(() => {
     let cancelled = false;
@@ -1140,9 +1229,14 @@ export function ApplicationForm({
         } else if (key) {
           const result = await client.application.get({ accessKey: key });
           if (!cancelled) {
-            const latest = normalizeDraft(
-              result.data as Partial<ApplicationDraft>,
-            );
+            const latest = normalizeDraft({
+              ...(result.data as Partial<ApplicationDraft>),
+              admissionStatus: result.admissionStatus,
+              interviewNotes: result.interviewNotes,
+              isBanned: result.isBanned,
+              banReason: result.banReason,
+              flags: result.flags,
+            });
             const restoredSessionCode =
               result.sessionCode ||
               new URLSearchParams(window.location.search).get("code") ||
@@ -1175,6 +1269,11 @@ export function ApplicationForm({
               accessKey: key || latest.accessKey || draft.accessKey,
               sessionCode: restoredSessionCode || draft.sessionCode,
               submittedAt: result.submittedAt ? String(result.submittedAt) : null,
+              admissionStatus: latest.admissionStatus,
+              interviewNotes: latest.interviewNotes,
+              isBanned: latest.isBanned,
+              banReason: latest.banReason,
+              flags: latest.flags,
             });
             dataLoaded = true;
           }
@@ -1547,6 +1646,188 @@ export function ApplicationForm({
                 </div>
               </div>
 
+              {draft.isBanned ? (
+                <div className="flex items-start gap-4 rounded-2xl border border-destructive/30 bg-destructive/8 p-5 sm:p-6">
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm">
+                    <ShieldX size={23} strokeWidth={2.5} />
+                  </div>
+                  <div className="grid gap-2">
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-destructive">
+                      Application blocked
+                    </span>
+                    <strong className="font-heading text-xl leading-tight sm:text-2xl">
+                      This application has been banned.
+                    </strong>
+                    <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+                      {draft.banReason || "This application has been blocked by an administrator. Please contact the school office for more information."}
+                    </p>
+                  </div>
+                </div>
+              ) : draft.admissionStatus === "verified" ? (
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/8 p-5 sm:p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                      <Check size={23} strokeWidth={2.5} />
+                    </div>
+                    <div className="grid gap-2">
+                      <span className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">
+                        Application verified
+                      </span>
+                      <strong className="font-heading text-xl leading-tight sm:text-2xl">
+                        Your application has been reviewed and verified.
+                      </strong>
+                      <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+                        An administrator has reviewed this application and confirmed the information is accurate.
+                      </p>
+                    </div>
+                  </div>
+                  {adminMarks.length > 0 && (
+                    <div className="mt-4 grid gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Category marks</span>
+                      <div className="grid gap-1.5">
+                        {draft.categories.map((category) => {
+                          const mark = adminMarks.find((m) => m.categoryType === category.categoryType);
+                          if (!mark) return null;
+                          return (
+                            <div key={category.categoryType} className="flex items-center justify-between text-sm py-1 border-b border-emerald-500/10 last:border-b-0">
+                              <span className="text-foreground">{CATEGORY_LABELS[category.categoryType]}</span>
+                              <span className="font-semibold text-emerald-700 dark:text-emerald-400">{mark.total}</span>
+                            </div>
+                          );
+                        })}
+                        <div className="flex items-center justify-between text-sm font-semibold pt-1">
+                          <span>Total</span>
+                          <span className="text-emerald-700 dark:text-emerald-400">{adminMarks.reduce((sum, m) => sum + m.total, 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {draft.flags && draft.flags.length > 0 && (
+                    <div className="mt-3 grid gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-amber-600">Observations ({draft.flags.length})</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {draft.flags.map((f, i) => (
+                          <Badge key={i} variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-400 text-xs">{f.label || f.key}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {draft.interviewNotes && (
+                    <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Admin note</span>
+                      <p className="text-sm mt-1 text-foreground">{draft.interviewNotes}</p>
+                    </div>
+                  )}
+                  {draft.interviewEdits && draft.interviewEdits.length > 0 && (
+                    <div className="mt-3 rounded-xl border border-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                        Changes made by admin ({draft.interviewEdits.length})
+                      </span>
+                      <div className="mt-2 grid gap-1 max-h-40 overflow-y-auto">
+                        {draft.interviewEdits.map((edit, i) => (
+                          <div key={i} className="flex flex-wrap items-center gap-2 text-xs border-b border-blue-500/10 pb-1 last:border-b-0 last:pb-0">
+                            <strong className="text-foreground">{edit.label}:</strong>
+                            <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
+                            <span>→</span>
+                            <span className="font-semibold text-primary">{edit.newValue || "(empty)"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : draft.admissionStatus === "fake" ? (
+                <div className="rounded-2xl border border-destructive/30 bg-destructive/8 p-5 sm:p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm">
+                      <TriangleAlert size={23} strokeWidth={2.5} />
+                    </div>
+                    <div className="grid gap-2">
+                      <span className="text-xs font-bold uppercase tracking-[0.14em] text-destructive">
+                        Application flagged
+                      </span>
+                      <strong className="font-heading text-xl leading-tight sm:text-2xl">
+                        This application requires attention.
+                      </strong>
+                      <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+                        An administrator has flagged concerns with this application. Please review the details below and contact the school office if needed.
+                      </p>
+                    </div>
+                  </div>
+                  {draft.flags && draft.flags.length > 0 && (
+                    <div className="mt-4 grid gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-destructive">Flagged items ({draft.flags.length})</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {draft.flags.map((f, i) => (
+                          <Badge key={i} variant="destructive" className="text-xs">{f.label || f.key}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {adminMarks.length > 0 && (
+                    <div className="mt-3 grid gap-2 rounded-xl border border-border bg-card p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Category marks</span>
+                      <div className="grid gap-1.5">
+                        {draft.categories.map((category) => {
+                          const mark = adminMarks.find((m) => m.categoryType === category.categoryType);
+                          if (!mark) return null;
+                          return (
+                            <div key={category.categoryType} className="flex items-center justify-between text-sm py-1 border-b border-border/40 last:border-b-0">
+                              <span className="text-foreground">{CATEGORY_LABELS[category.categoryType]}</span>
+                              <span className="font-semibold">{mark.total}</span>
+                            </div>
+                          );
+                        })}
+                        <div className="flex items-center justify-between text-sm font-semibold pt-1">
+                          <span>Total</span>
+                          <span>{adminMarks.reduce((sum, m) => sum + m.total, 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {draft.interviewNotes && (
+                    <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-destructive">Admin note</span>
+                      <p className="text-sm mt-1 text-foreground">{draft.interviewNotes}</p>
+                    </div>
+                  )}
+                  {draft.interviewEdits && draft.interviewEdits.length > 0 && (
+                    <div className="mt-3 rounded-xl border border-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                        Changes made by admin ({draft.interviewEdits.length})
+                      </span>
+                      <div className="mt-2 grid gap-1 max-h-40 overflow-y-auto">
+                        {draft.interviewEdits.map((edit, i) => (
+                          <div key={i} className="flex flex-wrap items-center gap-2 text-xs border-b border-blue-500/10 pb-1 last:border-b-0 last:pb-0">
+                            <strong className="text-foreground">{edit.label}:</strong>
+                            <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
+                            <span>→</span>
+                            <span className="font-semibold text-primary">{edit.newValue || "(empty)"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : draft.submittedAt ? (
+                <div className="flex items-start gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/8 p-5 sm:p-6">
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
+                    <FileSearch size={22} strokeWidth={2.5} />
+                  </div>
+                  <div className="grid gap-2">
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-amber-600">
+                      Awaiting review
+                    </span>
+                    <strong className="font-heading text-xl leading-tight sm:text-2xl">
+                      Your application is pending admin review.
+                    </strong>
+                    <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+                      Your submission is complete. An administrator will review the details shortly. You can check back later using your access key.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.65fr)]">
                 <section className="grid gap-4 rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6" aria-labelledby="submitted-access-key-heading">
                   <div className="flex items-start justify-between gap-4">
@@ -1601,9 +1882,11 @@ export function ApplicationForm({
                 <Button type="button" variant="secondary" onClick={() => void navigate({ to: "/" })}>
                   <House size={17} /> Back to home
                 </Button>
-                <Button type="button" onClick={startAnotherApplication}>
-                  <UserPlus size={17} /> Apply for another child
-                </Button>
+                {!collectionOnly && (
+                  <Button type="button" onClick={startAnotherApplication}>
+                    <UserPlus size={17} /> Apply for another child
+                  </Button>
+                )}
               </div>
             </div>
           ) : (

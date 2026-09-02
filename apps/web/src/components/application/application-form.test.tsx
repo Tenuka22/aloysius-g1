@@ -11,13 +11,14 @@ const { MOCK_ACCESS_KEY, MOCK_SESSION_CODE } = vi.hoisted(() => ({
   MOCK_SESSION_CODE: "26ABC123",
 }));
 
-const { createMock, getMock, statusMock, checkBirthCertificateMock, submitMock, updateMock } = vi.hoisted(() => ({
+const { createMock, getMock, statusMock, checkBirthCertificateMock, submitMock, updateMock, getMarksMock } = vi.hoisted(() => ({
   createMock: vi.fn(),
   getMock: vi.fn(),
   statusMock: vi.fn(),
   checkBirthCertificateMock: vi.fn(),
   submitMock: vi.fn(),
   updateMock: vi.fn(),
+  getMarksMock: vi.fn(),
 }));
 
 vi.mock("@/utils/orpc", () => ({
@@ -30,6 +31,7 @@ vi.mock("@/utils/orpc", () => ({
       submit: submitMock,
       checkBirthCertificate: checkBirthCertificateMock,
       requestAccess: vi.fn().mockResolvedValue({ submitted: true }),
+      getMarks: getMarksMock,
     },
     admin: {
       application: {
@@ -68,17 +70,26 @@ vi.mock("./location-step", () => ({
 }));
 vi.mock("./school-map-picker", () => ({ SchoolMapPicker: () => <div data-testid="school-map-picker" /> }));
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 function setStore(patch: Partial<typeof emptyDraft>) {
   act(() => useApplicationStore.setState({ ...patch }));
 }
 
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 function renderForm() {
-  render(<ApplicationForm />);
+  renderWithClient(<ApplicationForm />);
   return screen.findByRole("button", { name: /continue/i });
 }
 
 function renderReview() {
-  render(<ApplicationForm />);
+  renderWithClient(<ApplicationForm />);
   return screen.findByRole("button", { name: /(submit|update) application/i });
 }
 
@@ -107,6 +118,7 @@ beforeEach(() => {
   checkBirthCertificateMock.mockReset().mockResolvedValue({ exists: false });
   submitMock.mockReset().mockResolvedValue({ accepted: true });
   updateMock.mockReset().mockResolvedValue({ updatedAt: "2026-01-01T00:00:00.000Z" });
+  getMarksMock.mockReset().mockResolvedValue([]);
   Object.defineProperty(navigator, "clipboard", { value: { writeText: vi.fn().mockResolvedValue(undefined) }, configurable: true });
 });
 

@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css";
 import { client, orpc } from "@/utils/orpc";
 import { emptyDraft, normalizeDraft, prependLocationHistory, type ApplicationDraft, type CategoryApplication, type CategoryType, type LocationDraft, type ScoringInputs } from "@/lib/application-store";
 import { scoreCategory } from "@/lib/scoring";
+import { CATEGORY_MAX_MARKS } from "@/lib/marking-scheme";
 import { findSchoolById } from "@/lib/school-utils";
 import { toast } from "sonner";
 import { useAdminPreferences, isFieldVisible, type AdminFieldVisibility } from "@/lib/admin-preferences";
@@ -364,7 +365,7 @@ function MarkBar({ marks, max }: { marks: number; max: number }) {
 }
 
 function CategoryScoreBar({ total }: { total: number }) {
-  const pct = Math.min(total, 100);
+  const pct = Math.min(total, CATEGORY_MAX_MARKS);
   const barColor = total >= 70 ? "bg-emerald-500" : total >= 40 ? "bg-amber-500" : total > 0 ? "bg-red-400" : "bg-muted";
   return (
     <div className="flex items-center gap-3 w-full">
@@ -372,7 +373,7 @@ function CategoryScoreBar({ total }: { total: number }) {
         <div className={`absolute inset-y-0 left-0 ${barColor} rounded-full transition-all`} style={{ width: `${pct}%` }} />
       </div>
       <span className="font-mono tabular-nums text-sm font-semibold whitespace-nowrap shrink-0">
-        {total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100
+        {total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / {CATEGORY_MAX_MARKS}
       </span>
     </div>
   );
@@ -554,7 +555,7 @@ export function AdminApplicationView({ id }: { id: string }) {
               </div>
               <div>
                 <h3 className="font-semibold mb-3">Categories</h3>
-                {data.categories.length === 0 ? <p className="text-muted-foreground text-sm">None selected</p> : <div className="grid gap-1">{data.categories.map((c) => { const s = scoreCategory(c); return <div key={c.id} className="flex items-baseline justify-between gap-3 text-sm"><span className="text-muted-foreground">{CATEGORY_LABELS[c.categoryType]}</span><span className="font-mono tabular-nums">{s.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100</span></div>; })}<div className="flex items-baseline justify-between gap-3 border-t pt-1 text-sm font-semibold"><span>Total</span><span className="font-mono tabular-nums">{data.categories.reduce((sum, c) => sum + scoreCategory(c).total, 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} / {data.categories.length * 100}</span></div></div>}
+                {data.categories.length === 0 ? <p className="text-muted-foreground text-sm">None selected</p> : <div className="grid gap-1">{data.categories.map((c) => { const s = scoreCategory(c); return <div key={c.id} className="flex items-baseline justify-between gap-3 text-sm"><span className="text-muted-foreground">{CATEGORY_LABELS[c.categoryType]}</span><span className="font-mono tabular-nums">{s.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / {CATEGORY_MAX_MARKS}</span></div>; })}<div className="flex items-baseline justify-between gap-3 border-t pt-1 text-sm font-semibold"><span>Total</span><span className="font-mono tabular-nums">{data.categories.reduce((sum, c) => sum + scoreCategory(c).total, 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} / {data.categories.length * CATEGORY_MAX_MARKS}</span></div></div>}
               </div>
             </div>
           </TabsContent>
@@ -759,7 +760,7 @@ function AdminCategoryEditor({ category, onPatch, onRemove }: { category: Catego
   return (
     <div className="grid gap-3 p-4 border rounded-[10px]">
       <div className="flex items-center justify-between gap-3">
-        <h4 className="font-semibold">{CATEGORY_LABELS[category.categoryType]} – <span className="font-mono">{score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}/100</span></h4>
+        <h4 className="font-semibold">{CATEGORY_LABELS[category.categoryType]} – <span className="font-mono">{score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}/{CATEGORY_MAX_MARKS}</span></h4>
         <Button variant="secondary" size="sm" onClick={onRemove}><X size={16} /> Remove</Button>
       </div>
       {renderFields()}

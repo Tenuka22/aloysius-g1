@@ -169,7 +169,18 @@ export const appRouter = {
     get: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db.select().from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
-      return { data: withoutSchoolPreferences(row.data as Record<string, unknown>), updatedAt: row.updatedAt, accessKeyHint: row.accessKeyHint, sessionCode: await ensureSessionCode(row), submittedAt: row.submittedAt };
+      return {
+        data: withoutSchoolPreferences(row.data as Record<string, unknown>),
+        updatedAt: row.updatedAt,
+        accessKeyHint: row.accessKeyHint,
+        sessionCode: await ensureSessionCode(row),
+        submittedAt: row.submittedAt,
+        admissionStatus: row.admissionStatus,
+        interviewNotes: row.interviewNotes,
+        isBanned: row.isBanned,
+        banReason: row.banReason,
+        flags: parseFlags(row.flags),
+      };
     }),
     checkBirthCertificate: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1) })).handler(async ({ input }) => {
       const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
@@ -205,7 +216,7 @@ export const appRouter = {
       }
       const resolvedBirthCertificateNumber = row.birthCertificateNumber || "";
       if (!resolvedBirthCertificateNumber) throw new ORPCError("BAD_REQUEST", { message: "This application does not have a birth certificate number yet" });
-      const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(and(eq(applicationAccessRequests.applicationId, row.id), eq(applicationAccessRequests.requestType, input.requestType))).get();
+      const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(and(eq(applicationAccessRequests.applicationId, row.id), eq(applicationAccessRequests.requestType, input.requestType), eq(applicationAccessRequests.status, "open"))).get();
       if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName?.trim() ?? "", guardianName: input.guardianName?.trim() ?? "", contactEmail: input.contactEmail?.trim().toLowerCase() ?? "", ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), requestType: input.requestType, status: "open", createdAt: new Date(), resolvedAt: null });
       return { submitted: true };
     }),
@@ -252,7 +263,7 @@ export const appRouter = {
       dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => dismissRequest(input.requestId)),
       submissionRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("submission", input.query, input.page, input.pageSize)),
       removalRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("removal", input.query, input.page, input.pageSize)),
-      forgotRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "contactEmail", "birthCertificateNumber"])),
+      forgotRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "contactEmail", "birthCertificateNumber", "contactPhone"])),
       approveSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
         if (!request) throw new ORPCError("NOT_FOUND", { message: "Submission request not found" });
@@ -331,12 +342,14 @@ export const appRouter = {
         const row = await db.select({ id: applications.id, data: applications.data }).from(applications).where(eq(applications.id, input.id)).get();
         if (!row) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
         const data = (row.data ?? {}) as Record<string, unknown>;
-        const userLocationHistory = (Array.isArray(data.userLocationHistory) ? data.userLocationHistory : []) as Array<Record<string, unknown>>;
+        const userLocationHistory = ((Array.isArray(data.userLocationHistory) ? data.userLocationHistory : []) as Array<Record<string, unknown>>)
+          .filter((loc) => loc.source !== "admin");
         const newLocation = {
           id: randomUUID(),
-          lat: input.lat,
-          lng: input.lng,
+          latitude: input.lat,
+          longitude: input.lng,
           label: input.label,
+          address: input.label,
           source: "admin" as const,
           createdAt: new Date().toISOString(),
           ...(input.mapQuery ? { mapQuery: input.mapQuery } : {}),
@@ -355,6 +368,22 @@ export const appRouter = {
         const updatedData = { ...data, interviewEdits: input.interviewEdits };
         await db.update(applications).set({ data: updatedData, updatedAt: new Date() }).where(eq(applications.id, input.id)).run();
         return { interviewEdits: input.interviewEdits };
+      }),
+      saveScoringInputs: adminProcedure.input(z.object({
+        id: applicationIdSchema,
+        categoryId: z.string(),
+        scoringInputs: z.record(z.unknown()),
+      })).handler(async ({ input }) => {
+        const row = await db.select({ id: applications.id, data: applications.data }).from(applications).where(eq(applications.id, input.id)).get();
+        if (!row) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
+        const data = (row.data ?? {}) as Record<string, unknown>;
+        const categories = Array.isArray(data.categories) ? data.categories as Array<Record<string, unknown>> : [];
+        const updatedCategories = categories.map((cat) =>
+          cat.id === input.categoryId ? { ...cat, scoringInputs: input.scoringInputs } : cat
+        );
+        const updatedData = { ...data, categories: updatedCategories };
+        await db.update(applications).set({ data: updatedData, updatedAt: new Date() }).where(eq(applications.id, input.id)).run();
+        return { success: true };
       }),
       getMarks: adminProcedure.input(z.object({ applicationId: applicationIdSchema })).handler(async ({ input }) => {
         const marks = await db.select().from(applicationMarks).where(eq(applicationMarks.applicationId, input.applicationId)).all();

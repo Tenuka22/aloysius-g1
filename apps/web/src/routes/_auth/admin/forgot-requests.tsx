@@ -1,13 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, KeyRound, Trash2, X } from "lucide-react";
+import { ArrowLeft, KeyRound, QrCode, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-g1/ui/components/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-g1/ui/components/card";
 import { Button } from "@aloysius-g1/ui/components/button";
-import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Input } from "@aloysius-g1/ui/components/input";
 import {
   DataTable,
@@ -23,8 +21,8 @@ import {
 } from "@aloysius-g1/ui/components/dropdown-menu";
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
-import { QrCode } from "lucide-react";
 import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
+import { formatPhoneDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/_auth/admin/forgot-requests")({ component: AdminForgotRequestsPage });
 
@@ -32,21 +30,17 @@ type ForgotRequestRow = {
   id: string;
   applicantName: string;
   birthCertificateNumber: string;
+  contactPhone?: string | null;
   status: string;
   createdAt: Date;
 };
 
-function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () => void }) {
-  const [generatedKey, setGeneratedKey] = useState("");
-  const [qrKey, setQrKey] = useState("");
-
+function ActionsMenu({ item, onKeyGenerated, onDismissed }: { item: ForgotRequestRow; onKeyGenerated: (key: string) => void; onDismissed: () => void }) {
   const rotate = async () => {
     try {
       const result = await client.admin.accessRequests.rotateKey({ requestId: item.id });
-      setGeneratedKey(result.accessKey);
-      setQrKey(result.accessKey);
+      onKeyGenerated(result.accessKey);
       toast.success("New key generated");
-      onAction();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not generate key");
     }
@@ -55,63 +49,27 @@ function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () 
     try {
       await client.admin.accessRequests.dismiss({ requestId: item.id });
       toast.success("Request dismissed");
-      onAction();
+      onDismissed();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not dismiss request");
     }
   };
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground outline-hidden hover:bg-accent hover:text-accent-foreground">
-          <span className="flex items-center justify-center">⋯</span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={rotate}>
-            <KeyRound size={15} /> Generate new key
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={dismiss}>
-            <X size={15} /> Dismiss
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {generatedKey && (
-        <div className="grid gap-1 p-4 border rounded-[10px] border-primary/35 bg-primary/7 mt-2">
-          <strong className="font-semibold text-sm">One-time display</strong>
-          <code className="text-[1.1rem] font-bold break-all">{generatedKey}</code>
-          <span className="text-muted-foreground text-xs">Copy this key now; it will not be shown again.</span>
-          <Button variant="secondary" type="button" onClick={() => setQrKey(generatedKey)}><QrCode size={16} /> Show QR code</Button>
-        </div>
-      )}
-      <AccessKeyQrDialog accessKey={qrKey} open={Boolean(qrKey)} onOpenChange={(open) => { if (!open) setQrKey(""); }} />
-    </>
+    <DropdownMenu>
+      <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground outline-hidden hover:bg-accent hover:text-accent-foreground">
+        <span className="flex items-center justify-center">⋯</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={rotate}>
+          <KeyRound size={15} /> Generate new key
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={dismiss}>
+          <X size={15} /> Dismiss
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
-}
-
-function useColumns(onRefetch: () => void) {
-  return [
-    {
-      accessorKey: "applicantName",
-      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Applicant" />,
-      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="font-medium">{row.original.applicantName || "Unnamed"}</span>,
-    },
-    {
-      accessorKey: "birthCertificateNumber",
-      header: "Birth certificate",
-      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-xs">{row.original.birthCertificateNumber}</span>,
-    },
-    {
-      accessorKey: "createdAt",
-      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Requested" />,
-      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onAction={onRefetch} /></div>,
-    },
-  ];
 }
 
 function AdminForgotRequestsPage() {
@@ -119,6 +77,8 @@ function AdminForgotRequestsPage() {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [generatedKey, setGeneratedKey] = useState("");
+  const [qrKey, setQrKey] = useState("");
 
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
 
@@ -144,7 +104,35 @@ function AdminForgotRequestsPage() {
 
   const items = (requests.data?.items ?? []) as ForgotRequestRow[];
   const pageCount = requests.data ? Math.ceil(requests.data.total / requests.data.pageSize) : 0;
-  const columns = useColumns(() => void requests.refetch());
+
+  const refetch = requests.refetch;
+  const columns = useMemo(() => [
+    {
+      accessorKey: "applicantName",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Applicant" />,
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="font-medium">{row.original.applicantName || "Unnamed"}</span>,
+    },
+    {
+      accessorKey: "birthCertificateNumber",
+      header: "Birth certificate",
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-xs">{row.original.birthCertificateNumber}</span>,
+    },
+    {
+      accessorKey: "contactPhone",
+      header: "Phone",
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-xs">{row.original.contactPhone ? formatPhoneDisplay(row.original.contactPhone) : "—"}</span>,
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Requested" />,
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onKeyGenerated={(key) => { setGeneratedKey(key); setQrKey(key); }} onDismissed={() => void refetch()} /></div>,
+    },
+  ], [refetch]);
 
   return (
     <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
@@ -156,6 +144,17 @@ function AdminForgotRequestsPage() {
         </div>
         <Button variant="secondary" render={<Link to="/admin/applications" />} nativeButton={false}>Back to applications</Button>
       </div>
+      {generatedKey && (
+        <div className="grid gap-1 p-4 mb-4 border rounded-[10px] border-primary/35 bg-primary/7">
+          <div className="flex items-center justify-between">
+            <strong className="font-semibold text-sm">One-time display</strong>
+            <Button variant="ghost" size="icon" onClick={() => { setGeneratedKey(""); void refetch(); }}><X size={16} /></Button>
+          </div>
+          <code className="text-[1.1rem] font-bold break-all">{generatedKey}</code>
+          <span className="text-muted-foreground text-xs">Copy this key now; it will not be shown again.</span>
+          <Button variant="secondary" type="button" onClick={() => setQrKey(generatedKey)}><QrCode size={16} /> Show QR code</Button>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Pending forgot key requests</CardTitle>
@@ -185,7 +184,7 @@ function AdminForgotRequestsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-1 items-center gap-2">
                     <Input
-                      placeholder="Filter by name, email, or birth certificate…"
+                      placeholder="Filter by name, phone, or birth certificate…"
                       value={(filters.find((f) => f.id === "query")?.value as string) ?? ""}
                       onChange={(e) => setFilter("query", e.target.value)}
                       className="h-8 w-[200px] lg:w-[250px]"
@@ -204,6 +203,7 @@ function AdminForgotRequestsPage() {
           />
         </CardContent>
       </Card>
+      <AccessKeyQrDialog accessKey={qrKey} open={Boolean(qrKey)} onOpenChange={(open) => { if (!open) { setQrKey(""); void refetch(); } }} />
     </main>
   );
 }

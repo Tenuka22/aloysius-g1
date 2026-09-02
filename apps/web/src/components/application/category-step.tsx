@@ -5,6 +5,72 @@ import {
   type ScoringInputs,
   useApplicationStore,
 } from "@/lib/application-store";
+import {
+  CATEGORY_MAX_MARKS,
+  MAIN_DOCUMENT_MAX_61,
+  ADDITIONAL_DOC_MAX_61,
+  ELECTORAL_MAX_61,
+  PROXIMITY_PER_SCHOOL_61,
+  PROXIMITY_MAX_61,
+  YEARS_EDUCATED_MARKS_PER_YEAR,
+  YEARS_EDUCATED_MAX,
+  GRADE5_SCHOLARSHIP_MARKS,
+  SPORTS_MAX,
+  LEADERSHIP_MAX,
+  STUDENT_SOCIETIES_MAX,
+  OTHER_ACTIVITIES_MAX,
+  PAST_PUPILS_LIFE_MEMBER_MARKS,
+  PAST_PUPILS_YEARLY_MARKS,
+  PAST_PUPILS_MEMBERSHIP_MAX,
+  PAST_PUPILS_TOTAL_MAX,
+  DEGREE_MAX,
+  DIPLOMA_MARKS,
+  SPORTS_MEET_CONTRIBUTION,
+  SHRAMADANA_CONTRIBUTION,
+  CONTRIBUTION_MAX,
+  SCHOOL_PROJECTS_MARKS,
+  SIBLING_MARKS_PER_SIBLING,
+  SIBLING_STUDYING_MAX,
+  SIBLING_STUDIED_HERE_MARKS,
+  SIBLING_MULTIPLE_APPLYING_MARKS,
+  SIBLING_PREFECT_MAX,
+  SIBLING_EXAM_MAX,
+  SIBLING_PRAISEWORTHY_MARKS,
+  SIBLING_SUPPORT_MARKS,
+  SIBLING_COCURRICULAR_TOTAL_MAX,
+  MAIN_DOCUMENT_MAX_63,
+  ELECTORAL_MARKS_PER_PERSON_YEAR_63,
+  ELECTORAL_MAX_63,
+  PROXIMITY_PER_SCHOOL_63,
+  PROXIMITY_MAX_63,
+  SERVICE_PERIOD_MAX,
+  DIFFICULT_SERVICE_CURRENT_MARKS,
+  DIFFICULT_SERVICE_PREVIOUS_BASE,
+  DIFFICULT_SERVICE_MAX,
+  DIFFICULT_DISTANCE_TIERS,
+  DIFFICULT_EXTRA_PERIOD_MARKS,
+  UNUTILIZED_LEAVE_MARKS_PER_YEAR,
+  UNUTILIZED_LEAVE_MAX,
+  SERVICE_LOCATION_MARKS,
+  SERVICE_LOCATION_MAX,
+  RESIDENCE_DISTANCE_TIERS_64,
+  RESIDENCE_DISTANCE_FALLBACK_64,
+  RESIDENCE_DISTANCE_MAX_64,
+  WORKPLACE_DISTANCE_TIERS,
+  WORKPLACE_DISTANCE_FALLBACK,
+  WORKPLACE_DISTANCE_MAX,
+  TRANSFER_DISTANCE_MAX,
+  TRANSFER_SERVICE_PERIOD_MAX,
+  TRANSFER_PREVIOUS_PERIOD_MAX,
+  TRANSFER_ELAPSED_MAX,
+  PROXIMITY_PER_SCHOOL_65,
+  PROXIMITY_MAX_65,
+  ABROAD_PERIOD_MAX,
+  EMPLOYMENT_PURPOSE_MARKS,
+  EMPLOYMENT_PURPOSE_MAX,
+  PROXIMITY_PER_SCHOOL_66,
+  PROXIMITY_MAX_66,
+} from "@/lib/marking-scheme";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
@@ -15,7 +81,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-g1/ui/components/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@aloysius-g1/ui/components/tooltip";
 import { SchoolMapPicker } from "./school-map-picker";
-import { scoreCategory, documentMarks61, additionalDocsMarks61, electoralMarks61, proximityMarks61, proximityMarks, yearsFromDate, yearsBetween, deedAgeWeight, OL_CEILINGS, AL_CEILINGS, gradeRate, SPORTS_LEVEL_MARKS, LEADERSHIP_ROLE_MARKS, SIBLING_PREFECT_LEVEL_MARKS, SIBLING_EXAM_MARKS, MAIN_DOCUMENT_MARKS_63, STUDENT_SOCIETIES_ROLE_MARKS, OTHER_ACTIVITY_MARKS, DEGREE_MARKS, electoralYearsRegistered } from "@/lib/scoring";
+import {
+  scoreCategory,
+  documentMarks61,
+  additionalDocsMarks61,
+  electoralMarks61,
+  proximityMarks61,
+  proximityMarks,
+  yearsFromDate,
+  yearsBetween,
+  deedAgeWeight,
+  OL_CEILINGS,
+  AL_CEILINGS,
+  gradeRate,
+  SPORTS_LEVEL_MARKS,
+  LEADERSHIP_ROLE_MARKS,
+  SIBLING_PREFECT_LEVEL_MARKS,
+  SIBLING_EXAM_MARKS,
+  MAIN_DOCUMENT_MARKS_63,
+  STUDENT_SOCIETIES_ROLE_MARKS,
+  OTHER_ACTIVITY_MARKS,
+  DEGREE_MARKS,
+  electoralYearsRegistered,
+} from "@/lib/scoring";
+import { Flag } from "lucide-react";
+
+export type FlagProps = {
+  flaggedInputs?: Set<string>;
+  onToggleInputFlag?: (key: string) => void;
+};
+
+function FlagButton({ fieldKey, flaggedInputs, onToggleInputFlag }: { fieldKey: string } & FlagProps) {
+  if (!onToggleInputFlag || !flaggedInputs) return null;
+  const isFlagged = flaggedInputs.has(fieldKey);
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleInputFlag(fieldKey); }}
+      className={`rounded-md p-1 transition-colors ${isFlagged ? "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+      title={isFlagged ? "Remove flag" : "Flag as suspicious"}
+    >
+      <Flag size={12} />
+    </button>
+  );
+}
 
 const CATEGORY_LABELS: Record<CategoryType, string> = {
   "6.1": "6.1 – Residence Verification & Proximity",
@@ -36,19 +145,19 @@ const TAB_LABELS: Record<CategoryType, string> = {
 };
 
 const CATEGORY_META: Record<CategoryType, { description: string; maxMarks: number }> = {
-  "6.1": { description: "Residence documents, electoral registration, and home-to-school proximity.", maxMarks: 100 },
-  "6.2": { description: "The parent’s education, achievements, association service, and school contributions.", maxMarks: 100 },
-  "6.3": { description: "Sibling study history, achievements, residence evidence, and proximity.", maxMarks: 100 },
-  "6.4": { description: "Government service period, difficult service, leave, and service distances.", maxMarks: 100 },
-  "6.5": { description: "Transfer distance, service history, recency, leave, and school proximity.", maxMarks: 100 },
-  "6.6": { description: "Continuous foreign employment, purpose, and home-to-school proximity.", maxMarks: 100 },
+  "6.1": { description: "Residence documents, electoral registration, and home-to-school proximity.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.2": { description: "The parent’s education, achievements, association service, and school contributions.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.3": { description: "Sibling study history, achievements, residence evidence, and proximity.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.4": { description: "Government service period, difficult service, leave, and service distances.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.5": { description: "Transfer distance, service history, recency, leave, and school proximity.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.6": { description: "Continuous foreign employment, purpose, and home-to-school proximity.", maxMarks: CATEGORY_MAX_MARKS },
 };
 
 const PROXIMITY_CATEGORY_CONFIG: Partial<Record<CategoryType, { marksPerSchool: number; maxMarks: number }>> = {
-  "6.1": { marksPerSchool: 5, maxMarks: 50 },
-  "6.3": { marksPerSchool: 3, maxMarks: 30 },
-  "6.5": { marksPerSchool: 3, maxMarks: 30 },
-  "6.6": { marksPerSchool: 3.5, maxMarks: 35 },
+  "6.1": { marksPerSchool: PROXIMITY_PER_SCHOOL_61, maxMarks: PROXIMITY_MAX_61 },
+  "6.3": { marksPerSchool: PROXIMITY_PER_SCHOOL_63, maxMarks: PROXIMITY_MAX_63 },
+  "6.5": { marksPerSchool: PROXIMITY_PER_SCHOOL_65, maxMarks: PROXIMITY_MAX_65 },
+  "6.6": { marksPerSchool: PROXIMITY_PER_SCHOOL_66, maxMarks: PROXIMITY_MAX_66 },
 };
 
 const MAIN_DOCUMENT_OPTIONS = [
@@ -395,10 +504,16 @@ function AdditionalDocsCheckboxGroup({
 export function Category61Fields({
   category,
   onChange,
+  centerLat,
+  centerLng,
+  flaggedInputs,
+  onToggleInputFlag,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
-}) {
+  centerLat?: number;
+  centerLng?: number;
+} & FlagProps) {
   const inputs = category.scoringInputs;
   const docMarks = documentMarks61(inputs);
   const addlMarks = additionalDocsMarks61(inputs);
@@ -407,19 +522,23 @@ export function Category61Fields({
   const deedYears = yearsFromDate(inputs.deedTransferDate);
   const deedWeight = deedAgeWeight(deedYears);
   const deedPct = Math.round(deedWeight * 100);
+  const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
+  const hasCenter = centerLat != null && centerLng != null;
   return (
     <div className="grid gap-5">
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Main residence document</span>
-            <MarkBadge marks={docMarks} max={20} hint={"Document marks (max 20):\n• Title deed – applicant: 20\n• Title deed – parents: 16\n• Feeder electoral 5yr: 15\n• Lease deed: 10\n• Municipal/DS certificate: 5\n• Other documents: 4\n\nDeed age multiplier:\n• 5+ years = 100%\n• 4 years = 80%\n• 3 years = 60%\n• 2 years = 40%\n• 1 year = 20%\n• 6 months = 10%\n• <6 months = 5%"} />
+          <span className="text-sm font-medium">Main residence document</span>
+          <MarkBadge marks={docMarks} max={MAIN_DOCUMENT_MAX_61} hint={"Document marks (max 20):\n• Title deed – applicant: 20\n• Title deed – parents: 16\n• Feeder electoral 5yr: 15\n• Lease deed: 10\n• Municipal/DS certificate: 5\n• Other documents: 4\n\nDeed age multiplier:\n• 5+ years = 100%\n• 4 years = 80%\n• 3 years = 60%\n• 2 years = 40%\n• 1 year = 20%\n• 6 months = 10%\n• <6 months = 5%"} />
+          <FlagButton fieldKey="mainDocumentType" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
           </div>
           <DocumentTypeSelect category={category} onChange={onChange} />
         </div>
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Document registration date</span>
+            <FlagButton fieldKey="deedTransferDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
             {inputs.deedTransferDate && (
               <span className="text-xs text-muted-foreground tabular-nums">
                 {Math.floor(deedYears)} yr{Math.floor(deedYears) !== 1 ? "s" : ""} old · {deedPct}%
@@ -438,7 +557,8 @@ export function Category61Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Supporting documents</span>
-          <MarkBadge marks={addlMarks} max={5} hint={"1 mark per document, max 5.\n\nAccepted documents:\n• NIC\n• Driving licence\n• Landline bill\n• Marriage certificate\n• Life insurance policy\n• School leaving certificate\n• Child birth certificate\n• Vehicle registration\n• Bank passbook"} />
+          <MarkBadge marks={addlMarks} max={ADDITIONAL_DOC_MAX_61} hint={"1 mark per document, max 5.\n\nAccepted documents:\n• NIC\n• Driving licence\n• Landline bill\n• Marriage certificate\n• Life insurance policy\n• School leaving certificate\n• Child birth certificate\n• Vehicle registration\n• Bank passbook"} />
+          <FlagButton fieldKey="additionalDocs" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <AdditionalDocsCheckboxGroup category={category} onChange={onChange} />
       </div>
@@ -446,6 +566,7 @@ export function Category61Fields({
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Electoral register – mother</span>
+            <FlagButton fieldKey="electoralMotherSince" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
           </div>
           <ElectoralYearSelect
             id={`electoral-mother-year-${category.id}`}
@@ -458,6 +579,7 @@ export function Category61Fields({
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Electoral register – father</span>
+            <FlagButton fieldKey="electoralFatherSince" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
           </div>
           <ElectoralYearSelect
             id={`electoral-father-year-${category.id}`}
@@ -470,13 +592,35 @@ export function Category61Fields({
       </div>
       <div className="flex items-center gap-2 border-t pt-3">
         <span className="text-sm font-medium">Electoral register total</span>
-        <MarkBadge marks={electoral} max={25} hint={"2.5 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 25 marks.\n\nExample: Both 5 years = 25"} />
+        <MarkBadge marks={electoral} max={ELECTORAL_MAX_61} hint={"2.5 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 25 marks.\n\nExample: Both 5 years = 25"} />
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Nearby schools</span>
-          <MarkBadge marks={prox} max={50} hint={"Max 50 marks.\nDeduct 5 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 50 marks\n10 schools = 0 marks"} />
+          <MarkBadge marks={prox} max={PROXIMITY_MAX_61} hint={"Max 50 marks.\nDeduct 5 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 50 marks\n10 schools = 0 marks"} />
+          <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          {selectedSchoolIds.length > 0 && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{selectedSchoolIds.length} selected</span>
+          )}
         </div>
+        {hasCenter ? (
+          <SchoolMapPicker
+            centerLat={centerLat!}
+            centerLng={centerLng!}
+            selectedIds={selectedSchoolIds}
+            highlightSchoolId="st-aloysius-galle"
+            marksPerSchool={PROXIMITY_PER_SCHOOL_61}
+            onToggle={(schoolId) =>
+              onChange({
+                schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
+                  ? selectedSchoolIds.filter((id) => id !== schoolId)
+                  : [...selectedSchoolIds, schoolId],
+              })
+            }
+          />
+        ) : (
+          <p className="text-xs text-muted-foreground">No home location available for map display.</p>
+        )}
       </div>
     </div>
   );
@@ -636,44 +780,46 @@ function GradeCounts({
 export function Category62Fields({
   category,
   onChange,
+  flaggedInputs,
+  onToggleInputFlag,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
-}) {
+} & FlagProps) {
   const inputs = category.scoringInputs;
   const id = category.id;
   const years = yearsBetween(inputs.alumniStartDate, inputs.alumniEndDate);
-  const yearsMarks = Math.min(years * 2, 26);
-  const scholarshipMarks = inputs.grade5ScholarshipPassed ? 3 : 0;
+  const yearsMarks = Math.min(years * YEARS_EDUCATED_MARKS_PER_YEAR, YEARS_EDUCATED_MAX);
+  const scholarshipMarks = inputs.grade5ScholarshipPassed ? GRADE5_SCHOLARSHIP_MARKS : 0;
 
   // Sports / co-curricular marks
   const sportsBase = SPORTS_LEVEL_MARKS[inputs.sportsLevel ?? ""] ?? 0;
-  const sportsMarks = Math.min(sportsBase * (inputs.sportsCount ?? (sportsBase > 0 ? 1 : 0)), 10);
+  const sportsMarks = Math.min(sportsBase * (inputs.sportsCount ?? (sportsBase > 0 ? 1 : 0)), SPORTS_MAX);
   const leadershipMarks = LEADERSHIP_ROLE_MARKS[inputs.leadershipRole ?? ""] ?? 0;
   const studentSocietiesMarks = STUDENT_SOCIETIES_ROLE_MARKS[inputs.studentSocietiesRole ?? ""] ?? 0;
   const otherActivityMarks = OTHER_ACTIVITY_MARKS[inputs.otherActivity ?? ""] ?? 0;
 
   // Past Pupils' Association marks
   let pastPupilsMarks = 0;
-  if (inputs.pastPupilsLifeMember) pastPupilsMarks += 10;
+  if (inputs.pastPupilsLifeMember) pastPupilsMarks += PAST_PUPILS_LIFE_MEMBER_MARKS;
   else if (inputs.pastPupilsMembershipStart && inputs.pastPupilsMembershipEnd) {
     const years = yearsBetween(inputs.pastPupilsMembershipStart, inputs.pastPupilsMembershipEnd);
-    pastPupilsMarks += Math.min(years * 0.5, 10);
+    pastPupilsMarks += Math.min(years * PAST_PUPILS_YEARLY_MARKS, PAST_PUPILS_MEMBERSHIP_MAX);
   }
   if (inputs.pastPupilsCommitteeMember) pastPupilsMarks += 1;
   if (inputs.pastPupilsExecutiveOffice) pastPupilsMarks += 3;
-  pastPupilsMarks = Math.min(pastPupilsMarks, 10);
+  pastPupilsMarks = Math.min(pastPupilsMarks, PAST_PUPILS_TOTAL_MAX);
 
   // Degree marks
   const degreeMarks = DEGREE_MARKS[inputs.highestDegree ?? ""] ?? 0;
-  const diplomaMarks = inputs.hasDiploma ? 2 : 0;
+  const diplomaMarks = inputs.hasDiploma ? DIPLOMA_MARKS : 0;
 
   // Contribution marks
   let contributionMarks = 0;
-  if (inputs.sportsMeetContribution) contributionMarks += 0.5;
-  if (inputs.shramadanaContribution) contributionMarks += 0.5;
-  contributionMarks = Math.min(contributionMarks, 2);
-  const projectMarks = inputs.schoolProjectsContribution ? 5 : 0;
+  if (inputs.sportsMeetContribution) contributionMarks += SPORTS_MEET_CONTRIBUTION;
+  if (inputs.shramadanaContribution) contributionMarks += SHRAMADANA_CONTRIBUTION;
+  contributionMarks = Math.min(contributionMarks, CONTRIBUTION_MAX);
+  const projectMarks = inputs.schoolProjectsContribution ? SCHOOL_PROJECTS_MARKS : 0;
 
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
@@ -681,7 +827,8 @@ export function Category62Fields({
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Years educated at this school</span>
-          <MarkBadge marks={yearsMarks} max={26} hint={"2 marks per year, max 13 years.\n\nCurrent: " + Math.floor(years) + " years = " + yearsMarks + " marks"} />
+          <MarkBadge marks={yearsMarks} max={YEARS_EDUCATED_MAX} hint={"2 marks per year, max 13 years.\n\nCurrent: " + Math.floor(years) + " years = " + yearsMarks + " marks"} />
+          <FlagButton fieldKey="alumniStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
           <DateField
@@ -705,7 +852,8 @@ export function Category62Fields({
       <div className="col-span-2 grid content-start gap-2 rounded-xl border border-border/70 bg-muted/10 p-3 sm:flex sm:items-center sm:justify-between sm:gap-4 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Grade 5 Scholarship</span>
-          <MarkBadge marks={scholarshipMarks} max={3} hint={"Passed = 3 marks\nNot passed = 0 marks"} />
+          <MarkBadge marks={scholarshipMarks} max={GRADE5_SCHOLARSHIP_MARKS} hint={"Passed = 3 marks\nNot passed = 0 marks"} />
+          <FlagButton fieldKey="grade5ScholarshipPassed" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
@@ -765,7 +913,8 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Sports / co-curricular</span>
-          <MarkBadge marks={sportsMarks} max={10} hint={"Marks per achievement by level:\n• Inter-House: 0.5\n• Zonal: 1\n• District: 2\n• Provincial: 3\n• National: 4.75\n• International: 5\n\nMultiply by count, max 10"} />
+          <MarkBadge marks={sportsMarks} max={SPORTS_MAX} hint={"Marks per achievement by level:\n• Inter-House: 0.5\n• Zonal: 1\n• District: 2\n• Provincial: 3\n• National: 4.75\n• International: 5\n\nMultiply by count, max 10"} />
+          <FlagButton fieldKey="sportsLevel" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <StringSelect
           id={`sports-level-${id}`}
@@ -787,7 +936,8 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Leadership role</span>
-          <MarkBadge marks={leadershipMarks} max={5} hint={"Marks by role:\n• Primary Student Prefect: 1\n• Junior Student Prefect: 1.5\n• Senior Student Prefect: 3\n• Deputy Head Prefect: 4\n• Head Prefect: 5\n• First Team Vice-Captain: 1.5\n• First Team Captain: 2\n\nMax 5 marks"} />
+          <MarkBadge marks={leadershipMarks} max={LEADERSHIP_MAX} hint={"Marks by role:\n• Primary Student Prefect: 1\n• Junior Student Prefect: 1.5\n• Senior Student Prefect: 3\n• Deputy Head Prefect: 4\n• Head Prefect: 5\n• First Team Vice-Captain: 1.5\n• First Team Captain: 2\n\nMax 5 marks"} />
+          <FlagButton fieldKey="leadershipRole" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <StringSelect
           id={`leadership-role-${id}`}
@@ -803,7 +953,8 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Student Societies</span>
-          <MarkBadge marks={studentSocietiesMarks} max={5} hint={"Marks by role:\n• Committee Member: 0.5\n• Vice President / Vice Secretary / Vice Treasurer: 0.75\n• President / Secretary / Treasurer: 1\n\nMax 5 marks"} />
+          <MarkBadge marks={studentSocietiesMarks} max={STUDENT_SOCIETIES_MAX} hint={"Marks by role:\n• Committee Member: 0.5\n• Vice President / Vice Secretary / Vice Treasurer: 0.75\n• President / Secretary / Treasurer: 1\n\nMax 5 marks"} />
+          <FlagButton fieldKey="studentSocietiesRole" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <StringSelect
           id={`student-societies-role-${id}`}
@@ -819,7 +970,8 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Other Activities</span>
-          <MarkBadge marks={otherActivityMarks} max={5} hint={"Marks by activity:\n• Junior Band Leader: 2\n• Junior Band Member: 1\n• Senior Band Leader: 2\n• Senior Band Member: 1\n• Scout Leader: 2\n• Scout Member: 1\n• Cub Scout: 1\n• Cadet Team Leader: 2\n• Cadet Team Member: 1\n• Debating Team Leader: 2\n• Debating Team Member: 1\n• St. John Ambulance Leader: 2\n• St. John Ambulance Member: 1\n• Other: 1\n\nMax 5 marks"} />
+          <MarkBadge marks={otherActivityMarks} max={OTHER_ACTIVITIES_MAX} hint={"Marks by activity:\n• Junior Band Leader: 2\n• Junior Band Member: 1\n• Senior Band Leader: 2\n• Senior Band Member: 1\n• Scout Leader: 2\n• Scout Member: 1\n• Cub Scout: 1\n• Cadet Team Leader: 2\n• Cadet Team Member: 1\n• Debating Team Leader: 2\n• Debating Team Member: 1\n• St. John Ambulance Leader: 2\n• St. John Ambulance Member: 1\n• Other: 1\n\nMax 5 marks"} />
+          <FlagButton fieldKey="otherActivity" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <StringSelect
           id={`other-activity-${id}`}
@@ -847,13 +999,14 @@ export function Category62Fields({
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Past Pupils' Association</span>
-          <MarkBadge marks={pastPupilsMarks} max={10} hint={(() => {
+          <MarkBadge marks={pastPupilsMarks} max={PAST_PUPILS_TOTAL_MAX} hint={(() => {
             const start = inputs.pastPupilsMembershipStart;
             const end = inputs.pastPupilsMembershipEnd;
             const years = (start && end) ? yearsBetween(start, end).toFixed(1) : "0";
             const yearMarks = (parseFloat(years) * 0.5).toFixed(1);
             return `Life Membership: +10 marks\nOR Membership period: 0.5 × ${years} yrs = ${yearMarks} marks (max 10)\n\nCommittee Membership: +1 mark (0.25 × 4 yrs, max 3)\nExecutive Office Post: +3 marks (1.5 × 2, max 3)\n\nMax total: 10 marks`;
           })()} />
+          <FlagButton fieldKey="pastPupilsLifeMember" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
           <label className="flex items-center gap-2 text-sm">
@@ -901,7 +1054,8 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">University Degrees (UGC)</span>
-          <MarkBadge marks={degreeMarks} max={5} hint={"Marks by qualification:\n• First degree (UGC approved): 3\n• Postgraduate Degree: 4\n• Doctorate (Ph.D.): 5\n• Chartered Professional / NVQ 7: 3\n\nMax 5 marks"} />
+          <MarkBadge marks={degreeMarks} max={DEGREE_MAX} hint={"Marks by qualification:\n• First degree (UGC approved): 3\n• Postgraduate Degree: 4\n• Doctorate (Ph.D.): 5\n• Chartered Professional / NVQ 7: 3\n\nMax 5 marks"} />
+          <FlagButton fieldKey="highestDegree" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <StringSelect
           id={`highest-degree-${id}`}
@@ -917,7 +1071,8 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Diploma / Higher Diploma</span>
-          <MarkBadge marks={diplomaMarks} max={2} hint={"Diploma / Higher Diploma / NVQ 5, 6\n(More than 2 years): 2 marks\n\nOtherwise: 0 marks"} />
+          <MarkBadge marks={diplomaMarks} max={DIPLOMA_MARKS} hint={"Diploma / Higher Diploma / NVQ 5, 6\n(More than 2 years): 2 marks\n\nOtherwise: 0 marks"} />
+          <FlagButton fieldKey="hasDiploma" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
@@ -933,7 +1088,8 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Contribution to School Activities</span>
-          <MarkBadge marks={contributionMarks} max={2} hint={"Sports Meet: 0.5 marks\nShramadana (Community Service): 0.5 marks\n\nMax 2 marks"} />
+          <MarkBadge marks={contributionMarks} max={CONTRIBUTION_MAX} hint={"Sports Meet: 0.5 marks\nShramadana (Community Service): 0.5 marks\n\nMax 2 marks"} />
+          <FlagButton fieldKey="sportsMeetContribution" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <div className="grid gap-2">
           <label className="flex items-center gap-2 text-sm">
@@ -959,7 +1115,8 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Contribution to School Projects</span>
-          <MarkBadge marks={projectMarks} max={5} hint={"Contributed to school projects:\n5 marks\n\nOtherwise: 0 marks"} />
+          <MarkBadge marks={projectMarks} max={SCHOOL_PROJECTS_MARKS} hint={"Contributed to school projects:\n5 marks\n\nOtherwise: 0 marks"} />
+          <FlagButton fieldKey="schoolProjectsContribution" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
@@ -977,31 +1134,40 @@ export function Category62Fields({
 export function Category63Fields({
   category,
   onChange,
+  centerLat,
+  centerLng,
+  flaggedInputs,
+  onToggleInputFlag,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
-}) {
+  centerLat?: number;
+  centerLng?: number;
+} & FlagProps) {
   const inputs = category.scoringInputs;
   const id = category.id;
-  const siblingsMarks = Math.min((inputs.siblingsCurrentlyStudyingCount ?? 0) * 2, 20);
-  const studiedHereMarks = inputs.siblingStudiedAtAppliedSchool ? 5 : 0;
-  const multipleApplyingMarks = inputs.twoOrMoreSiblingsApplying ? 5 : 0;
-  const prefectMarks = Math.min((SIBLING_PREFECT_LEVEL_MARKS[inputs.siblingPrefectLevel ?? ""] ?? 0) * (inputs.siblingPrefectCount ?? 0), 2);
-  const examMarks = Math.min(SIBLING_EXAM_MARKS[inputs.siblingExamAchievement ?? ""] ?? 0, 2);
-  const praiseworthyMarks = inputs.siblingPraiseworthyAchievement ? 2 : 0;
-  const supportMarks = inputs.parentsSupportRendered ? 4 : 0;
-  const cocurricularTotal = Math.min(prefectMarks + examMarks + praiseworthyMarks + supportMarks, 10);
-  const documentMarks = Math.min(MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0, 10);
+  const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
+  const hasCenter = centerLat != null && centerLng != null;
+  const siblingsMarks = Math.min((inputs.siblingsCurrentlyStudyingCount ?? 0) * SIBLING_MARKS_PER_SIBLING, SIBLING_STUDYING_MAX);
+  const studiedHereMarks = inputs.siblingStudiedAtAppliedSchool ? SIBLING_STUDIED_HERE_MARKS : 0;
+  const multipleApplyingMarks = inputs.twoOrMoreSiblingsApplying ? SIBLING_MULTIPLE_APPLYING_MARKS : 0;
+  const prefectMarks = Math.min((SIBLING_PREFECT_LEVEL_MARKS[inputs.siblingPrefectLevel ?? ""] ?? 0) * (inputs.siblingPrefectCount ?? 0), SIBLING_PREFECT_MAX);
+  const examMarks = Math.min(SIBLING_EXAM_MARKS[inputs.siblingExamAchievement ?? ""] ?? 0, SIBLING_EXAM_MAX);
+  const praiseworthyMarks = inputs.siblingPraiseworthyAchievement ? SIBLING_PRAISEWORTHY_MARKS : 0;
+  const supportMarks = inputs.parentsSupportRendered ? SIBLING_SUPPORT_MARKS : 0;
+  const cocurricularTotal = Math.min(prefectMarks + examMarks + praiseworthyMarks + supportMarks, SIBLING_COCURRICULAR_TOTAL_MAX);
+  const documentMarks = Math.min(MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0, MAIN_DOCUMENT_MAX_63);
   const mother = electoralYearsRegistered(inputs.electoralMotherSince);
   const father = electoralYearsRegistered(inputs.electoralFatherSince);
-  const electoralMarks = Math.min((mother + father) * 2, 20);
-  const prox = proximityMarks(inputs, 3, 30);
+  const electoralMarks = Math.min((mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_63, ELECTORAL_MAX_63);
+  const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_63, PROXIMITY_MAX_63);
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Siblings currently studying</span>
-          <MarkBadge marks={siblingsMarks} max={20} hint={"2 marks per sibling, max 10.\n\nCurrent: " + (inputs.siblingsCurrentlyStudyingCount ?? 0) + " sibling(s) = " + siblingsMarks + " marks"} />
+          <MarkBadge marks={siblingsMarks} max={SIBLING_STUDYING_MAX} hint={"2 marks per sibling, max 10.\n\nCurrent: " + (inputs.siblingsCurrentlyStudyingCount ?? 0) + " sibling(s) = " + siblingsMarks + " marks"} />
+          <FlagButton fieldKey="siblingsCurrentlyStudyingCount" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <NumberField
           id={`siblings-count-${id}`}
@@ -1013,7 +1179,8 @@ export function Category63Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Sibling studied at applied school</span>
-          <MarkBadge marks={studiedHereMarks} max={5} hint={"If sibling studied at St. Aloysius:\n5 marks\n\nOtherwise: 0 marks"} />
+          <MarkBadge marks={studiedHereMarks} max={SIBLING_STUDIED_HERE_MARKS} hint={"If sibling studied at St. Aloysius:\n5 marks\n\nOtherwise: 0 marks"} />
+          <FlagButton fieldKey="siblingStudiedAtAppliedSchool" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
@@ -1027,7 +1194,8 @@ export function Category63Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Two or more siblings applying</span>
-          <MarkBadge marks={multipleApplyingMarks} max={5} hint={"If 2+ siblings applying to same school:\n5 marks\n\nOtherwise: 0 marks"} />
+          <MarkBadge marks={multipleApplyingMarks} max={SIBLING_MULTIPLE_APPLYING_MARKS} hint={"If 2+ siblings applying to same school:\n5 marks\n\nOtherwise: 0 marks"} />
+          <FlagButton fieldKey="twoOrMoreSiblingsApplying" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
@@ -1041,7 +1209,8 @@ export function Category63Fields({
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Sibling co-curricular &amp; prefect</span>
-          <MarkBadge marks={cocurricularTotal} max={10} hint={"Prefect skill: 0.25–2 per achievement\nExam: 0.5 (scholarship) / 1 (O/L) / 1.5 (A/L)\nPraiseworthy: 2\nParent support: 4\n\nMax 10 marks"} />
+          <MarkBadge marks={cocurricularTotal} max={SIBLING_COCURRICULAR_TOTAL_MAX} hint={"Prefect skill: 0.25–2 per achievement\nExam: 0.5 (scholarship) / 1 (O/L) / 1.5 (A/L)\nPraiseworthy: 2\nParent support: 4\n\nMax 10 marks"} />
+          <FlagButton fieldKey="siblingPrefectLevel" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
           <StringSelect
@@ -1087,7 +1256,8 @@ export function Category63Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Residence document</span>
-          <MarkBadge marks={documentMarks} max={10} hint={"Document marks (max 10):\n• Title deed – applicant/spouse: 10\n• Title deed – parents: 6\n• Feeder electoral 5yr: 6\n• Lease deed: 4\n• Municipal/DS/Rent Act: 4\n• Other documents: 2"} />
+          <MarkBadge marks={documentMarks} max={MAIN_DOCUMENT_MAX_63} hint={"Document marks (max 10):\n• Title deed – applicant/spouse: 10\n• Title deed – parents: 6\n• Feeder electoral 5yr: 6\n• Lease deed: 4\n• Municipal/DS/Rent Act: 4\n• Other documents: 2"} />
+          <FlagButton fieldKey="mainDocumentType" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <DocumentTypeSelect category={category} onChange={onChange} options={SIBLING_DOCUMENT_OPTIONS} />
       </div>
@@ -1119,12 +1289,14 @@ export function Category63Fields({
       </div>
       <div className="flex items-center gap-2 border-t pt-3">
         <span className="text-sm font-medium">Electoral register total</span>
-        <MarkBadge marks={electoralMarks} max={20} hint={"2 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 20 marks.\n\nExample: Both 5 years = 20"} />
-      </div>
+          <MarkBadge marks={electoralMarks} max={ELECTORAL_MAX_63} hint={"2 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 20 marks.\n\nExample: Both 5 years = 20"} />
+          <FlagButton fieldKey="electoralMotherSince" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+        </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Nearby schools</span>
-          <MarkBadge marks={prox} max={30} hint={"Max 30 marks.\nDeduct 3 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 30 marks\n10 schools = 0 marks"} />
+          <MarkBadge marks={prox} max={PROXIMITY_MAX_63} hint={"Max 30 marks.\nDeduct 3 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 30 marks\n10 schools = 0 marks"} />
+          <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
       </div>
     </div>
@@ -1134,45 +1306,49 @@ export function Category63Fields({
 export function Category64Fields({
   category,
   onChange,
+  flaggedInputs,
+  onToggleInputFlag,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
-}) {
+} & FlagProps) {
   const inputs = category.scoringInputs;
-  const serviceMarks = Math.min(yearsFromDate(inputs.serviceStartDate), 20);
+  const serviceMarks = Math.min(yearsFromDate(inputs.serviceStartDate), SERVICE_PERIOD_MAX);
   let difficultMarks = 0;
   if (inputs.difficultServiceType === "current") {
-    difficultMarks = 25;
+    difficultMarks = DIFFICULT_SERVICE_CURRENT_MARKS;
   } else if (inputs.difficultServiceType === "previous") {
-    const previousBase = 15;
     let distance = 0;
     const km = inputs.difficultServiceDistanceKm;
-    if (km != null && km >= 150) distance = 15;
-    else if (km != null && km > 100) distance = 10;
-    else if (km != null && km > 75) distance = 5;
-    difficultMarks = Math.max(previousBase, distance) + (inputs.difficultServiceExtraPeriods ?? 0) * 0.5;
+    if (km != null && km >= 150) distance = DIFFICULT_DISTANCE_TIERS[0][1];
+    else if (km != null && km > 100) distance = DIFFICULT_DISTANCE_TIERS[1][1];
+    else if (km != null && km > 75) distance = DIFFICULT_DISTANCE_TIERS[2][1];
+    difficultMarks = Math.max(DIFFICULT_SERVICE_PREVIOUS_BASE, distance) + (inputs.difficultServiceExtraPeriods ?? 0) * DIFFICULT_EXTRA_PERIOD_MARKS;
   }
-  difficultMarks = Math.min(difficultMarks, 25);
-  const leaveMarks = Math.min((inputs.unutilizedLeaveYears ?? 0) * 2, 10);
-  const locationMap: Record<string, number> = { "same-school": 10, zone: 7.5, province: 5, "education-institution": 2.5 };
-  const locationMarks = Math.min(locationMap[inputs.serviceLocationLevel ?? ""] ?? 0, 10);
+  difficultMarks = Math.min(difficultMarks, DIFFICULT_SERVICE_MAX);
+  const leaveMarks = Math.min((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX);
+  const locationMap: Record<string, number> = SERVICE_LOCATION_MARKS;
+  const locationMarks = Math.min(locationMap[inputs.serviceLocationLevel ?? ""] ?? 0, SERVICE_LOCATION_MAX);
   const resKm = inputs.residenceToSchoolKm;
   let residenceDistance = 0;
-  if (resKm != null && resKm <= 1) residenceDistance = 10;
-  else if (resKm != null && resKm <= 3) residenceDistance = 8;
-  else if (resKm != null && resKm <= 5) residenceDistance = 6;
+  if (resKm != null && resKm <= RESIDENCE_DISTANCE_TIERS_64[0][0]) residenceDistance = RESIDENCE_DISTANCE_TIERS_64[0][1];
+  else if (resKm != null && resKm <= RESIDENCE_DISTANCE_TIERS_64[1][0]) residenceDistance = RESIDENCE_DISTANCE_TIERS_64[1][1];
+  else if (resKm != null && resKm <= RESIDENCE_DISTANCE_TIERS_64[2][0]) residenceDistance = RESIDENCE_DISTANCE_TIERS_64[2][1];
+  else residenceDistance = RESIDENCE_DISTANCE_FALLBACK_64;
   const workKm = inputs.workplaceToSchoolKm;
   let workplaceDistance = 0;
-  if (workKm != null && workKm >= 100) workplaceDistance = 25;
-  else if (workKm != null && workKm >= 70) workplaceDistance = 20;
-  else if (workKm != null && workKm >= 40) workplaceDistance = 15;
-  else if (workKm != null && workKm >= 20) workplaceDistance = 10;
+  if (workKm != null && workKm >= WORKPLACE_DISTANCE_TIERS[0][0]) workplaceDistance = WORKPLACE_DISTANCE_TIERS[0][1];
+  else if (workKm != null && workKm >= WORKPLACE_DISTANCE_TIERS[1][0]) workplaceDistance = WORKPLACE_DISTANCE_TIERS[1][1];
+  else if (workKm != null && workKm >= WORKPLACE_DISTANCE_TIERS[2][0]) workplaceDistance = WORKPLACE_DISTANCE_TIERS[2][1];
+  else if (workKm != null && workKm >= WORKPLACE_DISTANCE_TIERS[3][0]) workplaceDistance = WORKPLACE_DISTANCE_TIERS[3][1];
+  else workplaceDistance = WORKPLACE_DISTANCE_FALLBACK;
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Period of service</span>
-          <MarkBadge marks={serviceMarks} max={20} hint={"1 mark per year of service, max 20.\n\nCurrent: " + Math.floor(yearsFromDate(inputs.serviceStartDate)) + " years = " + serviceMarks + " marks"} />
+          <MarkBadge marks={serviceMarks} max={SERVICE_PERIOD_MAX} hint={"1 mark per year of service, max 20.\n\nCurrent: " + Math.floor(yearsFromDate(inputs.serviceStartDate)) + " years = " + serviceMarks + " marks"} />
+          <FlagButton fieldKey="serviceStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <DateField
           id={`service-start-${category.id}`}
@@ -1185,7 +1361,8 @@ export function Category64Fields({
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Difficult service</span>
-          <MarkBadge marks={difficultMarks} max={25} hint={"Current school: 25 marks\nPrevious school: max(15, distance bonus) + extra periods\n\nDistance bonus:\n• 150+ km: 15\n• 100–150 km: 10\n• 75–100 km: 5\n\n+0.5 per extra period of 6 months"} />
+          <MarkBadge marks={difficultMarks} max={DIFFICULT_SERVICE_MAX} hint={"Current school: 25 marks\nPrevious school: max(15, distance bonus) + extra periods\n\nDistance bonus:\n• 150+ km: 15\n• 100–150 km: 10\n• 75–100 km: 5\n\n+0.5 per extra period of 6 months"} />
+          <FlagButton fieldKey="difficultServiceType" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <Field>
           <FieldLabel>Type of difficult service</FieldLabel>
@@ -1219,7 +1396,8 @@ export function Category64Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Unutilized leave</span>
-          <MarkBadge marks={leaveMarks} max={10} hint={"2 marks per year of unutilized leave, max 5 years.\n\nCurrent: " + (inputs.unutilizedLeaveYears ?? 0) + " years = " + leaveMarks + " marks"} />
+          <MarkBadge marks={leaveMarks} max={UNUTILIZED_LEAVE_MAX} hint={"2 marks per year of unutilized leave, max 5 years.\n\nCurrent: " + (inputs.unutilizedLeaveYears ?? 0) + " years = " + leaveMarks + " marks"} />
+          <FlagButton fieldKey="unutilizedLeaveYears" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <YearsSelect
           id={`unutilized-leave-${category.id}`}
@@ -1231,7 +1409,8 @@ export function Category64Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Service location</span>
-          <MarkBadge marks={locationMarks} max={10} hint={"Same school: 10\nZone: 7.5\nProvince: 5\nEducation institution: 2.5"} />
+          <MarkBadge marks={locationMarks} max={SERVICE_LOCATION_MAX} hint={"Same school: 10\nZone: 7.5\nProvince: 5\nEducation institution: 2.5"} />
+          <FlagButton fieldKey="serviceLocationLevel" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <Field>
           <FieldLabel>Service location level</FieldLabel>
@@ -1250,7 +1429,8 @@ export function Category64Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Residence to school</span>
-          <MarkBadge marks={residenceDistance} max={10} hint={"Within 1 km: 10\n1–3 km: 8\n3–5 km: 6\n>5 km: 4"} />
+          <MarkBadge marks={residenceDistance} max={RESIDENCE_DISTANCE_MAX_64} hint={"Within 1 km: 10\n1–3 km: 8\n3–5 km: 6\n>5 km: 4"} />
+          <FlagButton fieldKey="residenceToSchoolKm" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <NumberField
           id={`residence-to-school-${category.id}`}
@@ -1262,7 +1442,8 @@ export function Category64Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Workplace to school</span>
-          <MarkBadge marks={workplaceDistance} max={25} hint={"100+ km: 25\n70–100 km: 20\n40–70 km: 15\n20–40 km: 10\n<20 km: 5"} />
+          <MarkBadge marks={workplaceDistance} max={WORKPLACE_DISTANCE_MAX} hint={"100+ km: 25\n70–100 km: 20\n40–70 km: 15\n20–40 km: 10\n<20 km: 5"} />
+          <FlagButton fieldKey="workplaceToSchoolKm" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <NumberField
           id={`workplace-to-school-${category.id}`}
@@ -1275,20 +1456,28 @@ export function Category64Fields({
   );
 }
 
-function Category65Fields({
+export function Category65Fields({
   category,
   onChange,
+  centerLat,
+  centerLng,
+  flaggedInputs,
+  onToggleInputFlag,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
-}) {
+  centerLat?: number;
+  centerLng?: number;
+} & FlagProps) {
   const inputs = category.scoringInputs;
+  const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
+  const hasCenter = centerLat != null && centerLng != null;
   const km = inputs.previousWorkplaceDistanceKm;
   let distanceMarks = 0;
   if (km != null && km > 150) distanceMarks = 35;
   else if (km != null && km > 100) distanceMarks = 28;
   else if (km != null && km >= 50) distanceMarks = 21;
-  const periodMarks = Math.min(yearsFromDate(inputs.serviceStartDate), 10);
+  const periodMarks = Math.min(yearsFromDate(inputs.serviceStartDate), TRANSFER_SERVICE_PERIOD_MAX);
   const prevYears = yearsFromDate(inputs.previousWorkplaceStartDate);
   let previousPeriodMarks = 0;
   if (prevYears >= 3) previousPeriodMarks = 10;
@@ -1303,14 +1492,15 @@ function Category65Fields({
     else if (elapsed <= 4) elapsedMarks = 2;
     else if (elapsed <= 5) elapsedMarks = 1;
   }
-  const leaveMarks = Math.min((inputs.unutilizedLeaveYears ?? 0) * 2, 10);
-  const prox = proximityMarks(inputs, 3, 30);
+  const leaveMarks = Math.min((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX);
+  const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_65, PROXIMITY_MAX_65);
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Previous workplace distance</span>
-          <MarkBadge marks={distanceMarks} max={35} hint={">150 km: 35\n100–150 km: 28\n50–100 km: 21\n<50 km: 0\n\nMust be ≥50 km"} />
+          <MarkBadge marks={distanceMarks} max={TRANSFER_DISTANCE_MAX} hint={">150 km: 35\n100–150 km: 28\n50–100 km: 21\n<50 km: 0\n\nMust be ≥50 km"} />
+          <FlagButton fieldKey="previousWorkplaceDistanceKm" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <NumberField
           id={`prev-workplace-distance-${category.id}`}
@@ -1322,7 +1512,8 @@ function Category65Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Period of service</span>
-          <MarkBadge marks={periodMarks} max={10} hint={"1 mark per year, max 10.\n\nCurrent: " + Math.floor(yearsFromDate(inputs.serviceStartDate)) + " years = " + periodMarks + " marks"} />
+          <MarkBadge marks={periodMarks} max={TRANSFER_SERVICE_PERIOD_MAX} hint={"1 mark per year, max 10.\n\nCurrent: " + Math.floor(yearsFromDate(inputs.serviceStartDate)) + " years = " + periodMarks + " marks"} />
+          <FlagButton fieldKey="serviceStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <DateField
           id={`transfer-service-start-${category.id}`}
@@ -1335,7 +1526,8 @@ function Category65Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Period at previous workplace</span>
-          <MarkBadge marks={previousPeriodMarks} max={10} hint={"3+ years: 10\n2–3 years: 8\n1–2 years: 5\n<1 year: 0"} />
+          <MarkBadge marks={previousPeriodMarks} max={TRANSFER_PREVIOUS_PERIOD_MAX} hint={"3+ years: 10\n2–3 years: 8\n1–2 years: 5\n<1 year: 0"} />
+          <FlagButton fieldKey="previousWorkplaceStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <DateField
           id={`prev-workplace-start-${category.id}`}
@@ -1348,7 +1540,8 @@ function Category65Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Time since transfer</span>
-          <MarkBadge marks={elapsedMarks} max={5} hint={"Within 1 year: 5\n1–2 years: 4\n2–3 years: 3\n3–4 years: 2\n4–5 years: 1\n>5 years: 0"} />
+          <MarkBadge marks={elapsedMarks} max={TRANSFER_ELAPSED_MAX} hint={"Within 1 year: 5\n1–2 years: 4\n2–3 years: 3\n3–4 years: 2\n4–5 years: 1\n>5 years: 0"} />
+          <FlagButton fieldKey="transferDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <DateField
           id={`transfer-date-${category.id}`}
@@ -1361,7 +1554,8 @@ function Category65Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Unutilized leave</span>
-          <MarkBadge marks={leaveMarks} max={10} hint={"2 marks per year, max 5 years.\n\nCurrent: " + (inputs.unutilizedLeaveYears ?? 0) + " years = " + leaveMarks + " marks"} />
+          <MarkBadge marks={leaveMarks} max={UNUTILIZED_LEAVE_MAX} hint={"2 marks per year, max 5 years.\n\nCurrent: " + (inputs.unutilizedLeaveYears ?? 0) + " years = " + leaveMarks + " marks"} />
+          <FlagButton fieldKey="unutilizedLeaveYears" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <YearsSelect
           id={`transfer-unutilized-leave-${category.id}`}
@@ -1373,8 +1567,30 @@ function Category65Fields({
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Nearby schools</span>
-          <MarkBadge marks={prox} max={30} hint={"Max 30 marks.\nDeduct 3 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 30 marks\n10 schools = 0 marks"} />
+          <MarkBadge marks={prox} max={PROXIMITY_MAX_63} hint={"Max 30 marks.\nDeduct 3 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 30 marks\n10 schools = 0 marks"} />
+          <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          {selectedSchoolIds.length > 0 && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{selectedSchoolIds.length} selected</span>
+          )}
         </div>
+        {hasCenter ? (
+          <SchoolMapPicker
+            centerLat={centerLat!}
+            centerLng={centerLng!}
+            selectedIds={selectedSchoolIds}
+            highlightSchoolId="st-aloysius-galle"
+            marksPerSchool={PROXIMITY_PER_SCHOOL_65}
+            onToggle={(schoolId) =>
+              onChange({
+                schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
+                  ? selectedSchoolIds.filter((sid) => sid !== schoolId)
+                  : [...selectedSchoolIds, schoolId],
+              })
+            }
+          />
+        ) : (
+          <p className="text-xs text-muted-foreground">No home location available for map display.</p>
+        )}
       </div>
     </div>
   );
@@ -1383,25 +1599,34 @@ function Category65Fields({
 export function Category66Fields({
   category,
   onChange,
+  centerLat,
+  centerLng,
+  flaggedInputs,
+  onToggleInputFlag,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
-}) {
+  centerLat?: number;
+  centerLng?: number;
+} & FlagProps) {
   const inputs = category.scoringInputs;
+  const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
+  const hasCenter = centerLat != null && centerLng != null;
   const abroad = yearsBetween(inputs.abroadStartDate, inputs.abroadEndDate);
   let abroadMarks = 0;
   if (abroad >= 3) abroadMarks = 25;
   else if (abroad >= 2) abroadMarks = 15;
   else if (abroad >= 1) abroadMarks = 10;
-  const purposeMap: Record<string, number> = { board: 40, personal: 30, government: 25, education: 20 };
-  const purposeMarks = Math.min(purposeMap[inputs.employmentPurpose ?? ""] ?? 0, 40);
-  const prox = proximityMarks(inputs, 3.5, 35);
+  const purposeMap: Record<string, number> = EMPLOYMENT_PURPOSE_MARKS;
+  const purposeMarks = Math.min(purposeMap[inputs.employmentPurpose ?? ""] ?? 0, EMPLOYMENT_PURPOSE_MAX);
+  const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_66, PROXIMITY_MAX_66);
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Period abroad with child</span>
-          <MarkBadge marks={abroadMarks} max={25} hint={"Continuous 3+ years: 25\n2–3 years: 15\n1–2 years: 10\n<1 year: 0\n\nMust be 2024.07–2025.06"} />
+          <MarkBadge marks={abroadMarks} max={ABROAD_PERIOD_MAX} hint={"Continuous 3+ years: 25\n2–3 years: 15\n1–2 years: 10\n<1 year: 0\n\nMust be 2024.07–2025.06"} />
+          <FlagButton fieldKey="abroadStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <DateField
           id={`abroad-start-${category.id}`}
@@ -1421,7 +1646,8 @@ export function Category66Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Employment purpose</span>
-          <MarkBadge marks={purposeMarks} max={40} hint={"Board duties: 40\nPersonal: 30\nGovernment: 25\nEducation: 20\n\nMin 2 years abroad"} />
+          <MarkBadge marks={purposeMarks} max={EMPLOYMENT_PURPOSE_MAX} hint={"Board duties: 40\nPersonal: 30\nGovernment: 25\nEducation: 20\n\nMin 2 years abroad"} />
+          <FlagButton fieldKey="employmentPurpose" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <Field>
           <FieldLabel>Purpose of foreign employment</FieldLabel>
@@ -1440,8 +1666,30 @@ export function Category66Fields({
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Nearby schools</span>
-          <MarkBadge marks={prox} max={35} hint={"Max 35 marks.\nDeduct 3.5 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 35 marks\n10 schools = 0 marks"} />
+          <MarkBadge marks={prox} max={PROXIMITY_MAX_66} hint={"Max 35 marks.\nDeduct 3.5 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 35 marks\n10 schools = 0 marks"} />
+          <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          {selectedSchoolIds.length > 0 && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{selectedSchoolIds.length} selected</span>
+          )}
         </div>
+        {hasCenter ? (
+          <SchoolMapPicker
+            centerLat={centerLat!}
+            centerLng={centerLng!}
+            selectedIds={selectedSchoolIds}
+            highlightSchoolId="st-aloysius-galle"
+            marksPerSchool={PROXIMITY_PER_SCHOOL_66}
+            onToggle={(schoolId) =>
+              onChange({
+                schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
+                  ? selectedSchoolIds.filter((sid) => sid !== schoolId)
+                  : [...selectedSchoolIds, schoolId],
+              })
+            }
+          />
+        ) : (
+          <p className="text-xs text-muted-foreground">No home location available for map display.</p>
+        )}
       </div>
     </div>
   );

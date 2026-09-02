@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 export type LocationDraft = {
+  id?: string;
   label: string;
   address: string;
   latitude: number | null;
@@ -149,6 +150,11 @@ export type ApplicationDraft = {
   gnSearch: string;
   electoralSearch: string;
   interviewEdits: InterviewEdit[];
+  admissionStatus: string;
+  interviewNotes: string;
+  isBanned: boolean;
+  banReason: string | null;
+  flags: Array<{ type: string; key: string; label: string }>;
 };
 
 export type InterviewEdit = {
@@ -199,6 +205,11 @@ export const emptyDraft: ApplicationDraft = {
   gnSearch: "",
   electoralSearch: "",
   interviewEdits: [],
+  admissionStatus: "pending",
+  interviewNotes: "",
+  isBanned: false,
+  banReason: null,
+  flags: [],
 };
 
 export const LOCATION_HISTORY_LIMIT = 25;
@@ -208,13 +219,16 @@ function normalizeLocationHistory(input: unknown): LocationDraft[] {
   const history: LocationDraft[] = [];
   for (const entry of input) {
     if (typeof entry !== "object" || entry === null) continue;
-    const candidate = entry as Partial<LocationDraft>;
-    if (typeof candidate.latitude !== "number" || typeof candidate.longitude !== "number") continue;
+    const candidate = entry as Record<string, unknown>;
+    const latitude = typeof candidate.latitude === "number" ? candidate.latitude : undefined;
+    const longitude = typeof candidate.longitude === "number" ? candidate.longitude : undefined;
+    if (latitude == null || longitude == null) continue;
     history.push({
+      id: typeof candidate.id === "string" ? candidate.id : undefined,
       label: typeof candidate.label === "string" ? candidate.label : "",
       address: typeof candidate.address === "string" ? candidate.address : "",
-      latitude: candidate.latitude,
-      longitude: candidate.longitude,
+      latitude,
+      longitude,
       source: typeof candidate.source === "string" && ["manual", "device", "map", "network", "admin"].includes(candidate.source) ? (candidate.source as LocationDraft["source"]) : "map",
     });
     if (history.length >= LOCATION_HISTORY_LIMIT) break;
@@ -298,6 +312,11 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
     deviceLocationHistory: normalizeLocationHistory(input?.deviceLocationHistory),
     userLocationHistory: normalizeLocationHistory(input?.userLocationHistory),
     interviewEdits: Array.isArray(input?.interviewEdits) ? input.interviewEdits : [],
+    admissionStatus: typeof input?.admissionStatus === "string" ? input.admissionStatus : "pending",
+    interviewNotes: typeof input?.interviewNotes === "string" ? input.interviewNotes : "",
+    isBanned: Boolean(input?.isBanned),
+    banReason: typeof input?.banReason === "string" ? input.banReason : null,
+    flags: Array.isArray(input?.flags) ? input.flags : [],
   };
 }
 

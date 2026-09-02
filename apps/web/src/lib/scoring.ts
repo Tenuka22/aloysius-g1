@@ -1,15 +1,97 @@
 import type { CategoryApplication, CategoryType, ScoringInputs } from "@/lib/application-store";
+import {
+  CATEGORY_MAX_MARKS,
+  ELECTORAL_REGISTER_START_YEAR,
+  ELECTORAL_REGISTER_END_YEAR,
+  MAIN_DOCUMENT_MAX_61,
+  ADDITIONAL_DOC_MARKS_PER,
+  ADDITIONAL_DOC_MAX_61,
+  ELECTORAL_MARKS_PER_PERSON_YEAR_61,
+  ELECTORAL_MAX_61,
+  PROXIMITY_PER_SCHOOL_61,
+  PROXIMITY_MAX_61,
+  DEED_AGE_WEIGHTS,
+  DEED_AGE_MIN_WEIGHT,
+  YEARS_EDUCATED_MARKS_PER_YEAR,
+  YEARS_EDUCATED_MAX,
+  GRADE5_SCHOLARSHIP_MARKS,
+  OL_MAX_MARKS,
+  AL_MAX_MARKS,
+  EDUCATIONAL_TOTAL_MAX,
+  SPORTS_MAX,
+  LEADERSHIP_MAX,
+  STUDENT_SOCIETIES_MAX,
+  OTHER_ACTIVITIES_MAX,
+  PAST_PUPILS_LIFE_MEMBER_MARKS,
+  PAST_PUPILS_YEARLY_MARKS,
+  PAST_PUPILS_MEMBERSHIP_MAX,
+  PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR,
+  PAST_PUPILS_COMMITTEE_MAX_YEARS,
+  PAST_PUPILS_COMMITTEE_MAX,
+  PAST_PUPILS_EXECUTIVE_MARKS,
+  PAST_PUPILS_EXECUTIVE_COUNT,
+  PAST_PUPILS_EXECUTIVE_MAX,
+  PAST_PUPILS_TOTAL_MAX,
+  DEGREE_MAX,
+  DIPLOMA_MARKS,
+  SPORTS_MEET_CONTRIBUTION,
+  SHRAMADANA_CONTRIBUTION,
+  CONTRIBUTION_MAX,
+  SCHOOL_PROJECTS_MARKS,
+  SIBLING_MARKS_PER_SIBLING,
+  SIBLING_STUDYING_MAX,
+  SIBLING_STUDIED_HERE_MARKS,
+  SIBLING_MULTIPLE_APPLYING_MARKS,
+  SIBLING_PREFECT_MAX,
+  SIBLING_EXAM_MAX,
+  SIBLING_PRAISEWORTHY_MARKS,
+  SIBLING_SUPPORT_MARKS,
+  SIBLING_COCURRICULAR_TOTAL_MAX,
+  MAIN_DOCUMENT_MAX_63,
+  ELECTORAL_MARKS_PER_PERSON_YEAR_63,
+  ELECTORAL_MAX_63,
+  PROXIMITY_PER_SCHOOL_63,
+  PROXIMITY_MAX_63,
+  SERVICE_PERIOD_MAX,
+  DIFFICULT_SERVICE_CURRENT_MARKS,
+  DIFFICULT_SERVICE_PREVIOUS_BASE,
+  DIFFICULT_SERVICE_MAX,
+  DIFFICULT_DISTANCE_TIERS,
+  DIFFICULT_EXTRA_PERIOD_MARKS,
+  UNUTILIZED_LEAVE_MARKS_PER_YEAR,
+  UNUTILIZED_LEAVE_MAX,
+  SERVICE_LOCATION_MARKS,
+  SERVICE_LOCATION_MAX,
+  RESIDENCE_DISTANCE_TIERS_64,
+  RESIDENCE_DISTANCE_FALLBACK_64,
+  RESIDENCE_DISTANCE_MAX_64,
+  WORKPLACE_DISTANCE_TIERS,
+  WORKPLACE_DISTANCE_FALLBACK,
+  WORKPLACE_DISTANCE_MAX,
+  TRANSFER_DISTANCE_TIERS,
+  TRANSFER_DISTANCE_MAX,
+  TRANSFER_SERVICE_PERIOD_MAX,
+  TRANSFER_PREVIOUS_PERIOD_TIERS,
+  TRANSFER_PREVIOUS_PERIOD_MAX,
+  TRANSFER_ELAPSED_TIERS,
+  TRANSFER_ELAPSED_MAX,
+  PROXIMITY_PER_SCHOOL_65,
+  PROXIMITY_MAX_65,
+  ABROAD_PERIOD_TIERS,
+  ABROAD_PERIOD_MAX,
+  EMPLOYMENT_PURPOSE_MARKS,
+  EMPLOYMENT_PURPOSE_MAX,
+  PROXIMITY_PER_SCHOOL_66,
+  PROXIMITY_MAX_66,
+} from "@/lib/marking-scheme";
 
-export const CATEGORY_MAX_MARKS = 100;
+export { CATEGORY_MAX_MARKS } from "@/lib/marking-scheme";
 
 export type ScoreRow = { label: string; marks: number; max: number };
 export type CategoryScore = { categoryType: string; total: number; breakdown: ScoreRow[] };
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
 const cap = (value: number, max: number) => round2(Math.max(0, Math.min(value, max)));
-
-const ELECTORAL_REGISTER_START_YEAR = 2020;
-const ELECTORAL_REGISTER_END_YEAR = 2024;
 
 export function yearsFromDate(dateStr: string | undefined): number {
   if (!dateStr) return 0;
@@ -34,13 +116,10 @@ export function electoralYearsRegistered(regYear: number | undefined): number {
 
 export function deedAgeWeight(years: number | undefined): number {
   if (years == null) return 1;
-  if (years >= 5) return 1;
-  if (years >= 4) return 0.8;
-  if (years >= 3) return 0.6;
-  if (years >= 2) return 0.4;
-  if (years >= 1) return 0.2;
-  if (years >= 0.5) return 0.1;
-  return 0.05;
+  for (const { minYears, weight } of DEED_AGE_WEIGHTS) {
+    if (years >= minYears) return weight;
+  }
+  return DEED_AGE_MIN_WEIGHT;
 }
 
 const MAIN_DOCUMENT_MARKS_61: Record<string, number> = {
@@ -113,7 +192,7 @@ export const SIBLING_EXAM_MARKS: Record<string, number> = {
 function electoralRegisterMarks61(inputs: ScoringInputs): number {
   const mother = electoralYearsRegistered(inputs.electoralMotherSince);
   const father = electoralYearsRegistered(inputs.electoralFatherSince);
-  return cap((mother + father) * 2.5, 25);
+  return cap((mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_61, ELECTORAL_MAX_61);
 }
 
 export function proximityMarks(inputs: ScoringInputs, perSchool: number, max: number): number {
@@ -124,11 +203,11 @@ export function proximityMarks(inputs: ScoringInputs, perSchool: number, max: nu
 export function documentMarks61(inputs: ScoringInputs): number {
   const documentMax = MAIN_DOCUMENT_MARKS_61[inputs.mainDocumentType ?? ""];
   const deedYears = yearsFromDate(inputs.deedTransferDate);
-  return documentMax != null ? cap(documentMax * deedAgeWeight(deedYears), 20) : 0;
+  return documentMax != null ? cap(documentMax * deedAgeWeight(deedYears), MAIN_DOCUMENT_MAX_61) : 0;
 }
 
 export function additionalDocsMarks61(inputs: ScoringInputs): number {
-  return cap((inputs.additionalDocs?.length ?? 0) * 1, 5);
+  return cap((inputs.additionalDocs?.length ?? 0) * ADDITIONAL_DOC_MARKS_PER, ADDITIONAL_DOC_MAX_61);
 }
 
 export function electoralMarks61(inputs: ScoringInputs): number {
@@ -136,22 +215,22 @@ export function electoralMarks61(inputs: ScoringInputs): number {
 }
 
 export function proximityMarks61(inputs: ScoringInputs): number {
-  return proximityMarks(inputs, 5, 50);
+  return proximityMarks(inputs, PROXIMITY_PER_SCHOOL_61, PROXIMITY_MAX_61);
 }
 
 export function scoreCategory61(inputs: ScoringInputs): CategoryScore {
   const documentMax = MAIN_DOCUMENT_MARKS_61[inputs.mainDocumentType ?? ""];
   const deedYears = yearsFromDate(inputs.deedTransferDate);
   const documentMarks =
-    documentMax != null ? cap(documentMax * deedAgeWeight(deedYears), 20) : 0;
-  const additionalMarks = cap((inputs.additionalDocs?.length ?? 0) * 1, 5);
+    documentMax != null ? cap(documentMax * deedAgeWeight(deedYears), MAIN_DOCUMENT_MAX_61) : 0;
+  const additionalMarks = cap((inputs.additionalDocs?.length ?? 0) * ADDITIONAL_DOC_MARKS_PER, ADDITIONAL_DOC_MAX_61);
   const electoralMarks = electoralRegisterMarks61(inputs);
-  const proximity = proximityMarks(inputs, 5, 50);
+  const proximity = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_61, PROXIMITY_MAX_61);
   const rows: ScoreRow[] = [
-    { label: "Main residence document", marks: documentMarks, max: 20 },
-    { label: "Additional documents", marks: additionalMarks, max: 5 },
-    { label: "Electoral register", marks: electoralMarks, max: 25 },
-    { label: "Nearby schools", marks: proximity, max: 50 },
+    { label: "Main residence document", marks: documentMarks, max: MAIN_DOCUMENT_MAX_61 },
+    { label: "Additional documents", marks: additionalMarks, max: ADDITIONAL_DOC_MAX_61 },
+    { label: "Electoral register", marks: electoralMarks, max: ELECTORAL_MAX_61 },
+    { label: "Nearby schools", marks: proximity, max: PROXIMITY_MAX_61 },
   ];
   const total = cap(rows.reduce((sum, row) => sum + row.marks, 0), CATEGORY_MAX_MARKS);
   return { categoryType: "6.1", total, breakdown: rows };
@@ -160,7 +239,7 @@ export function scoreCategory61(inputs: ScoringInputs): CategoryScore {
 export const STUDENT_SOCIETIES_ROLE_MARKS: Record<string, number> = {
   "committee-member": 0.5,
   "vice-president": 0.75,
-  "president": 1,
+  president: 1,
 };
 
 export const OTHER_ACTIVITY_MARKS: Record<string, number> = {
@@ -177,19 +256,19 @@ export const OTHER_ACTIVITY_MARKS: Record<string, number> = {
   "debating-team-member": 1,
   "st-john-ambulance-leader": 2,
   "st-john-ambulance-member": 1,
-  "other": 1,
+  other: 1,
 };
 
 export const DEGREE_MARKS: Record<string, number> = {
   "first-degree": 3,
-  "postgraduate": 4,
-  "doctorate": 5,
+  postgraduate: 4,
+  doctorate: 5,
   "chartered-professional": 3,
 };
 
 export function scoreCategory62(inputs: ScoringInputs): CategoryScore {
-  const yearsMarks = cap(yearsBetween(inputs.alumniStartDate, inputs.alumniEndDate) * 2, 26);
-  const scholarshipMarks = inputs.grade5ScholarshipPassed ? 3 : 0;
+  const yearsMarks = cap(yearsBetween(inputs.alumniStartDate, inputs.alumniEndDate) * YEARS_EDUCATED_MARKS_PER_YEAR, YEARS_EDUCATED_MAX);
+  const scholarshipMarks = inputs.grade5ScholarshipPassed ? GRADE5_SCHOLARSHIP_MARKS : 0;
 
   let olMarks = 0;
   const olCount = inputs.olSubjectCount;
@@ -199,7 +278,7 @@ export function scoreCategory62(inputs: ScoringInputs): CategoryScore {
       olMarks += (inputs[`olGrade${grade}` as "olGradeS"] ?? 0) * gradeRate(olTable, olCount, grade);
     }
   }
-  olMarks = cap(olMarks, 10);
+  olMarks = cap(olMarks, OL_MAX_MARKS);
 
   let alMarks = 0;
   const alCount = inputs.alSubjectCount;
@@ -209,137 +288,88 @@ export function scoreCategory62(inputs: ScoringInputs): CategoryScore {
       alMarks += (inputs[`alGrade${grade}` as "alGradeS"] ?? 0) * gradeRate(alTable, alCount, grade);
     }
   }
-  alMarks = cap(alMarks, 12);
+  alMarks = cap(alMarks, AL_MAX_MARKS);
 
-  const educationalMarks = cap(scholarshipMarks + olMarks + alMarks, 25);
+  const educationalMarks = cap(scholarshipMarks + olMarks + alMarks, EDUCATIONAL_TOTAL_MAX);
 
   const sportsBase = SPORTS_LEVEL_MARKS[inputs.sportsLevel ?? ""] ?? 0;
-  const sportsMarks = cap(sportsBase * (inputs.sportsCount ?? (sportsBase > 0 ? 1 : 0)), 10);
-  const leadershipMarks = cap(LEADERSHIP_ROLE_MARKS[inputs.leadershipRole ?? ""] ?? 0, 5);
-  const studentSocietiesMarks = cap(STUDENT_SOCIETIES_ROLE_MARKS[inputs.studentSocietiesRole ?? ""] ?? 0, 5);
-  const otherActivityMarks = cap(OTHER_ACTIVITY_MARKS[inputs.otherActivity ?? ""] ?? 0, 5);
+  const sportsMarks = cap(sportsBase * (inputs.sportsCount ?? (sportsBase > 0 ? 1 : 0)), SPORTS_MAX);
+  const leadershipMarks = cap(LEADERSHIP_ROLE_MARKS[inputs.leadershipRole ?? ""] ?? 0, LEADERSHIP_MAX);
+  const studentSocietiesMarks = cap(STUDENT_SOCIETIES_ROLE_MARKS[inputs.studentSocietiesRole ?? ""] ?? 0, STUDENT_SOCIETIES_MAX);
+  const otherActivityMarks = cap(OTHER_ACTIVITY_MARKS[inputs.otherActivity ?? ""] ?? 0, OTHER_ACTIVITIES_MAX);
 
   let pastPupilsMarks = 0;
-  if (inputs.pastPupilsLifeMember) pastPupilsMarks += 10;
+  if (inputs.pastPupilsLifeMember) pastPupilsMarks += PAST_PUPILS_LIFE_MEMBER_MARKS;
   else if (inputs.pastPupilsMembershipStart && inputs.pastPupilsMembershipEnd) {
     const years = yearsBetween(inputs.pastPupilsMembershipStart, inputs.pastPupilsMembershipEnd);
-    pastPupilsMarks += cap(years * 0.5, 10);
+    pastPupilsMarks += cap(years * PAST_PUPILS_YEARLY_MARKS, PAST_PUPILS_MEMBERSHIP_MAX);
   }
-  if (inputs.pastPupilsCommitteeMember) pastPupilsMarks += cap(0.25 * 4, 3);
-  if (inputs.pastPupilsExecutiveOffice) pastPupilsMarks += cap(1.5 * 2, 3);
-  pastPupilsMarks = cap(pastPupilsMarks, 10);
+  if (inputs.pastPupilsCommitteeMember) pastPupilsMarks += cap(PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR * PAST_PUPILS_COMMITTEE_MAX_YEARS, PAST_PUPILS_COMMITTEE_MAX);
+  if (inputs.pastPupilsExecutiveOffice) pastPupilsMarks += cap(PAST_PUPILS_EXECUTIVE_MARKS * PAST_PUPILS_EXECUTIVE_COUNT, PAST_PUPILS_EXECUTIVE_MAX);
+  pastPupilsMarks = cap(pastPupilsMarks, PAST_PUPILS_TOTAL_MAX);
 
-  const degreeMarks = cap(DEGREE_MARKS[inputs.highestDegree ?? ""] ?? 0, 5);
-  const diplomaMarks = inputs.hasDiploma ? 2 : 0;
+  const degreeMarks = cap(DEGREE_MARKS[inputs.highestDegree ?? ""] ?? 0, DEGREE_MAX);
+  const diplomaMarks = inputs.hasDiploma ? DIPLOMA_MARKS : 0;
 
   let contributionMarks = 0;
-  if (inputs.sportsMeetContribution) contributionMarks += 0.5;
-  if (inputs.shramadanaContribution) contributionMarks += 0.5;
-  contributionMarks = cap(contributionMarks, 2);
+  if (inputs.sportsMeetContribution) contributionMarks += SPORTS_MEET_CONTRIBUTION;
+  if (inputs.shramadanaContribution) contributionMarks += SHRAMADANA_CONTRIBUTION;
+  contributionMarks = cap(contributionMarks, CONTRIBUTION_MAX);
 
-  const projectMarks = inputs.schoolProjectsContribution ? 5 : 0;
+  const projectMarks = inputs.schoolProjectsContribution ? SCHOOL_PROJECTS_MARKS : 0;
 
   const rows: ScoreRow[] = [
-    { label: "Years educated at school", marks: yearsMarks, max: 26 },
-    { label: "Grade 5 Scholarship", marks: scholarshipMarks, max: 3 },
-    { label: "G.C.E. (O/L)", marks: olMarks, max: 10 },
-    { label: "G.C.E. (A/L)", marks: alMarks, max: 12 },
-    { label: "Sports / co-curricular", marks: sportsMarks, max: 10 },
-    { label: "Leadership role", marks: leadershipMarks, max: 5 },
-    { label: "Student societies", marks: studentSocietiesMarks, max: 5 },
-    { label: "Other activities", marks: otherActivityMarks, max: 5 },
-    { label: "Past Pupils' Association", marks: pastPupilsMarks, max: 10 },
-    { label: "University degrees", marks: degreeMarks, max: 5 },
-    { label: "Diploma / Higher Diploma", marks: diplomaMarks, max: 2 },
-    { label: "Contribution to school activities", marks: contributionMarks, max: 2 },
-    { label: "Contribution to school projects", marks: projectMarks, max: 5 },
+    { label: "Years educated at school", marks: yearsMarks, max: YEARS_EDUCATED_MAX },
+    { label: "Grade 5 Scholarship", marks: scholarshipMarks, max: GRADE5_SCHOLARSHIP_MARKS },
+    { label: "G.C.E. (O/L)", marks: olMarks, max: OL_MAX_MARKS },
+    { label: "G.C.E. (A/L)", marks: alMarks, max: AL_MAX_MARKS },
+    { label: "Sports / co-curricular", marks: sportsMarks, max: SPORTS_MAX },
+    { label: "Leadership role", marks: leadershipMarks, max: LEADERSHIP_MAX },
+    { label: "Student societies", marks: studentSocietiesMarks, max: STUDENT_SOCIETIES_MAX },
+    { label: "Other activities", marks: otherActivityMarks, max: OTHER_ACTIVITIES_MAX },
+    { label: "Past Pupils' Association", marks: pastPupilsMarks, max: PAST_PUPILS_TOTAL_MAX },
+    { label: "University degrees", marks: degreeMarks, max: DEGREE_MAX },
+    { label: "Diploma / Higher Diploma", marks: diplomaMarks, max: DIPLOMA_MARKS },
+    { label: "Contribution to school activities", marks: contributionMarks, max: CONTRIBUTION_MAX },
+    { label: "Contribution to school projects", marks: projectMarks, max: SCHOOL_PROJECTS_MARKS },
   ];
   const total = cap(rows.reduce((sum, row) => sum + row.marks, 0), CATEGORY_MAX_MARKS);
   return { categoryType: "6.2", total, breakdown: rows };
 }
 
 export function scoreCategory63(inputs: ScoringInputs): CategoryScore {
-  const siblingsMarks = cap((inputs.siblingsCurrentlyStudyingCount ?? 0) * 2, 20);
-  const studiedHereMarks = inputs.siblingStudiedAtAppliedSchool ? 5 : 0;
-  const multipleApplyingMarks = inputs.twoOrMoreSiblingsApplying ? 5 : 0;
+  const siblingsMarks = cap((inputs.siblingsCurrentlyStudyingCount ?? 0) * SIBLING_MARKS_PER_SIBLING, SIBLING_STUDYING_MAX);
+  const studiedHereMarks = inputs.siblingStudiedAtAppliedSchool ? SIBLING_STUDIED_HERE_MARKS : 0;
+  const multipleApplyingMarks = inputs.twoOrMoreSiblingsApplying ? SIBLING_MULTIPLE_APPLYING_MARKS : 0;
   const prefectMarks = cap(
     (SIBLING_PREFECT_LEVEL_MARKS[inputs.siblingPrefectLevel ?? ""] ?? 0) *
       (inputs.siblingPrefectCount ?? 0),
-    2,
+    SIBLING_PREFECT_MAX,
   );
-  const examMarks = cap(SIBLING_EXAM_MARKS[inputs.siblingExamAchievement ?? ""] ?? 0, 2);
-  const praiseworthyMarks = inputs.siblingPraiseworthyAchievement ? 2 : 0;
-  const supportMarks = inputs.parentsSupportRendered ? 4 : 0;
+  const examMarks = cap(SIBLING_EXAM_MARKS[inputs.siblingExamAchievement ?? ""] ?? 0, SIBLING_EXAM_MAX);
+  const praiseworthyMarks = inputs.siblingPraiseworthyAchievement ? SIBLING_PRAISEWORTHY_MARKS : 0;
+  const supportMarks = inputs.parentsSupportRendered ? SIBLING_SUPPORT_MARKS : 0;
   const cocurricularTotal = cap(
     prefectMarks + examMarks + praiseworthyMarks + supportMarks,
-    10,
+    SIBLING_COCURRICULAR_TOTAL_MAX,
   );
-  const documentMarks = cap(MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0, 10);
+  const documentMarks = cap(MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0, MAIN_DOCUMENT_MAX_63);
   const mother = electoralYearsRegistered(inputs.electoralMotherSince);
   const father = electoralYearsRegistered(inputs.electoralFatherSince);
-  const electoralMarks = cap((mother + father) * 2, 20);
-  const proximity = proximityMarks(inputs, 3, 30);
+  const electoralMarks = cap((mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_63, ELECTORAL_MAX_63);
+  const proximity = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_63, PROXIMITY_MAX_63);
 
   const rows: ScoreRow[] = [
-    { label: "Siblings currently studying", marks: siblingsMarks, max: 20 },
-    { label: "Sibling studied at applied school", marks: studiedHereMarks, max: 5 },
-    { label: "Two or more siblings applying", marks: multipleApplyingMarks, max: 5 },
-    { label: "Sibling co-curricular & prefect", marks: cocurricularTotal, max: 10 },
-    { label: "Residence document", marks: documentMarks, max: 10 },
-    { label: "Electoral register", marks: electoralMarks, max: 20 },
-    { label: "Nearby schools", marks: proximity, max: 30 },
+    { label: "Siblings currently studying", marks: siblingsMarks, max: SIBLING_STUDYING_MAX },
+    { label: "Sibling studied at applied school", marks: studiedHereMarks, max: SIBLING_STUDIED_HERE_MARKS },
+    { label: "Two or more siblings applying", marks: multipleApplyingMarks, max: SIBLING_MULTIPLE_APPLYING_MARKS },
+    { label: "Sibling co-curricular & prefect", marks: cocurricularTotal, max: SIBLING_COCURRICULAR_TOTAL_MAX },
+    { label: "Residence document", marks: documentMarks, max: MAIN_DOCUMENT_MAX_63 },
+    { label: "Electoral register", marks: electoralMarks, max: ELECTORAL_MAX_63 },
+    { label: "Nearby schools", marks: proximity, max: PROXIMITY_MAX_63 },
   ];
   const total = cap(rows.reduce((sum, row) => sum + row.marks, 0), CATEGORY_MAX_MARKS);
   return { categoryType: "6.3", total, breakdown: rows };
-}
-
-export function scoreCategory64(inputs: ScoringInputs): CategoryScore {
-  const serviceMarks = cap(yearsFromDate(inputs.serviceStartDate), 20);
-
-  let difficultMarks = 0;
-  if (inputs.difficultServiceType === "current") {
-    difficultMarks = 25;
-  } else if (inputs.difficultServiceType === "previous") {
-    const previousBase = 15;
-    const distance = difficultDistanceMarks(inputs.difficultServiceDistanceKm);
-    const higherBranch = Math.max(previousBase, distance);
-    difficultMarks = higherBranch + (inputs.difficultServiceExtraPeriods ?? 0) * 0.5;
-  }
-  difficultMarks = cap(difficultMarks, 25);
-
-  const leaveMarks = cap((inputs.unutilizedLeaveYears ?? 0) * 2, 10);
-  const locationMarksMap: Record<string, number> = {
-    "same-school": 10,
-    zone: 7.5,
-    province: 5,
-    "education-institution": 2.5,
-  };
-  const locationMarks = cap(locationMarksMap[inputs.serviceLocationLevel ?? ""] ?? 0, 10);
-  const residenceDistance = tieredDistanceMarks(inputs.residenceToSchoolKm, [
-    [1, 10],
-    [3, 8],
-    [5, 6],
-  ], 4);
-  const workplaceDistance = workplaceDistanceMarks(inputs.workplaceToSchoolKm);
-
-  const rows: ScoreRow[] = [
-    { label: "Period of service", marks: serviceMarks, max: 20 },
-    { label: "Difficult service", marks: difficultMarks, max: 25 },
-    { label: "Unutilized leave", marks: leaveMarks, max: 10 },
-    { label: "Service location", marks: locationMarks, max: 10 },
-    { label: "Residence to school", marks: residenceDistance, max: 10 },
-    { label: "Workplace to school", marks: workplaceDistance, max: 25 },
-  ];
-  const total = cap(rows.reduce((sum, row) => sum + row.marks, 0), CATEGORY_MAX_MARKS);
-  return { categoryType: "6.4", total, breakdown: rows };
-}
-
-function difficultDistanceMarks(km: number | undefined): number {
-  if (km == null) return 0;
-  if (km >= 150) return 15;
-  if (km > 100) return 10;
-  if (km > 75) return 5;
-  return 0;
 }
 
 function tieredDistanceMarks(km: number | undefined, tiers: Array<[number, number]>, fallback: number): number {
@@ -350,75 +380,120 @@ function tieredDistanceMarks(km: number | undefined, tiers: Array<[number, numbe
   return fallback;
 }
 
+function difficultDistanceMarks(km: number | undefined): number {
+  if (km == null) return 0;
+  for (const [minKm, marks] of DIFFICULT_DISTANCE_TIERS) {
+    if (km >= minKm) return marks;
+  }
+  return 0;
+}
+
 function workplaceDistanceMarks(km: number | undefined): number {
   if (km == null) return 0;
-  if (km >= 100) return 25;
-  if (km >= 70) return 20;
-  if (km >= 40) return 15;
-  if (km >= 20) return 10;
-  return 5;
+  for (const [minKm, marks] of WORKPLACE_DISTANCE_TIERS) {
+    if (km >= minKm) return marks;
+  }
+  return WORKPLACE_DISTANCE_FALLBACK;
+}
+
+function transferDistanceMarks(km: number | undefined): number {
+  if (km == null) return 0;
+  for (const [minKm, marks] of TRANSFER_DISTANCE_TIERS) {
+    if (km > minKm) return marks;
+  }
+  return 0;
+}
+
+function previousPeriodMarks(years: number): number {
+  for (const [minYears, marks] of TRANSFER_PREVIOUS_PERIOD_TIERS) {
+    if (years >= minYears) return marks;
+  }
+  return 0;
+}
+
+function transferElapsedMarks(elapsed: number): number {
+  for (const [maxYears, marks] of TRANSFER_ELAPSED_TIERS) {
+    if (elapsed <= maxYears) return marks;
+  }
+  return 0;
+}
+
+export function scoreCategory64(inputs: ScoringInputs): CategoryScore {
+  const serviceMarks = cap(yearsFromDate(inputs.serviceStartDate), SERVICE_PERIOD_MAX);
+
+  let difficultMarks = 0;
+  if (inputs.difficultServiceType === "current") {
+    difficultMarks = DIFFICULT_SERVICE_CURRENT_MARKS;
+  } else if (inputs.difficultServiceType === "previous") {
+    const distance = difficultDistanceMarks(inputs.difficultServiceDistanceKm);
+    const higherBranch = Math.max(DIFFICULT_SERVICE_PREVIOUS_BASE, distance);
+    difficultMarks = higherBranch + (inputs.difficultServiceExtraPeriods ?? 0) * DIFFICULT_EXTRA_PERIOD_MARKS;
+  }
+  difficultMarks = cap(difficultMarks, DIFFICULT_SERVICE_MAX);
+
+  const leaveMarks = cap((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX);
+  const locationMarks = cap(SERVICE_LOCATION_MARKS[inputs.serviceLocationLevel ?? ""] ?? 0, SERVICE_LOCATION_MAX);
+  const residenceDistance = tieredDistanceMarks(inputs.residenceToSchoolKm, RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64);
+  const workplaceDistance = workplaceDistanceMarks(inputs.workplaceToSchoolKm);
+
+  const rows: ScoreRow[] = [
+    { label: "Period of service", marks: serviceMarks, max: SERVICE_PERIOD_MAX },
+    { label: "Difficult service", marks: difficultMarks, max: DIFFICULT_SERVICE_MAX },
+    { label: "Unutilized leave", marks: leaveMarks, max: UNUTILIZED_LEAVE_MAX },
+    { label: "Service location", marks: locationMarks, max: SERVICE_LOCATION_MAX },
+    { label: "Residence to school", marks: residenceDistance, max: RESIDENCE_DISTANCE_MAX_64 },
+    { label: "Workplace to school", marks: workplaceDistance, max: WORKPLACE_DISTANCE_MAX },
+  ];
+  const total = cap(rows.reduce((sum, row) => sum + row.marks, 0), CATEGORY_MAX_MARKS);
+  return { categoryType: "6.4", total, breakdown: rows };
 }
 
 export function scoreCategory65(inputs: ScoringInputs): CategoryScore {
-  const km = inputs.previousWorkplaceDistanceKm;
-  let distanceMarks = 0;
-  if (km != null && km > 150) distanceMarks = 35;
-  else if (km != null && km > 100) distanceMarks = 28;
-  else if (km != null && km >= 50) distanceMarks = 21;
+  const distanceMarks = transferDistanceMarks(inputs.previousWorkplaceDistanceKm);
 
-  const periodMarks = cap(yearsFromDate(inputs.serviceStartDate), 10);
+  const periodMarks = cap(yearsFromDate(inputs.serviceStartDate), TRANSFER_SERVICE_PERIOD_MAX);
 
-  let previousPeriodMarks = 0;
-  const years = yearsFromDate(inputs.previousWorkplaceStartDate);
-  if (years >= 3) previousPeriodMarks = 10;
-  else if (years >= 2) previousPeriodMarks = 8;
-  else if (years >= 1) previousPeriodMarks = 5;
+  const prevYears = yearsFromDate(inputs.previousWorkplaceStartDate);
+  const prevPeriodMarks = previousPeriodMarks(prevYears);
 
   let elapsedMarks = 0;
   if (inputs.transferDate) {
-    const elapsed = yearsFromDate(inputs.transferDate);
-    if (elapsed <= 1) elapsedMarks = 5;
-    else if (elapsed <= 2) elapsedMarks = 4;
-    else if (elapsed <= 3) elapsedMarks = 3;
-    else if (elapsed <= 4) elapsedMarks = 2;
-    else if (elapsed <= 5) elapsedMarks = 1;
+    elapsedMarks = transferElapsedMarks(yearsFromDate(inputs.transferDate));
   }
 
-  const leaveMarks = cap((inputs.unutilizedLeaveYears ?? 0) * 2, 10);
-  const proximity = proximityMarks(inputs, 3, 30);
+  const leaveMarks = cap((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX);
+  const proximity = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_65, PROXIMITY_MAX_65);
 
   const rows: ScoreRow[] = [
-    { label: "Previous-to-new workplace distance", marks: distanceMarks, max: 35 },
-    { label: "Nearby schools", marks: proximity, max: 30 },
-    { label: "Period of service", marks: periodMarks, max: 10 },
-    { label: "Period at previous workplace", marks: previousPeriodMarks, max: 10 },
-    { label: "Time since transfer", marks: elapsedMarks, max: 5 },
-    { label: "Unutilized leave", marks: leaveMarks, max: 10 },
+    { label: "Previous-to-new workplace distance", marks: distanceMarks, max: TRANSFER_DISTANCE_MAX },
+    { label: "Nearby schools", marks: proximity, max: PROXIMITY_MAX_65 },
+    { label: "Period of service", marks: periodMarks, max: TRANSFER_SERVICE_PERIOD_MAX },
+    { label: "Period at previous workplace", marks: prevPeriodMarks, max: TRANSFER_PREVIOUS_PERIOD_MAX },
+    { label: "Time since transfer", marks: elapsedMarks, max: TRANSFER_ELAPSED_MAX },
+    { label: "Unutilized leave", marks: leaveMarks, max: UNUTILIZED_LEAVE_MAX },
   ];
   const total = cap(rows.reduce((sum, row) => sum + row.marks, 0), CATEGORY_MAX_MARKS);
   return { categoryType: "6.5", total, breakdown: rows };
 }
 
+function abroadPeriodMarks(years: number): number {
+  for (const [minYears, marks] of ABROAD_PERIOD_TIERS) {
+    if (years >= minYears) return marks;
+  }
+  return 0;
+}
+
 export function scoreCategory66(inputs: ScoringInputs): CategoryScore {
   const abroad = yearsBetween(inputs.abroadStartDate, inputs.abroadEndDate);
-  let abroadMarks = 0;
-  if (abroad >= 3) abroadMarks = 25;
-  else if (abroad >= 2) abroadMarks = 15;
-  else if (abroad >= 1) abroadMarks = 10;
+  const abroadMarks = abroadPeriodMarks(abroad);
 
-  const purposeMap: Record<string, number> = {
-    board: 40,
-    personal: 30,
-    government: 25,
-    education: 20,
-  };
-  const purposeMarks = cap(purposeMap[inputs.employmentPurpose ?? ""] ?? 0, 40);
-  const proximity = proximityMarks(inputs, 3.5, 35);
+  const purposeMarks = cap(EMPLOYMENT_PURPOSE_MARKS[inputs.employmentPurpose ?? ""] ?? 0, EMPLOYMENT_PURPOSE_MAX);
+  const proximity = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_66, PROXIMITY_MAX_66);
 
   const rows: ScoreRow[] = [
-    { label: "Continuous period abroad with child", marks: abroadMarks, max: 25 },
-    { label: "Employment purpose", marks: purposeMarks, max: 40 },
-    { label: "Nearby schools", marks: proximity, max: 35 },
+    { label: "Continuous period abroad with child", marks: abroadMarks, max: ABROAD_PERIOD_MAX },
+    { label: "Employment purpose", marks: purposeMarks, max: EMPLOYMENT_PURPOSE_MAX },
+    { label: "Nearby schools", marks: proximity, max: PROXIMITY_MAX_66 },
   ];
   const total = cap(rows.reduce((sum, row) => sum + row.marks, 0), CATEGORY_MAX_MARKS);
   return { categoryType: "6.6", total, breakdown: rows };
