@@ -5,6 +5,7 @@ import { Button } from "@aloysius-g1/ui/components/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
 import { PhoneInput } from "@/components/application/phone-input";
 import { client } from "@/utils/orpc";
+import { toast } from "sonner";
 
 export function AccessRecoveryDialog({ applicantName, open, onOpenChange, onForgot }: { applicantName?: string; open: boolean; onOpenChange: (open: boolean) => void; onForgot: () => void }) {
   const [mode, setMode] = useState<"session" | "birth" | "guardian">("session");
@@ -21,7 +22,7 @@ export function AccessRecoveryDialog({ applicantName, open, onOpenChange, onForg
     try {
       await client.application.requestAccess({ birthCertificateNumber: mode === "birth" ? birthCertificateNumber.trim() || undefined : undefined, sessionCode: mode === "session" ? sessionCode.trim() || undefined : undefined, guardianNic: mode === "guardian" ? guardianNic.trim() || undefined : undefined, applicantName: name, contactPhone, requestType: "forgot" });
       onForgot();
-      setMessage("Request sent. An administrator will contact you with a replacement key.");
+      toast.success("Request sent. An administrator will contact you with a replacement key.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not send the admin request");
     } finally {
