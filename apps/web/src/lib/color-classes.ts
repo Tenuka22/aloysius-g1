@@ -180,7 +180,7 @@ export const SCORE_ROW_BG = {
 // ---------------------------------------------------------------------------
 
 export const MARK_TOOLTIP =
-  "bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+  "inline-flex rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-900 dark:bg-emerald-900/50 dark:text-emerald-200"
 
 // ---------------------------------------------------------------------------
 // Flag pill (clickable tag for flagged inputs)
