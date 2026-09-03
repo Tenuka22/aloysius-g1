@@ -4,7 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloy
 import { Button } from "@aloysius-g1/ui/components/button";
 import { AdminApplicationEditor, AdminApplicationView } from "@/components/admin/admin-application-editor";
 
-export const Route = createFileRoute("/_auth/admin/applications/$id")({ component: AdminApplicationPage });
+export const Route = createFileRoute("/_auth/admin/applications/$id")({
+  loader: async ({ context, params }) => {
+    await context.queryClient.prefetchQuery(context.orpc.admin.application.get.queryOptions({ input: { id: params.id } }));
+  },
+  component: AdminApplicationPage,
+});
 
 function AdminApplicationPage() {
   const { session } = Route.useRouteContext(); const { id } = Route.useParams(); const editing = (Route.useSearch() as { mode?: string }).mode === "edit";
