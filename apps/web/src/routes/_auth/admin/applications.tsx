@@ -293,13 +293,13 @@ function AdminApplicationsPage() {
                       placeholder="Search applicant or key hint…"
                       value={(filters.find((f) => f.id === "query")?.value as string) ?? ""}
                       onChange={(e) => setFilter("query", e.target.value)}
-                      className="h-8 w-[200px] lg:w-[250px]"
+                      className="h-8 w-full max-w-[250px]"
                     />
                     <Select
                       value={(filters.find((f) => f.id === "status")?.value as string) ?? "all"}
                       onValueChange={(val) => setFilter("status", val ?? "")}
                     >
-                      <SelectTrigger className="h-8 w-[140px]">
+                      <SelectTrigger                       className="h-8 w-[180px]">
                         <SelectValue placeholder="All statuses" />
                       </SelectTrigger>
                       <SelectContent>
