@@ -394,8 +394,8 @@ function AdminLocationMap({ browser, selected, history = [], editable = false, o
   const allPoints = [...historyPoints.map((h) => h.coords), ...(browserPoint ? [browserPoint] : []), ...(selectedPoint ? [selectedPoint] : [])];
   const center = selectedPoint ?? browserPoint ?? (historyPoints.length > 0 ? historyPoints[0].coords : null) ?? [7.8731, 80.7718] as [number, number];
   return (
-    <div className="relative overflow-hidden border rounded-xl">
-      <MapContainer center={center} zoom={allPoints.length > 0 ? 13 : 7} scrollWheelZoom className="min-h-[390px] w-full">
+    <div className="relative overflow-hidden border rounded-xl w-full">
+      <MapContainer center={center} zoom={allPoints.length > 0 ? 13 : 7} scrollWheelZoom style={{ height: "390px", width: "100%" }}>
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {browserPoint && (
           <CircleMarker center={browserPoint} radius={8} pathOptions={{ color: "#1d4ed8", fillColor: "#60a5fa", fillOpacity: .9, weight: 2 }}>
