@@ -149,7 +149,7 @@ function useColumns(onRefetch: () => void) {
       accessorKey: "status",
       header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }: { row: { original: ApplicationRow } }) => (
-        <Badge variant={row.original.status === "submitted" ? "default" : "secondary"}>
+        <Badge variant={row.original.status === "draft" ? "default" : "outline"}>
           {row.original.status}
         </Badge>
       ),
