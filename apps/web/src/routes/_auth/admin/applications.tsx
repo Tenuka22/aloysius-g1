@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, Eye, Pencil, ShieldCheck, Trash2, Clock } from "lucide-react";
 import { consumeEventIterator } from "@orpc/client";
@@ -213,7 +213,9 @@ function AdminApplicationsPage() {
 
   const items = (applications.data?.items ?? []) as ApplicationRow[];
   const pageCount = applications.data ? Math.ceil(applications.data.total / applications.data.pageSize) : 0;
-  const columns = useColumns(() => void applications.refetch());
+
+  const refetchApplications = useCallback(() => { void applications.refetch(); }, [applications]);
+  const columns = useColumns(refetchApplications);
 
   return (
     <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
