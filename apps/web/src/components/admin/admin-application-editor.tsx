@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, CircleAlert, MapPin, Save, X, User, Phone, Mail, Calendar, CreditCard, Hash, Map, FileText, Building, Globe, ChevronRight, CircleDot, Settings, Eye, EyeOff, LayoutGrid, Rows3 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -402,15 +402,19 @@ function AdminLocationMap({ browser, selected, history = [], editable = false, o
             <Tooltip direction="top" permanent>Browser location</Tooltip>
           </CircleMarker>
         )}
-        {historyPoints.map((entry, index) => (
-          <CircleMarker key={`history-${index}`} center={entry.coords} radius={6} pathOptions={{ color: "#7c3aed", fillColor: "#a78bfa", fillOpacity: .85, weight: 2 }}>
-            <Tooltip direction="top">
-              {entry.label}<br />
-              <span className="font-mono text-[0.7rem]">{entry.coords[0].toFixed(5)}, {entry.coords[1].toFixed(5)}</span><br />
-              Source: {entry.source}
-            </Tooltip>
-          </CircleMarker>
-        ))}
+        {historyPoints.map((entry, index) => {
+          const isLast = index === historyPoints.length - 1;
+          return (
+            <CircleMarker key={`history-${index}`} center={entry.coords} radius={isLast ? 8 : 6} pathOptions={{ color: isLast ? "#d97706" : "#7c3aed", fillColor: isLast ? "#fbbf24" : "#a78bfa", fillOpacity: .9, weight: isLast ? 3 : 2 }}>
+              <Tooltip direction="top">
+                {entry.label}<br />
+                <span className="font-mono text-[0.7rem]">{entry.coords[0].toFixed(5)}, {entry.coords[1].toFixed(5)}</span><br />
+                Source: {entry.source}
+                {isLast && <><br /><strong>Latest pin</strong></>}
+              </Tooltip>
+            </CircleMarker>
+          );
+        })}
         {selectedPoint && (editable ? (
           <Marker icon={selectedLocationIcon} draggable position={selectedPoint} eventHandlers={{ dragend: (event) => { const point = event.target.getLatLng(); onSelectedChange?.(point.lat, point.lng); } }}>
             <Tooltip direction="top" permanent>Selected location (drag to edit)</Tooltip>
@@ -424,7 +428,8 @@ function AdminLocationMap({ browser, selected, history = [], editable = false, o
       <div className="absolute z-500 left-4 bottom-4 flex flex-wrap gap-3 p-2.5 border rounded-lg bg-[color-mix(in_oklch,var(--card)_92%,transparent)] shadow-[0_4px_12px_#0002] text-[0.76rem]">
         <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#60a5fa]" /> Browser location</span>
         <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#13b77e]" /> {editable ? "Drag to edit" : "Last selected"}</span>
-        {historyPoints.length > 0 && <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#a78bfa]" /> Previous pins ({historyPoints.length})</span>}
+        {historyPoints.length > 0 && <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#a78bfa]" /> Previous pins ({historyPoints.length > 1 ? historyPoints.length - 1 : 0})</span>}
+        {historyPoints.length > 0 && <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#fbbf24]" /> Latest pin</span>}
       </div>
     </div>
   );
@@ -658,6 +663,34 @@ export function AdminApplicationView({ id }: { id: string }) {
   </main>;
 }
 
+const EDITOR_STEPS = ["Applicant", "Guardian", "Residence", "Locations", "Categories", "Declaration"];
+
+function EditorStepIndicator({ current, steps: stepLabels, onStepClick }: { current: number; steps: string[]; onStepClick: (index: number) => void }) {
+  const progress = Math.round((current / (stepLabels.length - 1)) * 100);
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4 px-5 pb-4 pt-6 md:px-8">
+        <div>
+          <p className="text-xs text-muted-foreground">Step {current + 1} of {stepLabels.length}</p>
+          <h2 className="font-heading text-2xl">{stepLabels[current]}</h2>
+        </div>
+        <span className="text-sm text-muted-foreground">{progress}% complete</span>
+      </div>
+      <div className="h-1 bg-secondary">
+        <div className="h-full bg-primary transition-[width] duration-350 ease-in-out" style={{ width: `${Math.max(progress, 8)}%` }} />
+      </div>
+      <nav className="flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8" aria-label="Edit steps">
+        {stepLabels.map((step, index) => (
+          <button type="button" key={step} className={`inline-flex items-center gap-1.5 whitespace-nowrap bg-transparent px-2.5 py-2 text-xs ${index === current ? "font-bold text-foreground" : "text-muted-foreground"}`} onClick={() => onStepClick(index)}>
+            <span className={`grid size-6 place-items-center rounded-full border text-[11px] ${index === current ? "border-primary bg-primary text-primary-foreground" : index < current ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{index < current ? <Check size={14} /> : index + 1}</span>
+            {step}
+          </button>
+        ))}
+      </nav>
+    </>
+  );
+}
+
 export function AdminApplicationEditor({ id }: { id: string }) {
   const navigate = useNavigate();
   const detail = useQuery(orpc.admin.application.get.queryOptions({ input: { id } }));
@@ -665,9 +698,9 @@ export function AdminApplicationEditor({ id }: { id: string }) {
   const [saveState, setSaveState] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
   useEffect(() => { if (detail.data?.data) setDraft(normalizeDraft(detail.data.data as Partial<ApplicationDraft>)); }, [detail.data?.data]);
   const set = (section: keyof ApplicationDraft, key: string, value: string | boolean) => setDraft((current) => ({ ...current, [section]: { ...(current[section] as object), [key]: value } }));
-  const fields = useMemo(() => sections.filter(([key]) => key !== "declaration"), []);
   const save = async () => {
     if (saving) return;
     setSaving(true);
@@ -689,15 +722,48 @@ export function AdminApplicationEditor({ id }: { id: string }) {
   };
   if (detail.isLoading) return <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]"><Card><CardContent><p>Loading application…</p></CardContent></Card></main>;
   if (detail.isError) return <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]"><Card className="text-destructive"><CardContent className="flex items-center gap-2"><CircleAlert size={18} /> Could not load application: {detail.error.message}</CardContent></Card></main>;
-  return <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]"><AdminHeader title="Edit application" description="Make corrections directly to the saved record. Changes are applied to the database when you save." status="Admin edit mode" /><Card className="grid gap-4"><CardHeader><div className="flex items-start justify-between gap-4"><div><p className="text-primary font-bold tracking-widest uppercase text-xs">{draft.applicant.fullName || "Unnamed applicant"}</p><CardTitle>Application information</CardTitle><p className="text-muted-foreground text-[0.82rem]">Session code: <strong>{detail.data?.sessionCode ?? "Not available"}</strong></p></div><div className="text-right">{saveState && <span className={saveState.startsWith("Could") ? "text-destructive" : "text-primary"}>{saveState}</span>}{savedAt && <span className="block text-xs text-muted-foreground mt-1">{savedAt.toLocaleString()}</span>}</div></div></CardHeader>
-    <CardContent className="grid gap-4">
-      {fields.map(([key, label]) => <AdminFieldSection key={key} section={key} label={label} value={draft[key] as Record<string, unknown>} onChange={set} />)}
-      <div className="border rounded-xl p-4"><h3>Locations</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured browser point or the location selected by the applicant. Drag the green pin, edit the coordinates, then save.</p><AdminLocationMap editable browser={draft.defaultLocations[0]} selected={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} history={draft.userLocationHistory} onSelectedChange={(latitude, longitude) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, latitude, longitude, source: "map" }, location: { ...current.location, latitude, longitude, source: "map" }, userLocationHistory: prependLocationHistory(current.userLocationHistory, { ...current.selectedLocation, latitude, longitude, source: "map", label: "Selected location" }) }))} /><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1"><AdminLocationEditor label="Saved browser location" value={draft.defaultLocations[0] ?? emptyDraft.location} onChange={(key, value) => setDraft((current) => ({ ...current, defaultLocations: current.defaultLocations.length > 0 ? current.defaultLocations.map((loc, i) => i === 0 ? { ...loc, [key]: value } : loc) : [{ ...emptyDraft.location, [key]: value }] }))} /><AdminLocationEditor label="Selected / edited location" value={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} onChange={(key, value) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, [key]: value }, location: { ...current.location, [key]: value } }))} /></div><AdminLocationHistory title="Device fixes (newest first)" history={draft.deviceLocationHistory} /><AdminLocationHistory title="Previously selected locations" history={draft.userLocationHistory} /></div>
-      <div className="border rounded-xl p-4"><h3>Categories</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured category details. Schools within radius are shown for reference and cannot be edited here.</p><div className="grid gap-4">{draft.categories.length === 0 && <p className="text-muted-foreground">No categories selected.</p>}{draft.categories.map((category) => <AdminCategoryEditor key={category.id} category={category} onPatch={(categoryId, patch) => setDraft((current) => ({ ...current, categories: current.categories.map((entry) => entry.id === categoryId ? { ...entry, scoringInputs: { ...entry.scoringInputs, ...patch } } : entry) }))} onRemove={() => setDraft((current) => ({ ...current, categories: current.categories.filter((entry) => entry.id !== category.id) }))} />)}</div></div>
-      <div className="border rounded-xl p-4"><h3>Declaration</h3><Toggle label="Information confirmed" checked={draft.declaration.confirmed} onChange={(value) => set("declaration", "confirmed", value)} /><Toggle label="Consent given" checked={draft.declaration.consent} onChange={(value) => set("declaration", "consent", value)} /></div>
-      <div className="flex justify-between gap-3 flex-wrap"><Button variant="secondary" disabled={saving} onClick={() => void navigate({ to: "/admin/applications/$id", params: { id } })}><X size={16} /> Cancel</Button><div className="flex gap-2"><Button variant="outline" disabled={saving} onClick={() => void navigate({ to: "/admin/applications/$id", params: { id } })}><Check size={16} /> View</Button><Button disabled={saving} onClick={() => void save()}><Save size={16} /> {saving ? "Saving…" : "Save changes"}</Button></div></div>
-    </CardContent>
-  </Card></main>;
+
+  const stepContent = [
+    <AdminFieldSection key="applicant" section="applicant" label="Applicant" value={draft.applicant as Record<string, unknown>} onChange={set} />,
+    <AdminFieldSection key="guardian" section="guardian" label="Parent / guardian" value={draft.guardian as Record<string, unknown>} onChange={set} />,
+    <AdminFieldSection key="residence" section="residence" label="Residence" value={draft.residence as Record<string, unknown>} onChange={set} />,
+    <div key="locations" className="border rounded-xl p-4"><h3>Locations</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured browser point or the location selected by the applicant. Drag the green pin, edit the coordinates, then save.</p><AdminLocationMap editable browser={draft.defaultLocations[0]} selected={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} history={draft.userLocationHistory} onSelectedChange={(latitude, longitude) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, latitude, longitude, source: "map" }, location: { ...current.location, latitude, longitude, source: "map" }, userLocationHistory: prependLocationHistory(current.userLocationHistory, { ...current.selectedLocation, latitude, longitude, source: "map", label: "Selected location" }) }))} /><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1"><AdminLocationEditor label="Saved browser location" value={draft.defaultLocations[0] ?? emptyDraft.location} onChange={(key, value) => setDraft((current) => ({ ...current, defaultLocations: current.defaultLocations.length > 0 ? current.defaultLocations.map((loc, i) => i === 0 ? { ...loc, [key]: value } : loc) : [{ ...emptyDraft.location, [key]: value }] }))} /><AdminLocationEditor label="Selected / edited location" value={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} onChange={(key, value) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, [key]: value }, location: { ...current.location, [key]: value } }))} /></div><AdminLocationHistory title="Device fixes (newest first)" history={draft.deviceLocationHistory} /><AdminLocationHistory title="Previously selected locations" history={draft.userLocationHistory} /></div>,
+    <div key="categories" className="border rounded-xl p-4"><h3>Categories</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured category details. Schools within radius are shown for reference and cannot be edited here.</p><div className="grid gap-4">{draft.categories.length === 0 && <p className="text-muted-foreground">No categories selected.</p>}{draft.categories.map((category) => <AdminCategoryEditor key={category.id} category={category} onPatch={(categoryId, patch) => setDraft((current) => ({ ...current, categories: current.categories.map((entry) => entry.id === categoryId ? { ...entry, scoringInputs: { ...entry.scoringInputs, ...patch } } : entry) }))} onRemove={() => setDraft((current) => ({ ...current, categories: current.categories.filter((entry) => entry.id !== category.id) }))} />)}</div></div>,
+    <div key="declaration" className="border rounded-xl p-4"><h3>Declaration</h3><Toggle label="Information confirmed" checked={draft.declaration.confirmed} onChange={(value) => set("declaration", "confirmed", value)} /><Toggle label="Consent given" checked={draft.declaration.consent} onChange={(value) => set("declaration", "consent", value)} /></div>,
+  ];
+
+  return (
+    <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
+      <div className="flex items-end justify-between gap-8 mb-4">
+        <div>
+          <p className="text-primary font-bold tracking-widest uppercase text-xs">Admin / Applications</p>
+          <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-2">Edit application</h1>
+          <p className="text-muted-foreground">{draft.applicant.fullName || "Unnamed applicant"} · Session {detail.data?.sessionCode ?? "—"}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {saveState && <span className={`text-sm ${saveState.startsWith("Could") ? "text-destructive" : "text-primary"}`}>{saveState}</span>}
+          {savedAt && <span className="text-xs text-muted-foreground">{savedAt.toLocaleTimeString()}</span>}
+        </div>
+      </div>
+      <Card className="mx-auto max-w-[1320px] overflow-hidden shadow-[0_20px_45px_color-mix(in_oklch,var(--foreground)_8%,transparent)]">
+        <EditorStepIndicator current={currentStep} steps={EDITOR_STEPS} onStepClick={setCurrentStep} />
+        <CardContent className="min-h-[440px] p-5 md:p-9">
+          {stepContent[currentStep]}
+        </CardContent>
+        <div className="flex items-center justify-between gap-3 border-t px-5 py-4 md:px-9">
+          <Button variant="secondary" disabled={saving} onClick={() => void navigate({ to: "/admin/applications/$id", params: { id } })}><X size={16} /> Cancel</Button>
+          <div className="flex gap-2">
+            {currentStep > 0 && <Button variant="outline" disabled={saving} onClick={() => setCurrentStep(currentStep - 1)}>Back</Button>}
+            {currentStep < EDITOR_STEPS.length - 1 ? (
+              <Button disabled={saving} onClick={() => setCurrentStep(currentStep + 1)}>Next</Button>
+            ) : (
+              <Button disabled={saving} onClick={() => void save()}><Save size={16} /> {saving ? "Saving…" : "Save changes"}</Button>
+            )}
+          </div>
+        </div>
+      </Card>
+    </main>
+  );
 }
 
 function AdminFieldSection({ section, label, value, onChange }: { section: keyof ApplicationDraft; label: string; value: Record<string, unknown>; onChange: (section: keyof ApplicationDraft, key: string, value: string | boolean) => void }) {
@@ -770,5 +836,5 @@ function AdminCategoryEditor({ category, onPatch, onRemove }: { category: Catego
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) { return <label className="flex items-center gap-2"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><span>{checked ? <Check size={14} /> : null}</span>{label}</label>; }
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) { return <label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={checked} onCheckedChange={(value) => onChange(value === true)} /><span>{label}</span></label>; }
 function AdminHeader({ title, description, status }: { title: string; description: string; status?: string }) { return <div className="flex items-end justify-between gap-8 mb-8"><div><p className="text-primary font-bold tracking-widest uppercase text-xs">Admin / Applications</p><h1>{title}</h1><p>{description}</p></div>{status && <span className="inline-flex items-center gap-1.5 text-primary text-sm font-semibold"><span /> {status}</span>}</div>; }
