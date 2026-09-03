@@ -1,0 +1,43 @@
+0701021	ZAHIRA COLLAGE (N.S.) - GINTOTA	G/Zahira National College Ginthota Galle	0.62	borderline-reject
+0701022	MALHARSULHIYA CENTRAL COLLEGE	Malharus Sulhiya College gps location	0.67	borderline-reject
+0701027	KANDEWATTA AL-MEERAN MAHA VIDYALAYA	Al Meeran Muslim Vidyalaya	0.5	borderline-reject
+0702002	DORAPE SECONDARY SCHOOOL	G/Dorape National College	0.6	borderline-reject
+0702004	KAHANDA M.V.	Kahanda Kanda Galle	0.9	borderline-reject
+0702013	MARTIN WICKRAMASINGHE VIDYALAYA	Martin Wickramasinghe Folk Museum	0.9	borderline-reject
+0702026	AHANGAMA SHARIPUTHRA COLLEGE	SHARIPUTRA COLLEGE	0.69	borderline-reject
+0702039	SRI SANGARATHANA PRIMARY SCHOOL	Sri Dharmarama Kanishta Vidyalaya	0.57	borderline-reject
+0702041	WELHENGODA SRI GUNARATHANA K.V.	Sri Gunarathana Maha viddyalaya	0.58	borderline-reject
+0702046	KOMBALA PRIMARY SCHOOL	Mawella Primary School	0.57	borderline-reject
+0703009	NANDIMITHRA MAHA VIDYALAYA	Kapuhempola Nandhimithra Vidyalaya	0.65	borderline-reject
+0703013	KITHULAMPITIYA ANANDA M.V.	Ananda College - Kithulampitiya ( ආනන්ද මහා විද්‍යාලය )	0.7	borderline-reject
+0703032	HINIDUMGODA VIJAYANANDA K.V	Wijayananda Mawatha	0.5	borderline-reject
+0703033	SENAPALA SAMARASEKARA K.V	Senapala Samarasekera House	0.84	borderline-reject
+0703036	NAVINNA MUSLIM VIDYALAYA	Navinna Jumma Masjid	0.65	borderline-reject
+0704004	HENNATHOTA VIDYAWARDANA M.V.	Vidyawardhana Maha Vidyalaya	0.69	borderline-reject
+0704039	GALAGODA KANITU VIDYALAYA	Galagoda , kuleegoda	0.65	borderline-reject
+0704045	AKKARAVISSA K.V.	Akkara 20 School	0.63	borderline-reject
+0706002	AWITHTHAWA NALANDA M.V.	Awiththawa Bus Stand	0.71	borderline-reject
+0706004	SRI SASANCHANDRA M.V.	Chandra Sevana	0.5	borderline-reject
+0706019	WATHURAWILA K.V.	Wathuruwila Galwala - වතුරුවිල ගල් වල (මහදෙනිය ඇල්ල)	0.69	borderline-reject
+0706023	IGLATHALAWA K.V.	G/Igala Thalawa K.V	0.92	borderline-reject
+0707001	ALUTHWALA MAHA WIDYALAYA	G/Aluthwala Maha Vidyalaya	0.64	borderline-reject
+0708118	GONAGALA M.V.	Gonagala Pura	0.9	borderline-reject
+0708123	URAGAHA M.V.	Uragasmanhandiya	0.61	borderline-reject
+0708124	BODHIMALUWA K.V.	Galu Maha Bodhiya | ගාලු මහ බෝධිය	0.55	borderline-reject
+0708136	HIPANWATHTHA K.V	Kahaduwawaththa	0.61	borderline-reject
+0709010	ANURUDDA K.V	Anuruddagama	0.9	borderline-reject
+0710011	MADOOWA K.V	Medaduwa	0.67	borderline-reject
+0711022	ANNANDA VIJAYA VIDYALAYA	Ananda College - Kithulampitiya ( ආනන්ද මහා විද්‍යාලය )	0.61	borderline-reject
+0712015	SIRI PABANKARA K.V.	Horangalla Siri Pabhankara k/v Vidyalaya	0.7	borderline-reject
+0712024	POLPELAKETIYA K.V.	Polpelakatiya Sri Devagiri Viharaya	0.53	borderline-reject
+0712026	MARTHUPITIYA K.V.	Maththaka	0.53	borderline-reject
+0713004	IHALA THELLAMBURA VIDYAKANTHI K.V	G/ Thellambura Dutugemunu M.V.(National School)	0.53	borderline-reject
+0713022	WATHOGALAK.V.	Wathuruwila Galwala - වතුරුවිල ගල් වල (මහදෙනිය ඇල්ල)	0.59	borderline-reject
+0714030	WARUKANDENIYA K.V.	Karandeniya	0.83	borderline-reject
+0714033	MANDALAPURA K.V.	Mandalapura Bus Stop	0.9	borderline-reject
+0714034	SANTHA ANANAES K.V.	Sandathanna Agro Serve	0.61	borderline-reject
+0715008	KEEMBIYA GAMINEE M.V.	Keembikanda Galge	0.65	borderline-reject
+0715017	LELWALA WICKRAMASINGHA K.V	G/Wickramasinghe K.V	0.72	borderline-reject
+0715022	WELIDENIYA KANISHTA VIDYALAYA	Weihena Kanishta Vidyalaya	0.71	borderline-reject
+0717009	GURUSINGHAGODA M.V.	Gurusinghagoda Co-Op	0.9	borderline-reject
+0717012	SIR ATHER C CLARK MODEL SCHOOL	Akurati sir Arthur C Clarke Model School	0.7	borderline-reject

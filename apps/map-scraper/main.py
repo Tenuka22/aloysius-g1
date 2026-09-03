@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from src.generator import build_school_records, write_records_json, write_typescript
 from src.pdf import parse_galle_schools
+
+# School names contain Sinhala characters; make sure printing them to a redirected
+# stdout (cp1252 on Windows) cannot crash the scrape.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PDF = ROOT / "schools.pdf"
@@ -20,9 +27,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-ts", type=Path, default=DEFAULT_TS, help="Generated TypeScript output")
     parser.add_argument("--map-cache", type=Path, default=DEFAULT_MAP_CACHE, help="Google Maps coordinate cache")
     parser.add_argument("--scrape-maps", action="store_true", help="Scrape the Galle Government school result feed")
+    parser.add_argument("--skip-feed", action="store_true", help="Reuse the cached Government school feed instead of scraping it again")
     parser.add_argument("--headful", action="store_true", help="Show the browser while scraping Google Maps")
     parser.add_argument("--delay", type=float, default=1.1, help="Seconds between lookups")
+    parser.add_argument(
+        "--school-timeout",
+        type=float,
+        default=60.0,
+        help="Maximum seconds for each individual per-school Google Maps lookup",
+    )
     parser.add_argument("--timeout", type=float, default=900.0, help="Maximum seconds for the Google Maps result feed")
+    parser.add_argument(
+        "--retry-unmatched",
+        action="store_true",
+        help="Re-request schools whose earlier lookups found nothing (recorded in map_attempts.json)",
+    )
     return parser.parse_args()
 
 
@@ -40,10 +59,15 @@ def main() -> None:
         from src.scraper import GoogleMapsScraper
 
         print("Looking up remaining coordinates in Google Maps...")
-        GoogleMapsScraper(headless=not args.headful, timeout_ms=int(args.timeout * 1_000)).scrape_coordinates(
+        # The scraper's timeout_ms bounds every per-school lookup, while the
+        # feed scrape keeps its own (long) --timeout budget.
+        GoogleMapsScraper(headless=not args.headful, timeout_ms=int(args.school_timeout * 1_000)).scrape_coordinates(
             sources,
             cache_path=map_cache,
             delay_seconds=args.delay,
+            scrape_feed=not args.skip_feed,
+            feed_timeout_seconds=args.timeout,
+            retry_unmatched=args.retry_unmatched,
         )
 
     records = build_school_records(

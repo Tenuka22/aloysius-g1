@@ -6,7 +6,7 @@ import { adminProcedure, subAdminProcedure, protectedProcedure, publicProcedure 
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
-import { applicationAccessRequests, applicationMarks, applicationSettings, applications } from "@aloysius-g1/db";
+import { applicationAccessRequests, applicationMarks, applicationSettings, applications, schoolCoordinateOverrides } from "@aloysius-g1/db";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { env } from "@aloysius-g1/env/server";
 import {
@@ -255,6 +255,12 @@ export const appRouter = {
       return marks;
     }),
   },
+  schools: {
+    /** Manually placed school coordinates (admin hub). Public so every client shows the same catalog. */
+    overrides: publicProcedure.handler(async () => {
+      return db.select().from(schoolCoordinateOverrides).all();
+    }),
+  },
   admin: {
     accessRequests: {
       query: adminProcedure.handler(async () => db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.status, "open")).all()),
@@ -290,6 +296,40 @@ export const appRouter = {
         return { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt };
       }),
     },
+    schools: {
+      /** Same list as schools.overrides, kept for admin-only callers. */
+      overrides: adminProcedure.handler(async () => {
+        return db.select().from(schoolCoordinateOverrides).all();
+      }),
+      save: adminProcedure.input(z.object({
+        id: z.string().trim().min(1),
+        name: z.string().trim().min(1).max(300),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        note: z.string().trim().max(500).default(""),
+      })).handler(async ({ input, context }) => {
+        const now = new Date();
+        const existing = await db.select({ id: schoolCoordinateOverrides.id }).from(schoolCoordinateOverrides).where(eq(schoolCoordinateOverrides.id, input.id)).get();
+        const values = {
+          name: input.name,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          note: input.note,
+          updatedBy: context.session.user?.id ?? "",
+          updatedAt: now,
+        };
+        if (existing) {
+          await db.update(schoolCoordinateOverrides).set(values).where(eq(schoolCoordinateOverrides.id, input.id)).run();
+        } else {
+          await db.insert(schoolCoordinateOverrides).values({ id: input.id, ...values }).run();
+        }
+        return { id: input.id, updatedAt: now };
+      }),
+      remove: adminProcedure.input(z.object({ id: z.string().trim().min(1) })).handler(async ({ input }) => {
+        await db.delete(schoolCoordinateOverrides).where(eq(schoolCoordinateOverrides.id, input.id)).run();
+        return { removed: true };
+      }),
+    },
     overview: adminProcedure.handler(async () => {
       const rows = await db.select().from(applications).all();
       const records = rows.map(applicationRecord);
@@ -311,6 +351,24 @@ export const appRouter = {
         const start = (input.page - 1) * input.pageSize;
         return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
     }),
+      listWithLocations: adminProcedure.handler(async () => {
+        const rows = await db.select().from(applications).where(isNotNull(applications.submittedAt)).all();
+        return rows.map((row) => {
+          const summary = admissionSummary(row);
+          const data = (row.data ?? {}) as Record<string, unknown>;
+          const locationHistory = (Array.isArray(data.userLocationHistory) ? data.userLocationHistory : []) as Array<Record<string, unknown>>;
+          const selectedLocation = data.selectedLocation as Record<string, unknown> | undefined;
+          const location = data.location as Record<string, unknown> | undefined;
+          const latestPin = locationHistory.find((loc) => typeof loc.latitude === "number" && typeof loc.longitude === "number")
+            ?? (selectedLocation && typeof selectedLocation.latitude === "number" ? selectedLocation : null)
+            ?? (location && typeof location.latitude === "number" ? location : null);
+          return {
+            ...summary,
+            latitude: latestPin && typeof latestPin.latitude === "number" ? latestPin.latitude : null,
+            longitude: latestPin && typeof latestPin.longitude === "number" ? latestPin.longitude : null,
+          };
+        });
+      }),
       get: adminProcedure.input(z.object({ id: applicationIdSchema })).handler(async ({ input }) => {
         const row = await db.select().from(applications).where(eq(applications.id, input.id)).get();
         if (!row || !row.submittedAt) throw new ORPCError("NOT_FOUND", { message: "Submitted application not found" });

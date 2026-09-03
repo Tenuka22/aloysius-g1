@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApplicationForm } from "./application-form";
 import { emptyDraft, useApplicationStore, type ApplicationDraft, type CategoryApplication } from "@/lib/application-store";
 import { scoreCategory } from "@/lib/scoring";
@@ -67,6 +68,19 @@ vi.mock("./location-step", () => ({
 }));
 
 /* ───────── helpers ───────── */
+
+// ApplicationForm mounts a react-query marks query, so every render needs a
+// QueryClientProvider.
+function renderApplication() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ApplicationForm />
+    </QueryClientProvider>,
+  );
+}
 
 function setStore(patch: Partial<ApplicationDraft>) {
   act(() => useApplicationStore.setState({ ...patch }));
@@ -158,7 +172,7 @@ describe("Full user journey – fresh application", () => {
   it("navigates all 7 steps and reaches review", async () => {
     // Step 0: Location
     setStore({ location: { ...emptyDraft.location, ...loc } });
-    render(<ApplicationForm />);
+    renderApplication();
     expect(await screen.findByTestId("location-step")).toBeInTheDocument();
 
     // Step 1: Applicant
@@ -204,7 +218,7 @@ describe("User stuck midway – back and forth", () => {
       currentStep: 1,
       applicant: { ...applicant, gender: "Male" },
     });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     const back = screen.getByRole("button", { name: /back/i });
@@ -219,7 +233,7 @@ describe("User stuck midway – back and forth", () => {
 
   it("step 4 blocked when no categories, then adding one unblocks", async () => {
     setStore({ currentStep: 4 });
-    render(<ApplicationForm />);
+    renderApplication();
     const continueButton = await screen.findByRole("button", { name: /continue/i });
     expect(continueButton).toBeDisabled();
 
@@ -229,7 +243,7 @@ describe("User stuck midway – back and forth", () => {
 
   it("changing applicant gender mid-flow is reflected in store", async () => {
     setStore({ currentStep: 1, applicant: { ...applicant, gender: "Male" } });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     expect(useApplicationStore.getState().applicant.gender).toBe("Male");
@@ -249,7 +263,7 @@ describe("Random navigation", () => {
       currentStep: 5,
       declaration: { confirmed: false, consent: false },
     });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     const back = screen.getByRole("button", { name: /back/i });
@@ -259,7 +273,7 @@ describe("Random navigation", () => {
 
   it("can jump from step 6 to step 0 via store without crash", async () => {
     setStore({ currentStep: 6, declaration: { confirmed: true, consent: true } });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /(submit|update) application/i });
 
     act(() => useApplicationStore.getState().setStep(0));
@@ -269,7 +283,7 @@ describe("Random navigation", () => {
 
   it("rapid step changes do not crash the form", async () => {
     setStore({ location: { ...emptyDraft.location, ...loc } });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     for (let step = 0; step <= 6; step++) {
@@ -287,11 +301,11 @@ describe("Random navigation", () => {
 describe("Abandon and resume", () => {
   it("retains applicant data after unmount and remount", async () => {
     setStore({ currentStep: 1, applicant });
-    const { unmount } = render(<ApplicationForm />);
+    const { unmount } = renderApplication();
     await screen.findByRole("button", { name: /continue/i });
     unmount();
 
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
     const store = useApplicationStore.getState();
     expect(store.applicant.fullName).toBe("Ashan Perera");
@@ -300,7 +314,7 @@ describe("Abandon and resume", () => {
 
   it("retains guardian data across step changes", async () => {
     setStore({ currentStep: 2, guardian });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     act(() => useApplicationStore.getState().setStep(3));
@@ -311,7 +325,7 @@ describe("Abandon and resume", () => {
 
   it("retains categories after navigating away and back", async () => {
     setStore({ currentStep: 4 });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     act(() => useApplicationStore.getState().addCategory("6.1"));
@@ -332,7 +346,7 @@ describe("Abandon and resume", () => {
 describe("Category duplicates", () => {
   it("allows multiple 6.1 entries", async () => {
     setStore({ currentStep: 4 });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     act(() => useApplicationStore.getState().addCategory("6.1"));
@@ -346,7 +360,7 @@ describe("Category duplicates", () => {
 
   it("allows one of each type", async () => {
     setStore({ currentStep: 4 });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     act(() => {
@@ -364,7 +378,7 @@ describe("Category duplicates", () => {
 
   it("removing one duplicate leaves the other intact", async () => {
     setStore({ currentStep: 4 });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     act(() => {
@@ -381,7 +395,7 @@ describe("Category duplicates", () => {
 
   it("mix of duplicates and unique types all render", async () => {
     setStore({ currentStep: 4 });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     act(() => {
@@ -414,7 +428,7 @@ describe("Indicative marks notice", () => {
         },
       ],
     });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     expect(screen.getByText("Example marks – 6.1 – Residence Verification & Proximity")).toBeInTheDocument();
@@ -439,7 +453,7 @@ describe("Indicative marks notice", () => {
       declaration,
       categories: [cat],
     });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /(submit|update) application/i });
 
     const score = scoreCategory(cat);
@@ -461,7 +475,7 @@ describe("Declaration consent gating", () => {
       guardian,
       residence,
     });
-    render(<ApplicationForm />);
+    renderApplication();
     const submitButton = await screen.findByRole("button", { name: /submit application/i });
     expect(submitButton).toBeDisabled();
   });
@@ -475,7 +489,7 @@ describe("Declaration consent gating", () => {
       guardian,
       residence,
     });
-    render(<ApplicationForm />);
+    renderApplication();
     const submitButton = await screen.findByRole("button", { name: /submit application/i });
     expect(submitButton).toBeEnabled();
   });
@@ -505,7 +519,7 @@ describe("Review edit jumps", () => {
 
   it("clicking Categories edit sets step to 4 via store", async () => {
     setStore({ ...fullDraft, currentStep: 6 });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /(submit|update) application/i });
 
     act(() => useApplicationStore.getState().setStep(4));
@@ -515,7 +529,7 @@ describe("Review edit jumps", () => {
 
   it("clicking Location edit sets step to 0 via store", async () => {
     setStore({ ...fullDraft, currentStep: 6 });
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /(submit|update) application/i });
 
     act(() => useApplicationStore.getState().setStep(0));
@@ -539,7 +553,7 @@ describe("Submit flow", () => {
       declaration,
       categories: [],
     });
-    render(<ApplicationForm />);
+    renderApplication();
     const submitButton = await screen.findByRole("button", { name: /submit application/i });
 
     await userEvent.click(submitButton);
@@ -564,7 +578,7 @@ describe("Location history in form", () => {
       value: { ...emptyDraft.location, latitude: 7.1, longitude: 80.2, source: "device", address: "Spot A" },
       defaultValue: { ...emptyDraft.location, latitude: 7.1, longitude: 80.2, source: "device", address: "Spot A" },
     };
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     await userEvent.click(screen.getByTestId("fire-location-change"));
@@ -579,7 +593,7 @@ describe("Location history in form", () => {
     locationChangePayload.current = {
       value: { ...emptyDraft.location, latitude: 7.3, longitude: 80.5, source: "device", address: "Spot B" },
     };
-    render(<ApplicationForm />);
+    renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
     await userEvent.click(screen.getByTestId("fire-location-change"));

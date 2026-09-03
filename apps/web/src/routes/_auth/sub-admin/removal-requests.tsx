@@ -23,6 +23,7 @@ import {
 } from "@aloysius-g1/ui/components/dropdown-menu";
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
+import { FORM_WINDOW_WARNING } from "@/lib/color-classes";
 
 export const Route = createFileRoute("/_auth/sub-admin/removal-requests")({ component: SubAdminRemovalRequestsPage });
 
@@ -154,9 +155,9 @@ function SubAdminRemovalRequestsPage() {
         <Button variant="secondary" render={<Link to="/sub-admin" />}>Back to overview</Button>
       </div>
       {!isOpen && (
-        <Card className="mb-4 border-amber-500/30 bg-amber-500/5">
+        <Card className={`mb-4 ${FORM_WINDOW_WARNING.card}`}>
           <CardContent className="flex items-center gap-3 py-3">
-            <span className="text-amber-600 font-semibold text-sm">⚠ Application window is closed</span>
+            <span className={`${FORM_WINDOW_WARNING.text} font-semibold text-sm`}>⚠ Application window is closed</span>
             <span className="text-muted-foreground text-sm">Removal requests can only be processed during the application open period. Deletion is disabled until the window reopens.</span>
           </CardContent>
         </Card>

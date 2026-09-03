@@ -3,11 +3,18 @@ import { env } from "@aloysius-g1/env/web";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
-import { QueryCache, QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export function createQueryClient() {
   return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 30_000,
+        retry: 1,
+        refetchOnWindowFocus: false,
+      },
+    },
     queryCache: new QueryCache({
       onError: (error, query) => {
         toast.error(`Error: ${error.message}`, {
@@ -18,6 +25,11 @@ export function createQueryClient() {
             },
           },
         });
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (error) => {
+        toast.error(`Mutation failed: ${error.message}`);
       },
     }),
   });

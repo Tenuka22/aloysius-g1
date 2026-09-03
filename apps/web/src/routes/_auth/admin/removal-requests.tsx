@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, Trash2, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-g1/ui/components/alert-dialog";
@@ -24,7 +24,14 @@ import {
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_auth/admin/removal-requests")({ component: AdminRemovalRequestsPage });
+export const Route = createFileRoute("/_auth/admin/removal-requests")({
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(context.orpc.admin.accessRequests.removalRequests.queryOptions({
+      input: { page: 1, pageSize: 10, query: "" },
+    }));
+  },
+  component: AdminRemovalRequestsPage,
+});
 
 type RemovalRequestRow = {
   id: string
@@ -39,25 +46,24 @@ type RemovalRequestRow = {
 function ActionsMenu({ item, onAction }: { item: RemovalRequestRow; onAction: () => void }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const approve = async () => {
-    try {
-      await client.admin.accessRequests.deleteAfterRemovalRequest({ requestId: item.id });
+  const deleteMutation = useMutation({
+    mutationFn: () => client.admin.accessRequests.deleteAfterRemovalRequest({ requestId: item.id }),
+    onSuccess: () => {
       toast.success("Application deleted");
       onAction();
       setDeleteOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not delete application");
-    }
-  };
-  const reject = async () => {
-    try {
-      await client.admin.accessRequests.dismiss({ requestId: item.id });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not delete application"),
+  });
+
+  const dismissMutation = useMutation({
+    mutationFn: () => client.admin.accessRequests.dismiss({ requestId: item.id }),
+    onSuccess: () => {
       toast.success("Request dismissed");
       onAction();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not dismiss request");
-    }
-  };
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not dismiss request"),
+  });
 
   return (
     <>
@@ -70,8 +76,8 @@ function ActionsMenu({ item, onAction }: { item: RemovalRequestRow; onAction: ()
           <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
             <Trash2 size={15} /> Delete application
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={reject}>
-            <X size={15} /> Dismiss request
+          <DropdownMenuItem onClick={() => dismissMutation.mutate()} disabled={dismissMutation.isPending}>
+            <X size={15} /> {dismissMutation.isPending ? "Dismissing…" : "Dismiss request"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -85,7 +91,9 @@ function ActionsMenu({ item, onAction }: { item: RemovalRequestRow; onAction: ()
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteOpen(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={approve} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

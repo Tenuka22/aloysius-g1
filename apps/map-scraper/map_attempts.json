@@ -1,0 +1,772 @@
+{
+  "0710008": {
+    "status": "no-match",
+    "result": "Muslim Kanishta Vidyalaya",
+    "score": 0.25,
+    "note": null,
+    "ts": 1788434693.6
+  },
+  "0710010": {
+    "status": "no-match",
+    "result": "Gallandala Kanishta Vidyalaya",
+    "score": 0.46,
+    "note": null,
+    "ts": 1788434709.5
+  },
+  "0710011": {
+    "status": "review",
+    "result": "Medaduwa",
+    "score": 0.67,
+    "note": null,
+    "ts": 1788434724.7
+  },
+  "0707001": {
+    "status": "review",
+    "result": "G/Aluthwala Maha Vidyalaya",
+    "score": 0.64,
+    "note": null,
+    "ts": 1788434793.3
+  },
+  "0707007": {
+    "status": "no-match",
+    "result": "Prajapathi College Play Ground",
+    "score": 0.65,
+    "note": null,
+    "ts": 1788434831.7
+  },
+  "0707011": {
+    "status": "no-match",
+    "result": "Maalalgoda Siri Seevali Kanishta Vidyalaya",
+    "score": 0.3,
+    "note": null,
+    "ts": 1788434875.4
+  },
+  "0715002": {
+    "status": "no-match",
+    "result": "Baddegama, Kiribathawila; Colonial Style Villa close to Hikkaduwa Beach",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788434899.6
+  },
+  "0707015": {
+    "status": "no-match",
+    "result": "K.P SOMADASA AND COMPANY (PVT) LTD",
+    "score": 0.35,
+    "note": null,
+    "ts": 1788434932.8
+  },
+  "0707020": {
+    "status": "no-match",
+    "result": "Kahatapitiya Play Ground",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788434977.2
+  },
+  "0707025": {
+    "status": "no-match",
+    "result": "Garden Villa Ronnaduwa",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788435009.0
+  },
+  "0717005": {
+    "status": "no-match",
+    "result": "Rekadahena Estate",
+    "score": 0.62,
+    "note": null,
+    "ts": 1788435070.8
+  },
+  "0717006": {
+    "status": "no-match",
+    "result": "Welivitiya chandananda Wiwekaramaya",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788435085.7
+  },
+  "0709007": {
+    "status": "no-match",
+    "result": "Nawadagala Maha Vidyalaya",
+    "score": 0.38,
+    "note": null,
+    "ts": 1788435140.0
+  },
+  "0717009": {
+    "status": "review",
+    "result": "Gurusinghagoda Co-Op",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788435155.3
+  },
+  "0709010": {
+    "status": "review",
+    "result": "Anuruddagama",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788435206.0
+  },
+  "0717010": {
+    "status": "no-match",
+    "result": "Maddewila dewalaya",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788435233.1
+  },
+  "0709012": {
+    "status": "no-match",
+    "result": "Magala South Sub Post Office",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788435243.3
+  },
+  "0709005": {
+    "status": "no-match",
+    "result": "Kithulampitiya",
+    "score": 0.36,
+    "note": null,
+    "ts": 1788435296.4
+  },
+  "0717012": {
+    "status": "review",
+    "result": "Akurati sir Arthur C Clarke Model School",
+    "score": 0.7,
+    "note": null,
+    "ts": 1788435305.6
+  },
+  "0709013": {
+    "status": "no-match",
+    "result": "Welladdara gedara.",
+    "score": 0.32,
+    "note": null,
+    "ts": 1788435334.4
+  },
+  "0709023": {
+    "status": "no-match",
+    "result": "Kotawila gedara",
+    "score": 0.64,
+    "note": null,
+    "ts": 1788435362.7
+  },
+  "0709024": {
+    "status": "no-match",
+    "result": "Minuwandeniya Kanishta Vidyalaya",
+    "score": 0.44,
+    "note": null,
+    "ts": 1788435376.9
+  },
+  "0708118": {
+    "status": "review",
+    "result": "Gonagala Pura",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788436023.5
+  },
+  "0708122": {
+    "status": "no-match",
+    "result": "Ransithu Villa",
+    "score": 0.72,
+    "note": null,
+    "ts": 1788436038.6
+  },
+  "0708123": {
+    "status": "review",
+    "result": "Uragasmanhandiya",
+    "score": 0.61,
+    "note": null,
+    "ts": 1788436054.1
+  },
+  "0708124": {
+    "status": "review",
+    "result": "Galu Maha Bodhiya | ගාලු මහ බෝධිය",
+    "score": 0.55,
+    "note": null,
+    "ts": 1788436072.8
+  },
+  "0708136": {
+    "status": "review",
+    "result": "Kahaduwawaththa",
+    "score": 0.61,
+    "note": null,
+    "ts": 1788436134.6
+  },
+  "0706002": {
+    "status": "review",
+    "result": "Awiththawa Bus Stand",
+    "score": 0.71,
+    "note": null,
+    "ts": 1788436161.4
+  },
+  "0706004": {
+    "status": "review",
+    "result": "Chandra Sevana",
+    "score": 0.5,
+    "note": null,
+    "ts": 1788436189.3
+  },
+  "0706013": {
+    "status": "no-match",
+    "result": "Ananda Central College - Elpitiya 1",
+    "score": 0.36,
+    "note": null,
+    "ts": 1788436258.4
+  },
+  "0706014": {
+    "status": "no-match",
+    "result": "Eramulla Tea Factory",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788436266.9
+  },
+  "0706015": {
+    "status": "no-match",
+    "result": "Kudagala Temple",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788436281.8
+  },
+  "0706016": {
+    "status": "no-match",
+    "result": "Pituwala Swimming Pool",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788436291.2
+  },
+  "0706019": {
+    "status": "review",
+    "result": "Wathuruwila Galwala - වතුරුවිල ගල් වල (මහදෙනිය ඇල්ල)",
+    "score": 0.69,
+    "note": null,
+    "ts": 1788436324.0
+  },
+  "0706022": {
+    "status": "no-match",
+    "result": "Pitigala Bus Station",
+    "score": 0.34,
+    "note": null,
+    "ts": 1788436366.7
+  },
+  "0706023": {
+    "status": "review",
+    "result": "G/Igala Thalawa K.V",
+    "score": 0.92,
+    "note": null,
+    "ts": 1788436381.1
+  },
+  "0706027": {
+    "status": "no-match",
+    "result": "Yatalamaththa Sub Post Office",
+    "score": 0.27,
+    "note": null,
+    "ts": 1788436436.6
+  },
+  "0706031": {
+    "status": "no-match",
+    "result": "Villa Siri Sewana",
+    "score": 0.53,
+    "note": null,
+    "ts": 1788436484.2
+  },
+  "0714005": {
+    "status": "no-match",
+    "result": "Dellawa Water Park",
+    "score": 0.46,
+    "note": null,
+    "ts": 1788436501.2
+  },
+  "0714016": {
+    "status": "no-match",
+    "result": "Amal Hotel (අමල් අයියගෙ කඩේ)",
+    "score": 0.5,
+    "note": null,
+    "ts": 1788436525.4
+  },
+  "0714019": {
+    "status": "no-match",
+    "result": "Vidyaloka College - Galle | විද්‍යාලෝක විද්‍යාලය ගාල්ල | வித்யாலோகா கல்லூரி காலி",
+    "score": 0.4,
+    "note": null,
+    "ts": 1788436620.5
+  },
+  "0714021": {
+    "status": "no-match",
+    "result": "Habarakada Jethawanaramaya",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788436636.1
+  },
+  "0714034": {
+    "status": "review",
+    "result": "Sandathanna Agro Serve",
+    "score": 0.61,
+    "note": null,
+    "ts": 1788436650.5
+  },
+  "0714024": {
+    "status": "no-match",
+    "result": "Dellawa Water Park",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788436665.3
+  },
+  "0714028": {
+    "status": "no-match",
+    "result": "Akiko Japanese Language Centre (Galle Branch)",
+    "score": 0.26,
+    "note": null,
+    "ts": 1788436696.3
+  },
+  "0714030": {
+    "status": "review",
+    "result": "Karandeniya",
+    "score": 0.83,
+    "note": null,
+    "ts": 1788436715.6
+  },
+  "0714033": {
+    "status": "review",
+    "result": "Mandalapura Bus Stop",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788436793.2
+  },
+  "0712008": {
+    "status": "no-match",
+    "result": "Godamuna Road",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788437006.3
+  },
+  "0711007": {
+    "status": "no-match",
+    "result": "Green Hideaway Galle",
+    "score": 0.26,
+    "note": null,
+    "ts": 1788437101.3
+  },
+  "0712012": {
+    "status": "no-match",
+    "result": "Dakshinapaya",
+    "score": 0.4,
+    "note": null,
+    "ts": 1788437453.6
+  },
+  "0711030": {
+    "status": "no-match",
+    "result": "Malamura waterfall",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788437500.7
+  },
+  "0711011": {
+    "status": "no-match",
+    "result": "BGA pvt ltd",
+    "score": 0.35,
+    "note": null,
+    "ts": 1788437521.7
+  },
+  "0712015": {
+    "status": "review",
+    "result": "Horangalla Siri Pabhankara k/v Vidyalaya",
+    "score": 0.7,
+    "note": null,
+    "ts": 1788437552.8
+  },
+  "0711013": {
+    "status": "no-match",
+    "result": "KURUNDA (PVT) LTD",
+    "score": 0.43,
+    "note": null,
+    "ts": 1788437597.6
+  },
+  "0711014": {
+    "status": "no-match",
+    "result": "K.G.Anura Kumara",
+    "score": 0.24,
+    "note": null,
+    "ts": 1788437616.3
+  },
+  "0712026": {
+    "status": "review",
+    "result": "Maththaka",
+    "score": 0.53,
+    "note": null,
+    "ts": 1788437646.1
+  },
+  "0715008": {
+    "status": "review",
+    "result": "Keembikanda Galge",
+    "score": 0.65,
+    "note": null,
+    "ts": 1788438056.4
+  },
+  "0715017": {
+    "status": "review",
+    "result": "G/Wickramasinghe K.V",
+    "score": 0.72,
+    "note": null,
+    "ts": 1788438121.1
+  },
+  "0715018": {
+    "status": "no-match",
+    "result": "Mahamevnawa Buddhist Monastery - Galle | මහමෙව්නාව භාවනා අසපුව - ගාල්ල",
+    "score": 0.31,
+    "note": null,
+    "ts": 1788438135.8
+  },
+  "0715019": {
+    "status": "no-match",
+    "result": "Thanipolgaha Junction - තනි පොල්ගහ හංදිය",
+    "score": 0.33,
+    "note": null,
+    "ts": 1788438153.7
+  },
+  "0715022": {
+    "status": "review",
+    "result": "Weihena Kanishta Vidyalaya",
+    "score": 0.71,
+    "note": null,
+    "ts": 1788438171.3
+  },
+  "0713003": {
+    "status": "no-match",
+    "result": "B & G Electricals & Tools",
+    "score": 0.25,
+    "note": null,
+    "ts": 1788438266.4
+  },
+  "0713004": {
+    "status": "review",
+    "result": "G/ Thellambura Dutugemunu M.V.(National School)",
+    "score": 0.53,
+    "note": null,
+    "ts": 1788438284.0
+  },
+  "0713006": {
+    "status": "no-match",
+    "result": "B & G Electricals & Tools",
+    "score": 0.26,
+    "note": null,
+    "ts": 1788438303.2
+  },
+  "0711022": {
+    "status": "review",
+    "result": "Ananda College - Kithulampitiya ( ආනන්ද මහා විද්‍යාලය )",
+    "score": 0.61,
+    "note": null,
+    "ts": 1788438385.0
+  },
+  "0713010": {
+    "status": "no-match",
+    "result": "B & G Electricals & Tools",
+    "score": 0.37,
+    "note": null,
+    "ts": 1788438400.3
+  },
+  "0713013": {
+    "status": "no-match",
+    "result": "Kasagala Green Plantation",
+    "score": 0.4,
+    "note": null,
+    "ts": 1788438414.9
+  },
+  "0713018": {
+    "status": "no-match",
+    "result": "Ihalagoda Sumangala Model School - Galle | ඉහළගොඩ සුමංගල ආදර්ශ විද්‍යාලය - ගාල්ල",
+    "score": 0.28,
+    "note": null,
+    "ts": 1788438466.8
+  },
+  "0713022": {
+    "status": "review",
+    "result": "Wathuruwila Galwala - වතුරුවිල ගල් වල (මහදෙනිය ඇල්ල)",
+    "score": 0.59,
+    "note": null,
+    "ts": 1788438482.9
+  },
+  "0713019": {
+    "status": "no-match",
+    "result": "G-STORE",
+    "score": 0.38,
+    "note": null,
+    "ts": 1788438497.6
+  },
+  "0704004": {
+    "status": "review",
+    "result": "Vidyawardhana Maha Vidyalaya",
+    "score": 0.69,
+    "note": null,
+    "ts": 1788438556.1
+  },
+  "0704007": {
+    "status": "no-match",
+    "result": "Villa de avocat",
+    "score": 0.53,
+    "note": null,
+    "ts": 1788438661.1
+  },
+  "0704015": {
+    "status": "no-match",
+    "result": "Morakola Gangarama Temple",
+    "score": 0.53,
+    "note": null,
+    "ts": 1788438691.4
+  },
+  "0704019": {
+    "status": "no-match",
+    "result": "Imbulagoda Temple",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788438706.8
+  },
+  "0704021": {
+    "status": "no-match",
+    "result": "Villa Galle Inn",
+    "score": 0.39,
+    "note": null,
+    "ts": 1788438731.1
+  },
+  "0704030": {
+    "status": "no-match",
+    "result": "Sri Sudharmalaya Buddhist Temple",
+    "score": 0.56,
+    "note": null,
+    "ts": 1788438803.0
+  },
+  "0704036": {
+    "status": "no-match",
+    "result": "Kumara stores",
+    "score": 0.54,
+    "note": null,
+    "ts": 1788438833.3
+  },
+  "0704038": {
+    "status": "no-match",
+    "result": "Villa kaya guest house",
+    "score": 0.31,
+    "note": null,
+    "ts": 1788438867.3
+  },
+  "0704039": {
+    "status": "review",
+    "result": "Galagoda , kuleegoda",
+    "score": 0.65,
+    "note": null,
+    "ts": 1788438895.9
+  },
+  "0701016": {
+    "status": "no-match",
+    "result": "All Saints' Church",
+    "score": 0.37,
+    "note": null,
+    "ts": 1788438978.7
+  },
+  "0703009": {
+    "status": "review",
+    "result": "Kapuhempola Nandhimithra Vidyalaya",
+    "score": 0.65,
+    "note": null,
+    "ts": 1788439054.9
+  },
+  "0703013": {
+    "status": "review",
+    "result": "Ananda College - Kithulampitiya ( ආනන්ද මහා විද්‍යාලය )",
+    "score": 0.7,
+    "note": null,
+    "ts": 1788439110.2
+  },
+  "0703019": {
+    "status": "no-match",
+    "result": "G-STORE",
+    "score": 0.32,
+    "note": null,
+    "ts": 1788439304.4
+  },
+  "0703026": {
+    "status": "no-match",
+    "result": "Kalegana Junction",
+    "score": 0.32,
+    "note": null,
+    "ts": 1788439381.6
+  },
+  "0703027": {
+    "status": "no-match",
+    "result": "Parane's Villa",
+    "score": 0.34,
+    "note": null,
+    "ts": 1788439405.2
+  },
+  "0703031": {
+    "status": "no-match",
+    "result": "G House",
+    "score": 0.4,
+    "note": null,
+    "ts": 1788439435.7
+  },
+  "0703032": {
+    "status": "review",
+    "result": "Wijayananda Mawatha",
+    "score": 0.5,
+    "note": null,
+    "ts": 1788439455.6
+  },
+  "0703033": {
+    "status": "review",
+    "result": "Senapala Samarasekera House",
+    "score": 0.84,
+    "note": null,
+    "ts": 1788439473.2
+  },
+  "0702002": {
+    "status": "review",
+    "result": "G/Dorape National College",
+    "score": 0.6,
+    "note": null,
+    "ts": 1788439494.0
+  },
+  "0702003": {
+    "status": "no-match",
+    "result": "Hapugala Maha Vidyalaya",
+    "score": 0.46,
+    "note": null,
+    "ts": 1788439509.5
+  },
+  "0702004": {
+    "status": "review",
+    "result": "Kahanda Kanda Galle",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788439539.0
+  },
+  "0702013": {
+    "status": "review",
+    "result": "Martin Wickramasinghe Folk Museum",
+    "score": 0.9,
+    "note": null,
+    "ts": 1788439588.3
+  },
+  "0702016": {
+    "status": "no-match",
+    "result": "වැලිකොන්ද ශ්‍රී ජීවානන්ද ප්‍රාථමික විදුහල",
+    "score": 0.0,
+    "note": null,
+    "ts": 1788439609.1
+  },
+  "0702026": {
+    "status": "review",
+    "result": "SHARIPUTRA COLLEGE",
+    "score": 0.69,
+    "note": null,
+    "ts": 1788439700.2
+  },
+  "0702038": {
+    "status": "no-match",
+    "result": "Ga/ Nakanda Kumara Prathamika Vidyalaya",
+    "score": 0.44,
+    "note": null,
+    "ts": 1788439939.3
+  },
+  "0702039": {
+    "status": "review",
+    "result": "Sri Dharmarama Kanishta Vidyalaya",
+    "score": 0.57,
+    "note": null,
+    "ts": 1788439956.5
+  },
+  "0702041": {
+    "status": "review",
+    "result": "Sri Gunarathana Maha viddyalaya",
+    "score": 0.58,
+    "note": null,
+    "ts": 1788439997.1
+  },
+  "0702046": {
+    "status": "review",
+    "result": "Mawella Primary School",
+    "score": 0.57,
+    "note": null,
+    "ts": 1788440096.1
+  },
+  "0713020": {
+    "status": "no-match",
+    "result": "B & G Electricals & Tools",
+    "score": 0.27,
+    "note": null,
+    "ts": 1788440159.8
+  },
+  "0701021": {
+    "status": "review",
+    "result": "G/Zahira National College Ginthota Galle",
+    "score": 0.62,
+    "note": null,
+    "ts": 1788440200.6
+  },
+  "0701022": {
+    "status": "review",
+    "result": "Malharus Sulhiya College gps location",
+    "score": 0.67,
+    "note": null,
+    "ts": 1788440209.9
+  },
+  "0701027": {
+    "status": "review",
+    "result": "Al Meeran Muslim Vidyalaya",
+    "score": 0.5,
+    "note": null,
+    "ts": 1788440250.4
+  },
+  "0703036": {
+    "status": "review",
+    "result": "Navinna Jumma Masjid",
+    "score": 0.65,
+    "note": null,
+    "ts": 1788440266.2
+  },
+  "0712024": {
+    "status": "review",
+    "result": "Polpelakatiya Sri Devagiri Viharaya",
+    "score": 0.53,
+    "note": null,
+    "ts": 1788440337.5
+  },
+  "0704045": {
+    "status": "review",
+    "result": "Akkara 20 School",
+    "score": 0.63,
+    "note": null,
+    "ts": 1788440360.9
+  },
+  "0709030": {
+    "status": "no-result",
+    "result": null,
+    "score": null,
+    "note": null,
+    "ts": 1788440442.3
+  },
+  "0701030": {
+    "status": "no-match",
+    "result": "St.Aloysius College Primary Section",
+    "score": 0.25,
+    "note": null,
+    "ts": 1788440591.3
+  },
+  "0711031": {
+    "status": "no-result",
+    "result": null,
+    "score": null,
+    "note": null,
+    "ts": 1788442161.0
+  },
+  "0708531": {
+    "status": "no-match",
+    "result": "Miriswatta Primary School",
+    "score": 0.32,
+    "note": null,
+    "ts": 1788442177.0
+  },
+  "0709032": {
+    "status": "no-match",
+    "result": "Madakumbura Royal Primary School",
+    "score": 0.24,
+    "note": null,
+    "ts": 1788442190.7
+  }
+}

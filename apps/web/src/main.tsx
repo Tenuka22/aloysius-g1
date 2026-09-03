@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
+import { refreshSchoolCoordinateOverrides } from "./lib/school-coordinates";
 import { orpc, queryClient } from "./utils/orpc";
 
 const router = createRouter({
@@ -23,13 +24,21 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const rootElement = document.getElementById("app");
+async function bootstrap() {
+  // Load manually administered school coordinates (DB) before first render so
+  // map pickers and distance calculations see the complete catalog.  On API
+  // failure the baked-in schools.ts list is used untouched.
+  await refreshSchoolCoordinateOverrides();
 
-if (!rootElement) {
-  throw new Error("Root element not found");
+  const rootElement = document.getElementById("app");
+  if (!rootElement) {
+    throw new Error("Root element not found");
+  }
+
+  if (!rootElement.innerHTML) {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<RouterProvider router={router} />);
+  }
 }
 
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(<RouterProvider router={router} />);
-}
+void bootstrap();

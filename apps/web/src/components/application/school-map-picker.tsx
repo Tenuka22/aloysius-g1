@@ -5,6 +5,7 @@ import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
 import { haversineDistanceKm, getAllSchoolsWithDistance, findSchoolById } from "@/lib/school-utils";
 import type { GenderType } from "@/lib/schools";
 import "leaflet/dist/leaflet.css";
+import { STATUS_SUCCESS, STATUS_WARNING } from "@/lib/color-classes";
 
 type SchoolMapPickerProps = {
   centerLat: number;
@@ -148,13 +149,13 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           if (isHighlighted) {
             return (
               <li key={school.id}>
-                <div className="flex items-center gap-3 rounded-lg border border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-sm cursor-default">
-                  <span className="size-5 shrink-0 rounded border-2 border-amber-400 bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
-                    <svg className="size-3 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <div className={`flex items-center gap-3 rounded-lg border ${STATUS_WARNING.border} ${STATUS_WARNING.bg} dark:bg-amber-950/20 p-3 text-sm cursor-default`}>
+                  <span className={`size-5 shrink-0 rounded border-2 border-amber-400 bg-amber-100 dark:bg-amber-900 flex items-center justify-center`}>
+                    <svg className={`size-3 ${STATUS_WARNING.text} ${STATUS_WARNING.textDark}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                   </span>
                   <span className="min-w-0 flex-1">
                     {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
-                    <span className="ml-1 text-amber-600 dark:text-amber-400 text-xs font-semibold">Applied school</span>
+                    <span className={`ml-1 ${STATUS_WARNING.text} ${STATUS_WARNING.textDark} text-xs font-semibold`}>Applied school</span>
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{school.distanceKm.toFixed(1)} km</span>
                 </div>
@@ -169,7 +170,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
                 </span>
                 {marksPerSchool != null && (
-                  <span className="shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-300 tabular-nums">{marksPerSchool} marks</span>
+                  <span className={`shrink-0 text-xs font-semibold ${STATUS_SUCCESS.textStrong} dark:text-emerald-300 tabular-nums`}>{marksPerSchool} marks</span>
                 )}
                 <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{school.distanceKm.toFixed(1)} km</span>
               </label>
@@ -183,13 +184,13 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           if (isHighlighted) {
             return (
               <li key={school.id} className="opacity-50">
-                <div className="flex items-center gap-3 rounded-lg border border-dashed border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-sm cursor-default">
-                  <span className="size-5 shrink-0 rounded border-2 border-amber-400 bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
-                    <svg className="size-3 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <div className={`flex items-center gap-3 rounded-lg border ${STATUS_WARNING.borderDash} ${STATUS_WARNING.bg} dark:bg-amber-950/20 p-3 text-sm cursor-default`}>
+                  <span className={`size-5 shrink-0 rounded border-2 border-amber-400 bg-amber-100 dark:bg-amber-900 flex items-center justify-center`}>
+                    <svg className={`size-3 ${STATUS_WARNING.text} ${STATUS_WARNING.textDark}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                   </span>
                   <span className="min-w-0 flex-1">
                     {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
-                    <span className="ml-1 text-amber-600 dark:text-amber-400 text-xs font-semibold">Applied school</span>
+                    <span className={`ml-1 ${STATUS_WARNING.text} ${STATUS_WARNING.textDark} text-xs font-semibold`}>Applied school</span>
                     <span className="ml-1 text-orange-500 text-xs font-semibold">Just outside</span>
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{school.distanceKm.toFixed(1)} km</span>
@@ -206,7 +207,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
                   <span className="ml-1 text-orange-500 text-xs font-semibold">Just outside</span>
                 </span>
                 {marksPerSchool != null && (
-                  <span className="shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-300 tabular-nums">{marksPerSchool} marks</span>
+                  <span className={`shrink-0 text-xs font-semibold ${STATUS_SUCCESS.textStrong} dark:text-emerald-300 tabular-nums`}>{marksPerSchool} marks</span>
                 )}
                 <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{school.distanceKm.toFixed(1)} km</span>
               </label>

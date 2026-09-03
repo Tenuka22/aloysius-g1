@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, Check, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-g1/ui/components/alert-dialog";
@@ -24,7 +24,14 @@ import {
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_auth/admin/requests")({ component: AdminRequestsPage });
+export const Route = createFileRoute("/_auth/admin/requests")({
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(context.orpc.admin.accessRequests.submissionRequests.queryOptions({
+      input: { page: 1, pageSize: 10, query: "" },
+    }));
+  },
+  component: AdminRequestsPage,
+});
 
 type RequestRow = {
   id: string
@@ -41,26 +48,25 @@ function ActionsMenu({ item, onAction }: { item: RequestRow; onAction: () => voi
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 
-  const approve = async () => {
-    try {
-      await client.admin.accessRequests.approveSubmission({ requestId: item.id });
+  const approveMutation = useMutation({
+    mutationFn: () => client.admin.accessRequests.approveSubmission({ requestId: item.id }),
+    onSuccess: () => {
       toast.success("Submission approved");
       onAction();
       setApproveOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not approve");
-    }
-  };
-  const reject = async () => {
-    try {
-      await client.admin.accessRequests.rejectSubmission({ requestId: item.id });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not approve"),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: () => client.admin.accessRequests.rejectSubmission({ requestId: item.id }),
+    onSuccess: () => {
       toast.success("Request rejected");
       onAction();
       setRejectOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not reject");
-    }
-  };
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not reject"),
+  });
 
   return (
     <>
@@ -88,7 +94,9 @@ function ActionsMenu({ item, onAction }: { item: RequestRow; onAction: () => voi
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setApproveOpen(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={approve}>Approve</AlertDialogAction>
+            <AlertDialogAction onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending}>
+              {approveMutation.isPending ? "Approving…" : "Approve"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -102,7 +110,9 @@ function ActionsMenu({ item, onAction }: { item: RequestRow; onAction: () => voi
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setRejectOpen(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={reject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Reject</AlertDialogAction>
+            <AlertDialogAction onClick={() => rejectMutation.mutate()} disabled={rejectMutation.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {rejectMutation.isPending ? "Rejecting…" : "Reject"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -16,8 +16,14 @@ import {
   DataTablePagination,
   DataTableViewOptions,
 } from "@aloysius-g1/ui/components/data-table";
+import { FORM_WINDOW_WARNING } from "@/lib/color-classes";
 
-export const Route = createFileRoute("/_auth/admin/admissions")({ component: AdmissionsPage });
+export const Route = createFileRoute("/_auth/admin/admissions")({
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions());
+  },
+  component: AdmissionsPage,
+});
 
 export type AdmissionStatus = "pending" | "verified" | "fake";
 export type FlagEntry = { type: "field" | "input" | "location"; key: string; label: string };
@@ -173,9 +179,9 @@ export function AdmissionsPage() {
 
       {!admissionsOpen ? (
         <>
-          <Card className="mx-auto max-w-2xl border-amber-500/30 bg-amber-500/5">
+          <Card className={`mx-auto max-w-2xl ${FORM_WINDOW_WARNING.card}`}>
             <CardHeader>
-              <div className="mb-2 flex size-11 items-center justify-center rounded-xl bg-amber-500/12 text-amber-600"><LockKeyhole size={22} /></div>
+              <div className={`mb-2 flex size-11 items-center justify-center rounded-xl ${FORM_WINDOW_WARNING.icon}`}><LockKeyhole size={22} /></div>
               <CardTitle>Admissions is not open yet</CardTitle>
               <CardDescription>Submitted applications become available automatically after the submission window closes{closesAt ? ` on ${closesAt.toLocaleString()}` : ""}.</CardDescription>
             </CardHeader>
@@ -186,7 +192,7 @@ export function AdmissionsPage() {
           <AlertDialog open={earlyAccessDialogOpen} onOpenChange={setEarlyAccessDialogOpen}>
             <AlertDialogContent size="sm">
               <AlertDialogHeader>
-                <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-amber-500/12 text-amber-600"><LockKeyhole size={20} /></div>
+                <div className={`mb-2 flex size-10 items-center justify-center rounded-full ${FORM_WINDOW_WARNING.icon}`}><LockKeyhole size={20} /></div>
                 <AlertDialogTitle>Open admissions before the window closes?</AlertDialogTitle>
                 <AlertDialogDescription>
                   The submission window closes on{closesAt ? ` ${closesAt.toLocaleString()}` : " — check the schedule"}. Admissions and interview reviews will become available automatically after that. Note that applicants can still edit their submissions until the window closes.

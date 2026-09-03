@@ -524,7 +524,7 @@ describe("ApplicationForm – submit a restored application", () => {
       submittedAt: null,
     });
     const user = userEvent.setup();
-    render(<ApplicationForm />);
+    renderWithClient(<ApplicationForm />);
     await screen.findByText(MOCK_ACCESS_KEY);
     await user.click(screen.getByRole("button", { name: /(submit|update) application/i }));
     expect(await screen.findByText("Application submitted successfully.")).toBeInTheDocument();

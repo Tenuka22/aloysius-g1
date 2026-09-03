@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import re
 import time
 from difflib import SequenceMatcher
@@ -10,6 +11,7 @@ from urllib.parse import quote
 
 from scrapling.fetchers import StealthyFetcher
 
+from .match_logic import accept, review_needed, school_aware_score
 from .models import MapSchool, SourceSchool
 
 MAPS_URL = "https://www.google.com/maps"
@@ -68,6 +70,44 @@ def _name_match_score(source: str, result: str) -> float:
 
 def _is_galle_coordinate(latitude: float | None, longitude: float | None) -> bool:
     return latitude is not None and longitude is not None and 5.6 <= latitude <= 6.6 and 79.7 <= longitude <= 80.7
+
+
+def record_attempt(
+    status: str,
+    *,
+    result_name: str | None = None,
+    score: float | None = None,
+    note: str | None = None,
+) -> dict[str, Any]:
+    """Outcome of a per-school lookup that did not end up in the coordinate cache."""
+    return {
+        "status": status,  # "no-match" | "review" | "no-result" | "error"
+        "result": result_name,
+        "score": score,
+        "note": note,
+        "ts": round(time.time(), 1),
+    }
+
+
+def load_attempts(path: Path) -> dict[str, dict[str, Any]]:
+    """Recorded failed lookups (school_id -> outcome), if any."""
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return {key: value for key, value in raw.items() if isinstance(value, dict)}
+
+
+def save_attempts(path: Path, attempts: dict[str, dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(attempts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def save_cache(path: Path, cache: dict[str, MapSchool]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({key: value.to_dict() for key, value in cache.items()}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 class GoogleMapsScraper:
@@ -261,11 +301,10 @@ class GoogleMapsScraper:
         if not results:
             return None
 
-        target = _normalise_name(school.name)
-        return min(
-            results,
-            key=lambda result: 0 if target in _normalise_name(result.name) or _normalise_name(result.name) in target else 1,
-        )
+        # Rank candidates with the school-aware matcher rather than picking the
+        # one that merely shares a name token, so a result Google spells
+        # differently (abbreviations, "K.V." vs "Vidyalaya", ...) still surfaces.
+        return max(results, key=lambda result: school_aware_score(school.name, result.name))
 
     def scrape_coordinates(
         self,
@@ -273,42 +312,63 @@ class GoogleMapsScraper:
         *,
         cache_path: Path,
         delay_seconds: float = 1.0,
+        scrape_feed: bool = True,
+        feed_timeout_seconds: float = 900.0,
+        retry_unmatched: bool = False,
     ) -> dict[str, MapSchool]:
-        """Scrape the Galle Government school result feed and match it to PDF rows."""
+        """Scrape the Galle Government school result feed and match it to PDF rows.
+
+        Schools the feed does not cover get an individual Google Maps lookup so
+        every PDF row can receive coordinates.
+
+        Already-extracted schools are never re-requested: rows in the
+        coordinate cache are kept as-is, and lookups that found nothing are
+        recorded next to the cache (map_attempts.json) so later runs skip them
+        too. Pass ``retry_unmatched=True`` to re-request previously recorded
+        misses (e.g. after reviewing borderline candidates).
+        """
         cache: dict[str, MapSchool] = {}
         if cache_path.exists():
             raw = json.loads(cache_path.read_text(encoding="utf-8"))
             cache = {key: MapSchool(**value) for key, value in raw.items()}
 
         schools = list(schools)
-        results = self.search_and_extract(
-            "Government school",
-            limit=None,
-            search_url=GOVERNMENT_SCHOOL_SEARCH_URL,
-            required_category="Government school",
-            timeout_ms=max(self.timeout_ms, 900_000),
-        )
         results_path = cache_path.with_name("government_school_results.json")
-        results_path.parent.mkdir(parents=True, exist_ok=True)
-        results_path.write_text(
-            json.dumps([result.to_dict() for result in results], ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
+        results: list[MapSchool] = []
+        if scrape_feed:
+            results = self.search_and_extract(
+                "Government school",
+                limit=None,
+                search_url=GOVERNMENT_SCHOOL_SEARCH_URL,
+                required_category="Government school",
+                timeout_ms=max(int(feed_timeout_seconds * 1_000), 60_000),
+            )
+            results_path.parent.mkdir(parents=True, exist_ok=True)
+            results_path.write_text(
+                json.dumps([result.to_dict() for result in results], ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        elif results_path.exists():
+            raw = json.loads(results_path.read_text(encoding="utf-8"))
+            results = [MapSchool(**value) for value in raw]
 
         source_by_id = {school.school_id: school for school in schools}
+        # Keep every previously extracted school. Re-validating cached rows or
+        # dropping those a school-aware pass accepted below the strict feed
+        # threshold would force a repeat Google Maps request for the same place.
         cache = {
             school_id: result
             for school_id, result in cache.items()
             if school_id in source_by_id
+            and result.latitude is not None
+            and result.longitude is not None
             and (result.url or "").startswith("https://www.google.com/maps")
-            and _name_match_score(source_by_id[school_id].name, result.name) >= 0.94
         }
-        used_school_ids = {
-            school_id
-            for school_id, result in cache.items()
-            if result.latitude is not None and result.longitude is not None
-        }
+        used_school_ids = set(cache)
         matches = 0
+
+        attempts_path = cache_path.with_name("map_attempts.json")
+        attempts = load_attempts(attempts_path)
         for result in results:
             candidates = sorted(
                 (
@@ -326,15 +386,74 @@ class GoogleMapsScraper:
                 continue
             cache[school.school_id] = result
             used_school_ids.add(school.school_id)
+            attempts.pop(school.school_id, None)
             matches += 1
             print(f"  -> {school.school_id}: {school.name} <= {result.name} ({score:.2f})")
             if delay_seconds > 0:
-                time.sleep(delay_seconds)
+                time.sleep(delay_seconds * random.uniform(0.7, 1.3))
 
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(
-            json.dumps({key: value.to_dict() for key, value in cache.items()}, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
+        previous = {
+            school_id: attempt
+            for school_id, attempt in attempts.items()
+            if school_id in source_by_id and school_id not in used_school_ids
+        }
+        if previous and not retry_unmatched:
+            print(
+                f"Skipping {len(previous)} schools already looked up and recorded in "
+                f"{attempts_path.name} (pass --retry-unmatched to re-request them)"
+            )
+        pending = [
+            school
+            for school in schools
+            if school.school_id not in used_school_ids
+            and (retry_unmatched or school.school_id not in attempts)
+        ]
+        if pending:
+            print(f"Per-school lookups for {len(pending)} remaining schools...")
+
+        review_lines: list[str] = []
+        accepted_new = 0
+        for index, school in enumerate(pending, 1):
+            school_id = school.school_id
+            try:
+                result = self.search_school(school)
+            except Exception as exc:  # noqa: BLE001
+                attempts[school_id] = record_attempt("error", note=f"{type(exc).__name__}: {exc}"[:200])
+                print(f"  [{index}/{len(pending)}] {school_id}: {school.name} -- ERROR {exc}")
+            else:
+                if result is None:
+                    attempts[school_id] = record_attempt("no-result")
+                    print(f"  [{index}/{len(pending)}] {school_id}: {school.name} -- NO RESULT")
+                else:
+                    ok, score = accept(school.name, result.name)
+                    if ok:
+                        cache[school_id] = result
+                        used_school_ids.add(school_id)
+                        attempts.pop(school_id, None)
+                        accepted_new += 1
+                        note = "" if score >= 0.94 else " (school-aware match)"
+                        print(f"  [{index}/{len(pending)}] {school_id}: {school.name} <= {result.name}{note} ({score:.2f})")
+                    else:
+                        flag = review_needed(school.name, result.name, score)
+                        status = "review" if flag else "no-match"
+                        attempts[school_id] = record_attempt(status, result_name=result.name, score=round(score, 2))
+                        if flag:
+                            review_lines.append(f"{school_id}\t{school.name}\t{result.name}\t{score:.2f}\tborderline-reject")
+                        print(f"  [{index}/{len(pending)}] {school_id}: {school.name} -- {'REVIEW' if flag else 'reject'} ({result.name}, {score:.2f})")
+            save_cache(cache_path, cache)
+            save_attempts(attempts_path, attempts)
+            if delay_seconds > 0:
+                # Jitter the gap so a long run does not land on a fixed rhythm.
+                time.sleep(delay_seconds * random.uniform(0.7, 1.3))
+
+        save_cache(cache_path, cache)
+        save_attempts(attempts_path, attempts)
+        if review_lines:
+            review_path = cache_path.with_name("rescue_review.txt")
+            review_path.write_text("\n".join(review_lines) + "\n", encoding="utf-8")
+            print(f"Borderline candidates for human review: {len(review_lines)} -> {review_path}")
+        print(
+            f"Maps Government school results: {len(results)}; matched new PDF rows: {matches}; "
+            f"per-school matched this run: {accepted_new}; cached rows: {len(cache)}"
         )
-        print(f"Maps Government school results: {len(results)}; matched new PDF rows: {matches}; cached rows: {len(cache)}")
         return cache

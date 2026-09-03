@@ -12,6 +12,7 @@ import { CATEGORY_MAX_MARKS } from "@/lib/marking-scheme";
 import { findSchoolById } from "@/lib/school-utils";
 import { toast } from "sonner";
 import { useAdminPreferences, isFieldVisible, type AdminFieldVisibility } from "@/lib/admin-preferences";
+import { FIELD_ICON_COLORS, BAR_COLORS } from "@/lib/color-classes";
 
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
@@ -308,16 +309,16 @@ type FieldType = "text" | "name" | "date" | "phone" | "email" | "nic" | "boolean
 
 const FIELD_STYLES: Record<FieldType, { icon: React.ReactNode; colorClass: string }> = {
   text:     { icon: <FileText size={13} />,     colorClass: "text-foreground" },
-  name:     { icon: <User size={13} />,         colorClass: "text-blue-400" },
-  date:     { icon: <Calendar size={13} />,     colorClass: "text-amber-400" },
-  phone:    { icon: <Phone size={13} />,        colorClass: "text-emerald-400" },
-  email:    { icon: <Mail size={13} />,         colorClass: "text-purple-400" },
-  nic:      { icon: <CreditCard size={13} />,   colorClass: "text-orange-400" },
+  name:     { icon: <User size={13} />,         colorClass: FIELD_ICON_COLORS.name },
+  date:     { icon: <Calendar size={13} />,     colorClass: FIELD_ICON_COLORS.date },
+  phone:    { icon: <Phone size={13} />,        colorClass: FIELD_ICON_COLORS.phone },
+  email:    { icon: <Mail size={13} />,         colorClass: FIELD_ICON_COLORS.email },
+  nic:      { icon: <CreditCard size={13} />,   colorClass: FIELD_ICON_COLORS.nic },
   boolean:  { icon: <CircleDot size={13} />,    colorClass: "text-foreground" },
-  address:  { icon: <Building size={13} />,     colorClass: "text-sky-400" },
+  address:  { icon: <Building size={13} />,     colorClass: FIELD_ICON_COLORS.address },
   select:   { icon: <ChevronRight size={13} />, colorClass: "text-foreground" },
-  number:   { icon: <Hash size={13} />,         colorClass: "text-teal-400" },
-  document: { icon: <CreditCard size={13} />,   colorClass: "text-rose-400" },
+  number:   { icon: <Hash size={13} />,         colorClass: FIELD_ICON_COLORS.number },
+  document: { icon: <CreditCard size={13} />,   colorClass: FIELD_ICON_COLORS.document },
 };
 
 function Value({ label, value, hint, type = "text" }: { label: string; value: unknown; hint?: string; type?: FieldType }) {
@@ -351,7 +352,7 @@ function formatScoringValue(key: string, raw: unknown): string {
 
 function MarkBar({ marks, max }: { marks: number; max: number }) {
   const pct = max > 0 ? (marks / max) * 100 : 0;
-  const barColor = pct >= 70 ? "bg-emerald-500" : pct >= 40 ? "bg-amber-500" : pct > 0 ? "bg-red-400" : "bg-muted";
+  const barColor = pct >= 70 ? BAR_COLORS.high : pct >= 40 ? BAR_COLORS.medium : pct > 0 ? BAR_COLORS.low : BAR_COLORS.empty;
   return (
     <div className="flex items-center gap-3 min-w-0">
       <div className="relative h-2 w-24 rounded-full bg-muted overflow-hidden shrink-0">
@@ -366,7 +367,7 @@ function MarkBar({ marks, max }: { marks: number; max: number }) {
 
 function CategoryScoreBar({ total }: { total: number }) {
   const pct = Math.min(total, CATEGORY_MAX_MARKS);
-  const barColor = total >= 70 ? "bg-emerald-500" : total >= 40 ? "bg-amber-500" : total > 0 ? "bg-red-400" : "bg-muted";
+  const barColor = total >= 70 ? BAR_COLORS.high : total >= 40 ? BAR_COLORS.medium : total > 0 ? BAR_COLORS.low : BAR_COLORS.empty;
   return (
     <div className="flex items-center gap-3 w-full">
       <div className="relative h-3 flex-1 rounded-full bg-muted overflow-hidden">
@@ -499,13 +500,13 @@ export function AdminApplicationView({ id }: { id: string }) {
             {validationErrors.length > 0 && <TabsTrigger value="quality">Data quality <Badge variant="destructive" className="ml-1">{validationErrors.length}</Badge></TabsTrigger>}
           </TabsList>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-[0.65rem] text-muted-foreground py-1 border-b mb-2">
-            <span className="flex items-center gap-1"><User size={10} className="text-blue-400" /> Name</span>
-            <span className="flex items-center gap-1"><Calendar size={10} className="text-amber-400" /> Date</span>
-            <span className="flex items-center gap-1"><Phone size={10} className="text-emerald-400" /> Phone</span>
-            <span className="flex items-center gap-1"><Mail size={10} className="text-purple-400" /> Email</span>
-            <span className="flex items-center gap-1"><CreditCard size={10} className="text-orange-400" /> NIC</span>
-            <span className="flex items-center gap-1"><Building size={10} className="text-sky-400" /> Address</span>
-            <span className="flex items-center gap-1"><CreditCard size={10} className="text-rose-400" /> Document</span>
+            <span className="flex items-center gap-1"><User size={10} className={FIELD_ICON_COLORS.name} /> Name</span>
+            <span className="flex items-center gap-1"><Calendar size={10} className={FIELD_ICON_COLORS.date} /> Date</span>
+            <span className="flex items-center gap-1"><Phone size={10} className={FIELD_ICON_COLORS.phone} /> Phone</span>
+            <span className="flex items-center gap-1"><Mail size={10} className={FIELD_ICON_COLORS.email} /> Email</span>
+            <span className="flex items-center gap-1"><CreditCard size={10} className={FIELD_ICON_COLORS.nic} /> NIC</span>
+            <span className="flex items-center gap-1"><Building size={10} className={FIELD_ICON_COLORS.address} /> Address</span>
+            <span className="flex items-center gap-1"><CreditCard size={10} className={FIELD_ICON_COLORS.document} /> Document</span>
             <span className="flex items-center gap-1"><CircleDot size={10} /> Yes / No</span>
             <span className="flex items-center gap-1"><ChevronRight size={10} /> Selection</span>
           </div>

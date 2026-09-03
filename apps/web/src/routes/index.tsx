@@ -13,6 +13,7 @@ import { completionPercent } from "@/lib/completion";
 import { clearActiveKey, getSavedKeys, removeSavedKey } from "@/lib/saved-keys";
 import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
 import { AccessRecoveryDialog } from "@/components/application/access-recovery-dialog";
+import { STAT_ICON_COLORS } from "@/lib/color-classes";
 
 export const Route = createFileRoute("/")({ component: HomeComponent });
 
@@ -180,7 +181,7 @@ export function HomeComponent() {
           <Card className="py-4">
             <CardContent className="py-0">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${STAT_ICON_COLORS.success}`}>
                   <CheckCircle2 size={15} />
                 </div>
                 <div>
@@ -193,7 +194,7 @@ export function HomeComponent() {
           <Card className="py-4">
             <CardContent className="py-0">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-500/10 text-amber-600">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${STAT_ICON_COLORS.warning}`}>
                   <Clock size={15} />
                 </div>
                 <div>
@@ -206,7 +207,7 @@ export function HomeComponent() {
           <Card className="py-4">
             <CardContent className="py-0">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-rose-500/10 text-rose-600">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${STAT_ICON_COLORS.error}`}>
                   <FileWarning size={15} />
                 </div>
                 <div>
@@ -219,7 +220,7 @@ export function HomeComponent() {
           <Card className="py-4">
             <CardContent className="py-0">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-500/10 text-violet-600">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${STAT_ICON_COLORS.info}`}>
                   <FileText size={15} />
                 </div>
                 <div>
@@ -301,7 +302,7 @@ export function HomeComponent() {
                 </CardTitle>
                 <CardDescription className="flex items-center justify-between pl-12">
                   {record?.submitted ? (
-                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-medium"><CheckCircle2 size={14} /> Submitted</span>
+                    <span className={`inline-flex items-center gap-1.5 ${STAT_ICON_COLORS.success} font-medium`}><CheckCircle2 size={14} /> Submitted</span>
                   ) : (
                     <span className="font-medium">{record?.completion ?? 0}% complete</span>
                   )}

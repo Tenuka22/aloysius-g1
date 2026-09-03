@@ -10,6 +10,7 @@ import { normalizeDraft, type ApplicationDraft, type InterviewEdit, type Locatio
 import { scoreCategory } from "@/lib/scoring";
 import { CATEGORY_MAX_MARKS } from "@/lib/marking-scheme";
 import { findSchoolById, haversineDistanceKm } from "@/lib/school-utils";
+import { FIELD_ICON_COLORS } from "@/lib/color-classes";
 import { toast } from "sonner";
 import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Button } from "@aloysius-g1/ui/components/button";
@@ -35,7 +36,15 @@ const CATEGORY_META: Record<string, { description: string; maxMarks: number }> =
   "6.6": { description: "Continuous foreign employment, purpose, and home-to-school proximity.", maxMarks: CATEGORY_MAX_MARKS },
 };
 
-export const Route = createFileRoute("/_auth/admin/admissions/$id/$categoryId")({ component: AdmissionWorkspacePage });
+export const Route = createFileRoute("/_auth/admin/admissions/$id/$categoryId")({
+  loader: async ({ context, params }) => {
+    await Promise.all([
+      context.queryClient.prefetchQuery(context.orpc.admin.admissions.get.queryOptions({ input: { id: params.id } })),
+      context.queryClient.prefetchQuery(context.orpc.admin.admissions.getMarks.queryOptions({ input: { applicationId: params.id } })),
+    ]);
+  },
+  component: AdmissionWorkspacePage,
+});
 
 function StatusBadge({ status, banned }: { status: AdmissionStatus; banned: boolean }) {
   if (banned) return <Badge variant="destructive">Banned</Badge>;
@@ -65,16 +74,16 @@ type FieldType = "text" | "name" | "date" | "phone" | "email" | "nic" | "boolean
 
 const FIELD_STYLES: Record<FieldType, { icon: React.ReactNode; colorClass: string }> = {
   text:     { icon: <FileText size={13} />,     colorClass: "text-foreground" },
-  name:     { icon: <User size={13} />,         colorClass: "text-blue-400" },
-  date:     { icon: <ClipboardCheck size={13} />, colorClass: "text-amber-400" },
-  phone:    { icon: <Phone size={13} />,        colorClass: "text-emerald-400" },
-  email:    { icon: <Mail size={13} />,         colorClass: "text-purple-400" },
-  nic:      { icon: <CreditCard size={13} />,   colorClass: "text-orange-400" },
+  name:     { icon: <User size={13} />,         colorClass: FIELD_ICON_COLORS.name },
+  date:     { icon: <ClipboardCheck size={13} />, colorClass: FIELD_ICON_COLORS.date },
+  phone:    { icon: <Phone size={13} />,        colorClass: FIELD_ICON_COLORS.phone },
+  email:    { icon: <Mail size={13} />,         colorClass: FIELD_ICON_COLORS.email },
+  nic:      { icon: <CreditCard size={13} />,   colorClass: FIELD_ICON_COLORS.nic },
   boolean:  { icon: <Hash size={13} />,         colorClass: "text-foreground" },
-  address:  { icon: <MapPin size={13} />,       colorClass: "text-sky-400" },
+  address:  { icon: <MapPin size={13} />,       colorClass: FIELD_ICON_COLORS.address },
   select:   { icon: <Hash size={13} />,         colorClass: "text-foreground" },
-  number:   { icon: <Hash size={13} />,         colorClass: "text-teal-400" },
-  document: { icon: <CreditCard size={13} />,   colorClass: "text-rose-400" },
+  number:   { icon: <Hash size={13} />,         colorClass: FIELD_ICON_COLORS.number },
+  document: { icon: <CreditCard size={13} />,   colorClass: FIELD_ICON_COLORS.document },
 };
 
 function getFieldType(key: string): FieldType {
@@ -251,8 +260,25 @@ type LocationEvidence = {
   group: "selected" | "true" | "admin";
 };
 
-const SCHOOL = findSchoolById("st-aloysius-galle")!;
-const SCHOOL_COORDS = { lat: SCHOOL.lat!, lng: SCHOOL.lng! };
+const SCHOOL_COORDS_FALLBACK = { lat: 6.0456, lng: 80.2086 };
+
+function getSchoolCoords(): { lat: number; lng: number } {
+  // Resolve at read time so manual DB overrides (schools hub) apply here too.
+  const school = findSchoolById("st-aloysius-galle");
+  if (school?.lat != null && school?.lng != null) return { lat: school.lat, lng: school.lng };
+  return SCHOOL_COORDS_FALLBACK;
+}
+
+// Accessor object keeps every existing SCHOOL_COORDS.lat/.lng read live against
+// the merged catalog (fallback to a Galle-center pin if coordinates are absent).
+const SCHOOL_COORDS: { lat: number; lng: number } = {
+  get lat() {
+    return getSchoolCoords().lat;
+  },
+  get lng() {
+    return getSchoolCoords().lng;
+  },
+};
 
 const LOCATION_COLORS = [
   { border: "#065f46", fill: "#13b77e" },

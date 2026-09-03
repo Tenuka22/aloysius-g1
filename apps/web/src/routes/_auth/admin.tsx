@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, FileWarning, KeyRound, LayoutDashboard, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, FileWarning, KeyRound, LayoutDashboard, MapPin, MapPinned, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { cn } from "@aloysius-g1/ui/lib/utils";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@aloysius-g1/ui/components/sidebar";
@@ -11,8 +11,19 @@ import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-g1/ui/components/popover";
 import { Calendar } from "@aloysius-g1/ui/components/calendar";
 import { client, orpc } from "@/utils/orpc";
+import { toast } from "sonner";
+import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
 
-export const Route = createFileRoute("/_auth/admin")({ component: AdminPage });
+export const Route = createFileRoute("/_auth/admin")({
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions()),
+      context.queryClient.prefetchQuery(context.orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "" } })),
+      context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions()),
+    ]);
+  },
+  component: AdminPage,
+});
 
 function AdminPage() {
   const { session } = Route.useRouteContext();
@@ -76,6 +87,12 @@ function AdminPage() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton href="/admin/admissions" isActive={location.pathname.startsWith("/admin/admissions")} onClick={() => setSidebarOpen(false)}><ClipboardCheck size={20} /> Admissions</SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/admin/schools" isActive={location.pathname === "/admin/schools"} onClick={() => setSidebarOpen(false)}><MapPinned size={20} /> Schools hub</SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/admin/admin_map" isActive={location.pathname === "/admin/admin_map"} onClick={() => setSidebarOpen(false)}><MapPin size={20} /> Map view</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton href="/admin/requests" isActive={location.pathname === "/admin/requests"} onClick={() => setSidebarOpen(false)}><FileWarning size={20} /> Submission requests</SidebarMenuButton>
@@ -166,6 +183,13 @@ function AdminPage() {
               </CardContent>
             </Card>
             <Card className="mb-4">
+              <CardHeader><CardTitle>School coordinates</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">Schools missing coordinates from the Google Maps scrape can be pinned manually using Google Maps / Earth lookups. Stored in the database and shared across deployments.</p>
+                <Button variant="secondary" render={<Link to="/admin/schools" />}><MapPinned size={17} /> Open schools hub</Button>
+              </CardContent>
+            </Card>
+            <Card className="mb-4">
               <CardHeader><CardTitle>Recent activity</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid gap-1">
@@ -250,25 +274,27 @@ function DateTimePicker({ value, onChange, label }: { value: string; onChange: (
 }
 
 function FormWindowSettings({ settings }: { settings?: { opensAt: Date; closesAt: Date } }) {
+  const queryClient = useQueryClient();
   const [opensAt, setOpensAt] = useState("");
   const [closesAt, setClosesAt] = useState("");
-  const [message, setMessage] = useState("");
-  const [saving, setSaving] = useState(false);
   useEffect(() => {
     if (settings) {
       setOpensAt(settings.opensAt.toISOString().slice(0, 16));
       setClosesAt(settings.closesAt.toISOString().slice(0, 16));
     }
   }, [settings]);
-  const save = async () => {
-    setSaving(true); setMessage("");
-    try {
-      await client.admin.settings.update({ opensAt: new Date(opensAt), closesAt: new Date(closesAt) });
-      setMessage("Form window saved");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not save form window");
-    } finally { setSaving(false); }
-  };
+
+  const saveMutation = useMutation({
+    mutationFn: () => client.admin.settings.update({ opensAt: new Date(opensAt), closesAt: new Date(closesAt) }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.settings.get.key() });
+      toast.success("Form window saved");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Could not save form window");
+    },
+  });
+
   return (
     <Card className="mb-4">
       <CardContent className="grid gap-4">
@@ -279,11 +305,11 @@ function FormWindowSettings({ settings }: { settings?: { opensAt: Date; closesAt
         <div className="grid grid-cols-2 gap-4 items-end">
           <DateTimePicker value={opensAt} onChange={setOpensAt} label="Opens" />
           <DateTimePicker value={closesAt} onChange={setClosesAt} label="Closes" />
-          <Button variant="default" type="button" disabled={saving || !opensAt || !closesAt} onClick={() => void save()}>
-            {saving ? "Saving…" : "Save form window"}
+          <Button variant="default" type="button" disabled={saveMutation.isPending || !opensAt || !closesAt} onClick={() => saveMutation.mutate()}>
+            {saveMutation.isPending ? "Saving…" : "Save form window"}
           </Button>
         </div>
-        {message && <p className="text-primary" role="status">{message}</p>}
+        {saveMutation.isError && <p className="text-destructive text-sm" role="status">{saveMutation.error.message}</p>}
       </CardContent>
     </Card>
   );
@@ -292,27 +318,32 @@ function FormWindowSettings({ settings }: { settings?: { opensAt: Date; closesAt
 function AccessRequestQueue({ requests, onRefresh }: { requests: Array<{ id: string; applicantName: string; guardianName?: string; contactEmail: string; contactPhone?: string | null; birthCertificateNumber: string; requestType: string; createdAt: Date }>; onRefresh: () => void }) {
   const [generatedKey, setGeneratedKey] = useState("");
   const [qrKey, setQrKey] = useState("");
-  const [message, setMessage] = useState("");
 
-  const rotate = async (requestId: string) => {
-    try {
-      const result = await client.admin.accessRequests.rotateKey({ requestId });
-      setGeneratedKey(result.accessKey); setQrKey(result.accessKey);
-      setMessage("New key generated. Share it securely with the verified applicant.");
+  const rotateMutation = useMutation({
+    mutationFn: (requestId: string) => client.admin.accessRequests.rotateKey({ requestId }),
+    onSuccess: (result) => {
+      setGeneratedKey(result.accessKey);
+      setQrKey(result.accessKey);
+      toast.success("New key generated. Share it securely with the verified applicant.");
       onRefresh();
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not generate key"); }
-  };
-  const removeAfterReview = async (requestId: string) => {
-    if (!window.confirm("Confirm that the school has reviewed this request and approved deleting the application?")) return;
-    try {
-      await client.admin.accessRequests.deleteAfterRemovalRequest({ requestId });
-      setMessage("The application was deleted after review."); onRefresh();
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not delete the application"); }
-  };
-  const dismiss = async (requestId: string) => {
-    try { await client.admin.accessRequests.dismiss({ requestId }); onRefresh(); }
-    catch (error) { setMessage(error instanceof Error ? error.message : "Could not dismiss request"); }
-  };
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not generate key"),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (requestId: string) => client.admin.accessRequests.deleteAfterRemovalRequest({ requestId }),
+    onSuccess: () => {
+      toast.success("The application was deleted after review.");
+      onRefresh();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not delete the application"),
+  });
+
+  const dismissMutation = useMutation({
+    mutationFn: (requestId: string) => client.admin.accessRequests.dismiss({ requestId }),
+    onSuccess: () => onRefresh(),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not dismiss request"),
+  });
 
   return (
     <Card className="mb-4">
@@ -332,7 +363,6 @@ function AccessRequestQueue({ requests, onRefresh }: { requests: Array<{ id: str
             <Button variant="secondary" type="button" onClick={() => setQrKey(generatedKey)}><QrCode size={16} /> Show QR code</Button>
           </div>
         )}
-        {message && <p className="text-primary" role="status">{message}</p>}
         {requests.length === 0
           ? <p className="text-muted-foreground text-sm">No open application requests.</p>
           : (
@@ -349,9 +379,9 @@ function AccessRequestQueue({ requests, onRefresh }: { requests: Array<{ id: str
                     </div>
                     <div className="flex gap-1">
                       {isRemoval
-                        ? <Button variant="secondary" type="button" onClick={() => void removeAfterReview(request.id)}><Trash2 size={15} /> Delete after review</Button>
-                        : <Button variant="secondary" type="button" onClick={() => void rotate(request.id)}><KeyRound size={15} /> Generate key</Button>}
-                      <Button variant="ghost" size="icon" title="Dismiss request" type="button" className="hover:text-destructive" onClick={() => void dismiss(request.id)}><Trash2 size={16} /></Button>
+                        ? <Button variant="secondary" type="button" disabled={removeMutation.isPending} onClick={() => removeMutation.mutate(request.id)}><Trash2 size={15} /> {removeMutation.isPending ? "Deleting…" : "Delete after review"}</Button>
+                        : <Button variant="secondary" type="button" disabled={rotateMutation.isPending} onClick={() => rotateMutation.mutate(request.id)}><KeyRound size={15} /> {rotateMutation.isPending ? "Generating…" : "Generate key"}</Button>}
+                      <Button variant="ghost" size="icon" title="Dismiss request" type="button" className="hover:text-destructive" disabled={dismissMutation.isPending} onClick={() => dismissMutation.mutate(request.id)}><Trash2 size={16} /></Button>
                     </div>
                   </div>
                 );

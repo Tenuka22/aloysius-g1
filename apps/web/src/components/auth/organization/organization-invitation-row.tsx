@@ -15,6 +15,7 @@ import { Spinner } from "@aloysius-g1/ui/components/spinner"
 import { TableCell, TableRow } from "@aloysius-g1/ui/components/table"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
 import { cn } from "@aloysius-g1/ui/lib/utils"
+import { INVITATION_STATUS } from "@/lib/color-classes"
 import { OrganizationInvitationRowSkeleton } from "./organization-invitation-row-skeleton"
 
 export type OrganizationInvitationRowProps = {
@@ -22,8 +23,8 @@ export type OrganizationInvitationRowProps = {
 }
 
 const statusBadgeClasses: Record<string, string> = {
-  pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  accepted: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  pending: INVITATION_STATUS.pending,
+  accepted: INVITATION_STATUS.accepted,
   rejected: "bg-destructive/10 text-destructive",
   canceled: "bg-muted text-muted-foreground"
 }

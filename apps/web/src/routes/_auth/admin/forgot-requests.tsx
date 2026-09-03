@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, KeyRound, QrCode, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-g1/ui/components/card";
@@ -24,7 +24,14 @@ import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
 import { formatPhoneDisplay } from "@/lib/phone";
 
-export const Route = createFileRoute("/_auth/admin/forgot-requests")({ component: AdminForgotRequestsPage });
+export const Route = createFileRoute("/_auth/admin/forgot-requests")({
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(context.orpc.admin.accessRequests.forgotRequests.queryOptions({
+      input: { page: 1, pageSize: 10, query: "" },
+    }));
+  },
+  component: AdminForgotRequestsPage,
+});
 
 type ForgotRequestRow = {
   id: string;
@@ -36,24 +43,23 @@ type ForgotRequestRow = {
 };
 
 function ActionsMenu({ item, onKeyGenerated, onDismissed }: { item: ForgotRequestRow; onKeyGenerated: (key: string) => void; onDismissed: () => void }) {
-  const rotate = async () => {
-    try {
-      const result = await client.admin.accessRequests.rotateKey({ requestId: item.id });
+  const rotateMutation = useMutation({
+    mutationFn: () => client.admin.accessRequests.rotateKey({ requestId: item.id }),
+    onSuccess: (result) => {
       onKeyGenerated(result.accessKey);
       toast.success("New key generated");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not generate key");
-    }
-  };
-  const dismiss = async () => {
-    try {
-      await client.admin.accessRequests.dismiss({ requestId: item.id });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not generate key"),
+  });
+
+  const dismissMutation = useMutation({
+    mutationFn: () => client.admin.accessRequests.dismiss({ requestId: item.id }),
+    onSuccess: () => {
       toast.success("Request dismissed");
       onDismissed();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not dismiss request");
-    }
-  };
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not dismiss request"),
+  });
 
   return (
     <DropdownMenu>
@@ -61,11 +67,11 @@ function ActionsMenu({ item, onKeyGenerated, onDismissed }: { item: ForgotReques
         <span className="flex items-center justify-center">⋯</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={rotate}>
-          <KeyRound size={15} /> Generate new key
+        <DropdownMenuItem onClick={() => rotateMutation.mutate()} disabled={rotateMutation.isPending}>
+          <KeyRound size={15} /> {rotateMutation.isPending ? "Generating…" : "Generate new key"}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={dismiss}>
-          <X size={15} /> Dismiss
+        <DropdownMenuItem onClick={() => dismissMutation.mutate()} disabled={dismissMutation.isPending}>
+          <X size={15} /> {dismissMutation.isPending ? "Dismissing…" : "Dismiss"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

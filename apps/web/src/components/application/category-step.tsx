@@ -5,6 +5,7 @@ import {
   type ScoringInputs,
   useApplicationStore,
 } from "@/lib/application-store";
+import { STATUS_ERROR, MARK_TOOLTIP } from "@/lib/color-classes";
 import {
   CATEGORY_MAX_MARKS,
   MAIN_DOCUMENT_MAX_61,
@@ -118,7 +119,7 @@ function FlagButton({ fieldKey, flaggedInputs, onToggleInputFlag }: { fieldKey: 
     <button
       type="button"
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleInputFlag(fieldKey); }}
-      className={`rounded-md p-1 transition-colors ${isFlagged ? "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+      className={`rounded-md p-1 transition-colors ${isFlagged ? `${STATUS_ERROR.bgSolid} ${STATUS_ERROR.text} ${STATUS_ERROR.hoverBg} dark:bg-red-900/40 ${STATUS_ERROR.textDark}` : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
       title={isFlagged ? "Remove flag" : "Flag as suspicious"}
     >
       <Flag size={12} />
@@ -369,7 +370,7 @@ function MarkBadge({ marks, max, hint }: { marks: number; max: number; hint: str
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 cursor-help tabular-nums">
+        <TooltipTrigger className={`${MARK_TOOLTIP} cursor-help tabular-nums`}>
           {marks.toLocaleString(undefined, { maximumFractionDigits: 2 })} / {max}
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs whitespace-pre-line text-xs leading-relaxed">
@@ -753,7 +754,7 @@ function GradeCounts({
               step="1"
               value={currentValue || ""}
               placeholder="0"
-              className={isThisOver ? "border-red-500 focus-visible:ring-red-500" : ""}
+              className={isThisOver ? `${STATUS_ERROR.border} ${STATUS_ERROR.focusRing}` : ""}
               onChange={(event) => {
                 const val = event.target.value === "" ? 0 : Number(event.target.value);
                 onChange({ [key]: val } as Partial<ScoringInputs>);
@@ -769,7 +770,7 @@ function GradeCounts({
         );
       })}
       {isOverLimit && (
-        <p className="col-span-2 text-sm text-red-500 max-md:col-span-1">
+        <p className={`col-span-2 text-sm ${STATUS_ERROR.text} max-md:col-span-1`}>
           Total ({totalSum}) exceeds {totalCount} subjects
         </p>
       )}

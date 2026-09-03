@@ -4,10 +4,12 @@ import { ArrowLeft, ArrowRight, Check, Clock3, Copy, FileSearch, House, KeyRound
 import { useNavigate } from "@tanstack/react-router";
 import { LocationStep } from "./location-step";
 import { CategoryStep } from "./category-step";
+import { STATUS_SUCCESS, STATUS_WARNING, STATUS_INFO, SECTION_COLORS } from "@/lib/color-classes";
 import {
   applyLocationChange,
   emptyDraft,
   normalizeDraft,
+  reconcileCapturedLocations,
   useApplicationStore,
   type ApplicationDraft,
   type CategoryApplication,
@@ -135,10 +137,12 @@ function categorySummary(category: CategoryApplication): string {
 
 function StepIndicator({
   current,
+  maxVisited,
   steps: stepLabels,
   onStepClick,
 }: {
   current: number;
+  maxVisited: number;
   steps: string[];
   onStepClick: (index: number) => void;
 }) {
@@ -175,7 +179,7 @@ function StepIndicator({
                   ? "text-muted-foreground"
                   : "text-muted-foreground"
             }`}
-            onClick={() => index <= current && onStepClick(index)}
+            onClick={() => index <= maxVisited && onStepClick(index)}
           >
             <span
               className={`grid size-6 place-items-center rounded-full border text-[11px] ${
@@ -910,7 +914,7 @@ function DeclarationStep({
             set({ declaration: { ...draft.declaration, consent: checked === true } })
           }
         />
-        I consent to this information being used to prepare the G1 2026 intake
+        I consent to this information being used to prepare the Grade 1 2026 intake
         application.
       </label>
     </div>
@@ -1033,7 +1037,7 @@ function ReviewStep({
                 {draft.isBanned ? (
                   <Badge variant="destructive" className="text-sm px-3 py-1">Banned</Badge>
                 ) : draft.admissionStatus === "verified" ? (
-                  <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-sm px-3 py-1">Verified</Badge>
+                  <Badge variant="default" className={`${STATUS_SUCCESS.badgeBg} ${STATUS_SUCCESS.badgeHover} text-sm px-3 py-1`}>Verified</Badge>
                 ) : draft.admissionStatus === "fake" ? (
                   <Badge variant="destructive" className="text-sm px-3 py-1">Flagged</Badge>
                 ) : (
@@ -1050,7 +1054,7 @@ function ReviewStep({
             )}
 
             {draft.admissionStatus === "verified" && (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-700 dark:text-emerald-400">
+              <div className={`rounded-lg border ${STATUS_SUCCESS.borderStrong} ${STATUS_SUCCESS.bgSoft} p-3 text-sm ${STATUS_SUCCESS.textStrong} ${STATUS_SUCCESS.textDark}`}>
                 <div className="flex items-center gap-2 font-semibold"><Check size={15} /> This application has been verified by an administrator.</div>
               </div>
             )}
@@ -1348,6 +1352,14 @@ export function ApplicationForm({
     };
   }, []);
 
+  // Restore the browser-captured location from its sealed copy once hydration
+  // settles. Only the applicant's own draft flow does this: admin/read-only and
+  // already-submitted loads come from the server and must not be clobbered.
+  useEffect(() => {
+    if (!draft.hydrated || readOnly || Boolean(adminApplicationId) || draft.submittedAt) return;
+    void reconcileCapturedLocations();
+  }, [draft.hydrated, readOnly, adminApplicationId, draft.submittedAt]);
+
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastSavedSnapshot = useRef("");
 
@@ -1582,6 +1594,7 @@ export function ApplicationForm({
       <Card className="mx-auto max-w-[1320px] overflow-hidden shadow-[0_20px_45px_color-mix(in_oklch,var(--foreground)_8%,transparent)]">
         <StepIndicator
           current={current}
+          maxVisited={draft.maxVisitedStep}
           steps={steps}
           onStepClick={(index) => draft.setStep(index)}
         />
@@ -1664,13 +1677,13 @@ export function ApplicationForm({
                   </div>
                 </div>
               ) : draft.admissionStatus === "verified" ? (
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/8 p-5 sm:p-6">
+                <div className={`rounded-2xl border ${SECTION_COLORS.success.card} p-5 sm:p-6`}>
                   <div className="flex items-start gap-4">
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                    <div className={`flex size-11 shrink-0 items-center justify-center rounded-full ${STATUS_SUCCESS.bgSolid} text-white shadow-sm`}>
                       <Check size={23} strokeWidth={2.5} />
                     </div>
                     <div className="grid gap-2">
-                      <span className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">
+                      <span className={`text-xs font-bold uppercase tracking-[0.14em] ${SECTION_COLORS.success.label}`}>
                         Application verified
                       </span>
                       <strong className="font-heading text-xl leading-tight sm:text-2xl">
@@ -1682,39 +1695,39 @@ export function ApplicationForm({
                     </div>
                   </div>
                   {adminMarks.length > 0 && (
-                    <div className="mt-4 grid gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Category marks</span>
+                    <div className={`mt-4 grid gap-2 rounded-xl border ${STATUS_SUCCESS.border} ${STATUS_SUCCESS.bgSoft} p-4`}>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_SUCCESS.text}`}>Category marks</span>
                       <div className="grid gap-1.5">
                         {draft.categories.map((category) => {
                           const mark = adminMarks.find((m) => m.categoryType === category.categoryType);
                           if (!mark) return null;
                           return (
-                            <div key={category.categoryType} className="flex items-center justify-between text-sm py-1 border-b border-emerald-500/10 last:border-b-0">
+                            <div key={category.categoryType} className={`flex items-center justify-between text-sm py-1 border-b border-emerald-500/10 last:border-b-0`}>
                               <span className="text-foreground">{CATEGORY_LABELS[category.categoryType]}</span>
-                              <span className="font-semibold text-emerald-700 dark:text-emerald-400">{mark.total}</span>
+                              <span className={`font-semibold ${STATUS_SUCCESS.textStrong} ${STATUS_SUCCESS.textDark}`}>{mark.total}</span>
                             </div>
                           );
                         })}
                         <div className="flex items-center justify-between text-sm font-semibold pt-1">
                           <span>Total</span>
-                          <span className="text-emerald-700 dark:text-emerald-400">{adminMarks.reduce((sum, m) => sum + m.total, 0)}</span>
+                          <span className={`${STATUS_SUCCESS.textStrong} ${STATUS_SUCCESS.textDark}`}>{adminMarks.reduce((sum, m) => sum + m.total, 0)}</span>
                         </div>
                       </div>
                     </div>
                   )}
                   {draft.flags && draft.flags.length > 0 && (
-                    <div className="mt-3 grid gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-amber-600">Observations ({draft.flags.length})</span>
+                    <div className={`mt-3 grid gap-2 rounded-xl border ${STATUS_WARNING.border} ${STATUS_WARNING.bgSoft} p-4`}>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_WARNING.text}`}>Observations ({draft.flags.length})</span>
                       <div className="flex flex-wrap gap-1.5">
                         {draft.flags.map((f, i) => (
-                          <Badge key={i} variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-400 text-xs">{f.label || f.key}</Badge>
+                          <Badge key={i} variant="outline" className={`border-amber-500/40 ${STATUS_WARNING.textStrong} ${STATUS_WARNING.textDark} text-xs`}>{f.label || f.key}</Badge>
                         ))}
                       </div>
                     </div>
                   )}
                   {draft.interviewNotes && (
-                    <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Admin note</span>
+                    <div className={`mt-3 rounded-xl border ${STATUS_SUCCESS.border} ${STATUS_SUCCESS.bgSoft} p-4`}>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_SUCCESS.text}`}>Admin note</span>
                       <p className="text-sm mt-1 text-foreground">{draft.interviewNotes}</p>
                     </div>
                   )}
@@ -1792,13 +1805,13 @@ export function ApplicationForm({
                     </div>
                   )}
                   {draft.interviewEdits && draft.interviewEdits.length > 0 && (
-                    <div className="mt-3 rounded-xl border border-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    <div className={`mt-3 rounded-xl border ${STATUS_INFO.border} ${STATUS_INFO.bg} ${STATUS_INFO.bgDark} p-4`}>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_INFO.text} ${STATUS_INFO.textDark}`}>
                         Changes made by admin ({draft.interviewEdits.length})
                       </span>
                       <div className="mt-2 grid gap-1 max-h-40 overflow-y-auto">
                         {draft.interviewEdits.map((edit, i) => (
-                          <div key={i} className="flex flex-wrap items-center gap-2 text-xs border-b border-blue-500/10 pb-1 last:border-b-0 last:pb-0">
+                          <div key={i} className={`flex flex-wrap items-center gap-2 text-xs border-b border-blue-500/10 pb-1 last:border-b-0 last:pb-0`}>
                             <strong className="text-foreground">{edit.label}:</strong>
                             <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
                             <span>→</span>
@@ -1810,12 +1823,12 @@ export function ApplicationForm({
                   )}
                 </div>
               ) : draft.submittedAt ? (
-                <div className="flex items-start gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/8 p-5 sm:p-6">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
+                <div className={`flex items-start gap-4 rounded-2xl border ${SECTION_COLORS.warning.card} p-5 sm:p-6`}>
+                  <div className={`flex size-11 shrink-0 items-center justify-center rounded-full ${STATUS_WARNING.bgSolid} text-white shadow-sm`}>
                     <FileSearch size={22} strokeWidth={2.5} />
                   </div>
                   <div className="grid gap-2">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-amber-600">
+                    <span className={`text-xs font-bold uppercase tracking-[0.14em] ${SECTION_COLORS.warning.label}`}>
                       Awaiting review
                     </span>
                     <strong className="font-heading text-xl leading-tight sm:text-2xl">

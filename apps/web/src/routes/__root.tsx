@@ -59,7 +59,7 @@ function RootComponent() {
           Link={({ href, ...props }) => <Link to={href} {...props} />}
           plugins={[multiSessionPlugin()]}
         >
-          <div className="min-h-svh">
+          <div className="h-svh overflow-auto">
             <Outlet />
           </div>
           <Toaster richColors />

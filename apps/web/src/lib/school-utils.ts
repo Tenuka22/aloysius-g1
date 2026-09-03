@@ -1,4 +1,7 @@
-import { type School, SCHOOLS } from "./schools";
+import { type School } from "./schools";
+import { findSchoolById, getSchools } from "./school-coordinates";
+
+export { findSchoolById };
 
 type LocatedSchool = School & { lat: number; lng: number };
 
@@ -19,14 +22,16 @@ export function haversineDistanceKm(lat1: number, lng1: number, lat2: number, ln
 }
 
 export function getSchoolsWithinRadius(centerLat: number, centerLng: number, radiusKm: number): Array<LocatedSchool & { distanceKm: number }> {
-  return SCHOOLS.filter(hasCoordinates)
+  return getSchools()
+    .filter(hasCoordinates)
     .map((school) => ({ ...school, distanceKm: haversineDistanceKm(centerLat, centerLng, school.lat, school.lng) }))
     .filter((school) => school.distanceKm < radiusKm)
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
 export function getAllSchoolsWithDistance(centerLat: number, centerLng: number): Array<LocatedSchool & { distanceKm: number }> {
-  return SCHOOLS.filter(hasCoordinates)
+  return getSchools()
+    .filter(hasCoordinates)
     .map((school) => ({ ...school, distanceKm: haversineDistanceKm(centerLat, centerLng, school.lat, school.lng) }))
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
@@ -36,8 +41,4 @@ export function getSchoolsWithClassification(centerLat: number, centerLng: numbe
   const within = all.filter((s) => s.distanceKm <= radiusKm);
   const outside = all.filter((s) => s.distanceKm > radiusKm).slice(0, EXTRA_OUTSIDE_SCHOOLS);
   return { within, outside };
-}
-
-export function findSchoolById(id: string): School | undefined {
-  return SCHOOLS.find((school) => school.id === id);
 }

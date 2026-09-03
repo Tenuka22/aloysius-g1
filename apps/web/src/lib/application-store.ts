@@ -1,5 +1,13 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import {
+  capturedSignature,
+  extractCaptured,
+  readLocationSeal,
+  restoreCapturedLocations,
+  writeLocationSeal,
+  type SealedLocations,
+} from "./location-seal";
 
 export type LocationDraft = {
   id?: string;
@@ -84,6 +92,7 @@ export type CategoryApplication = {
 
 export type ApplicationDraft = {
   currentStep: number;
+  maxVisitedStep: number;
   location: LocationDraft;
   defaultLocations: LocationDraft[];
   selectedLocation: LocationDraft;
@@ -167,6 +176,7 @@ export type InterviewEdit = {
 
 export const emptyDraft: ApplicationDraft = {
   currentStep: 0,
+  maxVisitedStep: 0,
   location: { label: "", address: "", latitude: null, longitude: null, source: "" },
   defaultLocations: [],
   selectedLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
@@ -336,7 +346,7 @@ export const useApplicationStore = create<ApplicationStore>()(
     (set) => ({
       ...emptyDraft,
       updateDraft: (patch) => set({ ...patch, lastSavedAt: new Date().toISOString() }),
-      setStep: (currentStep) => set({ currentStep }),
+      setStep: (currentStep) => set((state) => ({ currentStep, maxVisitedStep: Math.max(state.maxVisitedStep, currentStep) })),
       addCategory: (categoryType) =>
         set((state) => ({
           categories: [...state.categories, createCategory(categoryType, state.categories.length)],
@@ -367,3 +377,58 @@ export const useApplicationStore = create<ApplicationStore>()(
     },
   ),
 );
+
+// ---------------------------------------------------------------------------
+// Sealed browser-captured locations
+//
+// Every change to the captured (device/network) location re-encrypts its
+// authoritative copy into localStorage (see lib/location-seal.ts). When the
+// draft is loaded, reconcileCapturedLocations() compares the plaintext draft
+// against the seal and restores the captured fields from the seal, so editing
+// the auto-saved draft in devtools cannot silently move the recorded location.
+// ---------------------------------------------------------------------------
+
+let lastCapturedSignature: string | null = null;
+
+function capturedSignatureOfState(): string {
+  return capturedSignature(extractCaptured(useApplicationStore.getState()));
+}
+
+function resealIfChanged() {
+  if (typeof window === "undefined") return;
+  const signature = capturedSignatureOfState();
+  if (signature === lastCapturedSignature) return;
+  lastCapturedSignature = signature;
+  void writeLocationSeal(useApplicationStore.getState()).catch(() => {
+    // Sealing is best-effort; storage or crypto failures must not break the draft.
+  });
+}
+
+/**
+ * Verifies the persisted draft against the sealed captured locations and
+ * restores the sealed values when the plaintext was modified. Safe to call
+ * repeatedly after hydration; no-op when the draft already matches the seal.
+ */
+export async function reconcileCapturedLocations(): Promise<void> {
+  if (typeof window === "undefined") return;
+  const sealed: SealedLocations | null = await readLocationSeal();
+  const current = useApplicationStore.getState();
+  if (!sealed) {
+    // No seal yet (first run of this feature, cleared storage, or fresh draft):
+    // adopt the current captured locations as the baseline.
+    lastCapturedSignature = capturedSignature(extractCaptured(current));
+    await writeLocationSeal(current);
+    return;
+  }
+  const patch = restoreCapturedLocations(current, sealed);
+  if (patch) {
+    useApplicationStore.setState(patch as Partial<ApplicationDraft>);
+  }
+  lastCapturedSignature = capturedSignatureOfState();
+  await writeLocationSeal(useApplicationStore.getState());
+}
+
+useApplicationStore.subscribe(resealIfChanged);
+void reconcileCapturedLocations().catch(() => {
+  // Best-effort on first load; the form re-runs reconcile after hydration.
+});

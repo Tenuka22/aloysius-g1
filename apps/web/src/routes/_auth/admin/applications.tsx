@@ -31,8 +31,16 @@ import {
   SelectValue,
 } from "@aloysius-g1/ui/components/select";
 import { client, orpc } from "@/utils/orpc";
+import { toast } from "sonner";
 
-export const Route = createFileRoute("/_auth/admin/applications")({ component: AdminApplicationsPage });
+export const Route = createFileRoute("/_auth/admin/applications")({
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(context.orpc.admin.applications.queryOptions({
+      input: { page: 1, pageSize: 10, query: "", sort: "updatedAt", sortDir: "desc", status: "all" },
+    }));
+  },
+  component: AdminApplicationsPage,
+});
 
 type ApplicationRow = {
   id: string
@@ -68,16 +76,14 @@ function ActionsMenu({ item, onDeleted }: { item: ApplicationRow; onDeleted: () 
   const queryClient = useQueryClient();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => { await client.admin.application.remove({ id: item.id }) },
+  const deleteMutation = useMutation(orpc.admin.application.remove.mutationOptions({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: orpc.admin.applications.key() });
-      setMessage("Application deleted");
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.applications.key() });
+      toast.success("Application deleted");
       onDeleted();
       setDeleteOpen(false);
     },
-    onError: (error) => { setMessage(error instanceof Error ? error.message : "Could not delete application"); },
-  });
+  }));
 
   return (
     <>
@@ -102,7 +108,7 @@ function ActionsMenu({ item, onDeleted }: { item: ApplicationRow; onDeleted: () 
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onConfirm={() => deleteMutation.mutate()}
+        onConfirm={() => deleteMutation.mutate({ id: item.id })}
         applicantName={item.applicantName}
         isPending={deleteMutation.isPending}
       />
@@ -166,7 +172,6 @@ function AdminApplicationsPage() {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>(prefs.applicationsSort ? [prefs.applicationsSort] : []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(prefs.applicationsStatusFilter !== "all" ? [{ id: "status", value: prefs.applicationsStatusFilter }] : []);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
   const sort = sorting[0];
@@ -199,12 +204,6 @@ function AdminApplicationsPage() {
 
   const items = (applications.data?.items ?? []) as ApplicationRow[];
   const pageCount = applications.data ? Math.ceil(applications.data.total / applications.data.pageSize) : 0;
-
-  const remove = async () => {
-    if (!deleteId) return;
-    try { await client.admin.application.remove({ id: deleteId }); setDeleteId(null); setMessage("Application deleted"); }
-    catch (error) { setMessage(error instanceof Error ? error.message : "Could not delete application"); }
-  };
 
   return (
     <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
@@ -309,18 +308,6 @@ function AdminApplicationsPage() {
           />
         </CardContent>
       </Card>
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete application</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone. Are you sure?</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={remove}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </main>
   );
 }

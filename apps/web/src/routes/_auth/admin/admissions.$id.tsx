@@ -10,7 +10,15 @@ import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
 import { type AdmissionStatus, type AdmissionDetail, CATEGORY_LABELS } from "./admissions";
 
-export const Route = createFileRoute("/_auth/admin/admissions/$id")({ component: AdmissionCategorySelectPage });
+export const Route = createFileRoute("/_auth/admin/admissions/$id")({
+  loader: async ({ context, params }) => {
+    await Promise.all([
+      context.queryClient.prefetchQuery(context.orpc.admin.admissions.get.queryOptions({ input: { id: params.id } })),
+      context.queryClient.prefetchQuery(context.orpc.admin.admissions.getMarks.queryOptions({ input: { applicationId: params.id } })),
+    ]);
+  },
+  component: AdmissionCategorySelectPage,
+});
 
 function StatusBadge({ status, banned }: { status: AdmissionStatus; banned: boolean }) {
   if (banned) return <Badge variant="destructive">Banned</Badge>;
