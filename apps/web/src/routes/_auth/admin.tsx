@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, Database, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, Database, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, Minus, Plus, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { cn } from "@aloysius-g1/ui/lib/utils";
@@ -15,8 +15,6 @@ import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
 
-const INTAKE_YEARS = ["2027", "2026"] as const;
-
 export const Route = createFileRoute("/_auth/admin")({
   loader: async ({ context }) => {
     const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
@@ -29,20 +27,65 @@ export const Route = createFileRoute("/_auth/admin")({
   component: AdminPage,
 });
 
+function YearStepper({ value, onChange }: { value: string; onChange: (y: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const num = Number(value) || new Date().getFullYear();
+
+  const bump = useCallback((delta: number) => {
+    onChange(String(num + delta));
+  }, [num, onChange]);
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => bump(-1)}>
+        <Minus size={14} />
+      </Button>
+      <input
+        ref={inputRef}
+        type="number"
+        value={value}
+        onChange={(e) => {
+          const v = e.target.value.replace(/[^0-9]/g, "");
+          if (v.length <= 4) onChange(v);
+        }}
+        onBlur={() => { if (!inputRef.current?.value) onChange(String(num)); }}
+        className="h-8 w-16 rounded-md border border-input bg-background px-1.5 text-center text-xs font-semibold tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => bump(1)}>
+        <Plus size={14} />
+      </Button>
+    </div>
+  );
+}
+
+function yearOptions() {
+  const currentYear = new Date().getFullYear();
+  const years: string[] = [];
+  for (let y = currentYear - 1; y <= currentYear + 5; y++) years.push(String(y));
+  return years;
+}
+
 function AdminPage() {
   const { session } = Route.useRouteContext();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [intakeYear, setIntakeYear] = useState(() => {
     if (typeof localStorage !== "undefined") return localStorage.getItem("admin-intake-year") || "2027";
     return "2027";
   });
 
-  const handleYearChange = (year: string) => {
+  const handleYearChange = useCallback((year: string) => {
     setIntakeYear(year);
     localStorage.setItem("admin-intake-year", year);
-    window.location.reload();
-  };
+    void queryClient.invalidateQueries({ queryKey: orpc.admin.overview.key() });
+    void queryClient.invalidateQueries({ queryKey: orpc.admin.applications.key() });
+    void queryClient.invalidateQueries({ queryKey: orpc.admin.settings.get.key() });
+    void queryClient.invalidateQueries({ queryKey: orpc.admin.accessRequests.submissionRequests.key() });
+    void queryClient.invalidateQueries({ queryKey: orpc.admin.accessRequests.forgotRequests.key() });
+    void queryClient.invalidateQueries({ queryKey: orpc.admin.accessRequests.removalRequests.key() });
+    void queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.list.key() });
+  }, [queryClient]);
 
   const overview = useQuery(orpc.admin.overview.queryOptions({ input: { intakeYear } }));
   const applications = useQuery(orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "", intakeYear } }));
@@ -93,14 +136,15 @@ function AdminPage() {
         <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider mb-1 block">Intake year</label>
         <Select value={intakeYear} onValueChange={handleYearChange}>
           <SelectTrigger className="h-8 text-xs w-full">
-            <SelectValue />
+            <SelectValue placeholder="Select year" />
           </SelectTrigger>
           <SelectContent>
-            {INTAKE_YEARS.map((y) => (
+            {yearOptions().map((y) => (
               <SelectItem key={y} value={y}>Grade 1 — {y}</SelectItem>
             ))}
           </SelectContent>
         </Select>
+        <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Intake year = current year + 1</p>
       </div>
     </SidebarHeader>
     <SidebarContent>
@@ -318,8 +362,13 @@ function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
     if (yearSettings.data) {
       setOpensAt(yearSettings.data.opensAt.toISOString().slice(0, 16));
       setClosesAt(yearSettings.data.closesAt.toISOString().slice(0, 16));
+    } else if (yearSettings.isFetched && !yearSettings.data) {
+      setOpensAt("");
+      setClosesAt("");
     }
-  }, [yearSettings.data]);
+  }, [yearSettings.data, yearSettings.isFetched]);
+
+  const isConfigured = Boolean(yearSettings.data);
 
   const saveMutation = useMutation({
     mutationFn: () => client.admin.settings.update({ opensAt: new Date(opensAt), closesAt: new Date(closesAt), intakeYear: selectedYear }),
@@ -342,16 +391,11 @@ function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
         <div className="grid grid-cols-3 gap-4 items-end">
           <div className="grid gap-1">
             <span className="text-muted-foreground text-xs font-semibold">Intake year</span>
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="h-10 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {INTAKE_YEARS.map((y) => (
-                  <SelectItem key={y} value={y}>Grade 1 — {y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <YearStepper value={selectedYear} onChange={setSelectedYear} />
+            {isConfigured
+              ? <span className="text-[10px] text-emerald-600 font-medium">Already configured</span>
+              : <span className="text-[10px] text-muted-foreground">Not configured — set dates to enable</span>
+            }
           </div>
           <DateTimePicker value={opensAt} onChange={setOpensAt} label="Opens" />
           <DateTimePicker value={closesAt} onChange={setClosesAt} label="Closes" />

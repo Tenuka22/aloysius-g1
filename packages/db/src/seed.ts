@@ -256,7 +256,7 @@ function generateApplication(index: number, intakeYear: string) {
         nic: `${randInt(700000000, 999999999)}V`,
         phone: `+9477${String(randInt(1000000, 9999999))}`,
         whatsappPhone: `+9477${String(randInt(1000000, 9999999))}`,
-        email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s/g, "")}@seed.example.com`,
+        email: `${firstName.toLowerCase()}.${(lastName ?? "").toLowerCase().replace(/\s/g, "")}@seed.example.com`,
       },
       residence: {
         permanentAddress: `${randInt(1, 200)} ${pick(["Temple", "Church", "Lake", "Garden", "Hill", "Park", "River", "Road", "Street", "Lane"])} ${pick(["Road", "Street", "Lane", "Place"])}, ${loc.address.split(",").pop()?.trim() ?? "Galle"}`,

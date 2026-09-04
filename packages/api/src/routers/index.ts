@@ -46,6 +46,10 @@ const defaultOpensAt = defaultSubmissionWindow().opensAt;
 const defaultClosesAt = defaultSubmissionWindow().closesAt;
 const getApplicationWindow = async (intakeYear?: string) => {
   const year = intakeYear ?? "2027";
+  return await db.select().from(applicationSettings).where(eq(applicationSettings.id, year)).get() ?? null;
+};
+const getOrCreateApplicationWindow = async (intakeYear?: string) => {
+  const year = intakeYear ?? "2027";
   const existing = await db.select().from(applicationSettings).where(eq(applicationSettings.id, year)).get();
   if (existing) return existing;
   const now = new Date();
@@ -144,7 +148,7 @@ const admissionSummary = (row: typeof applications.$inferSelect) => {
   };
 };
 const ensureAdmissionsAccess = async (earlyAccess: boolean, intakeYear?: string) => {
-  const window = await getApplicationWindow(intakeYear);
+  const window = await getOrCreateApplicationWindow(intakeYear);
   if (!isAdmissionsAvailable(window.closesAt, new Date(), earlyAccess)) {
     throw new ORPCError("FORBIDDEN", { message: `Admissions opens after ${window.closesAt.toISOString()}` });
   }
@@ -157,7 +161,7 @@ export const appRouter = {
       const accessKey = createAccessKey();
       const sessionCode = await uniqueSessionCode();
       const now = new Date();
-      const window = await getApplicationWindow(input.intakeYear);
+      const window = await getOrCreateApplicationWindow(input.intakeYear);
       if (isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "New applications can only be created during the configured form window" });
       const birthCertificateNumber = extractBirthCertificateNumber(input.data);
       const data = withoutSchoolPreferences(input.data);
@@ -245,7 +249,7 @@ export const appRouter = {
       const birthCertificateNumber = extractBirthCertificateNumber(input.data);
       const current = await db.select({ id: applications.id, submittedAt: applications.submittedAt, intakeYear: applications.intakeYear }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!current) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
-      const window = await getApplicationWindow(current.intakeYear);
+      const window = await getOrCreateApplicationWindow(current.intakeYear);
       if (current.submittedAt && isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "Submitted applications can only be updated during the configured form window" });
       const duplicate = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get() : null;
       if (duplicate && duplicate.id !== current?.id) throw new ORPCError("CONFLICT", { message: "An application with this birth certificate number has already been submitted. Please check the number and try again." });
@@ -253,11 +257,11 @@ export const appRouter = {
       await publishApplicationChange();
       return { updatedAt };
     }),
-    status: publicProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => { const window = await getApplicationWindow(input?.intakeYear); return { submissionLocked: isSubmissionLocked(window), submissionOpensAt: window.opensAt.toISOString(), submissionClosesAt: window.closesAt.toISOString(), environment: env.NODE_ENV }; }),
+    status: publicProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => { const window = await getOrCreateApplicationWindow(input?.intakeYear); return { submissionLocked: isSubmissionLocked(window), submissionOpensAt: window.opensAt.toISOString(), submissionClosesAt: window.closesAt.toISOString(), environment: env.NODE_ENV }; }),
     submit: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db.select({ id: applications.id, intakeYear: applications.intakeYear }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
-      const window = await getApplicationWindow(row.intakeYear);
+      const window = await getOrCreateApplicationWindow(row.intakeYear);
       if (isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "Submissions are outside the configured form window" });
       await db.update(applications).set({ submittedAt: new Date(), updatedAt: new Date() }).where(eq(applications.id, row.id)).run();
       await publishApplicationChange();
@@ -319,7 +323,7 @@ export const appRouter = {
       }),
     },
     settings: {
-      get: adminProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => { const window = await getApplicationWindow(input?.intakeYear); return { opensAt: window.opensAt, closesAt: window.closesAt, updatedAt: window.updatedAt }; }),
+      get: adminProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => { const window = await getApplicationWindow(input?.intakeYear); if (!window) return null; return { opensAt: window.opensAt, closesAt: window.closesAt, updatedAt: window.updatedAt }; }),
       update: adminProcedure.input(z.object({ opensAt: z.coerce.date(), closesAt: z.coerce.date(), intakeYear: z.string().default("2027") })).handler(async ({ input }) => {
         if (!isValidSubmissionWindow(input.opensAt, input.closesAt)) throw new ORPCError("BAD_REQUEST", { message: "The closing time must be after the opening time" });
         const updatedAt = new Date();
