@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { consumeEventIterator } from "@orpc/client";
 import { type ColumnDef, type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
 import { CheckCircle2, ClipboardCheck, FileWarning, LockKeyhole, ShieldAlert } from "lucide-react";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
@@ -116,6 +117,15 @@ export function AdmissionsPage() {
 
   const items = (admissions.data?.items ?? []) as AdmissionSummary[];
   const pageCount = admissions.data ? Math.ceil(admissions.data.total / admissions.data.pageSize) : 0;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const cancel = consumeEventIterator(client.application.liveCount(undefined, { signal: controller.signal }), {
+      onEvent: () => { void admissions.refetch(); },
+      onError: () => undefined,
+    });
+    return () => { controller.abort(); cancel(); };
+  }, []);
 
   const counts = useMemo(() => ({ total: admissions.data?.total ?? 0, verified: items.filter((item) => item.admissionStatus === "verified").length, pending: items.filter((item) => item.admissionStatus === "pending").length, flagged: items.filter((item) => item.admissionStatus === "fake" || item.isBanned).length }), [admissions.data?.total, items]);
 

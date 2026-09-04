@@ -5,7 +5,8 @@ import { MapContainer, Marker, Polyline, TileLayer, Tooltip as LeafletTooltip, u
 import L, { DivIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ClipboardCheck, MapPinned, Maximize2 } from "lucide-react";
-import { orpc } from "@/utils/orpc";
+import { consumeEventIterator } from "@orpc/client";
+import { client, orpc } from "@/utils/orpc";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Card } from "@aloysius-g1/ui/components/card";
 import { Input } from "@aloysius-g1/ui/components/input";
@@ -156,6 +157,15 @@ function AdminMapPage() {
     latitude: number | null;
     longitude: number | null;
   }>;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const cancel = consumeEventIterator(client.application.liveCount(undefined, { signal: controller.signal }), {
+      onEvent: () => { void admissions.refetch(); },
+      onError: () => undefined,
+    });
+    return () => { controller.abort(); cancel(); };
+  }, []);
 
   const [homeLat, setHomeLat] = useState(6.045556);
   const [homeLng, setHomeLng] = useState(80.208583);
