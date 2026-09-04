@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, Database, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { cn } from "@aloysius-g1/ui/lib/utils";
@@ -96,6 +96,9 @@ function AdminPage() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton href="/admin/mark-allocation" isActive={location.pathname === "/admin/mark-allocation"} onClick={() => setSidebarOpen(false)}><ListOrdered size={20} /> Mark allocation</SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/admin/data-extraction" isActive={location.pathname === "/admin/data-extraction"} onClick={() => setSidebarOpen(false)}><Database size={20} /> Data extraction</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton href="/admin/requests" isActive={location.pathname === "/admin/requests"} onClick={() => setSidebarOpen(false)}><FileWarning size={20} /> Submission requests</SidebarMenuButton>
