@@ -32,10 +32,13 @@ import {
 } from "@aloysius-g1/ui/components/select";
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
+import { intakeYearSearchSchema } from "@/lib/intake-year";
 
 export const Route = createFileRoute("/_auth/admin/applications")({
-  loader: async ({ context }) => {
-    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  validateSearch: intakeYearSearchSchema,
+  loaderDeps: ({ search }) => ({ intakeYear: search.intakeYear }),
+  loader: async ({ context, deps }) => {
+    const { intakeYear } = deps;
     await Promise.all([
       context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions({ input: { intakeYear } })),
       context.queryClient.prefetchQuery(context.orpc.admin.applications.queryOptions({
@@ -183,7 +186,7 @@ function AdminApplicationsPage() {
   const [sorting, setSorting] = useState<SortingState>(prefs.applicationsSort ? [prefs.applicationsSort] : []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(prefs.applicationsStatusFilter !== "all" ? [{ id: "status", value: prefs.applicationsStatusFilter }] : []);
 
-  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  const { intakeYear } = Route.useSearch();
   const sort = sorting[0];
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
   const statusFilter = typeof columnFilters.find((f) => f.id === "status")?.value === "string" ? (columnFilters.find((f) => f.id === "status")!.value as string) : "all";

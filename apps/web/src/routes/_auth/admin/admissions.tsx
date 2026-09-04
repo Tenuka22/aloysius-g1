@@ -17,10 +17,13 @@ import {
   DataTableViewOptions,
 } from "@aloysius-g1/ui/components/data-table";
 import { FORM_WINDOW_WARNING } from "@/lib/color-classes";
+import { intakeYearSearchSchema } from "@/lib/intake-year";
 
 export const Route = createFileRoute("/_auth/admin/admissions")({
-  loader: async ({ context }) => {
-    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  validateSearch: intakeYearSearchSchema,
+  loaderDeps: ({ search }) => ({ intakeYear: search.intakeYear }),
+  loader: async ({ context, deps }) => {
+    const { intakeYear } = deps;
     await context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions({ input: { intakeYear } }));
   },
   component: AdmissionsPage,
@@ -80,7 +83,7 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: number; 
 export function AdmissionsPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  const { intakeYear } = Route.useSearch();
   const settings = useQuery(orpc.admin.settings.get.queryOptions({ input: { intakeYear } }));
   const [earlyAccessGranted, setEarlyAccessGranted] = useState(false);
   const [earlyAccessDialogOpen, setEarlyAccessDialogOpen] = useState(false);
@@ -121,7 +124,7 @@ export function AdmissionsPage() {
       accessorKey: "applicantName",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Applicant" />,
       cell: ({ row }) => (
-        <button type="button" onClick={() => navigate({ to: "/admin/admissions/$id", params: { id: row.original.id } })} className="text-left font-semibold hover:underline text-primary">
+        <button type="button" onClick={() => navigate({ to: "/admin/admissions/$id", params: { id: row.original.id }, search: true })} className="text-left font-semibold hover:underline text-primary">
           {row.original.applicantName}
         </button>
       ),

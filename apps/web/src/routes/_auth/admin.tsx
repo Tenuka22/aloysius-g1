@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, Database, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, Minus, Plus, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
@@ -14,10 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
+import { intakeYearOptions, intakeYearSearchSchema } from "@/lib/intake-year";
 
 export const Route = createFileRoute("/_auth/admin")({
-  loader: async ({ context }) => {
-    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  validateSearch: intakeYearSearchSchema,
+  loaderDeps: ({ search }) => ({ intakeYear: search.intakeYear }),
+  loader: async ({ context, deps }) => {
+    const { intakeYear } = deps;
     await Promise.all([
       context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions({ input: { intakeYear } })),
       context.queryClient.prefetchQuery(context.orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "", intakeYear } })),
@@ -36,9 +39,9 @@ function YearStepper({ value, onChange }: { value: string; onChange: (y: string)
   }, [num, onChange]);
 
   return (
-    <div className="flex items-center gap-1">
-      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => bump(-1)}>
-        <Minus size={14} />
+    <div className="flex items-center gap-1 w-full">
+      <Button variant="outline" size="icon" className="h-10.5 w-10.5 shrink-0" onClick={() => bump(-1)}>
+        <Minus size={16} />
       </Button>
       <input
         ref={inputRef}
@@ -49,44 +52,29 @@ function YearStepper({ value, onChange }: { value: string; onChange: (y: string)
           if (v.length <= 4) onChange(v);
         }}
         onBlur={() => { if (!inputRef.current?.value) onChange(String(num)); }}
-        className="h-8 w-16 rounded-md border border-input bg-background px-1.5 text-center text-xs font-semibold tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="h-10.5 flex-1 min-w-0 rounded-lg border border-input bg-background px-3 text-center text-sm font-semibold tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
-      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => bump(1)}>
-        <Plus size={14} />
+      <Button variant="outline" size="icon" className="h-10.5 w-10.5 shrink-0" onClick={() => bump(1)}>
+        <Plus size={16} />
       </Button>
     </div>
   );
 }
 
-function yearOptions() {
-  const currentYear = new Date().getFullYear();
-  const years: string[] = [];
-  for (let y = currentYear - 1; y <= currentYear + 5; y++) years.push(String(y));
-  return years;
-}
-
 function AdminPage() {
   const { session } = Route.useRouteContext();
   const location = useLocation();
+  const navigate = useNavigate({ from: "/admin" });
   const queryClient = useQueryClient();
+  const search = useSearch({ from: Route.id });
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [intakeYear, setIntakeYear] = useState(() => {
-    if (typeof localStorage !== "undefined") return localStorage.getItem("admin-intake-year") || "2027";
-    return "2027";
-  });
+  const intakeYear = search.intakeYear;
+
+  const adminHref = useCallback((path: string) => `${path}?intakeYear=${encodeURIComponent(intakeYear)}`, [intakeYear]);
 
   const handleYearChange = useCallback((year: string) => {
-    setIntakeYear(year);
-    localStorage.setItem("admin-intake-year", year);
-    const prefix = [orpc.admin.overview.key()[0]];
-    void queryClient.invalidateQueries({ queryKey: prefix });
-    void queryClient.invalidateQueries({ queryKey: [orpc.admin.applications.key()[0]] });
-    void queryClient.invalidateQueries({ queryKey: [orpc.admin.settings.get.key()[0]] });
-    void queryClient.invalidateQueries({ queryKey: [orpc.admin.accessRequests.submissionRequests.key()[0]] });
-    void queryClient.invalidateQueries({ queryKey: [orpc.admin.accessRequests.forgotRequests.key()[0]] });
-    void queryClient.invalidateQueries({ queryKey: [orpc.admin.accessRequests.removalRequests.key()[0]] });
-    void queryClient.invalidateQueries({ queryKey: [orpc.admin.admissions.list.key()[0]] });
-  }, [queryClient]);
+    void navigate({ search: { intakeYear: year } });
+  }, [navigate]);
 
   const overview = useQuery(orpc.admin.overview.queryOptions({ input: { intakeYear } }));
   const applications = useQuery(orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "", intakeYear } }));
@@ -140,7 +128,7 @@ function AdminPage() {
             <SelectValue placeholder="Select year" />
           </SelectTrigger>
           <SelectContent>
-            {yearOptions().map((y) => (
+            {intakeYearOptions().map((y) => (
               <SelectItem key={y} value={y}>Grade 1 — {y}</SelectItem>
             ))}
           </SelectContent>
@@ -153,34 +141,34 @@ function AdminPage() {
         <SidebarGroupLabel>Workspace</SidebarGroupLabel>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin" isActive={location.pathname === "/admin"} onClick={() => setSidebarOpen(false)}><LayoutDashboard size={20} /> Overview</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin")} isActive={location.pathname === "/admin"} onClick={() => setSidebarOpen(false)}><LayoutDashboard size={20} /> Overview</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/applications" isActive={location.pathname.startsWith("/admin/applications")} onClick={() => setSidebarOpen(false)}><BarChart3 size={20} /> Applications</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/applications")} isActive={location.pathname.startsWith("/admin/applications")} onClick={() => setSidebarOpen(false)}><BarChart3 size={20} /> Applications</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/admissions" isActive={location.pathname.startsWith("/admin/admissions")} onClick={() => setSidebarOpen(false)}><ClipboardCheck size={20} /> Admissions</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/admissions")} isActive={location.pathname.startsWith("/admin/admissions")} onClick={() => setSidebarOpen(false)}><ClipboardCheck size={20} /> Admissions</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/schools" isActive={location.pathname === "/admin/schools"} onClick={() => setSidebarOpen(false)}><MapPinned size={20} /> Schools hub</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/schools")} isActive={location.pathname === "/admin/schools"} onClick={() => setSidebarOpen(false)}><MapPinned size={20} /> Schools hub</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/admin_map" isActive={location.pathname === "/admin/admin_map"} onClick={() => setSidebarOpen(false)}><MapPin size={20} /> Map view</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/admin_map")} isActive={location.pathname === "/admin/admin_map"} onClick={() => setSidebarOpen(false)}><MapPin size={20} /> Map view</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/mark-allocation" isActive={location.pathname === "/admin/mark-allocation"} onClick={() => setSidebarOpen(false)}><ListOrdered size={20} /> Mark allocation</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/mark-allocation")} isActive={location.pathname === "/admin/mark-allocation"} onClick={() => setSidebarOpen(false)}><ListOrdered size={20} /> Mark allocation</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/data-extraction" isActive={location.pathname === "/admin/data-extraction"} onClick={() => setSidebarOpen(false)}><Database size={20} /> Data extraction</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/data-extraction")} isActive={location.pathname === "/admin/data-extraction"} onClick={() => setSidebarOpen(false)}><Database size={20} /> Data extraction</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/requests" isActive={location.pathname === "/admin/requests"} onClick={() => setSidebarOpen(false)}><FileWarning size={20} /> Submission requests</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/requests")} isActive={location.pathname === "/admin/requests"} onClick={() => setSidebarOpen(false)}><FileWarning size={20} /> Submission requests</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/removal-requests" isActive={location.pathname === "/admin/removal-requests"} onClick={() => setSidebarOpen(false)}><Trash2 size={20} /> Removal requests</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/removal-requests")} isActive={location.pathname === "/admin/removal-requests"} onClick={() => setSidebarOpen(false)}><Trash2 size={20} /> Removal requests</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/admin/forgot-requests" isActive={location.pathname === "/admin/forgot-requests"} onClick={() => setSidebarOpen(false)}><KeyRound size={20} /> Forgot key requests</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/admin/forgot-requests")} isActive={location.pathname === "/admin/forgot-requests"} onClick={() => setSidebarOpen(false)}><KeyRound size={20} /> Forgot key requests</SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
@@ -248,9 +236,9 @@ function AdminPage() {
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">Review and act on access, removal, and late submission requests from applicants.</p>
                 <div className="flex gap-2 flex-wrap">
-                  <Button variant="secondary" render={<Link to="/admin/requests" />}>Submission requests</Button>
-                  <Button variant="secondary" render={<Link to="/admin/removal-requests" />}>Removal requests</Button>
-                  <Button variant="secondary" render={<Link to="/admin/forgot-requests" />}>Forgot key requests</Button>
+                  <Button variant="secondary" render={<Link to="/admin/requests" search={true} />}>Submission requests</Button>
+                  <Button variant="secondary" render={<Link to="/admin/removal-requests" search={true} />}>Removal requests</Button>
+                  <Button variant="secondary" render={<Link to="/admin/forgot-requests" search={true} />}>Forgot key requests</Button>
                 </div>
               </CardContent>
             </Card>
@@ -258,14 +246,14 @@ function AdminPage() {
               <CardHeader><CardTitle>Admissions</CardTitle></CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">Open one submitted application at a time for interview review, corrections, and admissions decisions.</p>
-                <Button variant="secondary" render={<Link to="/admin/admissions" />}><ClipboardCheck size={17} /> Open admissions</Button>
+                <Button variant="secondary" render={<Link to="/admin/admissions" search={true} />}><ClipboardCheck size={17} /> Open admissions</Button>
               </CardContent>
             </Card>
             <Card className="mb-4">
               <CardHeader><CardTitle>School coordinates</CardTitle></CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">Schools missing coordinates from the Google Maps scrape can be pinned manually using Google Maps / Earth lookups. Stored in the database and shared across deployments.</p>
-                <Button variant="secondary" render={<Link to="/admin/schools" />}><MapPinned size={17} /> Open schools hub</Button>
+                <Button variant="secondary" render={<Link to="/admin/schools" search={true} />}><MapPinned size={17} /> Open schools hub</Button>
               </CardContent>
             </Card>
             <Card className="mb-4">
@@ -369,12 +357,19 @@ function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
     }
   }, [yearSettings.data, yearSettings.isFetched]);
 
-  const isConfigured = Boolean(yearSettings.data);
+  const windowStatus = yearSettings.data
+    ? (() => {
+        const now = Date.now();
+        if (now < yearSettings.data.opensAt.getTime()) return { label: "Configured — opens later", className: "text-amber-600" };
+        if (now > yearSettings.data.closesAt.getTime()) return { label: "Configured — window closed", className: "text-muted-foreground" };
+        return { label: "Configured — open now", className: "text-emerald-600" };
+      })()
+    : null;
 
   const saveMutation = useMutation({
     mutationFn: () => client.admin.settings.update({ opensAt: new Date(opensAt), closesAt: new Date(closesAt), intakeYear: selectedYear }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [orpc.admin.settings.get.key()[0]] });
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.settings.get.queryKey({ input: { intakeYear: selectedYear } }) });
       toast.success("Form window saved");
     },
     onError: (error) => {
@@ -389,12 +384,12 @@ function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
           <CardHeader className="p-0"><CardTitle>Form availability</CardTitle></CardHeader>
           <CardDescription>Choose when applicants can submit the form for a specific intake year.</CardDescription>
         </div>
-        <div className="grid grid-cols-3 gap-4 items-end">
+        <div className="grid grid-cols-3 gap-4 items-start">
           <div className="grid gap-1">
             <span className="text-muted-foreground text-xs font-semibold">Intake year</span>
             <YearStepper value={selectedYear} onChange={setSelectedYear} />
-            {isConfigured
-              ? <span className="text-[10px] text-emerald-600 font-medium">Already configured</span>
+            {windowStatus
+              ? <span className={`text-[10px] font-medium ${windowStatus.className}`}>{windowStatus.label}</span>
               : <span className="text-[10px] text-muted-foreground">Not configured — set dates to enable</span>
             }
           </div>

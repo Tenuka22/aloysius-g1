@@ -58,7 +58,7 @@ function AdmissionCategorySelectPage() {
   if (detail.isLoading) {
     return (
       <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-        <Link to="/admin/admissions" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
+        <Link to="/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
         <Card><CardContent className="flex items-center gap-3 p-8 text-sm text-muted-foreground"><ClipboardCheck className="text-primary" size={18} /> Loading applicant record…</CardContent></Card>
       </main>
     );
@@ -67,7 +67,7 @@ function AdmissionCategorySelectPage() {
   if (detail.error || !data) {
     return (
       <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-        <Link to="/admin/admissions" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
+        <Link to="/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
         <Card className="border-destructive/25"><CardContent className="flex items-start gap-2 p-6 text-sm text-destructive"><ShieldAlert size={17} className="mt-0.5 shrink-0" /> Could not load applicant: {detail.error?.message ?? "Not found"}</CardContent></Card>
       </main>
     );
@@ -78,7 +78,7 @@ function AdmissionCategorySelectPage() {
 
   return (
     <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-      <Link to="/admin/admissions" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
+      <Link to="/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
 
       <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 mb-5">
         <div className="flex items-start gap-3">

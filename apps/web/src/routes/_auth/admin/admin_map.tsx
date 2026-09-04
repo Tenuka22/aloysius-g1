@@ -21,8 +21,16 @@ import {
   PROXIMITY_PER_SCHOOL_66, PROXIMITY_MAX_66,
   RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64, RESIDENCE_DISTANCE_MAX_64,
 } from "@/lib/marking-scheme";
+import { intakeYearSearchSchema } from "@/lib/intake-year";
 
-export const Route = createFileRoute("/_auth/admin/admin_map")({ component: AdminMapPage });
+export const Route = createFileRoute("/_auth/admin/admin_map")({
+  validateSearch: intakeYearSearchSchema,
+  loaderDeps: ({ search }) => ({ intakeYear: search.intakeYear }),
+  loader: async ({ context, deps }) => {
+    await context.queryClient.prefetchQuery(context.orpc.admin.admissions.listWithLocations.queryOptions({ input: { intakeYear: deps.intakeYear } }));
+  },
+  component: AdminMapPage,
+});
 
 const SCHOOL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`;
 const SELECTED_SCHOOL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`;
@@ -138,7 +146,7 @@ function ProximityRow({ label, value, max }: { label: string; value: number; max
 }
 
 function AdminMapPage() {
-  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  const { intakeYear } = Route.useSearch();
   const admissions = useQuery(orpc.admin.admissions.listWithLocations.queryOptions({ input: { intakeYear } }));
   const items = (admissions.data ?? []) as Array<{
     id: string;
@@ -215,8 +223,8 @@ function AdminMapPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="ghost" render={<Link to="/admin/schools" />} nativeButton={false}><MapPinned size={16} /> Schools hub</Button>
-            <Button variant="secondary" render={<Link to="/admin/admissions" />} nativeButton={false}><ClipboardCheck size={16} /> Open admissions</Button>
+            <Button variant="ghost" render={<Link to="/admin/schools" search={true} />} nativeButton={false}><MapPinned size={16} /> Schools hub</Button>
+            <Button variant="secondary" render={<Link to="/admin/admissions" search={true} />} nativeButton={false}><ClipboardCheck size={16} /> Open admissions</Button>
           </div>
         </div>
 

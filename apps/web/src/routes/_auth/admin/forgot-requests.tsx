@@ -23,10 +23,13 @@ import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
 import { formatPhoneDisplay } from "@/lib/phone";
+import { intakeYearSearchSchema } from "@/lib/intake-year";
 
 export const Route = createFileRoute("/_auth/admin/forgot-requests")({
-  loader: async ({ context }) => {
-    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  validateSearch: intakeYearSearchSchema,
+  loaderDeps: ({ search }) => ({ intakeYear: search.intakeYear }),
+  loader: async ({ context, deps }) => {
+    const { intakeYear } = deps;
     await context.queryClient.prefetchQuery(context.orpc.admin.accessRequests.forgotRequests.queryOptions({
       input: { page: 1, pageSize: 10, query: "", intakeYear },
     }));
@@ -89,7 +92,7 @@ function AdminForgotRequestsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
-  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  const { intakeYear } = Route.useSearch();
 
   const requests = useQuery(orpc.admin.accessRequests.forgotRequests.queryOptions({
     input: {
@@ -162,7 +165,7 @@ function AdminForgotRequestsPage() {
           <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">Forgot key requests</h1>
           <p className="text-muted-foreground">Parents who lost their access key request a replacement.</p>
         </div>
-        <Button variant="secondary" render={<Link to="/admin/applications" />} nativeButton={false}>Back to applications</Button>
+        <Button variant="secondary" render={<Link to="/admin/applications" search={true} />} nativeButton={false}>Back to applications</Button>
       </div>
       {generatedKey && (
         <div className="grid gap-1 p-4 mb-4 border rounded-[10px] border-primary/35 bg-primary/7">
