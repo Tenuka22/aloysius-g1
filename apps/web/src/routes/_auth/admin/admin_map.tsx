@@ -4,13 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { MapContainer, Marker, Polyline, TileLayer, Tooltip as LeafletTooltip, useMap } from "react-leaflet";
 import L, { DivIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { ClipboardCheck, MapPinned } from "lucide-react";
+import { ClipboardCheck, MapPinned, Maximize2 } from "lucide-react";
 import { orpc } from "@/utils/orpc";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Card } from "@aloysius-g1/ui/components/card";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
+import { Dialog, DialogClose, DialogContent, DialogTitle, DialogDescription } from "@aloysius-g1/ui/components/dialog";
 import { schoolsWithCoordinates } from "@/lib/school-coordinates";
 import { haversineDistanceKm, getAllSchoolsWithDistance, findSchoolById, isGenderCompatible } from "@/lib/school-utils";
 import {
@@ -43,6 +44,16 @@ const iconSchool = createIcon(SCHOOL_SVG, "#64748b", "#475569", 24);
 const iconIneligible = createIcon(SCHOOL_SVG, "#d1d5db", "#9ca3af", 18);
 const iconSelectedSchool = createIcon(SELECTED_SCHOOL_SVG, "#f59e0b", "#b45309", 36);
 const iconApplicant = createIcon(APPLICANT_SVG, "#087f5b", "#065f46", 24);
+
+function createLabeledIcon(svg: string, bgColor: string, borderColor: string, label: string, size = 24) {
+  return new DivIcon({
+    className: "",
+    iconSize: [size, size + 8],
+    iconAnchor: [size / 2, size + 8],
+    popupAnchor: [0, -(size + 8)],
+    html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="position:relative;display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;background:${bgColor};border:2px solid ${borderColor};border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.3);color:#fff">${svg}</div><span style="font-size:10px;font-weight:600;color:#1e293b;background:rgba(255,255,255,.85);padding:1px 4px;border-radius:3px;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;line-height:1.2">${label}</span></div>`,
+  });
+}
 
 const RADIUS_COLORS = ["#dc2626", "#ea580c", "#d97706", "#65a30d", "#0891b2", "#7c3aed", "#be123c", "#0e7490"];
 
@@ -141,6 +152,7 @@ function AdminMapPage() {
   const [homeLng, setHomeLng] = useState(80.208583);
   const [selectedSchoolId, setSelectedSchoolId] = useState("st-aloysius-galle");
   const [selectedNearbyIds, setSelectedNearbyIds] = useState<Set<string>>(new Set());
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
 
   const toggleNearby = (schoolId: string) => {
     setSelectedNearbyIds((prev) => {
@@ -293,13 +305,20 @@ function AdminMapPage() {
             </Panel>
           </aside>
 
-          <Card className="overflow-hidden xl:h-full xl:min-h-0">
+          <Card className="overflow-hidden xl:h-full xl:min-h-0 py-0">
             <div className="relative h-[64vh] min-h-[420px] w-full xl:h-full xl:min-h-0">
               <div className="pointer-events-none absolute left-1/2 top-3 z-[1000] flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-card/95 px-2.5 py-1.5 shadow-sm backdrop-blur">
                 <span className="truncate text-sm font-semibold">{selectedSchool?.en ?? "No school selected"}</span>
                 {homeToSchoolKm != null && (
                   <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">{homeToSchoolKm.toFixed(2)} km · {schoolsWithinRadius} within</span>
                 )}
+                <button
+                  onClick={() => setFullscreenOpen(true)}
+                  className="pointer-events-auto ml-1 shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  title="Open fullscreen map"
+                >
+                  <Maximize2 size={14} />
+                </button>
               </div>
               <MapContainer center={[homeLat, homeLng]} zoom={13} scrollWheelZoom className="z-0 h-full w-full">
                 <MapResizeSync />
@@ -392,6 +411,74 @@ function AdminMapPage() {
         </div>
       </div>
       <style>{`.school-tooltip{background:#18181b!important;color:#fafafa!important;border:1px solid #27272a!important;border-radius:8px!important;padding:6px 10px!important;font-size:12px!important;box-shadow:0 4px 12px rgba(0,0,0,.3)!important;white-space:nowrap!important;display:flex;flex-direction:column;gap:1px!important}.school-tooltip::before{border-top-color:#18181b!important}`}</style>
+
+      <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
+        <DialogContent className="max-w-[90vw] w-[90vw] h-[90vh] p-0 gap-0 overflow-hidden" showCloseButton={false}>
+          <DialogTitle className="px-4 py-3 border-b flex items-center justify-between">
+            <span>{selectedSchool?.en ?? "Map"} — Fullscreen</span>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground font-normal">
+              {homeToSchoolKm != null && <span className="font-mono">{homeToSchoolKm.toFixed(2)} km · {schoolsWithinRadius} within</span>}
+              <DialogClose render={<Button variant="ghost" size="icon-sm" />}>
+                <span className="sr-only">Close</span>
+                <span className="text-lg leading-none">&times;</span>
+              </DialogClose>
+            </div>
+          </DialogTitle>
+          <DialogDescription className="sr-only">Fullscreen map view with school name labels and radius lines</DialogDescription>
+          <div className="relative flex-1 min-h-0">
+            {fullscreenOpen && (
+              <MapContainer center={[homeLat, homeLng]} zoom={12} scrollWheelZoom className="z-0 h-full w-full">
+                <MapResizeSync />
+                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+                <RadiusCircles homeLat={homeLat} homeLng={homeLng} schools={circleSchools} />
+
+                <Marker position={[homeLat, homeLng]} icon={createLabeledIcon(HOME_SVG, "#dc2626", "#991b1b", "Home", 30)} zIndexOffset={1000} />
+
+                {selectedSchool && (
+                  <>
+                    <Polyline
+                      positions={[[homeLat, homeLng], [selectedSchool.lat, selectedSchool.lng]]}
+                      pathOptions={{ color: "#b45309", weight: 3, opacity: 0.8, dashArray: "8 4" }}
+                    />
+                    <Marker position={[selectedSchool.lat, selectedSchool.lng]} icon={createLabeledIcon(SELECTED_SCHOOL_SVG, "#f59e0b", "#b45309", selectedSchool.en, 32)} zIndexOffset={900} />
+                  </>
+                )}
+
+                {selectedNearbySchools.map((school, i) => {
+                  const dist = haversineDistanceKm(homeLat, homeLng, school.lat, school.lng);
+                  const color = RADIUS_COLORS[(i + 1) % RADIUS_COLORS.length];
+                  return (
+                    <span key={`fs-nearby-${school.id}`}>
+                      <Polyline
+                        positions={[[homeLat, homeLng], [school.lat, school.lng]]}
+                        pathOptions={{ color, weight: 2, opacity: 0.6, dashArray: "6 3" }}
+                      />
+                      <Marker position={[school.lat, school.lng]} icon={createLabeledIcon(SCHOOL_SVG, color, color, `${school.en} (${dist.toFixed(1)} km)`, 22)} zIndexOffset={800} />
+                    </span>
+                  );
+                })}
+
+                {allSchools
+                  .filter((s) => s.id !== selectedSchoolId && !selectedNearbyIds.has(s.id))
+                  .map((school) => {
+                    const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
+                    return (
+                      <Marker
+                        key={`fs-${school.id}`}
+                        position={[school.lat, school.lng]}
+                        icon={compatible
+                          ? createLabeledIcon(SCHOOL_SVG, "#64748b", "#475569", school.en, 18)
+                          : createLabeledIcon(SCHOOL_SVG, "#d1d5db", "#9ca3af", school.en, 14)}
+                        opacity={compatible ? 0.7 : 0.3}
+                      />
+                    );
+                  })}
+              </MapContainer>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
