@@ -197,7 +197,7 @@ function electoralRegisterMarks61(inputs: ScoringInputs): number {
 
 export function proximityMarks(inputs: ScoringInputs, perSchool: number, max: number): number {
   const count = inputs.schoolsWithinRadius?.length ?? 0;
-  return cap(max - count * perSchool, max);
+  return cap(count * perSchool, max);
 }
 
 export function documentMarks61(inputs: ScoringInputs): number {

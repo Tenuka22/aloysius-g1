@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ExternalLink, Globe, MapPin, MapPinned, Save, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Globe, MapPin, MapPinned, Save, Trash2 } from "lucide-react";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import { DivIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -10,6 +10,7 @@ import { Button } from "@aloysius-g1/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
 import { Input } from "@aloysius-g1/ui/components/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
 import { client } from "@/utils/orpc";
 import { getSchools, refreshSchoolCoordinateOverrides, schoolCoordinateOverride, schoolsWithCoordinates } from "@/lib/school-coordinates";
 import type { School } from "@/lib/schools";
@@ -159,6 +160,8 @@ function AdminSchoolsPage() {
   const [filter, setFilter] = useState<Filter>("missing");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<CoordinateDialogState>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [, setTick] = useState(0);
 
   const bump = () => setTick((tick) => tick + 1);
@@ -198,6 +201,11 @@ function AdminSchoolsPage() {
         return true;
       });
   }, [schools, filter, query]);
+
+  useEffect(() => { setPage(0); }, [filter, query]);
+
+  const totalPages = Math.ceil(rows.length / pageSize);
+  const paginatedRows = rows.slice(page * pageSize, (page + 1) * pageSize);
 
   const openEditor = (school: School) => {
     const override = schoolCoordinateOverride(school.id);
@@ -252,32 +260,48 @@ function AdminSchoolsPage() {
         </CardHeader>
         <CardContent className="grid gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-1.5">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setFilter(tab.id)}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-                    filter === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  {tab.label} <span className="opacity-70">({countBadge(tab.id)})</span>
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap gap-1.5">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setFilter(tab.id)}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+                      filter === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {tab.label} <span className="opacity-70">({countBadge(tab.id)})</span>
+                  </button>
+                ))}
+              </div>
+              {query && <span className="text-xs text-muted-foreground">{rows.length} result{rows.length !== 1 ? "s" : ""}</span>}
             </div>
-            <Input
-              placeholder="Search by name, id, or division…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-8 w-full max-w-xs"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search by name, id, or division…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="h-8 w-full max-w-xs"
+              />
+              <Select value={String(pageSize)} onValueChange={(v) => { if (v) { setPageSize(Number(v)); setPage(0); } }}>
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid gap-1">
             {rows.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">No schools match this view.</p>}
-            {rows.map(({ school, override, status }) => {
+            {paginatedRows.map(({ school, override, status }) => {
               const links = searchLinks(school);
               return (
                 <div key={school.id} className="flex flex-wrap items-center gap-3 rounded-lg border px-3 py-2.5 text-sm hover:bg-muted/40">
@@ -310,6 +334,51 @@ function AdminSchoolsPage() {
               );
             })}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t pt-3">
+              <span className="text-xs text-muted-foreground">
+                Page {page + 1} of {totalPages} · {rows.length} school{rows.length !== 1 ? "s" : ""}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft size={14} /> Prev
+                </Button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const start = Math.max(0, Math.min(page - 2, totalPages - 5));
+                  const pageNum = start + i;
+                  if (pageNum >= totalPages) return null;
+                  return (
+                    <Button
+                      key={pageNum}
+                      type="button"
+                      variant={pageNum === page ? "default" : "outline"}
+                      size="sm"
+                      className="min-w-[2rem] px-1"
+                      onClick={() => setPage(pageNum)}
+                    >
+                      {pageNum + 1}
+                    </Button>
+                  );
+                })}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                >
+                  Next <ChevronRight size={14} />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
