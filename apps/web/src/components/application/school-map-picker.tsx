@@ -43,6 +43,7 @@ const iconSelectedIn = createIcon(SCHOOL_SVG, "#087f5b", "#065f46", 32);
 const iconSelectedOut = createIcon(SCHOOL_SVG, "#f97316", "#c2410c", 32);
 const iconUnselectedIn = createIcon(SCHOOL_SVG, "#64748b", "#475569", 26);
 const iconUnselectedOut = createIcon(SCHOOL_SVG, "#94a3b8", "#64748b", 22);
+const iconIneligible = createIcon(SCHOOL_SVG, "#d1d5db", "#9ca3af", 20);
 
 function MapResizeSync() {
   const map = useMap();
@@ -114,13 +115,15 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
             if (school.id === highlightSchoolId) return null;
             const selected = selectedIds.includes(school.id);
             const within = school.distanceKm <= radiusKm;
-            const icon = selected ? (within ? iconSelectedIn : iconSelectedOut) : (within ? iconUnselectedIn : iconUnselectedOut);
+            const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
+            const icon = !compatible ? iconIneligible : selected ? (within ? iconSelectedIn : iconSelectedOut) : (within ? iconUnselectedIn : iconUnselectedOut);
             const offset = within ? -6 : -4;
             return (
-              <Marker key={school.id} position={[school.lat, school.lng]} icon={icon} eventHandlers={{ click: () => onToggle(school.id) }}>
+              <Marker key={school.id} position={[school.lat, school.lng]} icon={icon} opacity={compatible ? 1 : 0.4} eventHandlers={{ click: () => compatible && onToggle(school.id) }}>
                 <RlTooltip direction="top" offset={[0, offset]} opacity={1} className="school-tooltip">
                   <span style={{ fontWeight: 600 }}>{school.en}</span>
                   <span style={{ opacity: 0.7 }}>({GENDER_LABELS[school.genderType]})</span>
+                  {!compatible && <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>Ineligible</span>}
                   <span style={{ fontFamily: "monospace" }}>{school.distanceKm.toFixed(1)} km</span>
                 </RlTooltip>
               </Marker>

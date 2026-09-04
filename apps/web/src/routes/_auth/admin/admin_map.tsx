@@ -12,7 +12,7 @@ import { Input } from "@aloysius-g1/ui/components/input";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
 import { schoolsWithCoordinates } from "@/lib/school-coordinates";
-import { haversineDistanceKm, getAllSchoolsWithDistance } from "@/lib/school-utils";
+import { haversineDistanceKm, getAllSchoolsWithDistance, findSchoolById, isGenderCompatible } from "@/lib/school-utils";
 import {
   PROXIMITY_PER_SCHOOL_61, PROXIMITY_MAX_61,
   PROXIMITY_PER_SCHOOL_63, PROXIMITY_MAX_63,
@@ -40,6 +40,7 @@ function createIcon(svg: string, bgColor: string, borderColor: string, size = 28
 
 const iconHome = createIcon(HOME_SVG, "#dc2626", "#991b1b", 34);
 const iconSchool = createIcon(SCHOOL_SVG, "#64748b", "#475569", 24);
+const iconIneligible = createIcon(SCHOOL_SVG, "#d1d5db", "#9ca3af", 18);
 const iconSelectedSchool = createIcon(SELECTED_SCHOOL_SVG, "#f59e0b", "#b45309", 36);
 const iconApplicant = createIcon(APPLICANT_SVG, "#087f5b", "#065f46", 24);
 
@@ -153,6 +154,7 @@ function AdminMapPage() {
   const locatedSchools = schoolsWithCoordinates();
 
   const selectedSchool = locatedSchools.find((s) => s.id === selectedSchoolId);
+  const appliedGenderType = selectedSchool?.genderType;
 
   const allSchools = useMemo(() => getAllSchoolsWithDistance(homeLat, homeLng), [homeLat, homeLng]);
 
@@ -247,16 +249,17 @@ function AdminMapPage() {
                   const isSelected = school.id === selectedSchoolId;
                   const isChecked = selectedNearbyIds.has(school.id);
                   const isWithin = homeToSchoolKm != null && school.distanceKm <= homeToSchoolKm;
+                  const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
                   return (
                     <li key={school.id} className="border-b border-border/60 last:border-b-0">
                       <label
                         htmlFor={`nearby-${school.id}`}
-                        className={`flex min-w-0 cursor-pointer items-center gap-2.5 py-1 text-[0.82rem] ${isSelected ? "text-foreground" : "hover:bg-muted/40"}`}
+                        className={`flex min-w-0 cursor-pointer items-center gap-2.5 py-1 text-[0.82rem] ${!compatible ? "opacity-40" : isSelected ? "text-foreground" : "hover:bg-muted/40"}`}
                       >
                         <Checkbox
                           id={`nearby-${school.id}`}
                           checked={isChecked}
-                          disabled={isSelected}
+                          disabled={isSelected || !compatible}
                           onCheckedChange={() => toggleNearby(school.id)}
                           className="size-3.5 shrink-0"
                         />
@@ -264,6 +267,7 @@ function AdminMapPage() {
                         <span className="min-w-0 flex-1 truncate">
                           {school.en}
                           {isSelected && <span className="ml-1.5 text-xs font-semibold text-amber-600">selected</span>}
+                          {!compatible && <span className="ml-1.5 text-[0.65rem] text-muted-foreground">Ineligible</span>}
                         </span>
                         <span className="shrink-0 font-mono text-[0.7rem] tabular-nums text-muted-foreground">{school.distanceKm.toFixed(1)} km</span>
                       </label>
@@ -346,14 +350,18 @@ function AdminMapPage() {
 
                 {allSchools
                   .filter((s) => s.id !== selectedSchoolId && !selectedNearbyIds.has(s.id))
-                  .map((school) => (
-                    <Marker key={school.id} position={[school.lat, school.lng]} icon={iconSchool}>
-                      <LeafletTooltip direction="top" offset={[0, -6]} opacity={1} className="school-tooltip">
-                        <span style={{ fontWeight: 600 }}>{school.en}</span>
-                        <span style={{ fontFamily: "monospace" }}>{school.distanceKm.toFixed(1)} km</span>
-                      </LeafletTooltip>
-                    </Marker>
-                  ))}
+                  .map((school) => {
+                    const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
+                    return (
+                      <Marker key={school.id} position={[school.lat, school.lng]} icon={compatible ? iconSchool : iconIneligible} opacity={compatible ? 1 : 0.4}>
+                        <LeafletTooltip direction="top" offset={[0, -6]} opacity={1} className="school-tooltip">
+                          <span style={{ fontWeight: 600 }}>{school.en}</span>
+                          <span style={{ fontFamily: "monospace" }}>{school.distanceKm.toFixed(1)} km</span>
+                          {!compatible && <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>Ineligible</span>}
+                        </LeafletTooltip>
+                      </Marker>
+                    );
+                  })}
 
                 {located.map((applicant) => {
                   const dist = haversineDistanceKm(homeLat, homeLng, applicant.latitude!, applicant.longitude!);
