@@ -75,9 +75,11 @@ const dismissRequest = async (requestId: string) => {
   await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, requestId)).run();
   return { dismissed: true };
 };
-const paginationInput = z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default("") });
-const paginateRequests = async (requestType: string, query: string, page: number, pageSize: number, searchFields?: string[]) => {
-  const all = await db.select().from(applicationAccessRequests).where(and(eq(applicationAccessRequests.requestType, requestType), eq(applicationAccessRequests.status, "open"))).all();
+const paginationInput = z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default(""), status: z.enum(["open", "resolved", "dismissed", "all"]).default("open") });
+const paginateRequests = async (requestType: string, query: string, page: number, pageSize: number, searchFields?: string[], status?: string) => {
+  const conditions = [eq(applicationAccessRequests.requestType, requestType)];
+  if (status && status !== "all") conditions.push(eq(applicationAccessRequests.status, status));
+  const all = await db.select().from(applicationAccessRequests).where(and(...conditions)).all();
   const filtered = query ? all.filter((r) => {
     const fields = searchFields ?? ["applicantName", "contactEmail"];
     return fields.some((field) => String(r[field as keyof typeof r] ?? "").toLowerCase().includes(query.toLowerCase()));
@@ -272,9 +274,9 @@ export const appRouter = {
       rotateKey: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => rotateRequestKey(input.requestId)),
       deleteAfterRemovalRequest: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => deleteAfterRemoval(input.requestId)),
       dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => dismissRequest(input.requestId)),
-      submissionRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("submission", input.query, input.page, input.pageSize)),
-      removalRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("removal", input.query, input.page, input.pageSize)),
-      forgotRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "contactEmail", "birthCertificateNumber", "contactPhone"])),
+      submissionRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("submission", input.query, input.page, input.pageSize, undefined, input.status)),
+      removalRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("removal", input.query, input.page, input.pageSize, undefined, input.status)),
+      forgotRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "contactEmail", "birthCertificateNumber", "contactPhone"], input.status)),
       approveSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
         if (!request) throw new ORPCError("NOT_FOUND", { message: "Submission request not found" });

@@ -217,12 +217,12 @@ const allGroups = [
 ];
 
 const sourceColors: Record<string, string> = {
-  form: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  device: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  map: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  system: "bg-muted text-muted-foreground",
-  admin: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
-  user: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  form: "bg-blue-600/30 text-blue-900",
+  device: "bg-emerald-600/30 text-emerald-900",
+  map: "bg-amber-600/30 text-amber-900",
+  system: "bg-zinc-600/25 text-zinc-900",
+  admin: "bg-rose-600/30 text-rose-900",
+  user: "bg-violet-600/30 text-violet-900",
 };
 
 function DataExtractionPage() {

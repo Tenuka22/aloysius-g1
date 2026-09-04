@@ -85,6 +85,7 @@ function AdminForgotRequestsPage() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [generatedKey, setGeneratedKey] = useState("");
   const [qrKey, setQrKey] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
 
@@ -93,6 +94,7 @@ function AdminForgotRequestsPage() {
       page: pagination.pageIndex + 1,
       pageSize: pagination.pageSize,
       query,
+      status: statusFilter as "open" | "resolved" | "dismissed" | "all",
     },
   }));
 
@@ -134,9 +136,18 @@ function AdminForgotRequestsPage() {
       cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
     },
     {
+      accessorKey: "status",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Status" />,
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => {
+        const s = row.original.status;
+        const color = s === "open" ? "bg-primary/15 text-primary" : s === "resolved" ? "bg-emerald-500/15 text-emerald-700" : "bg-zinc-500/15 text-zinc-600";
+        return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${color}`}>{s}</span>;
+      },
+    },
+    {
       id: "actions",
       header: "Actions",
-      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onKeyGenerated={(key) => { setGeneratedKey(key); setQrKey(key); }} onDismissed={() => void refetch()} /></div>,
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => row.original.status === "open" ? <div className="flex justify-end"><ActionsMenu item={row.original} onKeyGenerated={(key) => { setGeneratedKey(key); setQrKey(key); }} onDismissed={() => void refetch()} /></div> : null,
     },
   ], [refetch]);
 
@@ -163,8 +174,8 @@ function AdminForgotRequestsPage() {
       )}
       <Card>
         <CardHeader>
-          <CardTitle>Pending forgot key requests</CardTitle>
-          <CardDescription>Review each request and generate a new access key if verified.</CardDescription>
+          <CardTitle>Requests</CardTitle>
+          <CardDescription>Parents who lost their access key request a replacement. Active requests require action.</CardDescription>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -178,6 +189,7 @@ function AdminForgotRequestsPage() {
             onPaginationChange={setPagination}
             onSortingChange={setSorting}
             onColumnFiltersChange={setColumnFilters}
+            rowClassName={(row) => (row as ForgotRequestRow).status !== "open" ? "opacity-40" : undefined}
             toolbar={(table) => {
               const filters = table.getState().columnFilters;
               const isFiltered = filters.length > 0;
@@ -195,6 +207,11 @@ function AdminForgotRequestsPage() {
                       onChange={(e) => setFilter("query", e.target.value)}
                       className="h-8 w-[200px] lg:w-[250px]"
                     />
+                    <div className="flex items-center gap-1 rounded-lg border p-0.5">
+                      {(["all", "open", "resolved", "dismissed"] as const).map((s) => (
+                        <button key={s} onClick={() => { setStatusFilter(s); setPagination((p) => ({ ...p, pageIndex: 0 })); }} className={`rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>{s}</button>
+                      ))}
+                    </div>
                     {isFiltered && (
                       <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
                         Reset

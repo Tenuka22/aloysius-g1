@@ -38,6 +38,7 @@ interface DataTableProps<TData, TValue> {
   columnFilters?: ColumnFiltersState
   toolbar?: (table: TanStackTable<TData>) => React.ReactNode
   paginationBar?: (table: TanStackTable<TData>) => React.ReactNode
+  rowClassName?: (row: TData) => string | undefined
 }
 
 export function DataTable<TData, TValue>({
@@ -53,6 +54,7 @@ export function DataTable<TData, TValue>({
   columnFilters: externalColumnFilters,
   toolbar,
   paginationBar,
+  rowClassName,
 }: DataTableProps<TData, TValue>) {
   const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
     pageIndex: 0,
@@ -123,7 +125,7 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className={rowClassName?.(row.original)}>
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

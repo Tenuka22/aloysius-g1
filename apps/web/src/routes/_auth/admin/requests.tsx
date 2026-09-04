@@ -41,6 +41,7 @@ type RequestRow = {
   contactPhone?: string | null
   birthCertificateNumber: string
   requestType: string
+  status: string
   createdAt: Date
 }
 
@@ -120,44 +121,6 @@ function ActionsMenu({ item, onAction }: { item: RequestRow; onAction: () => voi
   );
 }
 
-const columns = [
-  {
-    accessorKey: "applicantName",
-    header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Applicant" />,
-    cell: ({ row }: { row: { original: RequestRow } }) => (
-      <div>
-        <span className="font-medium">{row.original.applicantName || "Unnamed"}</span>
-        {row.original.guardianName && <span className="text-muted-foreground text-xs block">Guardian: {row.original.guardianName}</span>}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "birthCertificateNumber",
-    header: "Birth certificate",
-    cell: ({ row }: { row: { original: RequestRow } }) => <span className="text-xs">{row.original.birthCertificateNumber}</span>,
-  },
-  {
-    accessorKey: "contactPhone",
-    header: "Contact",
-    cell: ({ row }: { row: { original: RequestRow } }) => (
-      <div className="grid gap-0.5">
-        <span>{row.original.contactPhone || "..."}</span>
-        <span className="text-muted-foreground text-xs">{row.original.contactEmail}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "createdAt",
-    header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Requested" />,
-    cell: ({ row }: { row: { original: RequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }: { row: { original: RequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onAction={() => void requests.refetch()} /></div>,
-  },
-];
-
 function AdminRequestsPage() {
   const { session } = Route.useRouteContext();
   const location = useLocation();
@@ -165,6 +128,7 @@ function AdminRequestsPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [message, setMessage] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
 
@@ -173,6 +137,7 @@ function AdminRequestsPage() {
       page: pagination.pageIndex + 1,
       pageSize: pagination.pageSize,
       query,
+      status: statusFilter as "open" | "resolved" | "dismissed" | "all",
     },
   }));
 
@@ -190,6 +155,54 @@ function AdminRequestsPage() {
 
   const items = (requests.data?.items ?? []) as RequestRow[];
   const pageCount = requests.data ? Math.ceil(requests.data.total / requests.data.pageSize) : 0;
+  const refetch = requests.refetch;
+
+  const columns = useMemo(() => [
+    {
+      accessorKey: "applicantName",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Applicant" />,
+      cell: ({ row }: { row: { original: RequestRow } }) => (
+        <div>
+          <span className="font-medium">{row.original.applicantName || "Unnamed"}</span>
+          {row.original.guardianName && <span className="text-muted-foreground text-xs block">Guardian: {row.original.guardianName}</span>}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "birthCertificateNumber",
+      header: "Birth certificate",
+      cell: ({ row }: { row: { original: RequestRow } }) => <span className="text-xs">{row.original.birthCertificateNumber}</span>,
+    },
+    {
+      accessorKey: "contactPhone",
+      header: "Contact",
+      cell: ({ row }: { row: { original: RequestRow } }) => (
+        <div className="grid gap-0.5">
+          <span>{row.original.contactPhone || "..."}</span>
+          <span className="text-muted-foreground text-xs">{row.original.contactEmail}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Requested" />,
+      cell: ({ row }: { row: { original: RequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Status" />,
+      cell: ({ row }: { row: { original: RequestRow } }) => {
+        const s = row.original.status;
+        const color = s === "open" ? "bg-primary/15 text-primary" : s === "resolved" ? "bg-emerald-500/15 text-emerald-700" : "bg-zinc-500/15 text-zinc-600";
+        return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${color}`}>{s}</span>;
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }: { row: { original: RequestRow } }) => row.original.status === "open" ? <div className="flex justify-end"><ActionsMenu item={row.original} onAction={() => void refetch()} /></div> : null,
+    },
+  ], [refetch]);
 
   return (
     <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
@@ -203,8 +216,8 @@ function AdminRequestsPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Pending requests</CardTitle>
-          <CardDescription>These applicants requested approval after the submission window closed.</CardDescription>
+          <CardTitle>Requests</CardTitle>
+          <CardDescription>Submission requests from applicants. Active requests require action.</CardDescription>
         </CardHeader>
         <CardContent>
           {message && <p className="text-primary mb-4" role="status">{message}</p>}
@@ -219,6 +232,7 @@ function AdminRequestsPage() {
             onPaginationChange={setPagination}
             onSortingChange={setSorting}
             onColumnFiltersChange={setColumnFilters}
+            rowClassName={(row) => (row as RequestRow).status !== "open" ? "opacity-40" : undefined}
             toolbar={(table) => {
               const filters = table.getState().columnFilters;
               const isFiltered = filters.length > 0;
@@ -236,6 +250,11 @@ function AdminRequestsPage() {
                       onChange={(e) => setFilter("query", e.target.value)}
                       className="h-8 w-[200px] lg:w-[250px]"
                     />
+                    <div className="flex items-center gap-1 rounded-lg border p-0.5">
+                      {(["all", "open", "resolved", "dismissed"] as const).map((s) => (
+                        <button key={s} onClick={() => { setStatusFilter(s); setPagination((p) => ({ ...p, pageIndex: 0 })); }} className={`rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>{s}</button>
+                      ))}
+                    </div>
                     {isFiltered && (
                       <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
                         Reset
