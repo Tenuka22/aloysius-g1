@@ -270,21 +270,27 @@ export const appRouter = {
     getMarks: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
-      const marks = await db.select().from(applicationMarks).where(eq(applicationMarks.applicationId, row.id)).all();
+      // Applicants only ever see their own indicative preview, never the admin's
+      // authoritative score (that would leak pre-decision outcomes and, combined
+      // with the write path below, let an applicant read back a forged value).
+      const marks = await db.select().from(applicationMarks).where(and(eq(applicationMarks.applicationId, row.id), eq(applicationMarks.source, "applicant"))).all();
       return marks;
     }),
-    saveIndicativeMarks: publicProcedure.input(z.object({ accessKey: keySchema, marks: z.array(z.object({ categoryType: z.string(), total: z.number(), breakdown: z.array(z.object({ label: z.string(), marks: z.number(), max: z.number() })) })) })).handler(async ({ input }) => {
+    saveIndicativeMarks: publicProcedure.input(z.object({ accessKey: keySchema, marks: z.array(z.object({ categoryType: z.string(), total: z.number().min(0).max(100), breakdown: z.array(z.object({ label: z.string(), marks: z.number().min(0).max(100), max: z.number().min(0).max(100) })) })) })).handler(async ({ input }) => {
       const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
       const now = new Date();
       for (const mark of input.marks) {
+        // Always written as source "applicant": this is a client-computed
+        // preview only and must never overwrite or be confused with the
+        // admin's authoritative "admin"-sourced row for the same category.
         const existing = await db.select({ id: applicationMarks.id }).from(applicationMarks)
-          .where(and(eq(applicationMarks.applicationId, row.id), eq(applicationMarks.categoryType, mark.categoryType)))
+          .where(and(eq(applicationMarks.applicationId, row.id), eq(applicationMarks.categoryType, mark.categoryType), eq(applicationMarks.source, "applicant")))
           .get();
         if (existing) {
           await db.update(applicationMarks).set({ breakdown: mark.breakdown, total: mark.total, updatedAt: now }).where(eq(applicationMarks.id, existing.id)).run();
         } else {
-          await db.insert(applicationMarks).values({ id: randomUUID(), applicationId: row.id, categoryType: mark.categoryType, breakdown: mark.breakdown, total: mark.total, createdAt: now, updatedAt: now }).run();
+          await db.insert(applicationMarks).values({ id: randomUUID(), applicationId: row.id, categoryType: mark.categoryType, breakdown: mark.breakdown, total: mark.total, source: "applicant", createdAt: now, updatedAt: now }).run();
         }
       }
       return { saved: true };
@@ -487,7 +493,10 @@ export const appRouter = {
         return { success: true };
       }),
       getMarks: adminProcedure.input(z.object({ applicationId: applicationIdSchema })).handler(async ({ input }) => {
-        const marks = await db.select().from(applicationMarks).where(eq(applicationMarks.applicationId, input.applicationId)).all();
+        // Only ever return admin-authored, authoritative marks: an applicant's
+        // own indicative-preview rows (source "applicant") must never pre-fill
+        // or influence the admin's editable/saved score.
+        const marks = await db.select().from(applicationMarks).where(and(eq(applicationMarks.applicationId, input.applicationId), eq(applicationMarks.source, "admin"))).all();
         return marks;
       }),
       saveMarks: adminProcedure.input(z.object({
@@ -497,7 +506,7 @@ export const appRouter = {
         total: z.number(),
       })).handler(async ({ input }) => {
         const existing = await db.select({ id: applicationMarks.id }).from(applicationMarks)
-          .where(and(eq(applicationMarks.applicationId, input.applicationId), eq(applicationMarks.categoryType, input.categoryType)))
+          .where(and(eq(applicationMarks.applicationId, input.applicationId), eq(applicationMarks.categoryType, input.categoryType), eq(applicationMarks.source, "admin")))
           .get();
         const now = new Date();
         if (existing) {
@@ -506,11 +515,11 @@ export const appRouter = {
           return { id: existing.id, updatedAt: now };
         }
         const id = randomUUID();
-        await db.insert(applicationMarks).values({ id, applicationId: input.applicationId, categoryType: input.categoryType, breakdown: input.breakdown, total: input.total, createdAt: now, updatedAt: now }).run();
+        await db.insert(applicationMarks).values({ id, applicationId: input.applicationId, categoryType: input.categoryType, breakdown: input.breakdown, total: input.total, source: "admin", createdAt: now, updatedAt: now }).run();
         return { id, updatedAt: now };
       }),
       deleteMarks: adminProcedure.input(z.object({ applicationId: applicationIdSchema, categoryType: z.string().min(1) })).handler(async ({ input }) => {
-        await db.delete(applicationMarks).where(and(eq(applicationMarks.applicationId, input.applicationId), eq(applicationMarks.categoryType, input.categoryType))).run();
+        await db.delete(applicationMarks).where(and(eq(applicationMarks.applicationId, input.applicationId), eq(applicationMarks.categoryType, input.categoryType), eq(applicationMarks.source, "admin"))).run();
         return { deleted: true };
       }),
     },
