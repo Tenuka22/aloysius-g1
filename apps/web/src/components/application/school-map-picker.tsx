@@ -43,7 +43,7 @@ const iconSelectedIn = createIcon(SCHOOL_SVG, "#087f5b", "#065f46", 32);
 const iconSelectedOut = createIcon(SCHOOL_SVG, "#f97316", "#c2410c", 32);
 const iconUnselectedIn = createIcon(SCHOOL_SVG, "#64748b", "#475569", 26);
 const iconUnselectedOut = createIcon(SCHOOL_SVG, "#94a3b8", "#64748b", 22);
-const iconIneligible = createIcon(SCHOOL_SVG, "#d1d5db", "#9ca3af", 20);
+const iconIneligible = createIcon(SCHOOL_SVG, "#c4b5fd", "#8b5cf6", 20);
 
 function MapResizeSync() {
   const map = useMap();
@@ -119,11 +119,11 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
             const icon = !compatible ? iconIneligible : selected ? (within ? iconSelectedIn : iconSelectedOut) : (within ? iconUnselectedIn : iconUnselectedOut);
             const offset = within ? -6 : -4;
             return (
-              <Marker key={school.id} position={[school.lat, school.lng]} icon={icon} opacity={compatible ? 1 : 0.4} eventHandlers={{ click: () => compatible && onToggle(school.id) }}>
+              <Marker key={school.id} position={[school.lat, school.lng]} icon={icon} opacity={compatible ? 1 : 0.85} eventHandlers={{ click: () => compatible && onToggle(school.id) }}>
                 <RlTooltip direction="top" offset={[0, offset]} opacity={1} className="school-tooltip">
                   <span style={{ fontWeight: 600 }}>{school.en}</span>
                   <span style={{ opacity: 0.7 }}>({GENDER_LABELS[school.genderType]})</span>
-                  {!compatible && <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>Ineligible</span>}
+                  {!compatible && <span style={{ color: "#8b5cf6", fontSize: "0.65rem" }}>Ineligible</span>}
                   <span style={{ fontFamily: "monospace" }}>{school.distanceKm.toFixed(1)} km</span>
                 </RlTooltip>
               </Marker>
@@ -169,11 +169,11 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
           return (
             <li key={school.id}>
-              <label htmlFor={rowId} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${compatible ? "hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}>
+              <label htmlFor={rowId} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${compatible ? "hover:bg-muted/50" : "border-violet-200 bg-violet-50/50 text-violet-700 cursor-not-allowed"}`}>
                 <Checkbox id={rowId} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible} onCheckedChange={() => compatible && onToggle(school.id)} />
                 <span className="min-w-0 flex-1">
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
-                  {!compatible && <span className="ml-1 text-xs text-muted-foreground">Ineligible</span>}
+                  {!compatible && <span className="ml-1 text-xs text-violet-500 font-medium">Ineligible</span>}
                 </span>
                 {marksPerSchool != null && (
                   <span className={`shrink-0 text-xs font-semibold ${STATUS_SUCCESS.textStrong} dark:text-emerald-300 tabular-nums`}>{marksPerSchool} marks</span>
@@ -206,12 +206,12 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           }
           const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
           return (
-            <li key={school.id} className="opacity-50">
-              <label htmlFor={`school-option-${school.id}`} className={`flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm ${compatible ? "hover:bg-muted/50" : "cursor-not-allowed"}`}>
+            <li key={school.id} className={compatible ? "opacity-50" : ""}>
+              <label htmlFor={`school-option-${school.id}`} className={`flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm ${compatible ? "hover:bg-muted/50" : "border-violet-200 bg-violet-50/50 text-violet-700 cursor-not-allowed"}`}>
                 <Checkbox id={`school-option-${school.id}`} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible} onCheckedChange={() => compatible && onToggle(school.id)} />
                 <span className="min-w-0 flex-1">
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
-                  {!compatible && <span className="ml-1 text-xs text-muted-foreground">Ineligible</span>}
+                  {!compatible && <span className="ml-1 text-xs text-violet-500 font-medium">Ineligible</span>}
                   {compatible && <span className="ml-1 text-orange-500 text-xs font-semibold">Just outside</span>}
                 </span>
                 {marksPerSchool != null && (

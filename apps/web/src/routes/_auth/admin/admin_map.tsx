@@ -41,7 +41,7 @@ function createIcon(svg: string, bgColor: string, borderColor: string, size = 28
 
 const iconHome = createIcon(HOME_SVG, "#dc2626", "#991b1b", 34);
 const iconSchool = createIcon(SCHOOL_SVG, "#64748b", "#475569", 24);
-const iconIneligible = createIcon(SCHOOL_SVG, "#d1d5db", "#9ca3af", 18);
+const iconIneligible = createIcon(SCHOOL_SVG, "#c4b5fd", "#8b5cf6", 18);
 const iconSelectedSchool = createIcon(SELECTED_SCHOOL_SVG, "#f59e0b", "#b45309", 36);
 const iconApplicant = createIcon(APPLICANT_SVG, "#087f5b", "#065f46", 24);
 
@@ -266,7 +266,7 @@ function AdminMapPage() {
                     <li key={school.id} className="border-b border-border/60 last:border-b-0">
                       <label
                         htmlFor={`nearby-${school.id}`}
-                        className={`flex min-w-0 cursor-pointer items-center gap-2.5 py-1 text-[0.82rem] ${!compatible ? "opacity-40" : isSelected ? "text-foreground" : "hover:bg-muted/40"}`}
+                        className={`flex min-w-0 cursor-pointer items-center gap-2.5 py-1 text-[0.82rem] ${!compatible ? "text-violet-600" : isSelected ? "text-foreground" : "hover:bg-muted/40"}`}
                       >
                         <Checkbox
                           id={`nearby-${school.id}`}
@@ -279,7 +279,7 @@ function AdminMapPage() {
                         <span className="min-w-0 flex-1 truncate">
                           {school.en}
                           {isSelected && <span className="ml-1.5 text-xs font-semibold text-amber-600">selected</span>}
-                          {!compatible && <span className="ml-1.5 text-[0.65rem] text-muted-foreground">Ineligible</span>}
+                          {!compatible && <span className="ml-1.5 text-[0.65rem] text-violet-500 font-medium">Ineligible</span>}
                         </span>
                         <span className="shrink-0 font-mono text-[0.7rem] tabular-nums text-muted-foreground">{school.distanceKm.toFixed(1)} km</span>
                       </label>
@@ -372,11 +372,11 @@ function AdminMapPage() {
                   .map((school) => {
                     const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
                     return (
-                      <Marker key={school.id} position={[school.lat, school.lng]} icon={compatible ? iconSchool : iconIneligible} opacity={compatible ? 1 : 0.4}>
+                      <Marker key={school.id} position={[school.lat, school.lng]} icon={compatible ? iconSchool : iconIneligible} opacity={compatible ? 1 : 0.85}>
                         <LeafletTooltip direction="top" offset={[0, -6]} opacity={1} className="school-tooltip">
                           <span style={{ fontWeight: 600 }}>{school.en}</span>
                           <span style={{ fontFamily: "monospace" }}>{school.distanceKm.toFixed(1)} km</span>
-                          {!compatible && <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>Ineligible</span>}
+                          {!compatible && <span style={{ color: "#8b5cf6", fontSize: "0.65rem" }}>Ineligible</span>}
                         </LeafletTooltip>
                       </Marker>
                     );
@@ -469,8 +469,8 @@ function AdminMapPage() {
                         position={[school.lat, school.lng]}
                         icon={compatible
                           ? createLabeledIcon(SCHOOL_SVG, "#64748b", "#475569", school.en, 18)
-                          : createLabeledIcon(SCHOOL_SVG, "#d1d5db", "#9ca3af", school.en, 14)}
-                        opacity={compatible ? 0.7 : 0.3}
+                          : createLabeledIcon(SCHOOL_SVG, "#c4b5fd", "#8b5cf6", school.en, 14)}
+                        opacity={compatible ? 0.7 : 0.8}
                       />
                     );
                   })}
