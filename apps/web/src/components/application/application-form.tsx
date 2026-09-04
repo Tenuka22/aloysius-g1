@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Check, Clock3, Copy, FileSearch, House, KeyRound, RotateCcw, ShieldCheck, ShieldX, UserPlus, TriangleAlert } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
@@ -19,8 +19,19 @@ import { G1_DOB_CUTOFF, getNextStepReason } from "@/lib/eligibility";
 import { scoreCategory } from "@/lib/scoring";
 import { client } from "@/utils/orpc";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@aloysius-g1/ui/components/alert-dialog";
+import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@aloysius-g1/ui/components/card";
@@ -149,7 +160,7 @@ function StepIndicator({
   const progress = Math.round((current / (stepLabels.length - 1)) * 100);
   return (
     <>
-      <div className="flex items-center justify-between gap-4 px-5 pb-4 pt-6 md:px-8">
+      <CardHeader className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs text-muted-foreground">
             Step {current + 1} of {stepLabels.length}
@@ -157,7 +168,7 @@ function StepIndicator({
           <h2 className="font-heading text-2xl">{stepLabels[current]}</h2>
         </div>
         <span className="text-sm text-muted-foreground">{progress}% complete</span>
-      </div>
+      </CardHeader>
       <div className="h-1 bg-secondary">
         <div
           className="h-full bg-primary transition-[width] duration-350 ease-in-out"
@@ -168,31 +179,41 @@ function StepIndicator({
         className="flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8"
         aria-label="Form steps"
       >
-        {stepLabels.map((step, index) => (
-          <button
-            type="button"
-            key={step}
-            className={`inline-flex items-center gap-1.5 whitespace-nowrap bg-transparent px-2.5 py-2 text-xs ${
-              index === current
-                ? "font-bold text-foreground"
-                : index < current
-                  ? "text-muted-foreground"
-                  : "text-muted-foreground"
-            }`}
-            onClick={() => index <= maxVisited && onStepClick(index)}
-          >
-            <span
-              className={`grid size-6 place-items-center rounded-full border text-[11px] ${
-                index === current || index < current
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border"
+        {stepLabels.map((step, index) => {
+          const isCurrent = index === current;
+          const isCompleted = index < maxVisited;
+          const canNavigate = index <= maxVisited;
+          return (
+            <button
+              type="button"
+              key={step}
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap bg-transparent px-2.5 py-2 text-xs transition-colors ${
+                isCurrent
+                  ? "font-bold text-foreground"
+                  : isCompleted
+                    ? "text-foreground/80 hover:text-foreground"
+                    : canNavigate
+                      ? "text-muted-foreground hover:text-foreground"
+                      : "text-muted-foreground/60 cursor-not-allowed"
               }`}
+              onClick={() => canNavigate && onStepClick(index)}
+              disabled={!canNavigate}
             >
-              {index < current ? <Check size={14} /> : index + 1}
-            </span>
-            {step}
-          </button>
-        ))}
+              <span
+                className={`grid size-6 place-items-center rounded-full border text-[11px] transition-colors ${
+                  isCurrent
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : isCompleted
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border"
+                }`}
+              >
+                {isCompleted && !isCurrent ? <Check size={14} /> : index + 1}
+              </span>
+              {step}
+            </button>
+          );
+        })}
       </nav>
     </>
   );
@@ -216,6 +237,7 @@ function BirthCertificateField({
     try {
       const result = await client.application.checkBirthCertificate({
         birthCertificateNumber: number,
+        excludeAccessKey: draft.accessKey || undefined,
       });
       if (reveal) set({ duplicateBirthCertificate: result.exists, bcDialogOpen: result.exists });
       else set({ duplicateBirthCertificate: result.exists });
@@ -420,7 +442,7 @@ function ApplicantStep({
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   return (
-    <div className="grid max-w-[1080px] grid-cols-2 gap-5">
+    <div className="grid  grid-cols-2 gap-5">
       <div className="col-span-2 mb-4">
         <h3 className="font-heading text-2xl">Tell us about the applicant</h3>
         <p className="text-sm text-muted-foreground">
@@ -566,7 +588,7 @@ function GuardianStep({
     !nicValue || /^\d{12}$/.test(nicValue) || /^\d{9}[VX]$/.test(nicValue);
 
   return (
-    <div className="grid max-w-[1080px] grid-cols-2 gap-5">
+    <div className="grid  grid-cols-2 gap-5">
       <div className="col-span-2 mb-4">
         <h3 className="font-heading text-2xl">Parent or guardian details</h3>
         <p className="text-sm text-muted-foreground">
@@ -718,7 +740,7 @@ function ResidenceStep({
     set({ residence: { ...draft.residence, ...residence } } as Partial<ApplicationDraft>);
 
   return (
-    <div className="grid max-w-[1080px] grid-cols-2 gap-5">
+    <div className="grid  grid-cols-2 gap-5">
       <div className="col-span-2 mb-4">
         <h3 className="font-heading text-2xl">Where does the family live?</h3>
         <p className="text-sm text-muted-foreground">
@@ -935,245 +957,272 @@ function ReviewStep({
     staleTime: 60_000,
   });
   const adminMarks = marksQuery.data ?? [];
-  const sections: [string, string, number][] = [
-    ["Location", draft.location.address || "Not selected", 0],
-    ["Full name in English", draft.applicant.fullName || "Not completed", 1],
-    ["Full name in Sinhala", draft.applicant.sinhalaName || "Not completed", 1],
-    ["Gender", draft.applicant.gender || "Not selected", 1],
-    ["Religion", draft.applicant.religion || "Not selected", 1],
-    [
-      "Education medium",
-      draft.applicant.educationMedium || "Not selected",
-      1,
-    ],
-    ["Date of birth", draft.applicant.dateOfBirth || "Not completed", 1],
-    [
-      "Birth certificate number",
-      draft.applicant.birthCertificateNumber || "Not completed",
-      1,
-    ],
-    ["Relationship", draft.guardian.relationship || "Not selected", 2],
-    ["Guardian name", draft.guardian.fullName || "Not completed", 2],
-    ["Guardian name in Sinhala", draft.guardian.sinhalaName || "Not completed", 2],
-    ["Guardian NIC", draft.guardian.nic || "Not completed", 2],
-    ["Phone number", draft.guardian.phone || "Not completed", 2],
-    ["Guardian email", draft.guardian.email || "Not completed", 2],
-    [
-      "Permanent address",
-      draft.residence.permanentAddress || "Not completed",
-      3,
-    ],
-    [
-      "Current address",
-      draft.residence.currentAddress || "Not completed",
-      3,
-    ],
-    ["District", draft.residence.district || "Not selected", 3],
-    [
-      "Divisional Secretariat division",
-      draft.residence.dsDivision || "Not selected",
-      3,
-    ],
-    [
-      "Grama Niladhari division",
-      draft.residence.gnDivision || "Not selected",
-      3],
-    [
-      "Electoral district",
-      draft.residence.electoralDistrict || "Not selected",
-      3,
-    ],
+
+  const groupedSections = [
+    {
+      title: "Location",
+      step: 0,
+      fields: [
+        ["Address", draft.location.address || "Not selected"],
+      ] as [string, string][],
+    },
+    {
+      title: "Applicant details",
+      step: 1,
+      fields: [
+        ["Full name in English", draft.applicant.fullName || "Not completed"],
+        ["Full name in Sinhala", draft.applicant.sinhalaName || "Not completed"],
+        ["Gender", draft.applicant.gender || "Not selected"],
+        ["Religion", draft.applicant.religion || "Not selected"],
+        ["Education medium", draft.applicant.educationMedium || "Not selected"],
+        ["Date of birth", draft.applicant.dateOfBirth || "Not completed"],
+        ["Birth certificate number", draft.applicant.birthCertificateNumber || "Not completed"],
+      ] as [string, string][],
+    },
+    {
+      title: "Parent / guardian",
+      step: 2,
+      fields: [
+        ["Relationship", draft.guardian.relationship || "Not selected"],
+        ["Guardian name", draft.guardian.fullName || "Not completed"],
+        ["Guardian name in Sinhala", draft.guardian.sinhalaName || "Not completed"],
+        ["Guardian NIC", draft.guardian.nic || "Not completed"],
+        ["Phone number", draft.guardian.phone || "Not completed"],
+        ["Guardian email", draft.guardian.email || "Not completed"],
+      ] as [string, string][],
+    },
+    {
+      title: "Residence",
+      step: 3,
+      fields: [
+        ["Permanent address", draft.residence.permanentAddress || "Not completed"],
+        ["Current address", draft.residence.currentAddress || "Not completed"],
+        ["District", draft.residence.district || "Not selected"],
+        ["Divisional Secretariat division", draft.residence.dsDivision || "Not selected"],
+        ["Grama Niladhari division", draft.residence.gnDivision || "Not selected"],
+        ["Electoral district", draft.residence.electoralDistrict || "Not selected"],
+      ] as [string, string][],
+    },
   ];
 
-  const categoryRows: [string, string, number][] =
+  const categoryRows: [string, string][] =
     draft.categories.length > 0
       ? draft.categories.map(
-          (category): [string, string, number] => [
+          (category): [string, string] => [
             CATEGORY_LABELS[category.categoryType],
             categorySummary(category),
-            4,
           ],
         )
-      : [["Categories", "None selected", 4]];
-  const rows = [...sections, ...categoryRows];
+      : [["None selected", ""]];
 
   return (
-    <div className="max-w-[1080px]">
-      <div className="mb-4">
+    <div className="">
+      <div className="mb-5">
         <h3 className="font-heading text-2xl">Review your draft</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-1">
           Check all collected information before the application submission step
           becomes available.
         </p>
       </div>
-      {rows.map(([label, value, step]) => (
-        <div
-          className="flex items-center justify-between gap-4 border-b py-3"
-          key={label}
-        >
-          <div className="grid gap-0.5">
-            <span className="text-xs text-muted-foreground">{label}</span>
-            <strong className="text-sm">{value}</strong>
+      <div className="grid sm:grid-cols-2 gap-4 items-start">
+        {groupedSections.map((section) => (
+          <div key={section.title} className="rounded-xl border bg-card overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
+              <h4 className="text-sm font-medium text-foreground">{section.title}</h4>
+              <button
+                type="button"
+                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                onClick={() => onNavigateToStep(section.step)}
+              >
+                Edit
+              </button>
+            </div>
+            <div className="divide-y">
+              {section.fields.map(([label, value]) => (
+                <div className="flex items-baseline justify-between gap-4 px-4 py-2.5" key={label}>
+                  <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+                  <span className="text-sm font-medium text-right text-foreground truncate">{value || "—"}</span>
+                </div>
+              ))}
+            </div>
           </div>
+        ))}
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium text-foreground">Categories</h4>
           <button
             type="button"
-            className="text-xs font-bold text-primary"
-            onClick={() => onNavigateToStep(step)}
+            className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            onClick={() => onNavigateToStep(4)}
           >
             Edit
           </button>
         </div>
-      ))}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {categoryRows.map(([label, summary]) => (
+            <div key={label} className="rounded-xl border bg-card p-4">
+              <span className="text-xs font-medium text-foreground block mb-1">{label}</span>
+              {summary && (
+                <p className="text-xs text-muted-foreground leading-relaxed">{summary}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {draft.submittedAt && (
         <>
-          <div className="mt-8 grid gap-4 rounded-xl border border-primary/25 bg-primary/5 p-4 sm:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-6 rounded-xl border overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b bg-muted/40">
               <div>
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Admission review</span>
-                <h4 className="font-heading text-lg">Application Review Status</h4>
+                <h4 className="text-sm font-medium text-foreground">Admission review</h4>
               </div>
               <div className="flex items-center gap-2">
                 {draft.isBanned ? (
-                  <Badge variant="destructive" className="text-sm px-3 py-1">Banned</Badge>
+                  <Badge variant="destructive" className="text-xs px-2.5 py-0.5">Banned</Badge>
                 ) : draft.admissionStatus === "verified" ? (
-                  <Badge variant="default" className={`${STATUS_SUCCESS.badgeBg} ${STATUS_SUCCESS.badgeHover} text-sm px-3 py-1`}>Verified</Badge>
+                  <Badge variant="default" className={`${STATUS_SUCCESS.badgeBg} ${STATUS_SUCCESS.badgeHover} text-xs px-2.5 py-0.5`}>Verified</Badge>
                 ) : draft.admissionStatus === "fake" ? (
-                  <Badge variant="destructive" className="text-sm px-3 py-1">Flagged</Badge>
+                  <Badge variant="destructive" className="text-xs px-2.5 py-0.5">Flagged</Badge>
                 ) : (
-                  <Badge variant="secondary" className="text-sm px-3 py-1">Pending review</Badge>
+                  <Badge variant="secondary" className="text-xs px-2.5 py-0.5">Pending review</Badge>
                 )}
               </div>
             </div>
-
-            {draft.isBanned && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                <div className="flex items-center gap-2 font-semibold mb-1"><ShieldX size={15} /> Application Banned</div>
-                <p>{draft.banReason || "No specific reason provided."}</p>
-              </div>
-            )}
-
-            {draft.admissionStatus === "verified" && (
-              <div className={`rounded-lg border ${STATUS_SUCCESS.borderStrong} ${STATUS_SUCCESS.bgSoft} p-3 text-sm ${STATUS_SUCCESS.textStrong} ${STATUS_SUCCESS.textDark}`}>
-                <div className="flex items-center gap-2 font-semibold"><Check size={15} /> This application has been verified by an administrator.</div>
-              </div>
-            )}
-
-            {draft.admissionStatus === "fake" && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                <div className="flex items-center gap-2 font-semibold"><TriangleAlert size={15} /> This application has been flagged for review.</div>
-              </div>
-            )}
-
-            {draft.flags && draft.flags.length > 0 && (
-              <div className="grid gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-                <span className="text-xs font-semibold text-destructive uppercase tracking-wider">
-                  Observations ({draft.flags.length})
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {draft.flags.map((f, i) => (
-                    <Badge key={i} variant="outline" className="border-destructive/40 text-destructive text-xs">
-                      {f.label || f.key}
-                    </Badge>
-                  ))}
+            <div className="grid gap-3 p-4">
+              {draft.isBanned && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  <div className="flex items-center gap-2 font-semibold mb-1"><ShieldX size={15} /> Application Banned</div>
+                  <p>{draft.banReason || "No specific reason provided."}</p>
                 </div>
-              </div>
-            )}
-
-            {draft.interviewNotes && (
-              <div className="grid gap-1 rounded-lg border border-border bg-card p-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admin Notes</span>
-                <p className="text-sm whitespace-pre-wrap text-foreground">{draft.interviewNotes}</p>
-              </div>
-            )}
-
-            {draft.interviewEdits && draft.interviewEdits.length > 0 && (
-              <div className="grid gap-2 rounded-lg border border-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 p-3">
-                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                  Changes made by admin ({draft.interviewEdits.length})
-                </span>
-                <div className="grid gap-1.5 max-h-48 overflow-y-auto">
-                  {draft.interviewEdits.map((edit, i) => (
-                    <div key={i} className="flex flex-wrap items-center gap-2 text-xs border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
-                      <strong className="text-foreground">{edit.label}:</strong>
-                      <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
-                      <span>→</span>
-                      <span className="font-semibold text-primary">{edit.newValue || "(empty)"}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6">
-            <div className="flex items-center gap-3 mb-3">
-              <h4 className="font-heading text-lg">Mark Allocation</h4>
-              {adminMarks.length === 0 && (
-                <Badge variant="secondary">Admin marks pending</Badge>
               )}
-            </div>
-            {draft.categories.length > 0 ? (
-              <div className="grid gap-3">
-                {draft.categories.map((category) => {
-                  const autoScore = scoreCategory(category);
-                  const adminMark = adminMarks.find((m) => m.categoryType === category.categoryType);
-                  return (
-                    <div
-                      className="flex items-center justify-between gap-4 rounded-lg border p-3"
-                      key={category.categoryType}
-                    >
-                      <div className="grid gap-0.5">
-                        <span className="text-xs text-muted-foreground">
-                          {CATEGORY_LABELS[category.categoryType]}
-                        </span>
-                        <div className="flex items-center gap-3 text-sm">
-                          <span>
-                            Indicative: <strong>{autoScore.total}</strong>
-                          </span>
-                          {adminMark != null && (
-                            <span className="text-primary font-semibold">
-                              Admin: <strong>{adminMark.total}</strong>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {adminMark != null ? (
-                        <Badge variant="default">Scored</Badge>
-                      ) : (
-                        <Badge variant="outline">Pending</Badge>
-                      )}
-                    </div>
-                  );
-                })}
-                <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
-                  <span className="text-sm font-semibold">Total</span>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span>
-                      Indicative:{" "}
-                      <strong>
-                        {draft.categories.reduce(
-                          (sum, c) => sum + scoreCategory(c).total,
-                          0,
-                        )}
-                      </strong>
-                    </span>
-                    {adminMarks.length > 0 && (
-                      <span className="text-primary font-semibold">
-                        Admin:{" "}
-                        <strong>
-                          {adminMarks.reduce((sum, m) => sum + m.total, 0)}
-                        </strong>
-                      </span>
-                    )}
+
+              {draft.admissionStatus === "verified" && (
+                <div className={`rounded-lg border ${STATUS_SUCCESS.borderStrong} ${STATUS_SUCCESS.bgSoft} p-3 text-sm ${STATUS_SUCCESS.textStrong} ${STATUS_SUCCESS.textDark}`}>
+                  <div className="flex items-center gap-2 font-semibold"><Check size={15} /> This application has been verified by an administrator.</div>
+                </div>
+              )}
+
+              {draft.admissionStatus === "fake" && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                  <div className="flex items-center gap-2 font-semibold"><TriangleAlert size={15} /> This application has been flagged for review.</div>
+                </div>
+              )}
+
+              {draft.flags && draft.flags.length > 0 && (
+                <div className="grid gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                  <span className="text-xs font-semibold text-destructive uppercase tracking-wider">
+                    Observations ({draft.flags.length})
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {draft.flags.map((f, i) => (
+                      <Badge key={i} variant="destructive" className="text-xs font-medium">
+                        {f.label || f.key}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No categories selected.
-              </p>
-            )}
+              )}
+
+              {draft.interviewNotes && (
+                <div className="grid gap-1 rounded-lg border border-border bg-card p-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admin Notes</span>
+                  <p className="text-sm whitespace-pre-wrap text-foreground">{draft.interviewNotes}</p>
+                </div>
+              )}
+
+              {draft.interviewEdits && draft.interviewEdits.length > 0 && (
+                <div className="grid gap-2 rounded-lg border border-border bg-card p-3">
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                    Changes made by admin ({draft.interviewEdits.length})
+                  </span>
+                  <div className="grid gap-1.5 max-h-48 overflow-y-auto">
+                    {draft.interviewEdits.map((edit, i) => (
+                      <div key={i} className="flex flex-wrap items-center gap-2 text-xs border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
+                        <strong className="text-foreground">{edit.label}:</strong>
+                        <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
+                        <span className="text-muted-foreground">→</span>
+                        <span className="font-semibold text-foreground">{edit.newValue || "(empty)"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
+              <h4 className="text-sm font-medium text-foreground">Mark Allocation</h4>
+              {adminMarks.length === 0 && (
+                <Badge variant="secondary" className="text-xs px-2.5 py-0.5">Admin marks pending</Badge>
+              )}
+            </div>
+            <div className="p-4">
+              {draft.categories.length > 0 ? (
+                <div className="grid gap-2">
+                  {draft.categories.map((category) => {
+                    const autoScore = scoreCategory(category);
+                    const adminMark = adminMarks.find((m) => m.categoryType === category.categoryType);
+                    return (
+                      <div
+                        className="flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5"
+                        key={category.categoryType}
+                      >
+                        <div className="grid gap-0.5">
+                          <span className="text-xs text-muted-foreground">
+                            {CATEGORY_LABELS[category.categoryType]}
+                          </span>
+                          <div className="flex items-center gap-3 text-sm">
+                            <span>
+                              Indicative: <strong className="tabular-nums">{autoScore.total}</strong>
+                            </span>
+                            {adminMark != null && (
+                              <span className="text-primary font-semibold">
+                                Admin: <strong className="tabular-nums">{adminMark.total}</strong>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {adminMark != null ? (
+                          <Badge variant="default">Scored</Badge>
+                        ) : (
+                          <Badge variant="outline">Pending</Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 mt-1">
+                    <span className="text-sm font-medium">Total</span>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span>
+                        Indicative:{" "}
+                        <strong className="tabular-nums">
+                          {draft.categories.reduce(
+                            (sum, c) => sum + scoreCategory(c).total,
+                            0,
+                          )}
+                        </strong>
+                      </span>
+                      {adminMarks.length > 0 && (
+                        <span className="text-primary font-semibold">
+                          Admin:{" "}
+                          <strong className="tabular-nums">
+                            {adminMarks.reduce((sum, m) => sum + m.total, 0)}
+                          </strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No categories selected.
+                </p>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -1268,6 +1317,7 @@ export function ApplicationForm({
               latest.residence.permanentAddress,
             );
             const merged: Partial<ApplicationDraft> = serverHasData || !localHasData ? latest : {};
+            const loadedStep = merged.currentStep ?? 0;
             set({
               ...merged,
               accessKey: key || latest.accessKey || draft.accessKey,
@@ -1278,6 +1328,7 @@ export function ApplicationForm({
               isBanned: latest.isBanned,
               banReason: latest.banReason,
               flags: latest.flags,
+              maxVisitedStep: Math.max(useApplicationStore.getState().maxVisitedStep, loadedStep, loadedStep > 0 ? 6 : 0),
             });
             dataLoaded = true;
           }
@@ -1365,7 +1416,12 @@ export function ApplicationForm({
 
   useEffect(() => {
     if (!draft.hydrated || !draft.accessKey) return;
+    if (draft.submittedAt && draft.submissionLocked) return;
     const snapshot = JSON.stringify(normalizeDraft(draft));
+    if (!lastSavedSnapshot.current) {
+      lastSavedSnapshot.current = snapshot;
+      return;
+    }
     if (snapshot === lastSavedSnapshot.current) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
@@ -1375,7 +1431,7 @@ export function ApplicationForm({
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
-  }, [draft.categories, draft.applicant, draft.guardian, draft.residence, draft.declaration, draft.currentStep, draft.hydrated, draft.accessKey]);
+  }, [draft.categories, draft.applicant, draft.guardian, draft.residence, draft.declaration, draft.currentStep, draft.hydrated, draft.accessKey, draft.submittedAt, draft.submissionLocked]);
 
   const current = draft.currentStep;
 
@@ -1385,17 +1441,21 @@ export function ApplicationForm({
       const data = normalizeDraft(currentDraft);
       const saveStartedAt = Date.now();
       set({ saveStatus: "Saving…" });
-      if (adminApplicationId)
-        await client.admin.application.update({ id: adminApplicationId, data });
-      else if (currentDraft.accessKey)
-        await client.application.update({ accessKey: currentDraft.accessKey, data });
-      const remainingFeedbackMs = 120 - (Date.now() - saveStartedAt);
-      if (showFeedback && remainingFeedbackMs > 0) {
-        const { promise, resolve } = Promise.withResolvers<void>();
-        setTimeout(resolve, remainingFeedbackMs);
-        await promise;
+      try {
+        if (adminApplicationId)
+          await client.admin.application.update({ id: adminApplicationId, data });
+        else if (currentDraft.accessKey)
+          await client.application.update({ accessKey: currentDraft.accessKey, data });
+        const remainingFeedbackMs = 120 - (Date.now() - saveStartedAt);
+        if (showFeedback && remainingFeedbackMs > 0) {
+          const { promise, resolve } = Promise.withResolvers<void>();
+          setTimeout(resolve, remainingFeedbackMs);
+          await promise;
+        }
+        set({ saveStatus: "Saved securely" });
+      } catch {
+        set({ saveStatus: "Save failed — retrying…" });
       }
-      set({ saveStatus: "Saved securely" });
     });
     saveQueue.current = operation.catch(() => undefined);
     return operation;
@@ -1489,7 +1549,7 @@ export function ApplicationForm({
   if (!draft.hydrated)
     return (
       <div className="grid place-items-center min-h-[50vh] text-muted-foreground">
-        Restoring your draft\u2026
+        Restoring your draft 2026
       </div>
     );
 
@@ -1582,7 +1642,7 @@ export function ApplicationForm({
               Keep going one section at a time. You can leave and return with the access key above.
             </p>
             <div className="flex items-center gap-2 border-t pt-3 text-sm text-primary">
-              <span className="size-2 rounded-full bg-primary" aria-hidden="true" />
+              <span className={`size-2 rounded-full ${draft.saveStatus === "Saving…" ? "animate-pulse" : ""} ${draft.saveStatus.includes("failed") ? "bg-destructive" : "bg-primary"}`} aria-hidden="true" />
               {draft.saveStatus === "Saved securely"
                 ? "Saved"
                 : draft.saveStatus || (draft.accessKey ? "Connected to secure draft" : "Connecting to secure draft")}
@@ -1968,7 +2028,7 @@ export function ApplicationForm({
         })()}
 
         {collectionOnly && (
-          <div className="flex items-center gap-3 px-(--card-spacing) py-4 bg-primary/8 border-t border-primary/20">
+          <CardFooter className="flex items-center gap-3 px-(--card-spacing) py-4 bg-primary/8 border-t border-primary/20">
             <Clock3 size={18} />
             <div className="grid gap-0.5 text-sm flex-1">
               <strong>Form submission is outside the open window</strong>
@@ -1985,14 +2045,39 @@ export function ApplicationForm({
                 .
               </span>
             </div>
-            <button
-              type="button"
-              className="bg-transparent text-muted-foreground text-xs border-0 cursor-pointer hover:text-foreground"
-              onClick={() => draft.reset()}
-            >
-              <RotateCcw size={15} /> Clear draft
-            </button>
-          </div>
+            <AlertDialog open={draft.clearDraftDialogOpen} onOpenChange={(open) => set({ clearDraftDialogOpen: open })}>
+              <button
+                type="button"
+                className="bg-transparent text-muted-foreground text-xs border-0 cursor-pointer hover:text-foreground flex flex-row gap-2"
+                onClick={() => set({ clearDraftDialogOpen: true })}
+              >
+                <RotateCcw size={15} /> Clear draft
+              </button>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear this draft?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will remove all saved data for this application from this device. You can reload it later using the access key.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={() => {
+                      localStorage.removeItem("aloysius-g1-application-key");
+                      localStorage.removeItem("aloysius-g1-application-session-code");
+                      draft.reset();
+                      set({ clearDraftDialogOpen: false });
+                      window.location.assign("/");
+                    }}
+                  >
+                    Clear draft
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardFooter>
         )}
 
         {draft.showSubmissionRequest && (

@@ -131,9 +131,9 @@ export function HomeComponent() {
 
   return (
     <main className="min-h-svh" data-surface="g1-2026-application">
-      <div className="mx-auto max-w-[1200px] px-8 py-10 grid gap-8">
+      <div className="mx-auto max-w-[1120px] px-6 sm:px-8 py-12 sm:py-16 grid gap-10">
         {/* Hero */}
-        <section className="grid gap-2">
+        <section className="grid gap-3">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
               <LayoutDashboard size={14} />
@@ -142,7 +142,7 @@ export function HomeComponent() {
               G1 2026 intake
             </p>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className="font-heading text-3xl sm:text-4xl font-medium tracking-tight text-foreground">
             Application dashboard
           </h1>
           <p className="text-muted-foreground max-w-[38rem] text-sm leading-relaxed">
@@ -151,99 +151,54 @@ export function HomeComponent() {
         </section>
 
         {/* Stats */}
-        <section className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <Card className="py-4">
-            <CardContent className="py-0">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <LayoutDashboard size={15} />
-                </div>
-                <div>
-                  <div className="text-xl font-bold tracking-tight">{applicationCount ?? "..."}</div>
-                  <div className="text-xs text-muted-foreground">Total applications</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="py-4">
-            <CardContent className="py-0">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-chart-1/15 text-chart-1">
-                  <KeyRound size={15} />
-                </div>
-                <div>
-                  <div className="text-xl font-bold tracking-tight">{keys.length}</div>
-                  <div className="text-xs text-muted-foreground">Saved on this device</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="py-4">
-            <CardContent className="py-0">
-              <div className="flex items-center gap-2.5">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${STAT_ICON_COLORS.success}`}>
-                  <CheckCircle2 size={15} />
-                </div>
-                <div>
-                  <div className="text-xl font-bold tracking-tight">{submittedCount}</div>
-                  <div className="text-xs text-muted-foreground">Submitted</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="py-4">
-            <CardContent className="py-0">
-              <div className="flex items-center gap-2.5">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${STAT_ICON_COLORS.warning}`}>
-                  <Clock size={15} />
-                </div>
-                <div>
-                  <div className="text-xl font-bold tracking-tight">{draftCount}</div>
-                  <div className="text-xs text-muted-foreground">Drafts</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="py-4">
-            <CardContent className="py-0">
-              <div className="flex items-center gap-2.5">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${STAT_ICON_COLORS.error}`}>
-                  <FileWarning size={15} />
-                </div>
-                <div>
-                  <div className="text-xl font-bold tracking-tight">{errorCount}</div>
-                  <div className="text-xs text-muted-foreground">With errors</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="py-4">
-            <CardContent className="py-0">
-              <div className="flex items-center gap-2.5">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${STAT_ICON_COLORS.info}`}>
-                  <FileText size={15} />
-                </div>
-                <div>
-                  <div className="text-xl font-bold tracking-tight">{incompleteCount}</div>
-                  <div className="text-xs text-muted-foreground">Incomplete</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <section className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">{applicationCount ?? "..."}</span>
+            <span className="text-xs text-muted-foreground">Total</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">{keys.length}</span>
+            <span className="text-xs text-muted-foreground">Saved</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={14} className="text-emerald-600" />
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">{submittedCount}</span>
+            <span className="text-xs text-muted-foreground">Submitted</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <Clock size={14} className="text-amber-600" />
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">{draftCount}</span>
+            <span className="text-xs text-muted-foreground">Drafts</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <FileWarning size={14} className="text-rose-600" />
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">{errorCount}</span>
+            <span className="text-xs text-muted-foreground">Errors</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <FileText size={14} className="text-violet-600" />
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">{incompleteCount}</span>
+            <span className="text-xs text-muted-foreground">Incomplete</span>
+          </div>
         </section>
 
         {/* Quick actions */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wider">
+        <section className="grid gap-3">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Quick actions
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <Button type="button" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={createNewApplication}><Plus size={18} strokeWidth={2.5} /> New application</Button>
-            <Button type="button" variant="secondary" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => setLoadKeyOpen(true)}><KeyRound size={18} /> Load with a key</Button>
-            {isAdmin && <Button type="button" variant="secondary" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => window.location.assign("/admin")}><ShieldCheck size={18} /> Admin panel</Button>}
-            <Button type="button" variant="secondary" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => setManageKeysOpen(true)} disabled={keys.length === 0}><KeyRound size={18} /> Manage saved keys</Button>
-            <Button type="button" variant="secondary" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => setQrImportOpen(true)}><Upload size={18} /> Import QR image</Button>
-            <Button type="button" variant="outline" className="h-auto py-3 flex-col items-center gap-1.5 text-sm" onClick={() => { setRecoveryKey(keys[0] ?? null); setRecoveryOpen(true); }}><Trash2 size={18} /> Forgot a key?</Button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <Button type="button" className="h-auto py-4 flex-col items-center gap-2 text-sm font-medium shadow-sm shadow-primary/10" onClick={createNewApplication}><Plus size={18} strokeWidth={2.5} /> New application</Button>
+            <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => setLoadKeyOpen(true)}><KeyRound size={18} /> Load with a key</Button>
+            {isAdmin && <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => window.location.assign("/admin")}><ShieldCheck size={18} /> Admin panel</Button>}
+            <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => setManageKeysOpen(true)} disabled={keys.length === 0}><KeyRound size={18} /> Manage saved keys</Button>
+            <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => setQrImportOpen(true)}><Upload size={18} /> Import QR image</Button>
+            <Button type="button" variant="outline" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => { setRecoveryKey(keys[0] ?? null); setRecoveryOpen(true); }}><Trash2 size={18} /> Forgot a key?</Button>
           </div>
         </section>
       <Dialog open={qrImportOpen} onOpenChange={(open) => { if (!open) { stopCamera(); setQrImportOpen(false); } }}>
@@ -281,37 +236,37 @@ export function HomeComponent() {
       {keys.length > 0 && <section className="grid gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Your saved applications</h2>
-            <p className="text-sm text-muted-foreground">Every application available with a saved access key is refreshed from the database.</p>
+            <h2 className="font-heading text-xl font-medium text-foreground">Your saved applications</h2>
+            <p className="text-sm text-muted-foreground mt-1">Every application available with a saved access key is refreshed from the database.</p>
           </div>
           <span className="text-sm text-muted-foreground tabular-nums">{keys.length} {keys.length === 1 ? "application" : "applications"}</span>
         </div>
         <div className="grid gap-2.5">{visibleKeys.map((key) => {
           const record = records[key];
-          return <Card key={key} className="group transition-shadow hover:shadow-md hover:ring-primary/20">
+          return <Card key={key} className="group transition-all duration-200 hover:shadow-md hover:shadow-foreground/[0.04] hover:ring-primary/20">
             <Link className="contents" to="/application/access" search={{ key, code: record?.sessionCode }}>
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary/70">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary/70">
                       <FileText size={16} />
                     </div>
-                    <span className="truncate text-base">{record?.name || "Loading application…"}</span>
+                    <span className="truncate text-base font-medium">{record?.name || "Loading application…"}</span>
                   </div>
-                  <ArrowRight size={18} className="shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  <ArrowRight size={18} className="shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
                 </CardTitle>
-                <CardDescription className="flex items-center justify-between pl-12">
+                <CardDescription className="flex items-center justify-between pl-[52px]">
                   {record?.submitted ? (
-                    <span className={`inline-flex items-center gap-1.5 ${STAT_ICON_COLORS.success} font-medium`}><CheckCircle2 size={14} /> Submitted</span>
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-medium"><CheckCircle2 size={14} /> Submitted</span>
                   ) : (
-                    <span className="font-medium">{record?.completion ?? 0}% complete</span>
+                    <span className="font-medium text-foreground/80">{record?.completion ?? 0}% complete</span>
                   )}
                 </CardDescription>
                 <CardAction>
                   <Button variant="ghost" size="icon-sm" type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRemoveKey(key); }}><Trash2 size={16} /></Button>
                 </CardAction>
               </CardHeader>
-              <CardContent className="grid gap-2 pl-12">
+              <CardContent className="grid gap-2 pl-[52px] pb-5">
                 {!record?.submitted && (
                   <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                     <span className="block h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${record?.completion ?? 0}%` }} />

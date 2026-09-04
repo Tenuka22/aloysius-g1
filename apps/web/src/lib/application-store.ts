@@ -164,6 +164,7 @@ export type ApplicationDraft = {
   isBanned: boolean;
   banReason: string | null;
   flags: Array<{ type: string; key: string; label: string }>;
+  clearDraftDialogOpen: boolean;
 };
 
 export type InterviewEdit = {
@@ -220,6 +221,7 @@ export const emptyDraft: ApplicationDraft = {
   isBanned: false,
   banReason: null,
   flags: [],
+  clearDraftDialogOpen: false,
 };
 
 export const LOCATION_HISTORY_LIMIT = 25;

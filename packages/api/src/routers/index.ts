@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
 import { applicationAccessRequests, applicationMarks, applicationSettings, applications, schoolCoordinateOverrides } from "@aloysius-g1/db";
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, ne } from "drizzle-orm";
 import { env } from "@aloysius-g1/env/server";
 import {
   accessRequestIssues,
@@ -182,9 +182,14 @@ export const appRouter = {
         flags: parseFlags(row.flags),
       };
     }),
-    checkBirthCertificate: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1) })).handler(async ({ input }) => {
+    checkBirthCertificate: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1), excludeAccessKey: z.string().trim().optional() })).handler(async ({ input }) => {
       const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
-      const row = await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get();
+      const conditions = [eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt)];
+      if (input.excludeAccessKey) {
+        const excludeHash = hashKey(input.excludeAccessKey);
+        conditions.push(ne(applications.accessKeyHash, excludeHash));
+      }
+      const row = await db.select({ id: applications.id }).from(applications).where(and(...conditions)).get();
       return { exists: Boolean(row) };
     }),
     requestAccess: publicProcedure.input(z.object({ birthCertificateNumber: z.string().trim().min(1).optional(), sessionCode: z.string().trim().min(1).optional(), guardianNic: z.string().trim().min(1).optional(), applicantName: z.string().trim().optional(), guardianName: z.string().trim().optional(), contactEmail: z.email().optional(), contactPhone: z.string().trim().optional(), accessKey: keySchema.optional(), requestType: z.enum(["access", "removal", "submission", "forgot"]).default("access") }).superRefine((input, context) => {
