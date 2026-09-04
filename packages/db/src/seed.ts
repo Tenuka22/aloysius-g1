@@ -17,8 +17,18 @@ const pickN = <T>(arr: T[], n: number): T[] => {
 const randDate = (startYear: number, endYear: number): string => {
   const y = randInt(startYear, endYear);
   const m = String(randInt(1, 12)).padStart(2, "0");
-  const d = String(randInt(1, 28)).padStart(2, "0");
+  const maxD = new Date(y, m, 0).getDate();
+  const d = String(randInt(1, maxD)).padStart(2, "0");
   return `${y}-${m}-${d}`;
+};
+const randDateTime = (year: number, monthRange: [number, number]): Date => {
+  const m = randInt(monthRange[0], monthRange[1]);
+  const maxD = new Date(year, m, 0).getDate();
+  const d = randInt(1, maxD);
+  const h = randInt(6, 22);
+  const min = randInt(0, 59);
+  const s = randInt(0, 59);
+  return new Date(year, m - 1, d, h, min, s);
 };
 
 // ── Name pools ───────────────────────────────────────────────────────────────
@@ -218,8 +228,10 @@ function generateApplication(index: number, intakeYear: string) {
   const isDraft = Math.random() < 0.15;
   const admissionStatus = pick(["pending", "pending", "pending", "pending", "verified", "verified", "fake"] as const);
   const isBanned = admissionStatus === "fake" && Math.random() > 0.5;
-  const submissionDay = randInt(1, 28);
-  const createdDay = randInt(1, Math.min(submissionDay, 28));
+  const intakeNum = Number(intakeYear);
+  const createdAt = randDateTime(intakeNum - 1, [1, 6]);
+  const updatedAt = new Date(createdAt.getTime() + randInt(1, 72) * 3600000);
+  const submittedAt = isDraft ? null : new Date(updatedAt.getTime() + randInt(1, 48) * 3600000);
 
   const accessKey = `ALY-SEED-${String(index).padStart(3, "0")}-${firstName.toUpperCase()}-${intakeYear}-TEST`;
   const sessionCode = `${intakeYear.slice(-2)}S${String(index).padStart(4, "0")}`;
@@ -288,9 +300,9 @@ function generateApplication(index: number, intakeYear: string) {
       })),
       declaration: { confirmed: true, consent: true },
     },
-    createdAt: new Date(`2026-09-${String(createdDay).padStart(2, "0")}T${String(randInt(8, 18)).padStart(2, "0")}:00:00.000Z`),
-    updatedAt: new Date(`2026-09-${String(submissionDay).padStart(2, "0")}T${String(randInt(8, 20)).padStart(2, "0")}:00:00.000Z`),
-    submittedAt: isDraft ? null : new Date(`2026-09-${String(submissionDay).padStart(2, "0")}T${String(randInt(8, 20)).padStart(2, "0")}:00:00.000Z`),
+    createdAt,
+    updatedAt,
+    submittedAt,
     admissionStatus,
     interviewNotes: isBanned ? "Seeded test record for ban testing." : "",
     isBanned,
@@ -352,7 +364,7 @@ for (const app of seedApps) {
         categoryType: cat.categoryType,
         breakdown,
         total,
-        createdAt: rest.updatedAt,
+        createdAt: rest.submittedAt ? new Date(rest.submittedAt.getTime() + randInt(1, 168) * 3600000) : rest.updatedAt,
         updatedAt: rest.updatedAt,
       }).onConflictDoNothing().run();
     }
