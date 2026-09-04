@@ -119,7 +119,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
             const icon = !compatible ? iconIneligible : selected ? (within ? iconSelectedIn : iconSelectedOut) : (within ? iconUnselectedIn : iconUnselectedOut);
             const offset = within ? -6 : -4;
             return (
-              <Marker key={school.id} position={[school.lat, school.lng]} icon={icon} opacity={compatible ? 1 : 0.85} eventHandlers={{ click: () => compatible && onToggle(school.id) }}>
+              <Marker key={school.id} position={[school.lat, school.lng]} icon={icon} eventHandlers={{ click: () => compatible && onToggle(school.id) }}>
                 <RlTooltip direction="top" offset={[0, offset]} opacity={1} className="school-tooltip">
                   <span style={{ fontWeight: 600 }}>{school.en}</span>
                   <span style={{ opacity: 0.7 }}>({GENDER_LABELS[school.genderType]})</span>

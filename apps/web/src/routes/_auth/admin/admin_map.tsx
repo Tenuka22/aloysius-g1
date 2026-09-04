@@ -372,7 +372,7 @@ function AdminMapPage() {
                   .map((school) => {
                     const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
                     return (
-                      <Marker key={school.id} position={[school.lat, school.lng]} icon={compatible ? iconSchool : iconIneligible} opacity={compatible ? 1 : 0.85}>
+                      <Marker key={school.id} position={[school.lat, school.lng]} icon={compatible ? iconSchool : iconIneligible}>
                         <LeafletTooltip direction="top" offset={[0, -6]} opacity={1} className="school-tooltip">
                           <span style={{ fontWeight: 600 }}>{school.en}</span>
                           <span style={{ fontFamily: "monospace" }}>{school.distanceKm.toFixed(1)} km</span>
@@ -470,7 +470,7 @@ function AdminMapPage() {
                         icon={compatible
                           ? createLabeledIcon(SCHOOL_SVG, "#64748b", "#475569", school.en, 18)
                           : createLabeledIcon(SCHOOL_SVG, "#c4b5fd", "#8b5cf6", school.en, 14)}
-                        opacity={compatible ? 0.7 : 0.8}
+                        opacity={compatible ? 0.7 : 0.7}
                       />
                     );
                   })}
