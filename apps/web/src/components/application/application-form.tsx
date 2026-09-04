@@ -1446,6 +1446,13 @@ export function ApplicationForm({
           await client.admin.application.update({ id: adminApplicationId, data });
         else if (currentDraft.accessKey)
           await client.application.update({ accessKey: currentDraft.accessKey, data });
+        if (currentDraft.accessKey && currentDraft.categories.length > 0) {
+          const marks = currentDraft.categories.map((cat) => {
+            const score = scoreCategory(cat);
+            return { categoryType: cat.categoryType, total: score.total, breakdown: score.breakdown };
+          });
+          await client.application.saveIndicativeMarks({ accessKey: currentDraft.accessKey, marks }).catch(() => {});
+        }
         const remainingFeedbackMs = 120 - (Date.now() - saveStartedAt);
         if (showFeedback && remainingFeedbackMs > 0) {
           const { promise, resolve } = Promise.withResolvers<void>();

@@ -138,7 +138,8 @@ function ProximityRow({ label, value, max }: { label: string; value: number; max
 }
 
 function AdminMapPage() {
-  const admissions = useQuery(orpc.admin.admissions.listWithLocations.queryOptions());
+  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  const admissions = useQuery(orpc.admin.admissions.listWithLocations.queryOptions({ input: { intakeYear } }));
   const items = (admissions.data ?? []) as Array<{
     id: string;
     applicantName: string;

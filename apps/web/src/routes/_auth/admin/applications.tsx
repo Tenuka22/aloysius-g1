@@ -35,10 +35,11 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/admin/applications")({
   loader: async ({ context }) => {
+    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
     await Promise.all([
-      context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions()),
+      context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions({ input: { intakeYear } })),
       context.queryClient.prefetchQuery(context.orpc.admin.applications.queryOptions({
-        input: { page: 1, pageSize: 10, query: "", sort: "updatedAt", sortDir: "desc", status: "all" },
+        input: { page: 1, pageSize: 10, query: "", sort: "updatedAt", sortDir: "desc", status: "all", intakeYear },
       })),
     ]);
   },
@@ -182,11 +183,12 @@ function AdminApplicationsPage() {
   const [sorting, setSorting] = useState<SortingState>(prefs.applicationsSort ? [prefs.applicationsSort] : []);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(prefs.applicationsStatusFilter !== "all" ? [{ id: "status", value: prefs.applicationsStatusFilter }] : []);
 
+  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
   const sort = sorting[0];
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
   const statusFilter = typeof columnFilters.find((f) => f.id === "status")?.value === "string" ? (columnFilters.find((f) => f.id === "status")!.value as string) : "all";
 
-  const overview = useQuery(orpc.admin.overview.queryOptions());
+  const overview = useQuery(orpc.admin.overview.queryOptions({ input: { intakeYear } }));
   const applications = useQuery(orpc.admin.applications.queryOptions({
     input: {
       page: pagination.pageIndex + 1,
@@ -195,6 +197,7 @@ function AdminApplicationsPage() {
       sort: sort?.id ?? "updatedAt",
       sortDir: sort?.desc ? "desc" : "asc",
       status: statusFilter as "all" | "draft" | "submitted" | "invalid",
+      intakeYear,
     },
   }));
 

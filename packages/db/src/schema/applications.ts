@@ -7,6 +7,7 @@ export const applications = sqliteTable("applications", {
   accessKeyHint: text("access_key_hint").notNull(),
   birthCertificateNumber: text("birth_certificate_number"),
   data: text("data", { mode: "json" }).notNull(),
+  intakeYear: text("intake_year").notNull().default("2027"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   submittedAt: integer("submitted_at", { mode: "timestamp_ms" }),

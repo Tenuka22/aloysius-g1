@@ -44,13 +44,14 @@ const ensureSessionCode = async (row: typeof applications.$inferSelect) => {
 };
 const defaultOpensAt = defaultSubmissionWindow().opensAt;
 const defaultClosesAt = defaultSubmissionWindow().closesAt;
-const getApplicationWindow = async () => {
-  const existing = await db.select().from(applicationSettings).where(eq(applicationSettings.id, "default")).get();
+const getApplicationWindow = async (intakeYear?: string) => {
+  const year = intakeYear ?? "2027";
+  const existing = await db.select().from(applicationSettings).where(eq(applicationSettings.id, year)).get();
   if (existing) return existing;
   const now = new Date();
-  const defaults = { id: "default", opensAt: defaultOpensAt, closesAt: defaultClosesAt, updatedAt: now };
+  const defaults = { id: year, opensAt: defaultOpensAt, closesAt: defaultClosesAt, updatedAt: now };
   await db.insert(applicationSettings).values(defaults).onConflictDoNothing();
-  return (await db.select().from(applicationSettings).where(eq(applicationSettings.id, "default")).get()) ?? defaults;
+  return (await db.select().from(applicationSettings).where(eq(applicationSettings.id, year)).get()) ?? defaults;
 };
 // Shared request action helpers (used by both admin and subAdmin)
 const rotateRequestKey = async (requestId: string) => {
@@ -75,10 +76,11 @@ const dismissRequest = async (requestId: string) => {
   await db.update(applicationAccessRequests).set({ status: "dismissed", resolvedAt: new Date() }).where(eq(applicationAccessRequests.id, requestId)).run();
   return { dismissed: true };
 };
-const paginationInput = z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default(""), status: z.enum(["open", "resolved", "dismissed", "all"]).default("open") });
-const paginateRequests = async (requestType: string, query: string, page: number, pageSize: number, searchFields?: string[], status?: string) => {
+const paginationInput = z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default(""), status: z.enum(["open", "resolved", "dismissed", "all"]).default("open"), intakeYear: z.string().default("2027") });
+const paginateRequests = async (requestType: string, query: string, page: number, pageSize: number, searchFields?: string[], status?: string, intakeYear?: string) => {
   const conditions = [eq(applicationAccessRequests.requestType, requestType)];
   if (status && status !== "all") conditions.push(eq(applicationAccessRequests.status, status));
+  if (intakeYear) conditions.push(eq(applicationAccessRequests.intakeYear, intakeYear));
   const all = await db.select().from(applicationAccessRequests).where(and(...conditions)).all();
   const filtered = query ? all.filter((r) => {
     const fields = searchFields ?? ["applicantName", "contactEmail"];
@@ -88,7 +90,10 @@ const paginateRequests = async (requestType: string, query: string, page: number
   return { total: filtered.length, page, pageSize, items: filtered.slice(start, start + pageSize) };
 };
 const applicationEvents = new EventPublisher<{ "application-count": { count: number } }>();
-const applicationCount = async () => (await db.select({ id: applications.id }).from(applications).all()).length;
+const applicationCount = async (intakeYear?: string) => {
+  if (intakeYear) return (await db.select({ id: applications.id }).from(applications).where(eq(applications.intakeYear, intakeYear)).all()).length;
+  return (await db.select({ id: applications.id }).from(applications).all()).length;
+};
 const publishApplicationChange = async () => applicationEvents.publish("application-count", { count: await applicationCount() });
 const applicationRecord = (row: typeof applications.$inferSelect) => {
   const data = row.data as ApplicationData | null | undefined;
@@ -138,8 +143,8 @@ const admissionSummary = (row: typeof applications.$inferSelect) => {
     flags: parseFlags(row.flags),
   };
 };
-const ensureAdmissionsAccess = async (earlyAccess: boolean) => {
-  const window = await getApplicationWindow();
+const ensureAdmissionsAccess = async (earlyAccess: boolean, intakeYear?: string) => {
+  const window = await getApplicationWindow(intakeYear);
   if (!isAdmissionsAvailable(window.closesAt, new Date(), earlyAccess)) {
     throw new ORPCError("FORBIDDEN", { message: `Admissions opens after ${window.closesAt.toISOString()}` });
   }
@@ -148,17 +153,17 @@ const ensureAdmissionsAccess = async (earlyAccess: boolean) => {
 
 export const appRouter = {
   application: {
-    create: publicProcedure.input(z.object({ data: draftSchema.default({}) })).handler(async ({ input }) => {
+    create: publicProcedure.input(z.object({ data: draftSchema.default({}), intakeYear: z.string().default("2027") })).handler(async ({ input }) => {
       const accessKey = createAccessKey();
       const sessionCode = await uniqueSessionCode();
       const now = new Date();
-      const window = await getApplicationWindow();
+      const window = await getApplicationWindow(input.intakeYear);
       if (isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "New applications can only be created during the configured form window" });
       const birthCertificateNumber = extractBirthCertificateNumber(input.data);
       const data = withoutSchoolPreferences(input.data);
       const existing = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get() : null;
       if (existing) throw new ORPCError("CONFLICT", { message: "An application with this birth certificate number has already been submitted. Please check the number and try again." });
-      await db.insert(applications).values({ id: randomUUID(), sessionCode, accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), birthCertificateNumber: birthCertificateNumber || null, data, createdAt: now, updatedAt: now });
+      await db.insert(applications).values({ id: randomUUID(), sessionCode, accessKeyHash: hashKey(accessKey), accessKeyHint: accessKey.slice(-6), birthCertificateNumber: birthCertificateNumber || null, data, intakeYear: input.intakeYear, createdAt: now, updatedAt: now });
       await publishApplicationChange();
       return { accessKey, sessionCode, data };
     }),
@@ -224,7 +229,10 @@ export const appRouter = {
       const resolvedBirthCertificateNumber = row.birthCertificateNumber || "";
       if (!resolvedBirthCertificateNumber) throw new ORPCError("BAD_REQUEST", { message: "This application does not have a birth certificate number yet" });
       const existing = await db.select({ id: applicationAccessRequests.id }).from(applicationAccessRequests).where(and(eq(applicationAccessRequests.applicationId, row.id), eq(applicationAccessRequests.requestType, input.requestType), eq(applicationAccessRequests.status, "open"))).get();
-      if (!existing) await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName?.trim() ?? "", guardianName: input.guardianName?.trim() ?? "", contactEmail: input.contactEmail?.trim().toLowerCase() ?? "", ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), requestType: input.requestType, status: "open", createdAt: new Date(), resolvedAt: null });
+      if (!existing) {
+        const appIntakeYear = row ? (await db.select({ intakeYear: applications.intakeYear }).from(applications).where(eq(applications.id, row.id)).get())?.intakeYear ?? "2027" : "2027";
+        await db.insert(applicationAccessRequests).values({ id: randomUUID(), applicationId: row.id, birthCertificateNumber: resolvedBirthCertificateNumber, applicantName: input.applicantName?.trim() ?? "", guardianName: input.guardianName?.trim() ?? "", contactEmail: input.contactEmail?.trim().toLowerCase() ?? "", ...(input.contactPhone?.trim() ? { contactPhone: input.contactPhone.trim() } : {}), requestType: input.requestType, status: "open", intakeYear: appIntakeYear, createdAt: new Date(), resolvedAt: null });
+      }
       return { submitted: true };
     }),
     liveCount: publicProcedure.output(eventIterator(z.object({ count: z.number() }))).handler(async function* ({ signal }) {
@@ -235,9 +243,9 @@ export const appRouter = {
     update: publicProcedure.input(z.object({ accessKey: keySchema, data: draftSchema })).handler(async ({ input }) => {
       const updatedAt = new Date();
       const birthCertificateNumber = extractBirthCertificateNumber(input.data);
-      const current = await db.select({ id: applications.id, submittedAt: applications.submittedAt }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
+      const current = await db.select({ id: applications.id, submittedAt: applications.submittedAt, intakeYear: applications.intakeYear }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!current) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
-      const window = await getApplicationWindow();
+      const window = await getApplicationWindow(current.intakeYear);
       if (current.submittedAt && isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "Submitted applications can only be updated during the configured form window" });
       const duplicate = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get() : null;
       if (duplicate && duplicate.id !== current?.id) throw new ORPCError("CONFLICT", { message: "An application with this birth certificate number has already been submitted. Please check the number and try again." });
@@ -245,12 +253,12 @@ export const appRouter = {
       await publishApplicationChange();
       return { updatedAt };
     }),
-    status: publicProcedure.handler(async () => { const window = await getApplicationWindow(); return { submissionLocked: isSubmissionLocked(window), submissionOpensAt: window.opensAt.toISOString(), submissionClosesAt: window.closesAt.toISOString(), environment: env.NODE_ENV }; }),
+    status: publicProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => { const window = await getApplicationWindow(input?.intakeYear); return { submissionLocked: isSubmissionLocked(window), submissionOpensAt: window.opensAt.toISOString(), submissionClosesAt: window.closesAt.toISOString(), environment: env.NODE_ENV }; }),
     submit: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
-      const window = await getApplicationWindow();
-      if (isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "Submissions are outside the configured form window" });
-      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
+      const row = await db.select({ id: applications.id, intakeYear: applications.intakeYear }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
       if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
+      const window = await getApplicationWindow(row.intakeYear);
+      if (isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "Submissions are outside the configured form window" });
       await db.update(applications).set({ submittedAt: new Date(), updatedAt: new Date() }).where(eq(applications.id, row.id)).run();
       await publishApplicationChange();
       return { accepted: true };
@@ -260,6 +268,22 @@ export const appRouter = {
       if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
       const marks = await db.select().from(applicationMarks).where(eq(applicationMarks.applicationId, row.id)).all();
       return marks;
+    }),
+    saveIndicativeMarks: publicProcedure.input(z.object({ accessKey: keySchema, marks: z.array(z.object({ categoryType: z.string(), total: z.number(), breakdown: z.array(z.object({ label: z.string(), marks: z.number(), max: z.number() })) })) })).handler(async ({ input }) => {
+      const row = await db.select({ id: applications.id }).from(applications).where(eq(applications.accessKeyHash, hashKey(input.accessKey))).get();
+      if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
+      const now = new Date();
+      for (const mark of input.marks) {
+        const existing = await db.select({ id: applicationMarks.id }).from(applicationMarks)
+          .where(and(eq(applicationMarks.applicationId, row.id), eq(applicationMarks.categoryType, mark.categoryType)))
+          .get();
+        if (existing) {
+          await db.update(applicationMarks).set({ breakdown: mark.breakdown, total: mark.total, updatedAt: now }).where(eq(applicationMarks.id, existing.id)).run();
+        } else {
+          await db.insert(applicationMarks).values({ id: randomUUID(), applicationId: row.id, categoryType: mark.categoryType, breakdown: mark.breakdown, total: mark.total, createdAt: now, updatedAt: now }).run();
+        }
+      }
+      return { saved: true };
     }),
   },
   schools: {
@@ -274,9 +298,9 @@ export const appRouter = {
       rotateKey: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => rotateRequestKey(input.requestId)),
       deleteAfterRemovalRequest: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => deleteAfterRemoval(input.requestId)),
       dismiss: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => dismissRequest(input.requestId)),
-      submissionRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("submission", input.query, input.page, input.pageSize, undefined, input.status)),
-      removalRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("removal", input.query, input.page, input.pageSize, undefined, input.status)),
-      forgotRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "contactEmail", "birthCertificateNumber", "contactPhone"], input.status)),
+      submissionRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("submission", input.query, input.page, input.pageSize, undefined, input.status, input.intakeYear)),
+      removalRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("removal", input.query, input.page, input.pageSize, undefined, input.status, input.intakeYear)),
+      forgotRequests: adminProcedure.input(paginationInput).handler(async ({ input }) => paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "contactEmail", "birthCertificateNumber", "contactPhone"], input.status, input.intakeYear)),
       approveSubmission: adminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => {
         const request = await db.select().from(applicationAccessRequests).where(eq(applicationAccessRequests.id, input.requestId)).get();
         if (!request) throw new ORPCError("NOT_FOUND", { message: "Submission request not found" });
@@ -295,11 +319,17 @@ export const appRouter = {
       }),
     },
     settings: {
-      get: adminProcedure.handler(async () => { const window = await getApplicationWindow(); return { opensAt: window.opensAt, closesAt: window.closesAt, updatedAt: window.updatedAt }; }),
-      update: adminProcedure.input(z.object({ opensAt: z.coerce.date(), closesAt: z.coerce.date() })).handler(async ({ input }) => {
+      get: adminProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => { const window = await getApplicationWindow(input?.intakeYear); return { opensAt: window.opensAt, closesAt: window.closesAt, updatedAt: window.updatedAt }; }),
+      update: adminProcedure.input(z.object({ opensAt: z.coerce.date(), closesAt: z.coerce.date(), intakeYear: z.string().default("2027") })).handler(async ({ input }) => {
         if (!isValidSubmissionWindow(input.opensAt, input.closesAt)) throw new ORPCError("BAD_REQUEST", { message: "The closing time must be after the opening time" });
         const updatedAt = new Date();
-        await db.insert(applicationSettings).values({ id: "default", opensAt: input.opensAt, closesAt: input.closesAt, updatedAt }).onConflictDoUpdate({ target: applicationSettings.id, set: { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt } });
+        const year = input.intakeYear;
+        const existing = await db.select({ id: applicationSettings.id }).from(applicationSettings).where(eq(applicationSettings.id, year)).get();
+        if (existing) {
+          await db.update(applicationSettings).set({ opensAt: input.opensAt, closesAt: input.closesAt, updatedAt }).where(eq(applicationSettings.id, year)).run();
+        } else {
+          await db.insert(applicationSettings).values({ id: year, opensAt: input.opensAt, closesAt: input.closesAt, updatedAt }).run();
+        }
         return { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt };
       }),
     },
@@ -337,15 +367,16 @@ export const appRouter = {
         return { removed: true };
       }),
     },
-    overview: adminProcedure.handler(async () => {
-      const rows = await db.select().from(applications).all();
+    overview: adminProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => {
+      const intakeYear = input?.intakeYear ?? "2027";
+      const rows = await db.select().from(applications).where(eq(applications.intakeYear, intakeYear)).all();
       const records = rows.map(applicationRecord);
       return { total: records.length, drafts: records.filter((record) => record.status === "draft").length, submitted: records.filter((record) => record.status === "submitted").length, invalidEmail: records.filter((record) => record.validationErrors.includes("invalid_email")).length, incomplete: records.filter((record) => record.validationErrors.length > 0).length, recent: records.slice().sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()).slice(0, 10) };
     }),
     admissions: {
       list: adminProcedure.input(admissionsListInput).handler(async ({ input }) => {
         const query = input.query.toLowerCase();
-        const rows = await db.select().from(applications).where(isNotNull(applications.submittedAt)).all();
+        const rows = await db.select().from(applications).where(and(isNotNull(applications.submittedAt), eq(applications.intakeYear, input.intakeYear))).all();
         const filtered = rows
           .map(admissionSummary)
           .filter((record) => {
@@ -358,8 +389,9 @@ export const appRouter = {
         const start = (input.page - 1) * input.pageSize;
         return { total: filtered.length, page: input.page, pageSize: input.pageSize, items: filtered.slice(start, start + input.pageSize) };
     }),
-      listWithLocations: adminProcedure.handler(async () => {
-        const rows = await db.select().from(applications).where(isNotNull(applications.submittedAt)).all();
+      listWithLocations: adminProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => {
+        const intakeYear = input?.intakeYear ?? "2027";
+        const rows = await db.select().from(applications).where(and(isNotNull(applications.submittedAt), eq(applications.intakeYear, intakeYear))).all();
         return rows.map((row) => {
           const summary = admissionSummary(row);
           const data = (row.data ?? {}) as Record<string, unknown>;
@@ -478,8 +510,8 @@ export const appRouter = {
         return { deleted: true };
       }),
     },
-    applications: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default(""), sort: z.string().default("updatedAt"), sortDir: z.enum(["asc", "desc"]).default("desc"), status: z.enum(["all", "draft", "submitted", "invalid"]).default("all") })).handler(async ({ input }) => {
-      const all = (await db.select().from(applications).all()).map(applicationRecord).filter((record) => { if (input.query && !record.applicantName.toLowerCase().includes(input.query.toLowerCase()) && !record.sessionCode.toLowerCase().includes(input.query.toLowerCase()) && !record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase())) return false; if (input.status !== "all") { if (input.status === "invalid" && record.validationErrors.length === 0) return false; if (input.status !== "invalid" && record.status !== input.status) return false; } return true; }).sort((a, b) => { const av = (a as unknown as Record<string, unknown>)[input.sort]; const bv = (b as unknown as Record<string, unknown>)[input.sort]; const cmp = String(av ?? "").localeCompare(String(bv ?? ""), undefined, { numeric: true }); return input.sortDir === "desc" ? -cmp : cmp; });
+    applications: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(100).default(25), query: z.string().trim().default(""), sort: z.string().default("updatedAt"), sortDir: z.enum(["asc", "desc"]).default("desc"), status: z.enum(["all", "draft", "submitted", "invalid"]).default("all"), intakeYear: z.string().default("2027") })).handler(async ({ input }) => {
+      const all = (await db.select().from(applications).where(eq(applications.intakeYear, input.intakeYear)).all()).map(applicationRecord).filter((record) => { if (input.query && !record.applicantName.toLowerCase().includes(input.query.toLowerCase()) && !record.sessionCode.toLowerCase().includes(input.query.toLowerCase()) && !record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase())) return false; if (input.status !== "all") { if (input.status === "invalid" && record.validationErrors.length === 0) return false; if (input.status !== "invalid" && record.status !== input.status) return false; } return true; }).sort((a, b) => { const av = (a as unknown as Record<string, unknown>)[input.sort]; const bv = (b as unknown as Record<string, unknown>)[input.sort]; const cmp = String(av ?? "").localeCompare(String(bv ?? ""), undefined, { numeric: true }); return input.sortDir === "desc" ? -cmp : cmp; });
       const start = (input.page - 1) * input.pageSize;
       return { total: all.length, page: input.page, pageSize: input.pageSize, items: all.slice(start, start + input.pageSize) };
     }),
@@ -512,11 +544,11 @@ export const appRouter = {
   },
   subAdmin: {
     forgotRequests: subAdminProcedure.input(paginationInput).handler(async ({ input }) => {
-      const result = await paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "birthCertificateNumber"]);
+      const result = await paginateRequests("forgot", input.query, input.page, input.pageSize, ["applicantName", "birthCertificateNumber"], undefined, input.intakeYear);
       return { ...result, items: result.items.map((r) => ({ id: r.id, birthCertificateNumber: r.birthCertificateNumber, applicantName: r.applicantName, status: r.status, createdAt: r.createdAt })) };
     }),
     removalRequests: subAdminProcedure.input(paginationInput).handler(async ({ input }) => {
-      const result = await paginateRequests("removal", input.query, input.page, input.pageSize, ["applicantName", "birthCertificateNumber"]);
+      const result = await paginateRequests("removal", input.query, input.page, input.pageSize, ["applicantName", "birthCertificateNumber"], undefined, input.intakeYear);
       return { ...result, items: result.items.map((r) => ({ id: r.id, birthCertificateNumber: r.birthCertificateNumber, applicantName: r.applicantName, status: r.status, createdAt: r.createdAt })) };
     }),
     rotateKey: subAdminProcedure.input(z.object({ requestId: z.string().uuid() })).handler(async ({ input }) => rotateRequestKey(input.requestId)),

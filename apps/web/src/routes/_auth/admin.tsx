@@ -10,16 +10,20 @@ import { Button } from "@aloysius-g1/ui/components/button";
 import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-g1/ui/components/popover";
 import { Calendar } from "@aloysius-g1/ui/components/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
 
+const INTAKE_YEARS = ["2027", "2026"] as const;
+
 export const Route = createFileRoute("/_auth/admin")({
   loader: async ({ context }) => {
+    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
     await Promise.all([
-      context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions()),
-      context.queryClient.prefetchQuery(context.orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "" } })),
-      context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions()),
+      context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions({ input: { intakeYear } })),
+      context.queryClient.prefetchQuery(context.orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "", intakeYear } })),
+      context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions({ input: { intakeYear } })),
     ]);
   },
   component: AdminPage,
@@ -29,9 +33,20 @@ function AdminPage() {
   const { session } = Route.useRouteContext();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const overview = useQuery(orpc.admin.overview.queryOptions());
-  const applications = useQuery(orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "" } }));
-  const settings = useQuery(orpc.admin.settings.get.queryOptions());
+  const [intakeYear, setIntakeYear] = useState(() => {
+    if (typeof localStorage !== "undefined") return localStorage.getItem("admin-intake-year") || "2027";
+    return "2027";
+  });
+
+  const handleYearChange = (year: string) => {
+    setIntakeYear(year);
+    localStorage.setItem("admin-intake-year", year);
+    window.location.reload();
+  };
+
+  const overview = useQuery(orpc.admin.overview.queryOptions({ input: { intakeYear } }));
+  const applications = useQuery(orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "", intakeYear } }));
+  const settings = useQuery(orpc.admin.settings.get.queryOptions({ input: { intakeYear } }));
   useEffect(() => {
     if (session.data?.user.role !== "admin") return;
     const controller = new AbortController();
@@ -69,10 +84,23 @@ function AdminPage() {
     <SidebarHeader>
       <div className="flex items-center gap-2.5">
             <div className="grid place-items-center w-9 h-9 rounded-lg text-primary-foreground bg-primary"><ShieldCheck size={24} /></div>
-        <div>
+        <div className="flex-1 min-w-0">
           <strong className="block">G1 Intake</strong>
           <span className="block text-muted-foreground text-xs mt-0.5">Admin console</span>
         </div>
+      </div>
+      <div className="px-1 pt-1">
+        <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider mb-1 block">Intake year</label>
+        <Select value={intakeYear} onValueChange={handleYearChange}>
+          <SelectTrigger className="h-8 text-xs w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {INTAKE_YEARS.map((y) => (
+              <SelectItem key={y} value={y}>Grade 1 — {y}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </SidebarHeader>
     <SidebarContent>
@@ -169,7 +197,7 @@ function AdminPage() {
                 </div>
               ))}
             </div>
-            <FormWindowSettings settings={settings.data} />
+            <FormWindowSettings intakeYear={intakeYear} />
             <Card className="mb-4">
               <CardHeader><CardTitle>Application requests</CardTitle></CardHeader>
               <CardContent>
@@ -279,19 +307,22 @@ function DateTimePicker({ value, onChange, label }: { value: string; onChange: (
   );
 }
 
-function FormWindowSettings({ settings }: { settings?: { opensAt: Date; closesAt: Date } }) {
+function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
   const queryClient = useQueryClient();
   const [opensAt, setOpensAt] = useState("");
   const [closesAt, setClosesAt] = useState("");
+  const [selectedYear, setSelectedYear] = useState(intakeYear);
+  const yearSettings = useQuery(orpc.admin.settings.get.queryOptions({ input: { intakeYear: selectedYear } }));
+
   useEffect(() => {
-    if (settings) {
-      setOpensAt(settings.opensAt.toISOString().slice(0, 16));
-      setClosesAt(settings.closesAt.toISOString().slice(0, 16));
+    if (yearSettings.data) {
+      setOpensAt(yearSettings.data.opensAt.toISOString().slice(0, 16));
+      setClosesAt(yearSettings.data.closesAt.toISOString().slice(0, 16));
     }
-  }, [settings]);
+  }, [yearSettings.data]);
 
   const saveMutation = useMutation({
-    mutationFn: () => client.admin.settings.update({ opensAt: new Date(opensAt), closesAt: new Date(closesAt) }),
+    mutationFn: () => client.admin.settings.update({ opensAt: new Date(opensAt), closesAt: new Date(closesAt), intakeYear: selectedYear }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: orpc.admin.settings.get.key() });
       toast.success("Form window saved");
@@ -306,16 +337,31 @@ function FormWindowSettings({ settings }: { settings?: { opensAt: Date; closesAt
       <CardContent className="grid gap-4">
         <div>
           <CardHeader className="p-0"><CardTitle>Form availability</CardTitle></CardHeader>
-          <CardDescription>Choose when applicants can submit the form. The window uses your local time.</CardDescription>
+          <CardDescription>Choose when applicants can submit the form for a specific intake year.</CardDescription>
         </div>
-        <div className="grid grid-cols-2 gap-4 items-end">
+        <div className="grid grid-cols-3 gap-4 items-end">
+          <div className="grid gap-1">
+            <span className="text-muted-foreground text-xs font-semibold">Intake year</span>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {INTAKE_YEARS.map((y) => (
+                  <SelectItem key={y} value={y}>Grade 1 — {y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <DateTimePicker value={opensAt} onChange={setOpensAt} label="Opens" />
           <DateTimePicker value={closesAt} onChange={setClosesAt} label="Closes" />
+        </div>
+        <div className="flex items-center gap-3">
           <Button variant="default" type="button" disabled={saveMutation.isPending || !opensAt || !closesAt} onClick={() => saveMutation.mutate()}>
             {saveMutation.isPending ? "Saving…" : "Save form window"}
           </Button>
+          {saveMutation.isError && <p className="text-destructive text-sm" role="status">{saveMutation.error.message}</p>}
         </div>
-        {saveMutation.isError && <p className="text-destructive text-sm" role="status">{saveMutation.error.message}</p>}
       </CardContent>
     </Card>
   );

@@ -26,8 +26,9 @@ import { formatPhoneDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/_auth/admin/forgot-requests")({
   loader: async ({ context }) => {
+    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
     await context.queryClient.prefetchQuery(context.orpc.admin.accessRequests.forgotRequests.queryOptions({
-      input: { page: 1, pageSize: 10, query: "" },
+      input: { page: 1, pageSize: 10, query: "", intakeYear },
     }));
   },
   component: AdminForgotRequestsPage,
@@ -88,6 +89,7 @@ function AdminForgotRequestsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
+  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
 
   const requests = useQuery(orpc.admin.accessRequests.forgotRequests.queryOptions({
     input: {
@@ -95,6 +97,7 @@ function AdminForgotRequestsPage() {
       pageSize: pagination.pageSize,
       query,
       status: statusFilter as "open" | "resolved" | "dismissed" | "all",
+      intakeYear,
     },
   }));
 

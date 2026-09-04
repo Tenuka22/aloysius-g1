@@ -20,7 +20,8 @@ import { FORM_WINDOW_WARNING } from "@/lib/color-classes";
 
 export const Route = createFileRoute("/_auth/admin/admissions")({
   loader: async ({ context }) => {
-    await context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions());
+    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+    await context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions({ input: { intakeYear } }));
   },
   component: AdmissionsPage,
 });
@@ -79,7 +80,8 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: number; 
 export function AdmissionsPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const settings = useQuery(orpc.admin.settings.get.queryOptions());
+  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
+  const settings = useQuery(orpc.admin.settings.get.queryOptions({ input: { intakeYear } }));
   const [earlyAccessGranted, setEarlyAccessGranted] = useState(false);
   const [earlyAccessDialogOpen, setEarlyAccessDialogOpen] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
@@ -103,6 +105,7 @@ export function AdmissionsPage() {
         pageSize: pagination.pageSize,
         query: searchQuery,
         status: statusFilter as StatusFilter,
+        intakeYear,
       },
     }),
     enabled: admissionsOpen,

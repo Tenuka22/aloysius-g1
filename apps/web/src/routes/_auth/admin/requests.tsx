@@ -26,8 +26,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/admin/requests")({
   loader: async ({ context }) => {
+    const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
     await context.queryClient.prefetchQuery(context.orpc.admin.accessRequests.submissionRequests.queryOptions({
-      input: { page: 1, pageSize: 10, query: "" },
+      input: { page: 1, pageSize: 10, query: "", intakeYear },
     }));
   },
   component: AdminRequestsPage,
@@ -131,6 +132,7 @@ function AdminRequestsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
+  const intakeYear = typeof localStorage !== "undefined" ? localStorage.getItem("admin-intake-year") || "2027" : "2027";
 
   const requests = useQuery(orpc.admin.accessRequests.submissionRequests.queryOptions({
     input: {
@@ -138,6 +140,7 @@ function AdminRequestsPage() {
       pageSize: pagination.pageSize,
       query,
       status: statusFilter as "open" | "resolved" | "dismissed" | "all",
+      intakeYear,
     },
   }));
 
