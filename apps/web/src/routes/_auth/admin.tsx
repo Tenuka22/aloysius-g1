@@ -78,13 +78,14 @@ function AdminPage() {
   const handleYearChange = useCallback((year: string) => {
     setIntakeYear(year);
     localStorage.setItem("admin-intake-year", year);
-    void queryClient.invalidateQueries({ queryKey: orpc.admin.overview.key() });
-    void queryClient.invalidateQueries({ queryKey: orpc.admin.applications.key() });
-    void queryClient.invalidateQueries({ queryKey: orpc.admin.settings.get.key() });
-    void queryClient.invalidateQueries({ queryKey: orpc.admin.accessRequests.submissionRequests.key() });
-    void queryClient.invalidateQueries({ queryKey: orpc.admin.accessRequests.forgotRequests.key() });
-    void queryClient.invalidateQueries({ queryKey: orpc.admin.accessRequests.removalRequests.key() });
-    void queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.list.key() });
+    const prefix = [orpc.admin.overview.key()[0]];
+    void queryClient.invalidateQueries({ queryKey: prefix });
+    void queryClient.invalidateQueries({ queryKey: [orpc.admin.applications.key()[0]] });
+    void queryClient.invalidateQueries({ queryKey: [orpc.admin.settings.get.key()[0]] });
+    void queryClient.invalidateQueries({ queryKey: [orpc.admin.accessRequests.submissionRequests.key()[0]] });
+    void queryClient.invalidateQueries({ queryKey: [orpc.admin.accessRequests.forgotRequests.key()[0]] });
+    void queryClient.invalidateQueries({ queryKey: [orpc.admin.accessRequests.removalRequests.key()[0]] });
+    void queryClient.invalidateQueries({ queryKey: [orpc.admin.admissions.list.key()[0]] });
   }, [queryClient]);
 
   const overview = useQuery(orpc.admin.overview.queryOptions({ input: { intakeYear } }));
@@ -373,7 +374,7 @@ function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
   const saveMutation = useMutation({
     mutationFn: () => client.admin.settings.update({ opensAt: new Date(opensAt), closesAt: new Date(closesAt), intakeYear: selectedYear }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: orpc.admin.settings.get.key() });
+      void queryClient.invalidateQueries({ queryKey: [orpc.admin.settings.get.key()[0]] });
       toast.success("Form window saved");
     },
     onError: (error) => {

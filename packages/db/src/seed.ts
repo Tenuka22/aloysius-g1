@@ -233,7 +233,7 @@ function generateApplication(index: number, intakeYear: string) {
   const updatedAt = new Date(createdAt.getTime() + randInt(1, 72) * 3600000);
   const submittedAt = isDraft ? null : new Date(updatedAt.getTime() + randInt(1, 48) * 3600000);
 
-  const accessKey = `ALY-SEED-${String(index).padStart(3, "0")}-${firstName.toUpperCase()}-${intakeYear}-TEST`;
+  const accessKey = `ALY-SEED-${String(index).padStart(4, "0")}-${firstName.toUpperCase()}-${lastName.toUpperCase().replace(/\s/g, "")}-${intakeYear}-${randInt(1000, 9999)}`;
   const sessionCode = `${intakeYear.slice(-2)}S${String(index).padStart(4, "0")}`;
   const bcNum = `SEED-BC-${String(index).padStart(4, "0")}`;
 
