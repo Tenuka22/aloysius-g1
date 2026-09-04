@@ -413,7 +413,7 @@ function AdminMapPage() {
       <style>{`.school-tooltip{background:#18181b!important;color:#fafafa!important;border:1px solid #27272a!important;border-radius:8px!important;padding:6px 10px!important;font-size:12px!important;box-shadow:0 4px 12px rgba(0,0,0,.3)!important;white-space:nowrap!important;display:flex;flex-direction:column;gap:1px!important}.school-tooltip::before{border-top-color:#18181b!important}`}</style>
 
       <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
-        <DialogContent className="!fixed !top-[5vh] !left-[5vw] !translate-x-0 !translate-y-0 !max-w-none !w-[90vw] !h-[90vh] !p-0 !gap-0 !overflow-hidden !rounded-xl !grid !grid-rows-[auto_1fr]" showCloseButton={false}>
+        <DialogContent className="!fixed !top-[5vh] !left-[5vw] !translate-x-0 !translate-y-0 !max-w-none !w-[90vw] !h-[90vh] !p-0 !gap-0 !overflow-hidden !rounded-xl !grid !grid-rows-[auto_1fr] !z-[1100]" showCloseButton={false}>
           <DialogTitle className="px-4 py-3 border-b flex items-center justify-between shrink-0">
             <span>{selectedSchool?.en ?? "Map"} — Fullscreen</span>
             <div className="flex items-center gap-3 text-sm text-muted-foreground font-normal">
