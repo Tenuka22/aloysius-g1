@@ -313,8 +313,27 @@ function generateApplication(index: number, intakeYear: string) {
 // ── Main seed ────────────────────────────────────────────────────────────────
 console.log("Seeding 100 applications across all sectors...\n");
 
+const YEAR_DISTRIBUTION: Array<{ year: string; weight: number }> = [
+  { year: "2024", weight: 8 },
+  { year: "2025", weight: 14 },
+  { year: "2026", weight: 22 },
+  { year: "2027", weight: 30 },
+  { year: "2028", weight: 16 },
+  { year: "2029", weight: 10 },
+];
+
+function pickIntakeYear(): string {
+  const totalWeight = YEAR_DISTRIBUTION.reduce((s, y) => s + y.weight, 0);
+  let r = Math.random() * totalWeight;
+  for (const y of YEAR_DISTRIBUTION) {
+    r -= y.weight;
+    if (r <= 0) return y.year;
+  }
+  return YEAR_DISTRIBUTION[YEAR_DISTRIBUTION.length - 1].year;
+}
+
 const seedApps = Array.from({ length: 100 }, (_, i) => {
-  const intakeYear = i < 70 ? "2027" : "2026";
+  const intakeYear = pickIntakeYear();
   return generateApplication(i + 1, intakeYear);
 });
 
@@ -372,17 +391,20 @@ for (const app of seedApps) {
 }
 
 // Summary
-const submitted2027 = seedApps.filter((a) => a.intakeYear === "2027" && a.submittedAt).length;
-const drafts2027 = seedApps.filter((a) => a.intakeYear === "2027" && !a.submittedAt).length;
-const submitted2026 = seedApps.filter((a) => a.intakeYear === "2026" && a.submittedAt).length;
-const drafts2026 = seedApps.filter((a) => a.intakeYear === "2026" && !a.submittedAt).length;
+const counts = seedApps.reduce((acc, a) => {
+  if (!acc[a.intakeYear]) acc[a.intakeYear] = { submitted: 0, drafts: 0 };
+  if (a.submittedAt) acc[a.intakeYear].submitted++;
+  else acc[a.intakeYear].drafts++;
+  return acc;
+}, {} as Record<string, { submitted: number; drafts: number }>);
 
 console.log(`Seeded ${seedApps.length} applications:`);
-console.log(`  2027 intake: ${submitted2027} submitted, ${drafts2027} drafts`);
-console.log(`  2026 intake: ${submitted2026} submitted, ${drafts2026} drafts`);
+for (const year of Object.keys(counts).sort()) {
+  const c = counts[year];
+  console.log(`  ${year} intake: ${c.submitted} submitted, ${c.drafts} drafts`);
+}
 console.log(`  Admission: ${seedApps.filter((a) => a.admissionStatus === "pending").length} pending, ${seedApps.filter((a) => a.admissionStatus === "verified").length} verified, ${seedApps.filter((a) => a.admissionStatus === "fake").length} fake`);
 console.log(`  Banned: ${seedApps.filter((a) => a.isBanned).length}`);
-const allCats = [...new Set(seedApps.flatMap((a) => (a.data as { categories: Array<{ categoryType: string }> }).categories.map((c) => c.categoryType)))].sort().join(", ");
-console.log(`  Categories covered: ${allCats}`);
+console.log(`  Categories covered: ${[...new Set(seedApps.flatMap((a) => (a.data as { categories: Array<{ categoryType: string }> }).categories.map((c) => c.categoryType)))].sort().join(", ")}`);
 console.log("\nAccess keys are in the format: ALY-SEED-XXX-NAME-YEAR-TEST");
 console.log("All applications are in the Galle / Kalutara / Colombo area.");
