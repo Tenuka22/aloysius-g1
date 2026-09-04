@@ -191,10 +191,10 @@ function AdminMapPage() {
     return list;
   }, [selectedSchool, selectedNearbySchools]);
 
-  const proximityScore61 = homeToSchoolKm != null ? Math.max(0, PROXIMITY_MAX_61 - schoolsWithinRadius * PROXIMITY_PER_SCHOOL_61) : PROXIMITY_MAX_61;
-  const proximityScore63 = homeToSchoolKm != null ? Math.max(0, PROXIMITY_MAX_63 - schoolsWithinRadius * PROXIMITY_PER_SCHOOL_63) : PROXIMITY_MAX_63;
-  const proximityScore65 = homeToSchoolKm != null ? Math.max(0, PROXIMITY_MAX_65 - schoolsWithinRadius * PROXIMITY_PER_SCHOOL_65) : PROXIMITY_MAX_65;
-  const proximityScore66 = homeToSchoolKm != null ? Math.max(0, PROXIMITY_MAX_66 - schoolsWithinRadius * PROXIMITY_PER_SCHOOL_66) : PROXIMITY_MAX_66;
+  const proximityScore61 = homeToSchoolKm != null ? Math.min(PROXIMITY_MAX_61, schoolsWithinRadius * PROXIMITY_PER_SCHOOL_61) : 0;
+  const proximityScore63 = homeToSchoolKm != null ? Math.min(PROXIMITY_MAX_63, schoolsWithinRadius * PROXIMITY_PER_SCHOOL_63) : 0;
+  const proximityScore65 = homeToSchoolKm != null ? Math.min(PROXIMITY_MAX_65, schoolsWithinRadius * PROXIMITY_PER_SCHOOL_65) : 0;
+  const proximityScore66 = homeToSchoolKm != null ? Math.min(PROXIMITY_MAX_66, schoolsWithinRadius * PROXIMITY_PER_SCHOOL_66) : 0;
   const residenceScore64 = tieredResidenceMarks(homeToSchoolKm);
 
   const located = useMemo(() => items.filter((a) => a.latitude != null && a.longitude != null), [items]);
