@@ -1,4 +1,4 @@
-import { type School } from "./schools";
+import { type GenderType, type School } from "./schools";
 import { findSchoolById, getSchools } from "./school-coordinates";
 
 export { findSchoolById };
@@ -41,4 +41,9 @@ export function getSchoolsWithClassification(centerLat: number, centerLng: numbe
   const within = all.filter((s) => s.distanceKm <= radiusKm);
   const outside = all.filter((s) => s.distanceKm > radiusKm).slice(0, EXTRA_OUTSIDE_SCHOOLS);
   return { within, outside };
+}
+
+export function isGenderCompatible(schoolGenderType: GenderType, appliedSchoolGenderType: GenderType): boolean {
+  if (appliedSchoolGenderType === "mixed") return true;
+  return schoolGenderType === appliedSchoolGenderType || schoolGenderType === "mixed";
 }

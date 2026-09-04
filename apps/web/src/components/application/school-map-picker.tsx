@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { Circle, MapContainer, Marker, Polyline, TileLayer, Tooltip as RlTooltip, useMap } from "react-leaflet";
 import { DivIcon } from "leaflet";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
-import { haversineDistanceKm, getAllSchoolsWithDistance, findSchoolById } from "@/lib/school-utils";
+import { haversineDistanceKm, getAllSchoolsWithDistance, findSchoolById, isGenderCompatible } from "@/lib/school-utils";
 import type { GenderType } from "@/lib/schools";
 import "leaflet/dist/leaflet.css";
 import { STATUS_SUCCESS, STATUS_WARNING } from "@/lib/color-classes";
@@ -65,6 +65,7 @@ function MapResizeSync() {
 
 export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSchoolId, marksPerSchool, onToggle }: SchoolMapPickerProps) {
   const highlightSchool = highlightSchoolId ? findSchoolById(highlightSchoolId) : undefined;
+  const appliedGenderType = highlightSchool?.genderType;
 
   const radiusKm = useMemo(() => {
     if (!highlightSchool || highlightSchool.lat == null || highlightSchool.lng == null) return 10;
@@ -162,12 +163,14 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
               </li>
             );
           }
+          const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
           return (
             <li key={school.id}>
-              <label htmlFor={rowId} className="flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-muted/50">
-                <Checkbox id={rowId} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} onCheckedChange={() => onToggle(school.id)} />
+              <label htmlFor={rowId} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${compatible ? "hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}>
+                <Checkbox id={rowId} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible} onCheckedChange={() => compatible && onToggle(school.id)} />
                 <span className="min-w-0 flex-1">
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
+                  {!compatible && <span className="ml-1 text-xs text-muted-foreground">Ineligible</span>}
                 </span>
                 {marksPerSchool != null && (
                   <span className={`shrink-0 text-xs font-semibold ${STATUS_SUCCESS.textStrong} dark:text-emerald-300 tabular-nums`}>{marksPerSchool} marks</span>
@@ -198,13 +201,15 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
               </li>
             );
           }
+          const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
           return (
             <li key={school.id} className="opacity-50">
-              <label htmlFor={`school-option-${school.id}`} className="flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm hover:bg-muted/50">
-                <Checkbox id={`school-option-${school.id}`} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} onCheckedChange={() => onToggle(school.id)} />
+              <label htmlFor={`school-option-${school.id}`} className={`flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm ${compatible ? "hover:bg-muted/50" : "cursor-not-allowed"}`}>
+                <Checkbox id={`school-option-${school.id}`} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible} onCheckedChange={() => compatible && onToggle(school.id)} />
                 <span className="min-w-0 flex-1">
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
-                  <span className="ml-1 text-orange-500 text-xs font-semibold">Just outside</span>
+                  {!compatible && <span className="ml-1 text-xs text-muted-foreground">Ineligible</span>}
+                  {compatible && <span className="ml-1 text-orange-500 text-xs font-semibold">Just outside</span>}
                 </span>
                 {marksPerSchool != null && (
                   <span className={`shrink-0 text-xs font-semibold ${STATUS_SUCCESS.textStrong} dark:text-emerald-300 tabular-nums`}>{marksPerSchool} marks</span>
