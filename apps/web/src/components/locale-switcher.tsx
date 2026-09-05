@@ -14,14 +14,11 @@ export function LocaleSwitcher() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label="Change language"
-          className="fixed bottom-4 right-4 z-50 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg h-11 w-11 hover:bg-primary/90 transition-colors"
-        >
-          <Globe size={20} />
-        </button>
+      <PopoverTrigger
+        aria-label="Change language"
+        className="fixed bottom-4 right-4 z-50 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg h-11 w-11 hover:bg-primary/90 transition-colors"
+      >
+        <Globe size={20} />
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-44 p-1">
         <button
