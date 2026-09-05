@@ -5,9 +5,14 @@ import userEvent from "@testing-library/user-event";
 import { AccessRecoveryDialog } from "./access-recovery-dialog";
 
 const { requestAccessMock } = vi.hoisted(() => ({ requestAccessMock: vi.fn() }));
+const { toastSuccessMock } = vi.hoisted(() => ({ toastSuccessMock: vi.fn() }));
 
 vi.mock("@/utils/orpc", () => ({
   client: { application: { requestAccess: requestAccessMock } },
+}));
+
+vi.mock("sonner", () => ({
+  toast: { success: toastSuccessMock, error: vi.fn() },
 }));
 
 function renderDialog(props: { applicantName?: string } = {}) {
@@ -21,6 +26,7 @@ describe("AccessRecoveryDialog – submit gating", () => {
   beforeEach(() => {
     requestAccessMock.mockReset();
     requestAccessMock.mockResolvedValue({ submitted: true });
+    toastSuccessMock.mockReset();
   });
 
   it("stays disabled until a session code and phone are provided", async () => {
@@ -63,7 +69,7 @@ describe("AccessRecoveryDialog – session mode", () => {
       contactPhone: "+94712345678",
       requestType: "forgot",
     });
-    expect(await screen.findByRole("status")).toHaveTextContent("Request sent. An administrator will contact you");
+    expect(toastSuccessMock).toHaveBeenCalledWith(expect.stringContaining("Request sent. An administrator will contact you"));
   });
 
   it("shows the server error message when the request fails", async () => {

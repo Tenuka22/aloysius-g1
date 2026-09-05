@@ -106,8 +106,10 @@ describe("HomeComponent – renders correctly", () => {
 
   it("shows the stats section", () => {
     render(<HomeComponent />);
-    expect(screen.getByText(/total applications/i)).toBeInTheDocument();
-    expect(screen.getByText(/saved on this device/i)).toBeInTheDocument();
+    expect(screen.getByText("Total")).toBeInTheDocument();
+    expect(screen.getByText("Saved")).toBeInTheDocument();
+    expect(screen.getByText("Submitted")).toBeInTheDocument();
+    expect(screen.getByText("Drafts")).toBeInTheDocument();
   });
 
   it("shows the G1 2026 intake badge", () => {
@@ -255,9 +257,9 @@ describe("HomeComponent – QR import", () => {
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("HomeComponent – forgot a key", () => {
-  it("disables forgot key button when no keys are saved", () => {
+  it("still enables the forgot key button when no keys are saved (recovery works via session code/birth certificate too)", () => {
     render(<HomeComponent />);
-    expect(screen.getByRole("button", { name: /forgot a key/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /forgot a key/i })).toBeEnabled();
   });
 
   it("opens recovery dialog when forgot key is clicked with saved keys", async () => {

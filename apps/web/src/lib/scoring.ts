@@ -98,7 +98,10 @@ export function yearsFromDate(dateStr: string | undefined): number {
   const start = new Date(dateStr);
   if (Number.isNaN(start.getTime())) return 0;
   const now = new Date();
-  return Math.max(0, (now.getTime() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  // Rounded to avoid sub-day floating-point drift (leap-year alignment,
+  // exact instant of "now") tipping a value that should land exactly on a
+  // year boundary (e.g. tier lookups keyed on whole years) to the wrong side.
+  return round2(Math.max(0, (now.getTime() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000)));
 }
 
 export function yearsBetween(d1: string | undefined, d2: string | undefined): number {
@@ -195,9 +198,12 @@ function electoralRegisterMarks61(inputs: ScoringInputs): number {
   return cap((mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_61, ELECTORAL_MAX_61);
 }
 
+// Proximity is a scarcity/priority criterion: an applicant with FEWER competing
+// schools within radius has fewer alternatives and starts at the maximum;
+// each additional nearby school deducts `perSchool` marks, floored at 0.
 export function proximityMarks(inputs: ScoringInputs, perSchool: number, max: number): number {
   const count = inputs.schoolsWithinRadius?.length ?? 0;
-  return cap(count * perSchool, max);
+  return cap(max - count * perSchool, max);
 }
 
 export function documentMarks61(inputs: ScoringInputs): number {

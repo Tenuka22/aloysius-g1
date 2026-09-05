@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   applyLocationChange,
 } from "./application-store";
@@ -13,6 +13,19 @@ import {
 } from "./scoring";
 
 const schools = (count: number) => Array.from({ length: count }, (_, index) => `school-${index}`);
+
+// Several scoring functions compute elapsed years against the real system
+// clock (`yearsFromDate`), so the expected values below are only stable for a
+// pinned "now". Chosen so every hardcoded date in this file lands exactly on
+// a whole-year boundary.
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-09-01T00:00:00.000Z"));
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe("scoreCategory61 – residence & proximity", () => {
   it("scores zero for an empty form", () => {

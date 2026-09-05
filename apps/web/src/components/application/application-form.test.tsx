@@ -541,7 +541,7 @@ describe("ApplicationForm – state transitions", () => {
   });
 
   it("navigates backward through the step indicator", async () => {
-    setStore({ ...fullValidDraft, currentStep: 4 });
+    setStore({ ...fullValidDraft, currentStep: 4, maxVisitedStep: 4 });
     const user = userEvent.setup();
     await renderForm();
     await user.click(screen.getByRole("button", { name: /parent \/ guardian/i }));
@@ -612,8 +612,11 @@ describe("ApplicationForm – server errors", () => {
     const user = userEvent.setup();
     await renderForm();
     await user.click(screen.getByRole("button", { name: /continue/i }));
-    expect(await screen.findByText("Save failed")).toBeInTheDocument();
-    expect(useApplicationStore.getState().currentStep).toBe(1);
+    expect(await screen.findByText("Save failed — retrying…")).toBeInTheDocument();
+    // Continue advances the step optimistically and saves in the background;
+    // a failed save surfaces the status message above but does not block
+    // navigation or revert the step.
+    expect(useApplicationStore.getState().currentStep).toBe(2);
     updateMock.mockReset().mockResolvedValue({ updatedAt: "2026-01-01T00:00:00.000Z" });
   });
 });

@@ -33,7 +33,7 @@
     "build": "nx run-many -t build",
     "check-types": "nx run-many -t check-types",
     "test": "vitest run --execArgv=--no-webstorage",
-    "test:integration": "bun test packages/api/src/routers/index.integration.test.ts packages/auth/src/index.integration.test.ts",
+    "test:integration": "bun test --isolate packages/api/src/routers/index.integration.test.ts packages/auth/src/index.integration.test.ts",
     "test:all": "bun run test && bun run test:integration",
     "dev:web": "nx run-many -t dev --projects=web",
     "dev:server": "nx run-many -t dev --projects=server",
