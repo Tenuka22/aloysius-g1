@@ -4,6 +4,7 @@ import { ORPCError } from "@orpc/client";
 
 import { adminProcedure, subAdminProcedure, protectedProcedure, publicProcedure } from "../index";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { createDb } from "@aloysius-g1/db";
 import { applicationAccessRequests, applicationMarks, applicationSettings, applications, schoolCoordinateOverrides } from "@aloysius-g1/db";
@@ -375,6 +376,49 @@ export const appRouter = {
       remove: adminProcedure.input(z.object({ id: z.string().trim().min(1) })).handler(async ({ input }) => {
         await db.delete(schoolCoordinateOverrides).where(eq(schoolCoordinateOverrides.id, input.id)).run();
         return { removed: true };
+      }),
+      clear: adminProcedure.handler(async () => {
+        await db.delete(schoolCoordinateOverrides).run();
+        return { cleared: true };
+      }),
+      seedFromScraper: adminProcedure.input(z.object({ mode: z.enum(["add", "upsert"]).default("add") })).handler(async ({ input }) => {
+        const scraperPath = "apps/map-scraper/schools_data.json";
+        let raw: string;
+        try {
+          raw = readFileSync(scraperPath, "utf-8");
+        } catch {
+          throw new ORPCError("NOT_FOUND", { message: "Scraper data file not found at " + scraperPath });
+        }
+        const schools = JSON.parse(raw) as Array<{ id: string; en: string; lat: number | null; lng: number | null }>;
+        const now = new Date();
+        let added = 0;
+        let skipped = 0;
+        let updated = 0;
+        for (const school of schools) {
+          if (!school.id || !school.en || school.lat == null || school.lng == null) continue;
+          const existing = await db.select({ id: schoolCoordinateOverrides.id }).from(schoolCoordinateOverrides).where(eq(schoolCoordinateOverrides.id, school.id)).get();
+          if (existing && input.mode === "add") {
+            skipped++;
+            continue;
+          }
+          const values = {
+            id: school.id,
+            name: school.en,
+            latitude: school.lat,
+            longitude: school.lng,
+            note: input.mode === "add" ? "imported from scraper (new)" : "imported from scraper (upsert)",
+            updatedBy: "scraper",
+            updatedAt: now,
+          };
+          if (existing) {
+            await db.update(schoolCoordinateOverrides).set(values).where(eq(schoolCoordinateOverrides.id, school.id)).run();
+            updated++;
+          } else {
+            await db.insert(schoolCoordinateOverrides).values(values).run();
+            added++;
+          }
+        }
+        return { added, skipped, updated };
       }),
     },
     overview: adminProcedure.input(z.object({ intakeYear: z.string().default("2027") }).optional()).handler(async ({ input }) => {

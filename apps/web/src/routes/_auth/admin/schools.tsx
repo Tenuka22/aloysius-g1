@@ -9,6 +9,7 @@ import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-g1/ui/components/alert-dialog";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-g1/ui/components/select";
 import { client } from "@/utils/orpc";
@@ -163,6 +164,9 @@ function AdminSchoolsPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [, setTick] = useState(0);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [seedDialogOpen, setSeedDialogOpen] = useState(false);
+  const [seedMode, setSeedMode] = useState<"add" | "upsert">("add");
 
   const bump = () => setTick((tick) => tick + 1);
 
@@ -181,6 +185,31 @@ function AdminSchoolsPage() {
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Could not remove coordinates");
+    },
+  });
+
+  const clearMutation = useMutation({
+    mutationFn: () => client.admin.schools.clear(),
+    onSuccess: () => {
+      toast.success("All school coordinates cleared");
+      void refreshSchoolCoordinateOverrides().then(bump);
+      setClearDialogOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Could not clear coordinates");
+    },
+  });
+
+  const seedMutation = useMutation({
+    mutationFn: (mode: "add" | "upsert") => client.admin.schools.seedFromScraper({ mode }),
+    onSuccess: (result) => {
+      const msg = `Seeded ${result.added} new schools` + (result.skipped ? `, skipped ${result.skipped} existing` : "") + (result.updated ? `, updated ${result.updated}` : "");
+      toast.success(msg);
+      void refreshSchoolCoordinateOverrides().then(bump);
+      setSeedDialogOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Could not seed schools");
     },
   });
 
@@ -245,6 +274,18 @@ function AdminSchoolsPage() {
         </div>
         <Button variant="secondary" render={<Link to="/admin/admin_map" />}><MapPin size={17} /> Open map view</Button>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Bulk actions</CardTitle>
+          <CardDescription>Seed or reset school coordinates from the map scraper output.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button variant="destructive" size="sm" onClick={() => setClearDialogOpen(true)}><Trash2 size={15} /> Clear all schools</Button>
+          <Button variant="secondary" size="sm" onClick={() => { setSeedMode("add"); setSeedDialogOpen(true); }}><Globe size={15} /> Seed from scraper (add only)</Button>
+          <Button variant="default" size="sm" onClick={() => { setSeedMode("upsert"); setSeedDialogOpen(true); }}><MapPinned size={15} /> Clear &amp; seed from scraper</Button>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Card><CardContent className="pt-6"><p className="text-muted-foreground text-xs">Total schools</p><strong className="text-[1.8rem]">{schools.length}</strong></CardContent></Card>
@@ -387,6 +428,42 @@ function AdminSchoolsPage() {
         onClose={() => setEditing(null)}
         onSaved={() => { void refreshSchoolCoordinateOverrides().then(bump); }}
       />
+
+      <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all school coordinates?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove every manual coordinate override from the database. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => clearMutation.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {clearMutation.isPending ? "Clearing…" : "Clear all"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={seedDialogOpen} onOpenChange={setSeedDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{seedMode === "upsert" ? "Clear & seed from scraper?" : "Seed from scraper?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {seedMode === "upsert"
+                ? "This will clear all existing overrides and replace them with coordinates from the scraper JSON."
+                : "This will add coordinates from the scraper JSON for schools that don't already have an override. Existing manual coordinates are preserved."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => seedMutation.mutate(seedMode)}>
+              {seedMutation.isPending ? "Seeding…" : seedMode === "upsert" ? "Clear & seed" : "Seed (add only)"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
