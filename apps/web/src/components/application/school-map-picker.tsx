@@ -3,6 +3,7 @@ import { Circle, MapContainer, Marker, Polyline, TileLayer, Tooltip as RlTooltip
 import { DivIcon } from "leaflet";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
 import { haversineDistanceKm, getAllSchoolsWithDistance, findSchoolById, isGenderCompatible } from "@/lib/school-utils";
+import { HOME_SCHOOL_ID, MAP_MARKER_COLORS } from "@/lib/school-config";
 import type { GenderType } from "@/lib/schools";
 import "leaflet/dist/leaflet.css";
 import { STATUS_SUCCESS, STATUS_WARNING } from "@/lib/color-classes";
@@ -39,13 +40,13 @@ function createIcon(svg: string, bgColor: string, borderColor: string, size = 32
   });
 }
 
-const iconHome = createIcon(HOME_SVG, "#dc2626", "#991b1b", 34);
-const iconApplied = createIcon(SCHOOL_SVG, "#f59e0b", "#b45309", 36);
-const iconSelectedIn = createIcon(SCHOOL_SVG, "#087f5b", "#065f46", 32);
-const iconSelectedOut = createIcon(SCHOOL_SVG, "#f97316", "#c2410c", 32);
-const iconUnselectedIn = createIcon(SCHOOL_SVG, "#64748b", "#475569", 26);
-const iconUnselectedOut = createIcon(SCHOOL_SVG, "#94a3b8", "#64748b", 22);
-const iconIneligible = createIcon(SCHOOL_SVG, "#c4b5fd", "#8b5cf6", 20);
+const iconHome = createIcon(HOME_SVG, MAP_MARKER_COLORS.home.bg, MAP_MARKER_COLORS.home.border, 34);
+const iconApplied = createIcon(SCHOOL_SVG, MAP_MARKER_COLORS.applied.bg, MAP_MARKER_COLORS.applied.border, 36);
+const iconSelectedIn = createIcon(SCHOOL_SVG, MAP_MARKER_COLORS.selectedIn.bg, MAP_MARKER_COLORS.selectedIn.border, 32);
+const iconSelectedOut = createIcon(SCHOOL_SVG, MAP_MARKER_COLORS.selectedOut.bg, MAP_MARKER_COLORS.selectedOut.border, 32);
+const iconUnselectedIn = createIcon(SCHOOL_SVG, MAP_MARKER_COLORS.unselectedIn.bg, MAP_MARKER_COLORS.unselectedIn.border, 26);
+const iconUnselectedOut = createIcon(SCHOOL_SVG, MAP_MARKER_COLORS.unselectedOut.bg, MAP_MARKER_COLORS.unselectedOut.border, 22);
+const iconIneligible = createIcon(SCHOOL_SVG, MAP_MARKER_COLORS.ineligible.bg, MAP_MARKER_COLORS.ineligible.border, 20);
 
 function MapResizeSync() {
   const map = useMap();
@@ -92,13 +93,13 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           <MapResizeSync />
           <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-          <Circle center={[centerLat, centerLng]} radius={radiusKm * 1000} pathOptions={{ color: "#087f5b", fillColor: "#13b77e", fillOpacity: 0.04, weight: 2, dashArray: "8 4" }} />
+          <Circle center={[centerLat, centerLng]} radius={radiusKm * 1000} pathOptions={{ color: MAP_MARKER_COLORS.radius.stroke, fillColor: MAP_MARKER_COLORS.radius.fill, fillOpacity: 0.04, weight: 2, dashArray: "8 4" }} />
 
           {withinSelected.map((school) => (
-            <Polyline key={`line-in-${school.id}`} positions={[[centerLat, centerLng], [school.lat, school.lng]]} pathOptions={{ color: "#087f5b", weight: 2, opacity: 0.5, dashArray: "4 4" }} />
+            <Polyline key={`line-in-${school.id}`} positions={[[centerLat, centerLng], [school.lat, school.lng]]} pathOptions={{ color: MAP_MARKER_COLORS.line.in, weight: 2, opacity: 0.5, dashArray: "4 4" }} />
           ))}
           {outsideSelected.map((school) => (
-            <Polyline key={`line-out-${school.id}`} positions={[[centerLat, centerLng], [school.lat, school.lng]]} pathOptions={{ color: "#f97316", weight: 2, opacity: 0.6, dashArray: "6 3" }} />
+            <Polyline key={`line-out-${school.id}`} positions={[[centerLat, centerLng], [school.lat, school.lng]]} pathOptions={{ color: MAP_MARKER_COLORS.line.out, weight: 2, opacity: 0.6, dashArray: "6 3" }} />
           ))}
 
           <Marker position={[centerLat, centerLng]} icon={iconHome} zIndexOffset={1000}>
@@ -125,7 +126,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
                 <RlTooltip direction="top" offset={[0, offset]} opacity={1} className="school-tooltip">
                   <span style={{ fontWeight: 600 }}>{school.en}</span>
                   <span style={{ opacity: 0.7 }}>({GENDER_LABELS[school.genderType]})</span>
-                  {!compatible && <span style={{ color: "#8b5cf6", fontSize: "0.65rem" }}>Ineligible</span>}
+                  {!compatible &&                   <span style={{ color: MAP_MARKER_COLORS.ineligible.border, fontSize: "0.65rem" }}>Ineligible</span>}
                   <span style={{ fontFamily: "monospace" }}>{school.distanceKm.toFixed(1)} km</span>
                 </RlTooltip>
               </Marker>

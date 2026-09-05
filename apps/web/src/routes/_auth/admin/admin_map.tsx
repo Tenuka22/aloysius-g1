@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogDescription } from "@aloysius-g1/ui/components/dialog";
 import { schoolsWithCoordinates } from "@/lib/school-coordinates";
 import { haversineDistanceKm, getAllSchoolsWithDistance, findSchoolById, isGenderCompatible } from "@/lib/school-utils";
+import { HOME_SCHOOL_ID } from "@/lib/school-config";
 import {
   PROXIMITY_PER_SCHOOL_61, PROXIMITY_MAX_61,
   PROXIMITY_PER_SCHOOL_63, PROXIMITY_MAX_63,
@@ -167,9 +168,10 @@ function AdminMapPage() {
     return () => { controller.abort(); cancel(); };
   }, []);
 
-  const [homeLat, setHomeLat] = useState(6.045556);
-  const [homeLng, setHomeLng] = useState(80.208583);
-  const [selectedSchoolId, setSelectedSchoolId] = useState("st-aloysius-galle");
+  const homeSchool = findSchoolById(HOME_SCHOOL_ID);
+  const [homeLat, setHomeLat] = useState(homeSchool?.lat ?? 6.045556);
+  const [homeLng, setHomeLng] = useState(homeSchool?.lng ?? 80.208583);
+  const [selectedSchoolId, setSelectedSchoolId] = useState(HOME_SCHOOL_ID);
   const [selectedNearbyIds, setSelectedNearbyIds] = useState<Set<string>>(new Set());
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
 

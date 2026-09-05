@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compatibleSchoolsWithinRadius, findSchoolById, getAllSchoolsWithDistance, getSchoolsWithinRadius, haversineDistanceKm, isGenderCompatible } from "./school-utils";
+import { HOME_SCHOOL_ID } from "./school-config";
 
 describe("haversineDistanceKm", () => {
   it("returns 0 for identical points", () => {
@@ -15,7 +16,7 @@ describe("haversineDistanceKm", () => {
 
 describe("findSchoolById", () => {
   it("finds a school by id", () => {
-    expect(findSchoolById("st-aloysius-galle")?.en).toBe("St. Aloysius' College");
+    expect(findSchoolById(HOME_SCHOOL_ID)?.en).toBe("St. Aloysius' College");
   });
 
   it("returns undefined for unknown ids", () => {
@@ -77,9 +78,9 @@ describe("isGenderCompatible", () => {
 });
 
 describe("compatibleSchoolsWithinRadius", () => {
-  // St. Aloysius' College (Galle) is a boys' school; used throughout the
+  // The home school (St. Aloysius' College, Galle) is a boys' school; used throughout the
   // scoring UI as the fixed "applied school" for the proximity criterion.
-  const targetId = "st-aloysius-galle";
+  const targetId = HOME_SCHOOL_ID;
   const centerLat = 6.0343;
   const centerLng = 80.217;
 

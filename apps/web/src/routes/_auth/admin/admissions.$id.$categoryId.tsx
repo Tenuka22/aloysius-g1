@@ -10,6 +10,7 @@ import { normalizeDraft, type ApplicationDraft, type InterviewEdit, type Locatio
 import { scoreCategory } from "@/lib/scoring";
 import { CATEGORY_MAX_MARKS } from "@/lib/marking-scheme";
 import { findSchoolById, haversineDistanceKm } from "@/lib/school-utils";
+import { HOME_SCHOOL_ID, getHomeSchoolDisplayName } from "@/lib/school-config";
 import { FIELD_ICON_COLORS } from "@/lib/color-classes";
 import { toast } from "sonner";
 import { Badge } from "@aloysius-g1/ui/components/badge";
@@ -264,7 +265,7 @@ const SCHOOL_COORDS_FALLBACK = { lat: 6.0456, lng: 80.2086 };
 
 function getSchoolCoords(): { lat: number; lng: number } {
   // Resolve at read time so manual DB overrides (schools hub) apply here too.
-  const school = findSchoolById("st-aloysius-galle");
+  const school = findSchoolById(HOME_SCHOOL_ID);
   if (school?.lat != null && school?.lng != null) return { lat: school.lat, lng: school.lng };
   return SCHOOL_COORDS_FALLBACK;
 }
@@ -529,7 +530,7 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
           <div>
             <CardTitle>Location evidence</CardTitle>
             <CardDescription>
-              Each circle is centred on St. Aloysius&apos; College with radius equal to the distance from each home to the school.
+              Each circle is centred on {getHomeSchoolDisplayName()} with radius equal to the distance from each home to the school.
               {homeToSchoolKm != null && (
                 <span className="ml-2 font-semibold text-primary">{homeToSchoolKm.toFixed(2)} km from school</span>
               )}
@@ -583,7 +584,7 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
                 })}
 
                 <Marker position={[SCHOOL_COORDS.lat, SCHOOL_COORDS.lng]} icon={iconSchool} zIndexOffset={800}>
-                  <LeafletTooltip direction="top" offset={[0, -12]} opacity={1}>St. Aloysius&apos; College</LeafletTooltip>
+                  <LeafletTooltip direction="top" offset={[0, -12]} opacity={1}>{getHomeSchoolDisplayName()}</LeafletTooltip>
                 </Marker>
 
                 {visiblePoints.map(point => {
@@ -665,7 +666,7 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
             {/* School row */}
             <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 p-3 flex items-center gap-3">
               <span className="inline-block size-2.5 rounded-full bg-amber-500" />
-              <span className="text-sm font-semibold">St. Aloysius&apos; College</span>
+              <span className="text-sm font-semibold">{getHomeSchoolDisplayName()}</span>
               <Badge variant="outline" className="text-[0.6rem] px-1.5 py-0">School</Badge>
               <span className="ml-auto text-xs text-muted-foreground">{SCHOOL_COORDS.lat.toFixed(5)}, {SCHOOL_COORDS.lng.toFixed(5)}</span>
             </div>

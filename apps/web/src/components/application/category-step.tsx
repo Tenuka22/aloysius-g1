@@ -8,6 +8,7 @@ import {
 } from "@/lib/application-store";
 import { STATUS_ERROR, MARK_TOOLTIP } from "@/lib/color-classes";
 import { compatibleSchoolsWithinRadius } from "@/lib/school-utils";
+import { HOME_SCHOOL_ID, getHomeSchoolDisplayName } from "@/lib/school-config";
 import {
   CATEGORY_MAX_MARKS,
   MAIN_DOCUMENT_MAX_61,
@@ -600,7 +601,7 @@ export function Category61Fields({
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Nearby schools</span>
-          <MarkBadge marks={prox} max={PROXIMITY_MAX_61} hint={"Max 50 marks.\nDeduct 5 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 50 marks\n10 schools = 0 marks"} />
+          <MarkBadge marks={prox} max={PROXIMITY_MAX_61} hint={"Max 50 marks.\nDeduct 5 per school within radius\n(excluding " + getHomeSchoolDisplayName() + ").\n\nNo other schools = 50 marks\n10 schools = 0 marks"} />
           <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
           {selectedSchoolIds.length > 0 && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{selectedSchoolIds.length} selected</span>
@@ -611,7 +612,7 @@ export function Category61Fields({
             centerLat={centerLat!}
             centerLng={centerLng!}
             selectedIds={selectedSchoolIds}
-            highlightSchoolId="st-aloysius-galle"
+            highlightSchoolId={HOME_SCHOOL_ID}
             marksPerSchool={PROXIMITY_PER_SCHOOL_61}
             onToggle={(schoolId) =>
               onChange({
@@ -837,14 +838,14 @@ export function Category62Fields({
           <DateField
             id={`alumni-start-${id}`}
             label="Date started at this school"
-            hint="When did the parent start attending St. Aloysius?"
+            hint={`When did the parent start attending ${getHomeSchoolDisplayName()}?`}
             value={inputs.alumniStartDate}
             onChange={(alumniStartDate) => onChange({ alumniStartDate })}
           />
           <DateField
             id={`alumni-end-${id}`}
             label="Date left this school"
-            hint="When did the parent leave St. Aloysius?"
+            hint={`When did the parent leave ${getHomeSchoolDisplayName()}?`}
             value={inputs.alumniEndDate}
             onChange={(alumniEndDate) => onChange({ alumniEndDate })}
           />
@@ -1182,7 +1183,7 @@ export function Category63Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Sibling studied at applied school</span>
-          <MarkBadge marks={studiedHereMarks} max={SIBLING_STUDIED_HERE_MARKS} hint={"If sibling studied at St. Aloysius:\n5 marks\n\nOtherwise: 0 marks"} />
+          <MarkBadge marks={studiedHereMarks} max={SIBLING_STUDIED_HERE_MARKS} hint={"If sibling studied at " + getHomeSchoolDisplayName() + ":\n5 marks\n\nOtherwise: 0 marks"} />
           <FlagButton fieldKey="siblingStudiedAtAppliedSchool" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
@@ -1298,7 +1299,7 @@ export function Category63Fields({
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Nearby schools</span>
-          <MarkBadge marks={prox} max={PROXIMITY_MAX_63} hint={"Max 30 marks.\nDeduct 3 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 30 marks\n10 schools = 0 marks"} />
+          <MarkBadge marks={prox} max={PROXIMITY_MAX_63} hint={"Max 30 marks.\nDeduct 3 per school within radius\n(excluding " + getHomeSchoolDisplayName() + ").\n\nNo other schools = 30 marks\n10 schools = 0 marks"} />
           <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
         </div>
       </div>
@@ -1570,7 +1571,7 @@ export function Category65Fields({
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Nearby schools</span>
-          <MarkBadge marks={prox} max={PROXIMITY_MAX_63} hint={"Max 30 marks.\nDeduct 3 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 30 marks\n10 schools = 0 marks"} />
+          <MarkBadge marks={prox} max={PROXIMITY_MAX_63} hint={"Max 30 marks.\nDeduct 3 per school within radius\n(excluding " + getHomeSchoolDisplayName() + ").\n\nNo other schools = 30 marks\n10 schools = 0 marks"} />
           <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
           {selectedSchoolIds.length > 0 && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{selectedSchoolIds.length} selected</span>
@@ -1581,7 +1582,7 @@ export function Category65Fields({
             centerLat={centerLat!}
             centerLng={centerLng!}
             selectedIds={selectedSchoolIds}
-            highlightSchoolId="st-aloysius-galle"
+            highlightSchoolId={HOME_SCHOOL_ID}
             marksPerSchool={PROXIMITY_PER_SCHOOL_65}
             onToggle={(schoolId) =>
               onChange({
@@ -1669,7 +1670,7 @@ export function Category66Fields({
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Nearby schools</span>
-          <MarkBadge marks={prox} max={PROXIMITY_MAX_66} hint={"Max 35 marks.\nDeduct 3.5 per school within radius\n(excluding St. Aloysius).\n\nNo other schools = 35 marks\n10 schools = 0 marks"} />
+          <MarkBadge marks={prox} max={PROXIMITY_MAX_66} hint={"Max 35 marks.\nDeduct 3.5 per school within radius\n(excluding " + getHomeSchoolDisplayName() + ").\n\nNo other schools = 35 marks\n10 schools = 0 marks"} />
           <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
           {selectedSchoolIds.length > 0 && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{selectedSchoolIds.length} selected</span>
@@ -1680,7 +1681,7 @@ export function Category66Fields({
             centerLat={centerLat!}
             centerLng={centerLng!}
             selectedIds={selectedSchoolIds}
-            highlightSchoolId="st-aloysius-galle"
+            highlightSchoolId={HOME_SCHOOL_ID}
             marksPerSchool={PROXIMITY_PER_SCHOOL_66}
             onToggle={(schoolId) =>
               onChange({
@@ -1742,7 +1743,7 @@ function CategoryCard({
   // be gamed by simply leaving everything unselected for a maximal score.
   useEffect(() => {
     if (!proximityConfig || !hasCenter || locked) return;
-    const { schoolIds } = compatibleSchoolsWithinRadius(centerLat!, centerLng!, "st-aloysius-galle");
+    const { schoolIds } = compatibleSchoolsWithinRadius(centerLat!, centerLng!, HOME_SCHOOL_ID);
     const current = category.scoringInputs.schoolsWithinRadius ?? [];
     const sameSet = current.length === schoolIds.length && current.every((id) => schoolIds.includes(id));
     if (!sameSet) onUpdate({ schoolsWithinRadius: schoolIds });
@@ -1824,7 +1825,7 @@ function CategoryCard({
                 centerLat={centerLat}
                 centerLng={centerLng}
                 selectedIds={selectedSchoolIds}
-                highlightSchoolId="st-aloysius-galle"
+            highlightSchoolId={HOME_SCHOOL_ID}
                 marksPerSchool={proximityConfig.marksPerSchool}
                 readOnly
               />
