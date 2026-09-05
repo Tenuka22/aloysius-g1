@@ -8,8 +8,9 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useState } from "react";
 
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { I18nProvider } from "@/lib/i18n";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin";
-import { ThemeProvider } from "@/components/theme-provider";
 import { authClient } from "@/lib/auth-client";
 import { link, orpc } from "@/utils/orpc";
 
@@ -47,26 +48,22 @@ function RootComponent() {
   return (
     <>
       <HeadContent />
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="light"
-        disableTransitionOnChange
-        storageKey="vite-ui-theme"
+      <AuthProvider
+        authClient={authClient}
+        navigate={navigate}
+        Link={({ href, ...props }) => <Link to={href} {...props} />}
+        plugins={[multiSessionPlugin()]}
       >
-        <AuthProvider
-          authClient={authClient}
-          navigate={navigate}
-          Link={({ href, ...props }) => <Link to={href} {...props} />}
-          plugins={[multiSessionPlugin()]}
-        >
+        <I18nProvider>
           <div className="h-svh overflow-auto">
             <Outlet />
           </div>
           <Toaster richColors />
-        </AuthProvider>
-      </ThemeProvider>
-      <TanStackRouterDevtools position="bottom-left" />
-      <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+          <LocaleSwitcher />
+        </I18nProvider>
+      </AuthProvider>
+      {/*<TanStackRouterDevtools position="bottom-left" />
+      <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />*/}
     </>
   );
 }

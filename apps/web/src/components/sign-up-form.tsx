@@ -24,7 +24,7 @@ export default function SignUpForm({
         { email: value.email, password: value.password, name: value.name },
         {
           onSuccess: () => {
-            navigate({ to: "/dashboard" });
+            navigate({ to: "/" });
             toast.success("Sign up successful");
           },
           onError: (error) => {

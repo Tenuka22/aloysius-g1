@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_auth/admin/applications/$id")({
 
 function AdminApplicationPage() {
   const { session } = Route.useRouteContext(); const { id } = Route.useParams(); const editing = Route.useSearch().mode === "edit";
-  if (session.data?.user.role !== "admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Admin access required</CardTitle></CardHeader><Button variant="default" className="w-fit" render={<Link to="/dashboard" />}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
+  if (session.data?.user.role !== "admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Admin access required</CardTitle></CardHeader><Button variant="default" className="w-fit" render={<Link to="/" />}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
   if (editing) return <AdminApplicationEditor id={id} />;
   return <AdminApplicationView id={id} />;
 }

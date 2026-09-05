@@ -6,6 +6,7 @@ import { useAppForm } from "@/lib/app-form";
 import { signInSchema } from "@/lib/validation";
 import { FieldGroup } from "@/components/form-fields";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-g1/ui/components/card";
+import { useTranslation } from "@/lib/i18n";
 import Loader from "./loader";
 
 export default function SignInForm({
@@ -13,6 +14,7 @@ export default function SignInForm({
 }: {
   onSwitchToSignUp: () => void;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate({ from: "/" });
   const { isPending } = authClient.useSession();
 
@@ -24,8 +26,8 @@ export default function SignInForm({
         { email: value.email, password: value.password },
         {
           onSuccess: () => {
-            navigate({ to: "/dashboard" });
-            toast.success("Sign in successful");
+            navigate({ to: "/" });
+            toast.success(t("signIn.success"));
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -41,7 +43,7 @@ export default function SignInForm({
     <Card className="mx-auto mt-10 w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-center text-3xl font-bold">
-          Welcome Back
+          {t("signIn.title")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -56,13 +58,13 @@ export default function SignInForm({
             <form.AppField
               name="email"
               children={(field) => (
-                <field.TextField label="Email" type="email" />
+                <field.TextField label={t("signIn.email")} type="email" />
               )}
             />
             <form.AppField
               name="password"
               children={(field) => (
-                <field.TextField label="Password" type="password" />
+                <field.TextField label={t("signIn.password")} type="password" />
               )}
             />
           </FieldGroup>
@@ -70,7 +72,7 @@ export default function SignInForm({
           <div className="mt-4">
             <form.AppForm>
               <form.SubmitButton className="w-full">
-                Sign In
+                {t("signIn.submit")}
               </form.SubmitButton>
             </form.AppForm>
           </div>
@@ -82,7 +84,7 @@ export default function SignInForm({
             onClick={onSwitchToSignUp}
             className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
           >
-            Need an account? Sign Up
+            {t("signIn.switchToSignUp")}
           </button>
         </div>
       </CardContent>

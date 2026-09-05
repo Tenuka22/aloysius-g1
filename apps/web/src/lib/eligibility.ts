@@ -1,12 +1,14 @@
+import { ADMISSION_RESTRICTIONS } from "./school-config";
+
 export const g1SchoolYear = () => new Date().getFullYear() + 1;
 
 export const G1_DOB_CUTOFF = () => `${g1SchoolYear()}-01-31`;
 
 export const nicRegex = /^\d{12}$|^\d{9}[VX]$/;
 
-export const DISALLOWED_GENDERS = ["Female"] as const;
-export const DISALLOWED_RELIGIONS = ["Christian"] as const;
-export const ALLOWED_EDUCATION_MEDIUMS = ["Sinhala", "Tamil"] as const;
+export const DISALLOWED_GENDERS = ADMISSION_RESTRICTIONS.disallowedGenders;
+export const DISALLOWED_RELIGIONS = ADMISSION_RESTRICTIONS.disallowedReligions;
+export const ALLOWED_EDUCATION_MEDIUMS = ADMISSION_RESTRICTIONS.allowedEducationMediums;
 
 export type ApplicantValues = {
   fullName?: string;
@@ -27,6 +29,8 @@ export function isRestrictedReligion(religion: string | undefined): boolean {
 }
 
 export function educationMediumAllowed(medium: string | undefined): boolean {
+  if (!medium) return false;
+  if (ALLOWED_EDUCATION_MEDIUMS.length === 0) return true;
   return ALLOWED_EDUCATION_MEDIUMS.includes(medium as (typeof ALLOWED_EDUCATION_MEDIUMS)[number]);
 }
 
@@ -83,10 +87,10 @@ export function getNextStepReason(deps: NextStepDeps): string {
     if (
       isRestrictedGender(applicant.gender) ||
       isRestrictedReligion(applicant.religion) ||
+      !educationMediumAllowed(applicant.educationMedium) ||
       !isG1EligibleDob(applicant.dateOfBirth) ||
       !applicant.birthCertificateNumber ||
-      !applicant.fullName ||
-      !applicant.educationMedium
+      !applicant.fullName
     )
       return "Complete all required applicant fields to continue.";
     return "";

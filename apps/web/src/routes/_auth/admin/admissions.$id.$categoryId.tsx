@@ -109,7 +109,7 @@ function DataRow({ label, value, fieldKey, onEdit, previousValue, flagged, onFla
     <strong className={isEmpty ? "text-muted-foreground italic font-normal text-sm leading-relaxed" : `${style.colorClass} text-sm leading-relaxed`}>{displayValue}</strong>
   );
   return (
-    <div className={`grid gap-1 border-b border-border/70 py-3 last:border-b-0 ${flagged ? "bg-red-50/50 dark:bg-red-950/20 -mx-2 px-2 rounded" : ""}`}>
+    <div className={`grid gap-1 border-b border-border/70 py-3 last:border-b-0 ${flagged ? "bg-red-50/50 -mx-2 px-2 rounded" : ""}`}>
       <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground flex items-center gap-1.5">
         <span className="opacity-50">{style.icon}</span>
         {label}
@@ -479,8 +479,8 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
         key={point.id}
         className={[
           "rounded-lg border p-3 transition-colors",
-          isFlagged ? "border-red-300 bg-red-50/50 dark:bg-red-950/20" : "",
-          isAdmin ? "border-amber-300 bg-amber-50/50 dark:bg-amber-950/20" : "",
+          isFlagged ? "border-red-300 bg-red-50/50" : "",
+          isAdmin ? "border-amber-300 bg-amber-50/50" : "",
           isEffective && !isFlagged && !isAdmin ? "ring-2 ring-primary/30 border-primary/30" : "",
         ].join(" ")}
       >
@@ -505,7 +505,7 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
               href={`https://earth.google.com/web/search/${point.latitude},${point.longitude}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-0.5 inline-block text-[0.65rem] text-blue-600 hover:underline dark:text-blue-400"
+              className="mt-0.5 inline-block text-[0.65rem] text-blue-600 hover:underline"
             >
               Open in Google Earth ↗
             </a>
@@ -664,7 +664,7 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
             </div>
 
             {/* School row */}
-            <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 p-3 flex items-center gap-3">
+            <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50/50 p-3 flex items-center gap-3">
               <span className="inline-block size-2.5 rounded-full bg-amber-500" />
               <span className="text-sm font-semibold">{getHomeSchoolDisplayName()}</span>
               <Badge variant="outline" className="text-[0.6rem] px-1.5 py-0">School</Badge>
@@ -673,8 +673,8 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
 
             {/* Flagged locations summary */}
             {flaggedLocations.size > 0 && (
-              <div className="rounded-lg border border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/20 p-3">
-                <p className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2 mb-2">
+              <div className="rounded-lg border border-red-200 bg-red-50/30 p-3">
+                <p className="text-sm font-semibold text-red-700 flex items-center gap-2 mb-2">
                   <Flag size={14} /> Flagged locations ({flaggedLocations.size})
                 </p>
                 <div className="grid gap-1">
@@ -896,16 +896,16 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
 
           {hasInputChanges && (
             <div className="mt-2 pt-2 border-t">
-              <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 mb-1"><Pencil size={10} /> Modified inputs ({inputChanges.length})</p>
+              <p className="text-xs font-semibold text-amber-600 flex items-center gap-1 mb-1"><Pencil size={10} /> Modified inputs ({inputChanges.length})</p>
               <div className="grid gap-1">
                 {inputChanges.map((change) => (
-                  <div key={change.key} className="flex items-center justify-between gap-2 rounded-md bg-amber-50 dark:bg-amber-950/20 px-2 py-1.5">
+                  <div key={change.key} className="flex items-center justify-between gap-2 rounded-md bg-amber-50 px-2 py-1.5">
                     <div className="min-w-0 flex-1">
-                      <span className="text-[0.7rem] font-semibold text-amber-700 dark:text-amber-300">{change.label}</span>
+                      <span className="text-[0.7rem] font-semibold text-amber-700">{change.label}</span>
                       <div className="flex items-center gap-1.5 text-[0.65rem]">
                         <span className="text-muted-foreground line-through truncate">{change.oldValue || "(empty)"}</span>
                         <span className="text-muted-foreground">→</span>
-                        <span className="font-medium text-amber-700 dark:text-amber-300 truncate">{change.newValue || "(empty)"}</span>
+                        <span className="font-medium text-amber-700 truncate">{change.newValue || "(empty)"}</span>
                       </div>
                     </div>
                     <button
@@ -932,7 +932,7 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
                   onClick={() => onToggleInputFlag(key)}
                   className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[0.65rem] transition-colors ${
                     flaggedInputs.has(key)
-                      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200"
+                      ? "bg-red-100 text-red-700 hover:bg-red-200"
                       : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                   }`}
                 >
@@ -944,10 +944,10 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
 
           {flaggedInputs.size > 0 && (
             <div className="mt-2 pt-2 border-t">
-              <p className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1 mb-1"><Flag size={10} /> Flagged inputs ({flaggedInputs.size})</p>
+              <p className="text-xs font-semibold text-red-600 flex items-center gap-1 mb-1"><Flag size={10} /> Flagged inputs ({flaggedInputs.size})</p>
               <div className="flex flex-wrap gap-1">
                 {Array.from(flaggedInputs).map((inputKey) => (
-                  <button key={inputKey} type="button" onClick={() => onToggleInputFlag(inputKey)} className="inline-flex items-center gap-1 rounded-md bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-[0.65rem] text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors">
+                  <button key={inputKey} type="button" onClick={() => onToggleInputFlag(inputKey)} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-[0.65rem] text-red-700 hover:bg-red-200 transition-colors">
                     {formatFieldName(inputKey)} <X size={10} />
                   </button>
                 ))}
@@ -985,9 +985,9 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
                     const exceeds = row.marks > row.max;
                     const matches = row.marks === autoMarks;
                     let bg = "";
-                    if (exceeds) bg = "bg-red-50 dark:bg-red-950/30";
-                    else if (!matches) bg = "bg-amber-50 dark:bg-amber-950/30";
-                    else bg = "bg-emerald-50 dark:bg-emerald-950/30";
+                    if (exceeds) bg = "bg-red-50";
+                    else if (!matches) bg = "bg-amber-50";
+                    else bg = "bg-emerald-50";
                     return (
                       <tr key={idx} className="border-b border-border/50 last:border-b-0">
                         <td className="py-2 pr-4 font-medium">{row.label}</td>
@@ -1193,9 +1193,9 @@ function MarkAllocationEditor({ applicationId, categories }: { applicationId: st
                       const exceedsMax = row.marks > row.max;
                       const matchesAuto = row.marks === autoMarks;
                       let bgClass = "";
-                      if (exceedsMax) bgClass = "bg-red-50 dark:bg-red-950/30";
-                      else if (!matchesAuto) bgClass = "bg-amber-50 dark:bg-amber-950/30";
-                      else bgClass = "bg-emerald-50 dark:bg-emerald-950/30";
+                      if (exceedsMax) bgClass = "bg-red-50";
+                      else if (!matchesAuto) bgClass = "bg-amber-50";
+                      else bgClass = "bg-emerald-50";
 
                       return (
                         <tr key={rowIndex} className="border-b border-border/50 last:border-b-0">
@@ -1559,8 +1559,8 @@ function AdmissionWorkspacePage() {
             </Card>
           </div>
           {(flaggedFields.size > 0) && (
-            <Card className="border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/20">
-              <CardHeader><CardTitle className="text-red-700 dark:text-red-400 flex items-center gap-2"><Flag size={16} /> Flagged fields ({flaggedFields.size})</CardTitle><CardDescription>Fields marked as suspicious during review.</CardDescription></CardHeader>
+            <Card className="border-red-200 bg-red-50/30">
+              <CardHeader><CardTitle className="text-red-700 flex items-center gap-2"><Flag size={16} /> Flagged fields ({flaggedFields.size})</CardTitle><CardDescription>Fields marked as suspicious during review.</CardDescription></CardHeader>
               <CardContent className="grid gap-1">
                 {Array.from(flaggedFields).map((fieldKey) => {
                   const label = fieldKey.startsWith("applicant.") ? fieldKey.replace("applicant.", "") : fieldKey.startsWith("guardian.") ? fieldKey.replace("guardian.", "") : fieldKey.startsWith("residence.") ? fieldKey.replace("residence.", "") : fieldKey;
@@ -1630,15 +1630,15 @@ function AdmissionWorkspacePage() {
               </div>
 
               {(flaggedFields.size > 0 || flaggedInputs.size > 0 || flaggedLocations.size > 0) && (
-                <div className="grid gap-3 rounded-xl border border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/20 p-4">
-                  <h4 className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2"><Flag size={14} /> Flagged items ({flaggedFields.size + flaggedInputs.size + flaggedLocations.size})</h4>
+                <div className="grid gap-3 rounded-xl border border-red-200 bg-red-50/30 p-4">
+                  <h4 className="text-sm font-semibold text-red-700 flex items-center gap-2"><Flag size={14} /> Flagged items ({flaggedFields.size + flaggedInputs.size + flaggedLocations.size})</h4>
                   <div className="grid gap-2">
                     {flaggedFields.size > 0 && (
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground mb-1">Applicant / Guardian fields</p>
                         <div className="flex flex-wrap gap-1">
                           {Array.from(flaggedFields).map((key) => (
-                            <button key={key} type="button" onClick={() => toggleFieldFlag(key)} className="inline-flex items-center gap-1 rounded-md bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-[0.7rem] text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors">
+                            <button key={key} type="button" onClick={() => toggleFieldFlag(key)} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-[0.7rem] text-red-700 hover:bg-red-200 transition-colors">
                               {key.startsWith("applicant.") ? key.replace("applicant.", "") : key.startsWith("guardian.") ? key.replace("guardian.", "") : key.replace("residence.", "").replace(/([A-Z])/g, " $1").trim()} <X size={10} />
                             </button>
                           ))}
@@ -1650,7 +1650,7 @@ function AdmissionWorkspacePage() {
                         <p className="text-xs font-semibold text-muted-foreground mb-1">Category scoring inputs</p>
                         <div className="flex flex-wrap gap-1">
                           {Array.from(flaggedInputs).map((key) => (
-                            <button key={key} type="button" onClick={() => toggleInputFlag(key)} className="inline-flex items-center gap-1 rounded-md bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-[0.7rem] text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors">
+                            <button key={key} type="button" onClick={() => toggleInputFlag(key)} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-[0.7rem] text-red-700 hover:bg-red-200 transition-colors">
                               {key.replace(/([A-Z])/g, " $1").trim()} <X size={10} />
                             </button>
                           ))}
@@ -1662,7 +1662,7 @@ function AdmissionWorkspacePage() {
                         <p className="text-xs font-semibold text-muted-foreground mb-1">Locations</p>
                         <div className="flex flex-wrap gap-1">
                           {Array.from(flaggedLocations).map((key) => (
-                            <button key={key} type="button" onClick={() => toggleLocationFlag(key)} className="inline-flex items-center gap-1 rounded-md bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-[0.7rem] text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors">
+                            <button key={key} type="button" onClick={() => toggleLocationFlag(key)} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-[0.7rem] text-red-700 hover:bg-red-200 transition-colors">
                               Location <X size={10} />
                             </button>
                           ))}
@@ -1675,15 +1675,15 @@ function AdmissionWorkspacePage() {
               )}
 
               {draft.interviewEdits.length > 0 && (
-                <div className="grid gap-3 rounded-xl border border-blue-200 bg-blue-50/30 dark:border-blue-900 dark:bg-blue-950/20 p-4">
-                  <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2"><Pencil size={14} /> Interview notes ({draft.interviewEdits.length})</h4>
+                <div className="grid gap-3 rounded-xl border border-blue-200 bg-blue-50/30 p-4">
+                  <h4 className="text-sm font-semibold text-blue-700 flex items-center gap-2"><Pencil size={14} /> Interview notes ({draft.interviewEdits.length})</h4>
                   <p className="text-xs text-muted-foreground">Field edits made during this interview session. These are observations only and do not change the applicant's original data.</p>
                   <div className="grid gap-1 max-h-[200px] overflow-y-auto">
                     {[...draft.interviewEdits].reverse().map((edit, idx) => (
                       <div key={idx} className="flex items-center gap-2 text-xs py-1 border-b border-blue-200/50 last:border-b-0">
                         <span className="font-medium">{edit.label}:</span>
                         <span className="text-muted-foreground line-through">{edit.previousValue || "(empty)"}</span>
-                        <span className="text-blue-600 dark:text-blue-400">{edit.newValue || "(empty)"}</span>
+                        <span className="text-blue-600">{edit.newValue || "(empty)"}</span>
                       </div>
                     ))}
                   </div>

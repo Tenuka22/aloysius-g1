@@ -24,6 +24,7 @@ import {
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
+import { useTranslation } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_auth/sub-admin/forgot-requests")({ component: SubAdminForgotRequestsPage });
 
@@ -36,6 +37,7 @@ type ForgotRequestRow = {
 };
 
 function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () => void }) {
+  const { t } = useTranslation();
   const [generatedKey, setGeneratedKey] = useState("");
   const [qrKey, setQrKey] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -45,19 +47,19 @@ function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () 
       const result = await client.subAdmin.rotateKey({ requestId: item.id });
       setGeneratedKey(result.accessKey);
       setQrKey(result.accessKey);
-      toast.success("New key generated – show the QR to the parent");
+      toast.success(t("subAdminForgot.toast.keyGenerated"));
       onAction();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not generate key");
+      toast.error(error instanceof Error ? error.message : t("subAdminForgot.toast.generateError"));
     }
   };
   const dismiss = async () => {
     try {
       await client.subAdmin.dismiss({ requestId: item.id });
-      toast.success("Request dismissed");
+      toast.success(t("subAdminForgot.toast.dismissed"));
       onAction();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not dismiss request");
+      toast.error(error instanceof Error ? error.message : t("subAdminForgot.toast.dismissError"));
     }
   };
 
@@ -69,32 +71,32 @@ function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () 
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setConfirmOpen(true)}>
-            <KeyRound size={15} /> Generate new key
+            <KeyRound size={15} /> {t("subAdminForgot.actions.generateKey")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={dismiss}>
-            <X size={15} /> Dismiss
+            <X size={15} /> {t("subAdminForgot.actions.dismiss")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Generate new access key?</AlertDialogTitle>
+            <AlertDialogTitle>{t("subAdminForgot.confirm.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              A new access key will be generated for birth certificate <strong>{item.birthCertificateNumber}</strong>. Show the QR code to the parent so they can scan it and access the application.
+              {t("subAdminForgot.confirm.description", { number: item.birthCertificateNumber })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={rotate}>Generate key</AlertDialogAction>
+            <AlertDialogCancel>{t("subAdminForgot.confirm.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={rotate}>{t("subAdminForgot.confirm.generate")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       {generatedKey && (
         <div className="grid gap-2 p-4 border rounded-[10px] border-primary/35 bg-primary/7 mt-2">
-          <strong className="font-semibold text-sm">One-time display – show QR to parent</strong>
+          <strong className="font-semibold text-sm">{t("subAdminForgot.generated.oneTimeDisplay")}</strong>
           <code className="text-[1.1rem] font-bold break-all">{generatedKey}</code>
-          <Button variant="secondary" type="button" onClick={() => setQrKey(generatedKey)}><QrCode size={16} /> Show QR code</Button>
+          <Button variant="secondary" type="button" onClick={() => setQrKey(generatedKey)}><QrCode size={16} /> {t("subAdminForgot.generated.showQr")}</Button>
         </div>
       )}
       <AccessKeyQrDialog accessKey={qrKey} open={Boolean(qrKey)} onOpenChange={(open) => { if (!open) setQrKey(""); }} />
@@ -102,29 +104,30 @@ function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () 
   );
 }
 
-const columns = [
-  {
-    accessorKey: "birthCertificateNumber",
-    header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Birth certificate #" />,
-    cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="font-mono text-sm">{row.original.birthCertificateNumber}</span>,
-  },
-  {
-    accessorKey: "createdAt",
-    header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Requested" />,
-    cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }: { row: { original: ForgotRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onAction={() => void requests.refetch()} /></div>,
-  },
-];
-
 function SubAdminForgotRequestsPage() {
+  const { t } = useTranslation();
   const { session } = Route.useRouteContext();
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  const columns = [
+    {
+      accessorKey: "birthCertificateNumber",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title={t("subAdminForgot.column.birthCert")} />,
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="font-mono text-sm">{row.original.birthCertificateNumber}</span>,
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title={t("subAdminForgot.column.requested")} />,
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
+    },
+    {
+      id: "actions",
+      header: t("subAdminForgot.column.actions"),
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => <div className="flex justify-end"><ActionsMenu item={row.original} onAction={() => void requests.refetch()} /></div>,
+    },
+  ];
 
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
 
@@ -152,16 +155,16 @@ function SubAdminForgotRequestsPage() {
     <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
       <div className="flex items-end justify-between gap-8 mb-8">
         <div>
-          <p className="text-primary font-bold tracking-widest uppercase text-xs">Sub-admin / Requests</p>
-          <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">Forgot key requests</h1>
-          <p className="text-muted-foreground">Verify the parent's identity, then generate a new access key or QR code.</p>
+          <p className="text-primary font-bold tracking-widest uppercase text-xs">{t("subAdminForgot.breadcrumb")}</p>
+          <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">{t("subAdminForgot.title")}</h1>
+          <p className="text-muted-foreground">{t("subAdminForgot.description")}</p>
         </div>
-        <Button variant="secondary" render={<Link to="/sub-admin" />}>Back to overview</Button>
+        <Button variant="secondary" render={<Link to="/sub-admin" />}>{t("subAdminForgot.backToOverview")}</Button>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Pending forgot key requests</CardTitle>
-          <CardDescription>Only verification numbers are shown. Generate a new key after verifying the parent.</CardDescription>
+          <CardTitle>{t("subAdminForgot.pending.title")}</CardTitle>
+          <CardDescription>{t("subAdminForgot.pending.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -187,14 +190,14 @@ function SubAdminForgotRequestsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-1 items-center gap-2">
                     <Input
-                      placeholder="Filter by birth certificate…"
+                      placeholder={t("subAdminForgot.filterPlaceholder")}
                       value={(filters.find((f) => f.id === "query")?.value as string) ?? ""}
                       onChange={(e) => setFilter("query", e.target.value)}
                       className="h-8 w-[200px] lg:w-[250px]"
                     />
                     {isFiltered && (
                       <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
-                        Reset
+                        {t("subAdminForgot.reset")}
                       </Button>
                     )}
                   </div>

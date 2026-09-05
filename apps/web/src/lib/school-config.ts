@@ -25,3 +25,21 @@ export const MAP_MARKER_COLORS = {
   radius:    { stroke: "#087f5b", fill: "#13b77e" },
   line:      { in: "#087f5b", out: "#f97316" },
 } as const;
+
+export type AdmissionRestrictions = {
+  disallowedGenders: readonly string[];
+  disallowedReligions: readonly string[];
+  allowedEducationMediums: readonly string[];
+  restrictGenderMessage?: string;
+  restrictReligionMessage?: string;
+  restrictMediumMessage?: string;
+};
+
+export const ADMISSION_RESTRICTIONS: AdmissionRestrictions = {
+  disallowedGenders: ["Female"],
+  disallowedReligions: ["Christian"],
+  allowedEducationMediums: ["Sinhala"],
+  restrictGenderMessage: "This is a boys\u2019 school, so female applicants cannot continue with this application.",
+  restrictReligionMessage: "This intake is not available to Christian applicants.",
+  restrictMediumMessage: "",
+};

@@ -4,6 +4,7 @@ import flags from "react-phone-number-input/flags";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@aloysius-g1/ui/components/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-g1/ui/components/popover";
 import { ChevronDownIcon, CheckIcon } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 import { normalizeSriLankanMobile } from "@/lib/phone";
 
 function formatPhoneDisplay(value: string, country: Country): string {
@@ -18,21 +19,6 @@ function formatPhoneDisplay(value: string, country: Country): string {
   const grouped = rest.replace(/(\d{3})(?=\d)/g, "$1 ");
   return `+${code} ${grouped}`;
 }
-
-const COUNTRIES: { value: Country; label: string }[] = [
-  { value: "LK", label: "Sri Lanka" },
-  { value: "IN", label: "India" },
-  { value: "US", label: "United States" },
-  { value: "GB", label: "United Kingdom" },
-  { value: "AU", label: "Australia" },
-  { value: "CA", label: "Canada" },
-  { value: "SG", label: "Singapore" },
-  { value: "AE", label: "United Arab Emirates" },
-  { value: "MY", label: "Malaysia" },
-  { value: "JP", label: "Japan" },
-  { value: "DE", label: "Germany" },
-  { value: "FR", label: "France" },
-];
 
 function detectCountry(value: string): Country {
   if (value.startsWith("+94")) return "LK";
@@ -52,6 +38,21 @@ function detectCountry(value: string): Country {
 
 function CountrySelect({ value, onChange }: { value: Country; onChange: (country: Country) => void }) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+  const COUNTRIES: { value: Country; label: string }[] = [
+    { value: "LK", label: t("phone.country.sriLanka") },
+    { value: "IN", label: t("phone.country.india") },
+    { value: "US", label: t("phone.country.unitedStates") },
+    { value: "GB", label: t("phone.country.unitedKingdom") },
+    { value: "AU", label: t("phone.country.australia") },
+    { value: "CA", label: t("phone.country.canada") },
+    { value: "SG", label: t("phone.country.singapore") },
+    { value: "AE", label: t("phone.country.uae") },
+    { value: "MY", label: t("phone.country.malaysia") },
+    { value: "JP", label: t("phone.country.japan") },
+    { value: "DE", label: t("phone.country.germany") },
+    { value: "FR", label: t("phone.country.france") },
+  ];
   const current = COUNTRIES.find((c) => c.value === value) ?? COUNTRIES[0];
   const Flag = flags[current.value];
 
@@ -89,8 +90,9 @@ function CountrySelect({ value, onChange }: { value: Country; onChange: (country
   );
 }
 
-export function PhoneInput({ value, onChange, placeholder = "Contact phone number" }: { value: string; onChange: (value: string) => void; placeholder?: string }) {
+export function PhoneInput({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder?: string }) {
   const country = detectCountry(value);
+  const { t } = useTranslation();
 
   return (
     <div className="grid gap-1.5">
@@ -110,11 +112,11 @@ export function PhoneInput({ value, onChange, placeholder = "Contact phone numbe
           type="tel"
           value={value}
           onChange={(e) => onChange(normalizeSriLankanMobile(e.target.value))}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t("phone.placeholder")}
           className="pl-2"
         />
       </InputGroup>
-      {value && <p className="text-xs text-muted-foreground">Saved as {formatPhoneDisplay(value, country)}</p>}
+      {value && <p className="text-xs text-muted-foreground">{t("phone.savedAs", { formattedPhone: formatPhoneDisplay(value, country) })}</p>}
     </div>
   );
 }

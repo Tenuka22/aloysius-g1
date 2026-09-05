@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Clock3, Copy, FileSearch, House, KeyRound, RotateCcw, ShieldCheck, ShieldX, UserPlus, TriangleAlert } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Copy, FileSearch, House, KeyRound, RotateCcw, ShieldCheck, ShieldX, UserPlus, TriangleAlert, CalendarIcon } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { format } from "date-fns";
 import { LocationStep } from "./location-step";
 import { CategoryStep } from "./category-step";
 import { STATUS_SUCCESS, STATUS_WARNING, STATUS_INFO, SECTION_COLORS } from "@/lib/color-classes";
@@ -16,8 +17,10 @@ import {
   type CategoryType,
 } from "@/lib/application-store";
 import { G1_DOB_CUTOFF, getNextStepReason } from "@/lib/eligibility";
+import { ADMISSION_RESTRICTIONS } from "@/lib/school-config";
 import { scoreCategory } from "@/lib/scoring";
 import { client } from "@/utils/orpc";
+import { useTranslation } from "@/lib/i18n";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +42,20 @@ import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { Checkbox } from "@aloysius-g1/ui/components/checkbox";
+import { Calendar } from "@aloysius-g1/ui/components/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@aloysius-g1/ui/components/popover";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@aloysius-g1/ui/components/combobox";
 import {
   Select,
   SelectContent,
@@ -78,16 +95,28 @@ import {
   declarationStepSchema,
 } from "@/lib/validation";
 
-const steps = ["Location", "Applicant", "Parent / guardian", "Residence", "Categories", "Declaration", "Review"];
+function getSteps(t: (key: string) => string) {
+  return [
+    t("appForm.steps.location"),
+    t("appForm.steps.applicant"),
+    t("appForm.steps.guardian"),
+    t("appForm.steps.residence"),
+    t("appForm.steps.categories"),
+    t("appForm.steps.declaration"),
+    t("appForm.steps.review"),
+  ];
+}
 
-const CATEGORY_LABELS: Record<CategoryType, string> = {
-  "6.1": "6.1 – Residence Verification & Proximity",
-  "6.2": "6.2 – Alumni",
-  "6.3": "6.3 – Siblings",
-  "6.4": "6.4 – Period of Service & Distance",
-  "6.5": "6.5 – Transfer Applications",
-  "6.6": "6.6 – Foreign Employment",
-};
+function getCategoryLabels(t: (key: string) => string): Record<CategoryType, string> {
+  return {
+    "6.1": t("appForm.categoryLabels.6_1"),
+    "6.2": t("appForm.categoryLabels.6_2"),
+    "6.3": t("appForm.categoryLabels.6_3"),
+    "6.4": t("appForm.categoryLabels.6_4"),
+    "6.5": t("appForm.categoryLabels.6_5"),
+    "6.6": t("appForm.categoryLabels.6_6"),
+  };
+}
 
 function categorySummary(category: CategoryApplication): string {
   const inputs = category.scoringInputs;
@@ -157,17 +186,18 @@ function StepIndicator({
   steps: string[];
   onStepClick: (index: number) => void;
 }) {
+  const { t } = useTranslation();
   const progress = Math.round((current / (stepLabels.length - 1)) * 100);
   return (
     <>
       <CardHeader className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs text-muted-foreground">
-            Step {current + 1} of {stepLabels.length}
+            {t("appForm.stepIndicator.stepOf", { current: current + 1, total: stepLabels.length })}
           </p>
           <h2 className="font-heading text-2xl">{stepLabels[current]}</h2>
         </div>
-        <span className="text-sm text-muted-foreground">{progress}% complete</span>
+        <span className="text-sm text-muted-foreground">{t("appForm.stepIndicator.percentComplete", { percent: progress })}</span>
       </CardHeader>
       <div className="h-1 bg-secondary">
         <div
@@ -177,7 +207,7 @@ function StepIndicator({
       </div>
       <nav
         className="flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8"
-        aria-label="Form steps"
+        aria-label={t("appForm.stepIndicator.ariaLabel")}
       >
         {stepLabels.map((step, index) => {
           const isCurrent = index === current;
@@ -226,6 +256,7 @@ function BirthCertificateField({
   draft: ApplicationDraft;
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
+  const { t } = useTranslation();
   const checkTimer = useRef<number | undefined>(undefined);
 
   const check = async (value: string, reveal = true) => {
@@ -267,7 +298,7 @@ function BirthCertificateField({
 
   const requestRemoval = async (birthCertificateNumber: string) => {
     try {
-      set({ bcRequestState: "Sending removal request\u2026" });
+      set({ bcRequestState: t("appForm.birthCert.requestState.sending") });
       await client.application.requestAccess({
         birthCertificateNumber,
         applicantName: draft.bcApplicantName || draft.applicant.fullName,
@@ -276,13 +307,12 @@ function BirthCertificateField({
         requestType: "removal",
       });
       set({
-        bcRequestState:
-          "Removal request sent. The school will review it and contact you before taking action.",
+        bcRequestState: t("appForm.birthCert.requestState.sent"),
       });
     } catch (error) {
       set({
         bcRequestState:
-          error instanceof Error ? error.message : "Could not send the request",
+          error instanceof Error ? error.message : t("appForm.birthCert.requestState.error"),
       });
     }
   };
@@ -290,7 +320,7 @@ function BirthCertificateField({
   return (
     <Field>
       <FieldLabel htmlFor="applicant.birthCertificateNumber">
-        Birth certificate number
+        {t("appForm.birthCert.label")}
       </FieldLabel>
       <div className="flex gap-2">
         <Input
@@ -298,7 +328,7 @@ function BirthCertificateField({
           id="applicant.birthCertificateNumber"
           name="applicant.birthCertificateNumber"
           value={draft.applicant.birthCertificateNumber}
-          placeholder="Enter birth certificate number"
+          placeholder={t("appForm.birthCert.placeholder")}
           onChange={(e) => {
             set({
               applicant: { ...draft.applicant, birthCertificateNumber: e.target.value },
@@ -311,51 +341,48 @@ function BirthCertificateField({
           type="button"
           variant="ghost"
           size="sm"
-          title="Check this birth certificate number again"
+          title={t("appForm.birthCert.refreshTitle")}
           onClick={() => void check(draft.applicant.birthCertificateNumber, false)}
         >
-          <RotateCcw size={14} /> Refresh
+          <RotateCcw size={14} /> {t("appForm.birthCert.refresh")}
         </Button>
       </div>
       <Drawer open={draft.bcDialogOpen} onOpenChange={(open) => set({ bcDialogOpen: open })}>
         {draft.duplicateBirthCertificate && (
           <DrawerTrigger className="border-0 bg-transparent p-0 text-destructive text-sm underline w-fit">
-            View existing application options
+            {t("appForm.birthCert.duplicateLink")}
           </DrawerTrigger>
         )}
         <DrawerContent className="p-6">
           <DrawerHeader>
-            <DrawerTitle>Existing application found</DrawerTitle>
+            <DrawerTitle>{t("appForm.birthCert.duplicateTitle")}</DrawerTitle>
             <DrawerDescription>
-              An application already exists for this birth certificate
-              number. Open the existing student profile instead of creating
-              another record.
+              {t("appForm.birthCert.duplicateDescription")}
             </DrawerDescription>
           </DrawerHeader>
           <div className="grid gap-4">
             <section className="grid gap-2">
               <h3 className="text-base font-semibold">
-                Ask the school to remove this record
+                {t("appForm.birthCert.askRemoval.heading")}
               </h3>
               <p className="text-sm text-muted-foreground">
-                Only the school can approve removal after checking the
-                record and contacting the family.
+                {t("appForm.birthCert.askRemoval.description")}
               </p>
               <div className="grid gap-2">
                 <Input
                   value={draft.bcApplicantName}
                   onChange={(e) => set({ bcApplicantName: e.target.value })}
-                  placeholder="Applicant name"
+                  placeholder={t("appForm.birthCert.applicantNamePlaceholder")}
                 />
                 <Input
                   value={draft.bcGuardianName}
                   onChange={(e) => set({ bcGuardianName: e.target.value })}
-                  placeholder="Guardian name"
+                  placeholder={t("appForm.birthCert.guardianNamePlaceholder")}
                 />
                 <PhoneInput
                   value={draft.bcContactPhone}
                   onChange={(value) => set({ bcContactPhone: value })}
-                  placeholder="Contact phone number"
+                  placeholder={t("appForm.birthCert.contactPhonePlaceholder")}
                 />
                 <Button
                   type="button"
@@ -366,7 +393,7 @@ function BirthCertificateField({
                   }
                   onClick={() => void requestRemoval(draft.applicant.birthCertificateNumber)}
                 >
-                  Request record removal
+                  {t("appForm.birthCert.requestRemoval")}
                 </Button>
               </div>
               {draft.bcRequestState && (
@@ -391,13 +418,13 @@ function LocationStepCard({
   readOnly: boolean;
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="grid gap-4">
       <div className="mb-4">
-        <h3 className="font-heading text-2xl">Start with the home location</h3>
+        <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.locationStep.heading")}</h3>
         <p className="text-sm text-muted-foreground">
-          Your true browser location is saved first. You may then replace the
-          selected application location with another point.
+          {t("appForm.locationStep.description")}
         </p>
       </div>
       <LocationStep
@@ -434,6 +461,58 @@ function LocationStepCard({
   );
 }
 
+function DateOfBirthPicker({ value, onChange }: { value: string; onChange: (dateStr: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const parsedDate = value ? new Date(value + "T00:00:00") : undefined;
+  const maxDate = new Date(G1_DOB_CUTOFF() + "T00:00:00");
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(isOpen, details) => {
+        if (!isOpen && details.reason === "outside-press") {
+          const target = details.event?.target as HTMLElement | undefined;
+          if (target?.tagName === "SELECT" || target?.closest?.("[data-slot='calendar']")) {
+            details.cancel();
+            return;
+          }
+        }
+        setOpen(isOpen);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1"
+        >
+          <span className={parsedDate ? "" : "text-muted-foreground"}>
+            {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
+          </span>
+          <CalendarIcon className="size-4 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={parsedDate}
+          defaultMonth={parsedDate}
+          captionLayout="dropdown"
+          disabled={(date) => date > maxDate}
+          onSelect={(date) => {
+            if (date) {
+              const y = date.getFullYear();
+              const m = String(date.getMonth() + 1).padStart(2, "0");
+              const d = String(date.getDate()).padStart(2, "0");
+              onChange(`${y}-${m}-${d}`);
+            }
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function ApplicantStep({
   draft,
   set,
@@ -441,28 +520,29 @@ function ApplicantStep({
   draft: ApplicationDraft;
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <div className="grid  grid-cols-2 gap-5">
-      <div className="col-span-2 mb-4">
-        <h3 className="font-heading text-2xl">Tell us about the applicant</h3>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="col-span-full mb-4">
+        <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.applicantStep.heading")}</h3>
         <p className="text-sm text-muted-foreground">
-          Use the name shown on the applicant&apos;s birth certificate.
+          {t("appForm.applicantStep.description")}
         </p>
       </div>
 
       <Field>
-        <FieldLabel htmlFor="applicant.fullName">Full name in English</FieldLabel>
+        <FieldLabel htmlFor="applicant.fullName">{t("appForm.applicantStep.fullNameEn")}</FieldLabel>
         <Input
           id="applicant.fullName"
           value={draft.applicant.fullName}
-          placeholder="Enter full name"
+          placeholder={t("appForm.applicantStep.fullNameEnPlaceholder")}
           onChange={(e) => set({ applicant: { ...draft.applicant, fullName: e.target.value } })}
         />
       </Field>
 
       <Field>
         <FieldLabel htmlFor="applicant.sinhalaName">
-          Full name in Sinhala
+          {t("appForm.applicantStep.fullNameSi")}
         </FieldLabel>
         <Input
           id="applicant.sinhalaName"
@@ -475,12 +555,12 @@ function ApplicantStep({
           target="_blank"
           rel="noreferrer"
         >
-          Need a Sinhala phonetic keyboard? Open Helakuru
+          {t("appForm.applicantStep.sinhalaKeyboardLink")}
         </a>
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="applicant.gender">Gender</FieldLabel>
+        <FieldLabel htmlFor="applicant.gender">{t("appForm.applicantStep.gender")}</FieldLabel>
         <Select
           value={draft.applicant.gender || ""}
           onValueChange={(value) => set({ applicant: { ...draft.applicant, gender: value ?? "" } })}
@@ -489,24 +569,23 @@ function ApplicantStep({
             id="applicant.gender"
             className="w-full"
           >
-            <SelectValue placeholder="Select gender" />
+            <SelectValue placeholder={t("appForm.applicantStep.genderPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Female">Female</SelectItem>
-            <SelectItem value="Male">Male</SelectItem>
+            <SelectItem value="Female">{t("appForm.applicantStep.gender.female")}</SelectItem>
+            <SelectItem value="Male">{t("appForm.applicantStep.gender.male")}</SelectItem>
           </SelectContent>
         </Select>
       </Field>
 
       {draft.applicant.gender === "Female" && (
-        <p className="col-span-2 text-sm text-destructive">
-          This is a boys&apos; school, so female applicants cannot continue
-          with this application.
+        <p className="col-span-full text-sm text-destructive">
+          {ADMISSION_RESTRICTIONS.restrictGenderMessage || t("appForm.applicantStep.genderRestriction")}
         </p>
       )}
 
       <Field>
-        <FieldLabel htmlFor="applicant.religion">Religion</FieldLabel>
+        <FieldLabel htmlFor="applicant.religion">{t("appForm.applicantStep.religion")}</FieldLabel>
         <Select
           value={draft.applicant.religion || ""}
           onValueChange={(value) => set({ applicant: { ...draft.applicant, religion: value ?? "" } })}
@@ -515,26 +594,26 @@ function ApplicantStep({
             id="applicant.religion"
             className="w-full"
           >
-            <SelectValue placeholder="Select religion" />
+            <SelectValue placeholder={t("appForm.applicantStep.religionPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Catholic">Catholic</SelectItem>
-            <SelectItem value="Christian">Christian</SelectItem>
-            <SelectItem value="Buddhist">Buddhist</SelectItem>
-            <SelectItem value="Islam">Islam</SelectItem>
+            <SelectItem value="Catholic">{t("appForm.applicantStep.religion.catholic")}</SelectItem>
+            <SelectItem value="Christian">{t("appForm.applicantStep.religion.christian")}</SelectItem>
+            <SelectItem value="Buddhist">{t("appForm.applicantStep.religion.buddhist")}</SelectItem>
+            <SelectItem value="Islam">{t("appForm.applicantStep.religion.islam")}</SelectItem>
           </SelectContent>
         </Select>
       </Field>
 
       {draft.applicant.religion === "Christian" && (
-        <p className="col-span-2 text-sm text-destructive">
-          This intake is not available to Christian applicants.
+        <p className="col-span-full text-sm text-destructive">
+          {ADMISSION_RESTRICTIONS.restrictReligionMessage || t("appForm.applicantStep.religionRestriction")}
         </p>
       )}
 
       <Field>
         <FieldLabel htmlFor="applicant.educationMedium">
-          Education medium
+          {t("appForm.applicantStep.educationMedium")}
         </FieldLabel>
         <Select
           value={draft.applicant.educationMedium || ""}
@@ -544,32 +623,35 @@ function ApplicantStep({
             id="applicant.educationMedium"
             className="w-full"
           >
-            <SelectValue placeholder="Select medium" />
+            <SelectValue placeholder={t("appForm.applicantStep.educationMediumPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Sinhala">Sinhala</SelectItem>
-            <SelectItem value="Tamil">Tamil</SelectItem>
+            <SelectItem value="Sinhala">{t("appForm.applicantStep.educationMedium.sinhala")}</SelectItem>
+            <SelectItem value="Tamil">{t("appForm.applicantStep.educationMedium.tamil")}</SelectItem>
           </SelectContent>
         </Select>
       </Field>
 
+      {draft.applicant.educationMedium === "Tamil" && ADMISSION_RESTRICTIONS.allowedEducationMediums.length > 0 && !ADMISSION_RESTRICTIONS.allowedEducationMediums.includes(draft.applicant.educationMedium) && (
+        <p className="col-span-full text-sm text-destructive">
+          {ADMISSION_RESTRICTIONS.restrictMediumMessage || t("appForm.applicantStep.mediumRestriction")}
+        </p>
+      )}
+
       <Field>
         <FieldLabel htmlFor="applicant.dateOfBirth">
-          Date of birth
+          {t("appForm.applicantStep.dateOfBirth")}
         </FieldLabel>
-        <Input
-          id="applicant.dateOfBirth"
-          type="date"
-          max={G1_DOB_CUTOFF()}
+        <DateOfBirthPicker
           value={draft.applicant.dateOfBirth}
-          onChange={(e) => set({ applicant: { ...draft.applicant, dateOfBirth: e.target.value } })}
+          onChange={(dateStr) => set({ applicant: { ...draft.applicant, dateOfBirth: dateStr } })}
         />
         <FieldDescription>
-          The child must be at least five years old by 31 January 2027.
+          {t("appForm.applicantStep.dateOfBirthDescription")}
         </FieldDescription>
       </Field>
 
-      <div className="col-span-2">
+      <div className="col-span-full">
         <BirthCertificateField draft={draft} set={set} />
       </div>
     </div>
@@ -583,23 +665,23 @@ function GuardianStep({
   draft: ApplicationDraft;
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
+  const { t } = useTranslation();
   const nicValue = String(draft.guardian.nic || "").trim().toUpperCase();
   const nicValid =
     !nicValue || /^\d{12}$/.test(nicValue) || /^\d{9}[VX]$/.test(nicValue);
 
   return (
-    <div className="grid  grid-cols-2 gap-5">
-      <div className="col-span-2 mb-4">
-        <h3 className="font-heading text-2xl">Parent or guardian details</h3>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="col-span-full mb-4">
+        <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.guardianStep.heading")}</h3>
         <p className="text-sm text-muted-foreground">
-          We&apos;ll use these details only to contact the family about this
-          intake.
+          {t("appForm.guardianStep.description")}
         </p>
       </div>
 
       <Field>
         <FieldLabel htmlFor="guardian.relationship">
-          Relationship to applicant
+          {t("appForm.guardianStep.relationship")}
         </FieldLabel>
         <Select
           value={draft.guardian.relationship || ""}
@@ -609,18 +691,18 @@ function GuardianStep({
             id="guardian.relationship"
             className="w-full"
           >
-            <SelectValue placeholder="Select relationship" />
+            <SelectValue placeholder={t("appForm.guardianStep.relationshipPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Mother">Mother</SelectItem>
-            <SelectItem value="Father">Father</SelectItem>
-            <SelectItem value="Guardian">Guardian</SelectItem>
+            <SelectItem value="Mother">{t("appForm.guardianStep.relationship.mother")}</SelectItem>
+            <SelectItem value="Father">{t("appForm.guardianStep.relationship.father")}</SelectItem>
+            <SelectItem value="Guardian">{t("appForm.guardianStep.relationship.guardian")}</SelectItem>
           </SelectContent>
         </Select>
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="guardian.fullName">Full name in English</FieldLabel>
+        <FieldLabel htmlFor="guardian.fullName">{t("appForm.guardianStep.fullNameEn")}</FieldLabel>
         <Input
           id="guardian.fullName"
           value={draft.guardian.fullName}
@@ -629,7 +711,7 @@ function GuardianStep({
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="guardian.sinhalaName">Full name in Sinhala</FieldLabel>
+        <FieldLabel htmlFor="guardian.sinhalaName">{t("appForm.guardianStep.fullNameSi")}</FieldLabel>
         <Input
           id="guardian.sinhalaName"
           value={draft.guardian.sinhalaName}
@@ -641,16 +723,16 @@ function GuardianStep({
           target="_blank"
           rel="noreferrer"
         >
-          Need a Sinhala phonetic keyboard? Open Helakuru
+          {t("appForm.guardianStep.sinhalaKeyboardLink")}
         </a>
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="guardian.nic">NIC number</FieldLabel>
+        <FieldLabel htmlFor="guardian.nic">{t("appForm.guardianStep.nic")}</FieldLabel>
         <Input
           id="guardian.nic"
           value={draft.guardian.nic}
-          placeholder="e.g. 123456789V or 200012345678"
+          placeholder={t("appForm.guardianStep.nicPlaceholder")}
           maxLength={12}
           autoCapitalize="characters"
           spellCheck={false}
@@ -660,14 +742,13 @@ function GuardianStep({
         />
         {!nicValid && (
           <p className="text-sm text-destructive">
-            Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12
-            digits.
+            {t("appForm.guardianStep.nicError")}
           </p>
         )}
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="guardian.phone">Phone number</FieldLabel>
+        <FieldLabel htmlFor="guardian.phone">{t("appForm.guardianStep.phone")}</FieldLabel>
         <PhoneInput
           value={draft.guardian.phone || ""}
           onChange={(value) => set({ guardian: { ...draft.guardian, phone: value } })}
@@ -675,7 +756,7 @@ function GuardianStep({
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="guardian.email">Email address</FieldLabel>
+        <FieldLabel htmlFor="guardian.email">{t("appForm.guardianStep.email")}</FieldLabel>
         <Input
           id="guardian.email"
           type="email"
@@ -694,19 +775,8 @@ function ResidenceStep({
   draft: ApplicationDraft;
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
+  const { t } = useTranslation();
   const sameAsPermanent = draft.residence.sameAsPermanent;
-  const districtSearch = draft.residence.districtSearch;
-  const dsSearch = draft.residence.dsSearch;
-  const gnSearch = draft.residence.gnSearch;
-  const electoralSearch = draft.residence.electoralSearch;
-
-  const normalize = (value: string) => value.trim().toLocaleLowerCase();
-  const filterOptions = (values: string[], search: string) => {
-    const query = normalize(search);
-    return values
-      .filter((value) => !query || normalize(value).includes(query))
-      .slice(0, 12);
-  };
 
   const selectedDistrict = DISTRICTS.find(
     (d) =>
@@ -718,64 +788,53 @@ function ResidenceStep({
       d.id === draft.residence.dsDivision,
   );
 
-  const districtOptions = filterOptions(DISTRICTS.map((d) => d.en), districtSearch);
-  const dsOptions = filterOptions(
-    DIVISIONAL_SECRETARIATS.filter(
-      (d) => !selectedDistrict || d.districtId === selectedDistrict.id,
-    ).map((d) => d.en),
-    dsSearch,
-  );
-  const gnOptions = filterOptions(
-    GN_DIVISIONS.filter(
-      (d) => !selectedDs || d.dsId === selectedDs.id,
-    ).map((d) => d.en),
-    gnSearch,
-  );
-  const electoralOptions = filterOptions(
-    ELECTORAL_CONSTITUENCIES.map((c) => c.en),
-    electoralSearch,
-  );
+  const districtOptions = DISTRICTS.map((d) => d.en);
+  const dsOptions = DIVISIONAL_SECRETARIATS.filter(
+    (d) => !selectedDistrict || d.districtId === selectedDistrict.id,
+  ).map((d) => d.en);
+  const gnOptions = GN_DIVISIONS.filter(
+    (d) => !selectedDs || d.dsId === selectedDs.id,
+  ).map((d) => d.en);
+  const electoralOptions = ELECTORAL_CONSTITUENCIES.map((c) => c.en);
 
   const setResidence = (residence: Partial<ApplicationDraft["residence"]>) =>
     set({ residence: { ...draft.residence, ...residence } } as Partial<ApplicationDraft>);
 
   return (
-    <div className="grid  grid-cols-2 gap-5">
-      <div className="col-span-2 mb-4">
-        <h3 className="font-heading text-2xl">Where does the family live?</h3>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="col-span-full mb-4">
+        <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.residenceStep.heading")}</h3>
         <p className="text-sm text-muted-foreground">
-          Provide the permanent residence first, then add current details if
-          different. The circular requires residence to be supported by official
-          documents and, where applicable, GN certification.
+          {t("appForm.residenceStep.description")}
         </p>
       </div>
 
       <Field>
         <FieldLabel htmlFor="residence.permanentAddress">
-          Permanent address
+          {t("appForm.residenceStep.permanentAddress")}
         </FieldLabel>
         <Input
           id="residence.permanentAddress"
           value={draft.residence.permanentAddress}
-          placeholder="House number, street, town"
+          placeholder={t("appForm.residenceStep.permanentAddressPlaceholder")}
           onChange={(e) => setResidence({ permanentAddress: e.target.value })}
         />
       </Field>
 
       <Field>
         <FieldLabel htmlFor="residence.currentAddress">
-          Current address
+          {t("appForm.residenceStep.currentAddress")}
         </FieldLabel>
         <Input
           id="residence.currentAddress"
           value={draft.residence.currentAddress}
-          placeholder="Current address"
+          placeholder={t("appForm.residenceStep.currentAddressPlaceholder")}
           disabled={sameAsPermanent}
           onChange={(e) => setResidence({ currentAddress: e.target.value })}
         />
       </Field>
 
-      <div className="col-span-2">
+      <div className="col-span-full">
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
             className="size-5"
@@ -788,112 +847,122 @@ function ResidenceStep({
               });
             }}
           />
-          Current address is the same as permanent address
+          {t("appForm.residenceStep.sameAsPermanent")}
         </label>
       </div>
 
       <Field>
-        <FieldLabel htmlFor="residence.district">District</FieldLabel>
-        <input
-          id="residence.district"
-          list="district-options"
-          value={districtSearch}
-          placeholder="Search district"
-          onChange={(e) => {
-            if (!e.target.value) {
-              setResidence({ districtSearch: e.target.value, district: "", dsDivision: "", gnDivision: "" });
-              return;
+        <FieldLabel htmlFor="residence.district">{t("appForm.residenceStep.district")}</FieldLabel>
+        <Combobox
+          items={districtOptions}
+          value={draft.residence.district || ""}
+          onValueChange={(val) => {
+            if (val) {
+              setResidence({ district: val, districtSearch: val, dsDivision: "", gnDivision: "" });
+            } else {
+              setResidence({ district: "", districtSearch: "", dsDivision: "", gnDivision: "" });
             }
-            const match = districtOptions.find(
-              (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
-            );
-            setResidence({
-              districtSearch: e.target.value,
-              ...(match ? { district: match, dsDivision: "", gnDivision: "" } : {}),
-            });
           }}
-          className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-        />
-        <datalist id="district-options">
-          {districtOptions.map((opt) => (
-            <option key={opt} value={opt} />
-          ))}
-        </datalist>
+        >
+          <ComboboxInput placeholder={t("appForm.residenceStep.districtPlaceholder")} />
+          <ComboboxContent>
+            <ComboboxEmpty>{t("appForm.residenceStep.districtEmpty")}</ComboboxEmpty>
+            <ComboboxList>
+              {(item: string) => (
+                <ComboboxItem key={item} value={item}>
+                  {item}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </Field>
 
       <Field>
         <FieldLabel htmlFor="residence.dsDivision">
-          Divisional Secretariat division
+          {t("appForm.residenceStep.dsDivision")}
         </FieldLabel>
-        <input
-          id="residence.dsDivision"
-          list="ds-options"
-          value={dsSearch}
-          placeholder="Search DS division"
-          onChange={(e) => {
-            const match = dsOptions.find(
-              (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
-            );
-            setResidence({
-              dsSearch: e.target.value,
-              ...(match ? { dsDivision: match, gnDivision: "" } : {}),
-            });
+        <Combobox
+          items={dsOptions}
+          value={draft.residence.dsDivision || ""}
+          onValueChange={(val) => {
+            if (val) {
+              setResidence({ dsDivision: val, dsSearch: val, gnDivision: "" });
+            } else {
+              setResidence({ dsDivision: "", dsSearch: "", gnDivision: "" });
+            }
           }}
-          className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-        />
-        <datalist id="ds-options">
-          {dsOptions.map((opt) => (
-            <option key={opt} value={opt} />
-          ))}
-        </datalist>
+        >
+          <ComboboxInput placeholder={t("appForm.residenceStep.dsDivisionPlaceholder")} />
+          <ComboboxContent>
+            <ComboboxEmpty>{t("appForm.residenceStep.dsDivisionEmpty")}</ComboboxEmpty>
+            <ComboboxList>
+              {(item: string) => (
+                <ComboboxItem key={item} value={item}>
+                  {item}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </Field>
 
       <Field>
         <FieldLabel htmlFor="residence.gnDivision">
-          Grama Niladhari division
+          {t("appForm.residenceStep.gnDivision")}
         </FieldLabel>
-        <input
-          id="residence.gnDivision"
-          list="gn-options"
-          value={gnSearch}
-          placeholder="Search GN division"
-          onChange={(e) => {
-            const match = gnOptions.find(
-              (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
-            );
-            setResidence({ gnSearch: e.target.value, ...(match ? { gnDivision: match } : {}) });
+        <Combobox
+          items={gnOptions}
+          value={draft.residence.gnDivision || ""}
+          onValueChange={(val) => {
+            if (val) {
+              setResidence({ gnDivision: val, gnSearch: val });
+            } else {
+              setResidence({ gnDivision: "", gnSearch: "" });
+            }
           }}
-          className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-        />
-        <datalist id="gn-options">
-          {gnOptions.map((opt) => (
-            <option key={opt} value={opt} />
-          ))}
-        </datalist>
+        >
+          <ComboboxInput placeholder={t("appForm.residenceStep.gnDivisionPlaceholder")} />
+          <ComboboxContent>
+            <ComboboxEmpty>{t("appForm.residenceStep.gnDivisionEmpty")}</ComboboxEmpty>
+            <ComboboxList>
+              {(item: string) => (
+                <ComboboxItem key={item} value={item}>
+                  {item}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </Field>
 
       <Field>
         <FieldLabel htmlFor="residence.electoralDistrict">
-          Electoral district
+          {t("appForm.residenceStep.electoralDistrict")}
         </FieldLabel>
-        <input
-          id="residence.electoralDistrict"
-          list="electoral-options"
-          value={electoralSearch}
-          placeholder="Search electoral district"
-          onChange={(e) => {
-            const match = electoralOptions.find(
-              (opt) => opt.toLowerCase() === e.target.value.toLowerCase(),
-            );
-            setResidence({ electoralSearch: e.target.value, ...(match ? { electoralDistrict: match } : {}) });
+        <Combobox
+          items={electoralOptions}
+          value={draft.residence.electoralDistrict || ""}
+          onValueChange={(val) => {
+            if (val) {
+              setResidence({ electoralDistrict: val, electoralSearch: val });
+            } else {
+              setResidence({ electoralDistrict: "", electoralSearch: "" });
+            }
           }}
-          className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-        />
-        <datalist id="electoral-options">
-          {electoralOptions.map((opt) => (
-            <option key={opt} value={opt} />
-          ))}
-        </datalist>
+        >
+          <ComboboxInput placeholder={t("appForm.residenceStep.electoralDistrictPlaceholder")} />
+          <ComboboxContent>
+            <ComboboxEmpty>{t("appForm.residenceStep.districtEmpty")}</ComboboxEmpty>
+            <ComboboxList>
+              {(item: string) => (
+                <ComboboxItem key={item} value={item}>
+                  {item}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </Field>
     </div>
   );
@@ -906,13 +975,13 @@ function DeclarationStep({
   draft: ApplicationDraft;
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="grid max-w-[920px] gap-5">
       <div className="mb-4">
-        <h3 className="font-heading text-2xl">Confirm before review</h3>
+        <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.declarationStep.heading")}</h3>
         <p className="text-sm text-muted-foreground">
-          This is a collection draft. Nothing will be submitted while collection
-          mode is active.
+          {t("appForm.declarationStep.description")}
         </p>
       </div>
 
@@ -924,8 +993,7 @@ function DeclarationStep({
             set({ declaration: { ...draft.declaration, confirmed: checked === true } })
           }
         />
-        I confirm that the information I provide is accurate to the best of my
-        knowledge.
+        {t("appForm.declarationStep.confirmAccuracy")}
       </label>
 
       <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
@@ -936,8 +1004,7 @@ function DeclarationStep({
             set({ declaration: { ...draft.declaration, consent: checked === true } })
           }
         />
-        I consent to this information being used to prepare the Grade 1 2026 intake
-        application.
+        {t("appForm.declarationStep.consentProcessing")}
       </label>
     </div>
   );
@@ -950,6 +1017,7 @@ function ReviewStep({
   draft: ApplicationDraft;
   onNavigateToStep: (step: number) => void;
 }) {
+  const { t } = useTranslation();
   const marksQuery = useQuery({
     queryKey: ["application-marks", draft.accessKey],
     queryFn: () => client.application.getMarks({ accessKey: draft.accessKey }),
@@ -957,50 +1025,51 @@ function ReviewStep({
     staleTime: 60_000,
   });
   const adminMarks = marksQuery.data ?? [];
+  const categoryLabels = getCategoryLabels(t);
 
   const groupedSections = [
     {
-      title: "Location",
+      title: t("appForm.reviewStep.location"),
       step: 0,
       fields: [
-        ["Address", draft.location.address || "Not selected"],
+        [t("appForm.reviewStep.fields.permanentAddress"), draft.location.address || t("appForm.reviewStep.status.notCompleted")],
       ] as [string, string][],
     },
     {
-      title: "Applicant details",
+      title: t("appForm.reviewStep.applicantDetails"),
       step: 1,
       fields: [
-        ["Full name in English", draft.applicant.fullName || "Not completed"],
-        ["Full name in Sinhala", draft.applicant.sinhalaName || "Not completed"],
-        ["Gender", draft.applicant.gender || "Not selected"],
-        ["Religion", draft.applicant.religion || "Not selected"],
-        ["Education medium", draft.applicant.educationMedium || "Not selected"],
-        ["Date of birth", draft.applicant.dateOfBirth || "Not completed"],
-        ["Birth certificate number", draft.applicant.birthCertificateNumber || "Not completed"],
+        [t("appForm.reviewStep.fields.fullName"), draft.applicant.fullName || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.fullNameSi"), draft.applicant.sinhalaName || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.gender"), draft.applicant.gender || t("appForm.reviewStep.status.notSelected")],
+        [t("appForm.reviewStep.fields.religion"), draft.applicant.religion || t("appForm.reviewStep.status.notSelected")],
+        [t("appForm.reviewStep.fields.educationMedium"), draft.applicant.educationMedium || t("appForm.reviewStep.status.notSelected")],
+        [t("appForm.reviewStep.fields.dateOfBirth"), draft.applicant.dateOfBirth || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.birthCert"), draft.applicant.birthCertificateNumber || t("appForm.reviewStep.status.notCompleted")],
       ] as [string, string][],
     },
     {
-      title: "Parent / guardian",
+      title: t("appForm.reviewStep.parentGuardian"),
       step: 2,
       fields: [
-        ["Relationship", draft.guardian.relationship || "Not selected"],
-        ["Guardian name", draft.guardian.fullName || "Not completed"],
-        ["Guardian name in Sinhala", draft.guardian.sinhalaName || "Not completed"],
-        ["Guardian NIC", draft.guardian.nic || "Not completed"],
-        ["Phone number", draft.guardian.phone || "Not completed"],
-        ["Guardian email", draft.guardian.email || "Not completed"],
+        [t("appForm.reviewStep.fields.relationship"), draft.guardian.relationship || t("appForm.reviewStep.status.notSelected")],
+        [t("appForm.reviewStep.fields.guardianName"), draft.guardian.fullName || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.guardianNameSi"), draft.guardian.sinhalaName || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.guardianNic"), draft.guardian.nic || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.phone"), draft.guardian.phone || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.guardianEmail"), draft.guardian.email || t("appForm.reviewStep.status.notCompleted")],
       ] as [string, string][],
     },
     {
-      title: "Residence",
+      title: t("appForm.reviewStep.residence"),
       step: 3,
       fields: [
-        ["Permanent address", draft.residence.permanentAddress || "Not completed"],
-        ["Current address", draft.residence.currentAddress || "Not completed"],
-        ["District", draft.residence.district || "Not selected"],
-        ["Divisional Secretariat division", draft.residence.dsDivision || "Not selected"],
-        ["Grama Niladhari division", draft.residence.gnDivision || "Not selected"],
-        ["Electoral district", draft.residence.electoralDistrict || "Not selected"],
+        [t("appForm.reviewStep.fields.permanentAddress"), draft.residence.permanentAddress || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.currentAddress"), draft.residence.currentAddress || t("appForm.reviewStep.status.notCompleted")],
+        [t("appForm.reviewStep.fields.district"), draft.residence.district || t("appForm.reviewStep.status.notSelected")],
+        [t("appForm.reviewStep.fields.dsDivision"), draft.residence.dsDivision || t("appForm.reviewStep.status.notSelected")],
+        [t("appForm.reviewStep.fields.gnDivision"), draft.residence.gnDivision || t("appForm.reviewStep.status.notSelected")],
+        [t("appForm.reviewStep.fields.electoralDistrict"), draft.residence.electoralDistrict || t("appForm.reviewStep.status.notSelected")],
       ] as [string, string][],
     },
   ];
@@ -1009,19 +1078,18 @@ function ReviewStep({
     draft.categories.length > 0
       ? draft.categories.map(
           (category): [string, string] => [
-            CATEGORY_LABELS[category.categoryType],
+            categoryLabels[category.categoryType],
             categorySummary(category),
           ],
         )
-      : [["None selected", ""]];
+      : [[t("appForm.reviewStep.status.noneSelected"), ""]];
 
   return (
     <div className="">
       <div className="mb-5">
-        <h3 className="font-heading text-2xl">Review your draft</h3>
+        <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.reviewStep.heading")}</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Check all collected information before the application submission step
-          becomes available.
+          {t("appForm.reviewStep.description")}
         </p>
       </div>
       <div className="grid sm:grid-cols-2 gap-4 items-start">
@@ -1034,14 +1102,14 @@ function ReviewStep({
                 className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
                 onClick={() => onNavigateToStep(section.step)}
               >
-                Edit
+                {t("appForm.reviewStep.edit")}
               </button>
             </div>
             <div className="divide-y">
               {section.fields.map(([label, value]) => (
                 <div className="flex items-baseline justify-between gap-4 px-4 py-2.5" key={label}>
                   <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-                  <span className="text-sm font-medium text-right text-foreground truncate">{value || "—"}</span>
+                  <span className="text-sm font-medium text-right text-foreground truncate">{value || t("appForm.reviewStep.none")}</span>
                 </div>
               ))}
             </div>
@@ -1051,13 +1119,13 @@ function ReviewStep({
 
       <div className="mt-4">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-medium text-foreground">Categories</h4>
+          <h4 className="text-sm font-medium text-foreground">{t("appForm.reviewStep.categories")}</h4>
           <button
             type="button"
             className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
             onClick={() => onNavigateToStep(4)}
           >
-            Edit
+            {t("appForm.reviewStep.edit")}
           </button>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1077,44 +1145,44 @@ function ReviewStep({
           <div className="mt-6 rounded-xl border overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b bg-muted/40">
               <div>
-                <h4 className="text-sm font-medium text-foreground">Admission review</h4>
+                <h4 className="text-sm font-medium text-foreground">{t("appForm.reviewStep.admissionReview")}</h4>
               </div>
               <div className="flex items-center gap-2">
                 {draft.isBanned ? (
-                  <Badge variant="destructive" className="text-xs px-2.5 py-0.5">Banned</Badge>
+                  <Badge variant="destructive" className="text-xs px-2.5 py-0.5">{t("appForm.reviewStep.badge.banned")}</Badge>
                 ) : draft.admissionStatus === "verified" ? (
-                  <Badge variant="default" className={`${STATUS_SUCCESS.badgeBg} ${STATUS_SUCCESS.badgeHover} text-xs px-2.5 py-0.5`}>Verified</Badge>
+                  <Badge variant="default" className={`${STATUS_SUCCESS.badgeBg} ${STATUS_SUCCESS.badgeHover} text-xs px-2.5 py-0.5`}>{t("appForm.reviewStep.badge.verified")}</Badge>
                 ) : draft.admissionStatus === "fake" ? (
-                  <Badge variant="destructive" className="text-xs px-2.5 py-0.5">Flagged</Badge>
+                  <Badge variant="destructive" className="text-xs px-2.5 py-0.5">{t("appForm.reviewStep.badge.flagged")}</Badge>
                 ) : (
-                  <Badge variant="secondary" className="text-xs px-2.5 py-0.5">Pending review</Badge>
+                  <Badge variant="secondary" className="text-xs px-2.5 py-0.5">{t("appForm.reviewStep.badge.pendingReview")}</Badge>
                 )}
               </div>
             </div>
             <div className="grid gap-3 p-4">
               {draft.isBanned && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                  <div className="flex items-center gap-2 font-semibold mb-1"><ShieldX size={15} /> Application Banned</div>
-                  <p>{draft.banReason || "No specific reason provided."}</p>
+                  <div className="flex items-center gap-2 font-semibold mb-1"><ShieldX size={15} /> {t("appForm.reviewStep.banned.heading")}</div>
+                  <p>{draft.banReason || t("appForm.reviewStep.banned.noReason")}</p>
                 </div>
               )}
 
               {draft.admissionStatus === "verified" && (
-                <div className={`rounded-lg border ${STATUS_SUCCESS.borderStrong} ${STATUS_SUCCESS.bgSoft} p-3 text-sm ${STATUS_SUCCESS.textStrong} ${STATUS_SUCCESS.textDark}`}>
-                  <div className="flex items-center gap-2 font-semibold"><Check size={15} /> This application has been verified by an administrator.</div>
+                <div className={`rounded-lg border ${STATUS_SUCCESS.borderStrong} ${STATUS_SUCCESS.bgSoft} p-3 text-sm ${STATUS_SUCCESS.textStrong}`}>
+                  <div className="flex items-center gap-2 font-semibold"><Check size={15} /> {t("appForm.reviewStep.verified.heading")}</div>
                 </div>
               )}
 
               {draft.admissionStatus === "fake" && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                  <div className="flex items-center gap-2 font-semibold"><TriangleAlert size={15} /> This application has been flagged for review.</div>
+                  <div className="flex items-center gap-2 font-semibold"><TriangleAlert size={15} /> {t("appForm.reviewStep.flagged.heading")}</div>
                 </div>
               )}
 
               {draft.flags && draft.flags.length > 0 && (
                 <div className="grid gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
                   <span className="text-xs font-semibold text-destructive uppercase tracking-wider">
-                    Observations ({draft.flags.length})
+                    {t("appForm.reviewStep.observations", { count: draft.flags.length })}
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {draft.flags.map((f, i) => (
@@ -1128,7 +1196,7 @@ function ReviewStep({
 
               {draft.interviewNotes && (
                 <div className="grid gap-1 rounded-lg border border-border bg-card p-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admin Notes</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("appForm.reviewStep.adminNotes")}</span>
                   <p className="text-sm whitespace-pre-wrap text-foreground">{draft.interviewNotes}</p>
                 </div>
               )}
@@ -1136,15 +1204,15 @@ function ReviewStep({
               {draft.interviewEdits && draft.interviewEdits.length > 0 && (
                 <div className="grid gap-2 rounded-lg border border-border bg-card p-3">
                   <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                    Changes made by admin ({draft.interviewEdits.length})
+                    {t("appForm.reviewStep.changesByAdmin", { count: draft.interviewEdits.length })}
                   </span>
                   <div className="grid gap-1.5 max-h-48 overflow-y-auto">
                     {draft.interviewEdits.map((edit, i) => (
                       <div key={i} className="flex flex-wrap items-center gap-2 text-xs border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
                         <strong className="text-foreground">{edit.label}:</strong>
-                        <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
+                        <span className="line-through text-muted-foreground">{edit.previousValue || t("appForm.reviewStep.emptyValue")}</span>
                         <span className="text-muted-foreground">→</span>
-                        <span className="font-semibold text-foreground">{edit.newValue || "(empty)"}</span>
+                        <span className="font-semibold text-foreground">{edit.newValue || t("appForm.reviewStep.emptyValue")}</span>
                       </div>
                     ))}
                   </div>
@@ -1155,9 +1223,9 @@ function ReviewStep({
 
           <div className="mt-4 rounded-xl border overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
-              <h4 className="text-sm font-medium text-foreground">Mark Allocation</h4>
+              <h4 className="text-sm font-medium text-foreground">{t("appForm.reviewStep.markAllocation")}</h4>
               {adminMarks.length === 0 && (
-                <Badge variant="secondary" className="text-xs px-2.5 py-0.5">Admin marks pending</Badge>
+                <Badge variant="secondary" className="text-xs px-2.5 py-0.5">{t("appForm.reviewStep.adminMarksPending")}</Badge>
               )}
             </div>
             <div className="p-4">
@@ -1173,32 +1241,32 @@ function ReviewStep({
                       >
                         <div className="grid gap-0.5">
                           <span className="text-xs text-muted-foreground">
-                            {CATEGORY_LABELS[category.categoryType]}
+                            {categoryLabels[category.categoryType]}
                           </span>
                           <div className="flex items-center gap-3 text-sm">
                             <span>
-                              Indicative: <strong className="tabular-nums">{autoScore.total}</strong>
+                              {t("appForm.reviewStep.indicative")}: <strong className="tabular-nums">{autoScore.total}</strong>
                             </span>
                             {adminMark != null && (
                               <span className="text-primary font-semibold">
-                                Admin: <strong className="tabular-nums">{adminMark.total}</strong>
+                                {t("appForm.reviewStep.adminMarks")}: <strong className="tabular-nums">{adminMark.total}</strong>
                               </span>
                             )}
                           </div>
                         </div>
                         {adminMark != null ? (
-                          <Badge variant="default">Scored</Badge>
+                          <Badge variant="default">{t("appForm.reviewStep.scored")}</Badge>
                         ) : (
-                          <Badge variant="outline">Pending</Badge>
+                          <Badge variant="outline">{t("appForm.reviewStep.pending")}</Badge>
                         )}
                       </div>
                     );
                   })}
                   <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 mt-1">
-                    <span className="text-sm font-medium">Total</span>
+                    <span className="text-sm font-medium">{t("appForm.reviewStep.total")}</span>
                     <div className="flex items-center gap-4 text-sm">
                       <span>
-                        Indicative:{" "}
+                        {t("appForm.reviewStep.indicative")}:{" "}
                         <strong className="tabular-nums">
                           {draft.categories.reduce(
                             (sum, c) => sum + scoreCategory(c).total,
@@ -1208,7 +1276,7 @@ function ReviewStep({
                       </span>
                       {adminMarks.length > 0 && (
                         <span className="text-primary font-semibold">
-                          Admin:{" "}
+                          {t("appForm.reviewStep.adminMarks")}:{" "}
                           <strong className="tabular-nums">
                             {adminMarks.reduce((sum, m) => sum + m.total, 0)}
                           </strong>
@@ -1219,7 +1287,7 @@ function ReviewStep({
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No categories selected.
+                  {t("appForm.reviewStep.noCategoriesSelected")}
                 </p>
               )}
             </div>
@@ -1237,6 +1305,7 @@ export function ApplicationForm({
   adminApplicationId?: string;
   readOnly?: boolean;
 }) {
+  const { t } = useTranslation();
   const draft = useApplicationStore();
   const saveQueue = useRef(Promise.resolve());
   const restorePromise = useRef<Promise<void> | null>(null);
@@ -1434,13 +1503,14 @@ export function ApplicationForm({
   }, [draft.categories, draft.applicant, draft.guardian, draft.residence, draft.declaration, draft.currentStep, draft.hydrated, draft.accessKey, draft.submittedAt, draft.submissionLocked]);
 
   const current = draft.currentStep;
+  const steps = getSteps(t);
 
   const saveToServer = async (showFeedback = true) => {
     const operation = saveQueue.current.then(async () => {
       const currentDraft = useApplicationStore.getState();
       const data = normalizeDraft(currentDraft);
       const saveStartedAt = Date.now();
-      set({ saveStatus: "Saving…" });
+      set({ saveStatus: t("appForm.statusBar.saving") });
       try {
         if (adminApplicationId)
           await client.admin.application.update({ id: adminApplicationId, data });
@@ -1459,9 +1529,9 @@ export function ApplicationForm({
           setTimeout(resolve, remainingFeedbackMs);
           await promise;
         }
-        set({ saveStatus: "Saved securely" });
+        set({ saveStatus: t("appForm.statusBar.savedSecurely") });
       } catch {
-        set({ saveStatus: "Save failed — retrying…" });
+        set({ saveStatus: t("appForm.statusBar.saveFailed") });
       }
     });
     saveQueue.current = operation.catch(() => undefined);
@@ -1481,7 +1551,7 @@ export function ApplicationForm({
         submitError:
           error instanceof Error
             ? error.message
-            : "Could not save this step. Please try again.",
+            : t("appForm.buttons.submitError.couldNotSave"),
       });
       draft.setStep(current);
     }
@@ -1501,10 +1571,10 @@ export function ApplicationForm({
       }
       await saveToServer(false);
       accessKey = useApplicationStore.getState().accessKey || accessKey;
-      if (!accessKey) throw new Error("Could not create a secure application draft");
-      set({ saveStatus: "Submitting…" });
+      if (!accessKey) throw new Error(t("appForm.buttons.submitError.couldNotCreateDraft"));
+      set({ saveStatus: t("appForm.statusBar.submitting") });
       await client.application.submit({ accessKey });
-      set({ submittedAt: new Date().toISOString(), saveStatus: "Submitted" });
+      set({ submittedAt: new Date().toISOString(), saveStatus: t("appForm.statusBar.submitted") });
     } catch (error) {
       set({ saveStatus: "" });
       if (error instanceof Error && error.message.includes("Submissions are outside the configured form window")) {
@@ -1514,7 +1584,7 @@ export function ApplicationForm({
           submitError:
             error instanceof Error
               ? error.message
-              : "Could not submit the application. Please try again.",
+              : t("appForm.buttons.submitError.couldNotSubmit"),
         });
       }
     } finally {
@@ -1526,9 +1596,9 @@ export function ApplicationForm({
     try {
       set({ requestSaving: true });
       await client.application.requestAccess({ accessKey: draft.accessKey, applicantName: draft.requestName.trim(), contactPhone: draft.requestPhone.trim(), requestType: "submission" });
-      set({ showSubmissionRequest: false, saveStatus: "Approval request sent" });
+      set({ showSubmissionRequest: false, saveStatus: t("appForm.buttons.approvalRequestSent") });
     } catch (error) {
-      set({ submitError: error instanceof Error ? error.message : "Could not send the approval request" });
+      set({ submitError: error instanceof Error ? error.message : t("appForm.buttons.approvalRequestError") });
     } finally {
       set({ requestSaving: false });
     }
@@ -1556,7 +1626,7 @@ export function ApplicationForm({
   if (!draft.hydrated)
     return (
       <div className="grid place-items-center min-h-[50vh] text-muted-foreground">
-        Restoring your draft 2026
+        {t("appForm.buttons.restoring")}
       </div>
     );
 
@@ -1579,60 +1649,58 @@ export function ApplicationForm({
         <div className="mb-9 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.38fr)]">
           <div className="min-w-0">
             <h1 className="font-heading text-[clamp(2.35rem,5vw,4.5rem)] leading-[0.98] tracking-[-0.03em]">
-              Applicant information
+              {t("appForm.buttons.applicantInfo")}
             </h1>
             <p className="mt-4 max-w-[48rem] text-[1.05rem] leading-relaxed text-muted-foreground">
-              G1 2026 intake · Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.
+              {t("appForm.buttons.applicantInfoDescription")}
             </p>
             {(draft.sessionCode || draft.accessKey) && (
               <div className="mt-5 grid max-w-[900px] grid-cols-1 gap-3 sm:grid-cols-2">
                 {draft.sessionCode && (
                   <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
                     <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                      <span>Session code</span>
+                      <span>{t("appForm.sessionCode.label")}</span>
                       <button
                         type="button"
                         className="inline-flex items-center gap-1 border-0 rounded-md px-1.5 py-1 text-primary bg-transparent text-[0.72rem] hover:bg-primary/10"
-                        aria-label="Copy session code"
+                        aria-label={t("appForm.sessionCode.copyAriaLabel")}
                         onClick={(e) => {
                           e.stopPropagation();
                           copyWithFeedback("session", draft.sessionCode);
                         }}
                       >
-                        {draft.copiedField === "session" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
+                        {draft.copiedField === "session" ? <><Check size={15} /> {t("appForm.sessionCode.copied")}</> : <><Copy size={15} /> {t("appForm.sessionCode.copy")}</>}
                       </button>
                     </div>
                     <code className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
                       {draft.sessionCode}
                     </code>
                     <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
-                      Memorise this code to find this child&apos;s application
-                      on another device.
+                      {t("appForm.sessionCode.hint")}
                     </span>
                   </div>
                 )}
                 {draft.accessKey && (
                   <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
                     <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                      <span>Access key</span>
+                      <span>{t("appForm.accessKey.label")}</span>
                       <button
                         type="button"
                         className="inline-flex items-center gap-1 border-0 rounded-md px-1.5 py-1 text-primary bg-transparent text-[0.72rem] hover:bg-primary/10"
-                        aria-label="Copy access key"
+                        aria-label={t("appForm.accessKey.copyAriaLabel")}
                         onClick={(e) => {
                           e.stopPropagation();
                           copyWithFeedback("key", draft.accessKey);
                         }}
                       >
-                        {draft.copiedField === "key" ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy</>}
+                        {draft.copiedField === "key" ? <><Check size={15} /> {t("appForm.sessionCode.copied")}</> : <><Copy size={15} /> {t("appForm.sessionCode.copy")}</>}
                       </button>
                     </div>
                     <code className="block break-all text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
                       {draft.accessKey}
                     </code>
                     <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
-                      This key authorizes you to view, change, and edit this
-                      application again. Store it safely.
+                      {t("appForm.accessKey.hint")}
                     </span>
                   </div>
                 )}
@@ -1641,18 +1709,18 @@ export function ApplicationForm({
           </div>
           <div className="grid gap-3 rounded-2xl border border-primary/20 bg-card/85 p-5 shadow-[0_14px_32px_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
             <div className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
-              <span>Application status</span>
+              <span>{t("appForm.statusBar.applicationStatus")}</span>
               <ShieldCheck className="text-primary" size={17} />
             </div>
-            <strong className="font-heading text-2xl">Step {current + 1} of {steps.length}</strong>
+            <strong className="font-heading text-2xl">{t("appForm.statusBar.stepOf", { current: current + 1, total: steps.length })}</strong>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Keep going one section at a time. You can leave and return with the access key above.
+              {t("appForm.statusBar.keepGoing")}
             </p>
             <div className="flex items-center gap-2 border-t pt-3 text-sm text-primary">
-              <span className={`size-2 rounded-full ${draft.saveStatus === "Saving…" ? "animate-pulse" : ""} ${draft.saveStatus.includes("failed") ? "bg-destructive" : "bg-primary"}`} aria-hidden="true" />
-              {draft.saveStatus === "Saved securely"
-                ? "Saved"
-                : draft.saveStatus || (draft.accessKey ? "Connected to secure draft" : "Connecting to secure draft")}
+              <span className={`size-2 rounded-full ${draft.saveStatus === t("appForm.statusBar.saving") ? "animate-pulse" : ""} ${draft.saveStatus.includes("failed") ? "bg-destructive" : "bg-primary"}`} aria-hidden="true" />
+              {draft.saveStatus === t("appForm.statusBar.savedSecurely")
+                ? t("appForm.statusBar.saved")
+                : draft.saveStatus || (draft.accessKey ? t("appForm.statusBar.connected") : t("appForm.statusBar.connecting"))}
             </div>
           </div>
         </div>
@@ -1714,14 +1782,13 @@ export function ApplicationForm({
                 </div>
                 <div className="grid gap-1">
                   <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                    Submission complete
+                    {t("appForm.submitted.statusBadge")}
                   </span>
                   <strong className="font-heading text-2xl leading-tight sm:text-3xl">
-                    Application submitted successfully.
+                    {t("appForm.submitted.title")}
                   </strong>
                   <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-                    Your application is safely recorded. Keep the access key below
-                    so you can return to this child&apos;s application later.
+                    {t("appForm.submitted.description")}
                   </p>
                 </div>
               </div>
@@ -1733,13 +1800,13 @@ export function ApplicationForm({
                   </div>
                   <div className="grid gap-2">
                     <span className="text-xs font-bold uppercase tracking-[0.14em] text-destructive">
-                      Application blocked
+                      {t("appForm.submitted.bannedStatusBadge")}
                     </span>
                     <strong className="font-heading text-xl leading-tight sm:text-2xl">
-                      This application has been banned.
+                      {t("appForm.submitted.bannedTitle")}
                     </strong>
                     <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-                      {draft.banReason || "This application has been blocked by an administrator. Please contact the school office for more information."}
+                      {draft.banReason || t("appForm.submitted.bannedDescription")}
                     </p>
                   </div>
                 </div>
@@ -1751,65 +1818,65 @@ export function ApplicationForm({
                     </div>
                     <div className="grid gap-2">
                       <span className={`text-xs font-bold uppercase tracking-[0.14em] ${SECTION_COLORS.success.label}`}>
-                        Application verified
+                        {t("appForm.submitted.verifiedStatusBadge")}
                       </span>
                       <strong className="font-heading text-xl leading-tight sm:text-2xl">
-                        Your application has been reviewed and verified.
+                        {t("appForm.submitted.verifiedTitle")}
                       </strong>
                       <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-                        An administrator has reviewed this application and confirmed the information is accurate.
+                        {t("appForm.submitted.verifiedDescription")}
                       </p>
                     </div>
                   </div>
                   {adminMarks.length > 0 && (
                     <div className={`mt-4 grid gap-2 rounded-xl border ${STATUS_SUCCESS.border} ${STATUS_SUCCESS.bgSoft} p-4`}>
-                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_SUCCESS.text}`}>Category marks</span>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_SUCCESS.text}`}>{t("appForm.submitted.categoryMarks")}</span>
                       <div className="grid gap-1.5">
                         {draft.categories.map((category) => {
                           const mark = adminMarks.find((m) => m.categoryType === category.categoryType);
                           if (!mark) return null;
                           return (
                             <div key={category.categoryType} className={`flex items-center justify-between text-sm py-1 border-b border-emerald-500/10 last:border-b-0`}>
-                              <span className="text-foreground">{CATEGORY_LABELS[category.categoryType]}</span>
-                              <span className={`font-semibold ${STATUS_SUCCESS.textStrong} ${STATUS_SUCCESS.textDark}`}>{mark.total}</span>
+                              <span className="text-foreground">{getCategoryLabels(t)[category.categoryType]}</span>
+                              <span className={`font-semibold ${STATUS_SUCCESS.textStrong}`}>{mark.total}</span>
                             </div>
                           );
                         })}
                         <div className="flex items-center justify-between text-sm font-semibold pt-1">
-                          <span>Total</span>
-                          <span className={`${STATUS_SUCCESS.textStrong} ${STATUS_SUCCESS.textDark}`}>{adminMarks.reduce((sum, m) => sum + m.total, 0)}</span>
+                          <span>{t("appForm.reviewStep.total")}</span>
+                          <span className={`${STATUS_SUCCESS.textStrong}`}>{adminMarks.reduce((sum, m) => sum + m.total, 0)}</span>
                         </div>
                       </div>
                     </div>
                   )}
                   {draft.flags && draft.flags.length > 0 && (
                     <div className={`mt-3 grid gap-2 rounded-xl border ${STATUS_WARNING.border} ${STATUS_WARNING.bgSoft} p-4`}>
-                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_WARNING.text}`}>Observations ({draft.flags.length})</span>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_WARNING.text}`}>{t("appForm.submitted.observations", { count: draft.flags.length })}</span>
                       <div className="flex flex-wrap gap-1.5">
                         {draft.flags.map((f, i) => (
-                          <Badge key={i} variant="outline" className={`border-amber-500/40 ${STATUS_WARNING.textStrong} ${STATUS_WARNING.textDark} text-xs`}>{f.label || f.key}</Badge>
+                          <Badge key={i} variant="outline" className={`border-amber-500/40 ${STATUS_WARNING.textStrong} text-xs`}>{f.label || f.key}</Badge>
                         ))}
                       </div>
                     </div>
                   )}
                   {draft.interviewNotes && (
                     <div className={`mt-3 rounded-xl border ${STATUS_SUCCESS.border} ${STATUS_SUCCESS.bgSoft} p-4`}>
-                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_SUCCESS.text}`}>Admin note</span>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_SUCCESS.text}`}>{t("appForm.submitted.adminNote")}</span>
                       <p className="text-sm mt-1 text-foreground">{draft.interviewNotes}</p>
                     </div>
                   )}
                   {draft.interviewEdits && draft.interviewEdits.length > 0 && (
-                    <div className="mt-3 rounded-xl border border-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                        Changes made by admin ({draft.interviewEdits.length})
+                    <div className="mt-3 rounded-xl border border-blue-500/20 bg-blue-50/20 p-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
+                        {t("appForm.submitted.changesByAdmin", { count: draft.interviewEdits.length })}
                       </span>
                       <div className="mt-2 grid gap-1 max-h-40 overflow-y-auto">
                         {draft.interviewEdits.map((edit, i) => (
                           <div key={i} className="flex flex-wrap items-center gap-2 text-xs border-b border-blue-500/10 pb-1 last:border-b-0 last:pb-0">
                             <strong className="text-foreground">{edit.label}:</strong>
-                            <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
+                            <span className="line-through text-muted-foreground">{edit.previousValue || t("appForm.reviewStep.emptyValue")}</span>
                             <span>→</span>
-                            <span className="font-semibold text-primary">{edit.newValue || "(empty)"}</span>
+                            <span className="font-semibold text-primary">{edit.newValue || t("appForm.reviewStep.emptyValue")}</span>
                           </div>
                         ))}
                       </div>
@@ -1824,19 +1891,19 @@ export function ApplicationForm({
                     </div>
                     <div className="grid gap-2">
                       <span className="text-xs font-bold uppercase tracking-[0.14em] text-destructive">
-                        Application flagged
+                        {t("appForm.submitted.flaggedStatusBadge")}
                       </span>
                       <strong className="font-heading text-xl leading-tight sm:text-2xl">
-                        This application requires attention.
+                        {t("appForm.submitted.flaggedTitle")}
                       </strong>
                       <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-                        An administrator has flagged concerns with this application. Please review the details below and contact the school office if needed.
+                        {t("appForm.submitted.flaggedDescription")}
                       </p>
                     </div>
                   </div>
                   {draft.flags && draft.flags.length > 0 && (
                     <div className="mt-4 grid gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-destructive">Flagged items ({draft.flags.length})</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-destructive">{t("appForm.submitted.flaggedItems", { count: draft.flags.length })}</span>
                       <div className="flex flex-wrap gap-1.5">
                         {draft.flags.map((f, i) => (
                           <Badge key={i} variant="destructive" className="text-xs">{f.label || f.key}</Badge>
@@ -1846,20 +1913,20 @@ export function ApplicationForm({
                   )}
                   {adminMarks.length > 0 && (
                     <div className="mt-3 grid gap-2 rounded-xl border border-border bg-card p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Category marks</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("appForm.submitted.categoryMarks")}</span>
                       <div className="grid gap-1.5">
                         {draft.categories.map((category) => {
                           const mark = adminMarks.find((m) => m.categoryType === category.categoryType);
                           if (!mark) return null;
                           return (
                             <div key={category.categoryType} className="flex items-center justify-between text-sm py-1 border-b border-border/40 last:border-b-0">
-                              <span className="text-foreground">{CATEGORY_LABELS[category.categoryType]}</span>
+                              <span className="text-foreground">{getCategoryLabels(t)[category.categoryType]}</span>
                               <span className="font-semibold">{mark.total}</span>
                             </div>
                           );
                         })}
                         <div className="flex items-center justify-between text-sm font-semibold pt-1">
-                          <span>Total</span>
+                          <span>{t("appForm.reviewStep.total")}</span>
                           <span>{adminMarks.reduce((sum, m) => sum + m.total, 0)}</span>
                         </div>
                       </div>
@@ -1867,22 +1934,22 @@ export function ApplicationForm({
                   )}
                   {draft.interviewNotes && (
                     <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-destructive">Admin note</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-destructive">{t("appForm.submitted.adminNote")}</span>
                       <p className="text-sm mt-1 text-foreground">{draft.interviewNotes}</p>
                     </div>
                   )}
                   {draft.interviewEdits && draft.interviewEdits.length > 0 && (
-                    <div className={`mt-3 rounded-xl border ${STATUS_INFO.border} ${STATUS_INFO.bg} ${STATUS_INFO.bgDark} p-4`}>
-                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_INFO.text} ${STATUS_INFO.textDark}`}>
-                        Changes made by admin ({draft.interviewEdits.length})
+                    <div className={`mt-3 rounded-xl border ${STATUS_INFO.border} ${STATUS_INFO.bg} p-4`}>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${STATUS_INFO.text} `}>
+                        {t("appForm.submitted.changesByAdmin", { count: draft.interviewEdits.length })}
                       </span>
                       <div className="mt-2 grid gap-1 max-h-40 overflow-y-auto">
                         {draft.interviewEdits.map((edit, i) => (
                           <div key={i} className={`flex flex-wrap items-center gap-2 text-xs border-b border-blue-500/10 pb-1 last:border-b-0 last:pb-0`}>
                             <strong className="text-foreground">{edit.label}:</strong>
-                            <span className="line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
+                            <span className="line-through text-muted-foreground">{edit.previousValue || t("appForm.reviewStep.emptyValue")}</span>
                             <span>→</span>
-                            <span className="font-semibold text-primary">{edit.newValue || "(empty)"}</span>
+                            <span className="font-semibold text-primary">{edit.newValue || t("appForm.reviewStep.emptyValue")}</span>
                           </div>
                         ))}
                       </div>
@@ -1896,13 +1963,13 @@ export function ApplicationForm({
                   </div>
                   <div className="grid gap-2">
                     <span className={`text-xs font-bold uppercase tracking-[0.14em] ${SECTION_COLORS.warning.label}`}>
-                      Awaiting review
+                      {t("appForm.submitted.awaitingReviewBadge")}
                     </span>
                     <strong className="font-heading text-xl leading-tight sm:text-2xl">
-                      Your application is pending admin review.
+                      {t("appForm.submitted.awaitingReviewTitle")}
                     </strong>
                     <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-                      Your submission is complete. An administrator will review the details shortly. You can check back later using your access key.
+                      {t("appForm.submitted.awaitingReviewDescription")}
                     </p>
                   </div>
                 </div>
@@ -1915,11 +1982,11 @@ export function ApplicationForm({
                       <div className="flex items-center gap-2 text-primary">
                         <KeyRound size={18} />
                         <h2 id="submitted-access-key-heading" className="text-base font-semibold text-foreground">
-                          Your access key
+                          {t("appForm.submitted.yourAccessKey")}
                         </h2>
                       </div>
                       <p className="text-sm leading-relaxed text-muted-foreground">
-                        This key lets you view or update this child&apos;s application.
+                        {t("appForm.submitted.accessKeyDescription")}
                       </p>
                     </div>
                     <ShieldCheck className="mt-0.5 shrink-0 text-primary" size={19} aria-hidden="true" />
@@ -1936,23 +2003,23 @@ export function ApplicationForm({
                       copyWithFeedback("keycard", draft.accessKey);
                     }}
                   >
-                    {draft.copiedField === "keycard" ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy key</>}
+                    {draft.copiedField === "keycard" ? <><Check size={16} /> {t("appForm.submitted.copied")}</> : <><Copy size={16} /> {t("appForm.submitted.copyKey")}</>}
                   </Button>
                 </section>
 
                 <aside className="grid content-start gap-4 rounded-2xl border border-border bg-muted/20 p-5 sm:p-6" aria-labelledby="submitted-next-steps-heading">
                   <div className="grid gap-1">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Next steps</span>
-                    <h2 id="submitted-next-steps-heading" className="font-heading text-xl">Keep your application within reach</h2>
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">{t("appForm.submitted.nextSteps.badge")}</span>
+                    <h2 id="submitted-next-steps-heading" className="font-heading text-xl">{t("appForm.submitted.nextSteps.title")}</h2>
                   </div>
                   <ol className="grid gap-3 text-sm">
                     <li className="flex items-start gap-3">
                       <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-bold text-primary">1</span>
-                      <span className="leading-relaxed text-muted-foreground">Copy or store the access key somewhere safe.</span>
+                      <span className="leading-relaxed text-muted-foreground">{t("appForm.submitted.nextSteps.step1")}</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-bold text-primary">2</span>
-                      <span className="leading-relaxed text-muted-foreground">Use it with your session code to return to this application.</span>
+                      <span className="leading-relaxed text-muted-foreground">{t("appForm.submitted.nextSteps.step2")}</span>
                     </li>
                   </ol>
                 </aside>
@@ -1960,11 +2027,11 @@ export function ApplicationForm({
 
               <div className="flex flex-wrap gap-3 border-t pt-5">
                 <Button type="button" variant="secondary" onClick={() => void navigate({ to: "/" })}>
-                  <House size={17} /> Back to home
+                  <House size={17} /> {t("appForm.submitted.backToHome")}
                 </Button>
                 {!collectionOnly && (
                   <Button type="button" onClick={startAnotherApplication}>
-                    <UserPlus size={17} /> Apply for another child
+                    <UserPlus size={17} /> {t("appForm.submitted.applyForAnother")}
                   </Button>
                 )}
               </div>
@@ -1973,13 +2040,13 @@ export function ApplicationForm({
             <>
               {draft.lastSavedAt && (
                 <span className="inline-flex items-center gap-1 text-primary text-[0.85rem] whitespace-nowrap">
-                  <Check size={15} /> Saved locally
+                  <Check size={15} /> {t("appForm.statusBar.savedLocally")}
                 </span>
               )}
               <div className="ml-auto flex gap-3">
                 {current > 0 && (
                   <Button variant="secondary" onClick={back}>
-                    <ArrowLeft size={17} /> Back
+                    <ArrowLeft size={17} /> {t("appForm.buttons.back")}
                   </Button>
                 )}
                 {current < steps.length - 1 ? (
@@ -1987,7 +2054,7 @@ export function ApplicationForm({
                     disabled={isNextDisabled}
                     onClick={next}
                   >
-                    Continue <ArrowRight size={17} />
+                    {t("appForm.buttons.continue")} <ArrowRight size={17} />
                   </Button>
                 ) : (
                   <Button
@@ -1997,17 +2064,17 @@ export function ApplicationForm({
                       !draft.declaration.confirmed ||
                       !draft.declaration.consent
                     }
-                    aria-label={collectionOnly ? "Update application — submission opens 9 Sep 2026" : undefined}
+                    aria-label={collectionOnly ? t("appForm.buttons.collectionOnlyAriaLabel") : undefined}
                     onClick={() => void submitApplication()}
                   >
                     {collectionOnly ? (
                       <>
-                        <Clock3 size={17} /> Submission opens 9 Sep 2026
+                        <Clock3 size={17} /> {t("appForm.buttons.collectionOnly")}
                       </>
                     ) : draft.submittedAt ? (
-                      "Update application"
+                      t("appForm.buttons.updateApplication")
                     ) : (
-                      "Submit application"
+                      t("appForm.buttons.submitApplication")
                     )}
                   </Button>
                 )}
@@ -2024,8 +2091,8 @@ export function ApplicationForm({
 
         {current === steps.length - 1 && !collectionOnly && !draft.isSubmitting && (() => {
           const reasons: string[] = [];
-          if (!draft.declaration.confirmed) reasons.push("Confirm that the information is correct");
-          if (!draft.declaration.consent) reasons.push("Give consent to process the data");
+          if (!draft.declaration.confirmed) reasons.push(t("appForm.buttons.confirmInfo"));
+          if (!draft.declaration.consent) reasons.push(t("appForm.buttons.giveConsent"));
           if (reasons.length === 0) return null;
           return (
             <div className="flex items-center gap-2 px-(--card-spacing) py-2 text-sm text-muted-foreground border-t">
@@ -2038,18 +2105,16 @@ export function ApplicationForm({
           <CardFooter className="flex items-center gap-3 px-(--card-spacing) py-4 bg-primary/8 border-t border-primary/20">
             <Clock3 size={18} />
             <div className="grid gap-0.5 text-sm flex-1">
-              <strong>Form submission is outside the open window</strong>
+              <strong>{t("appForm.buttons.formWindowClosed.title")}</strong>
               <span className="text-muted-foreground">
-                Your draft is saved locally and synchronized with the server.
-                The form window is{" "}
-                {draft.submissionOpensAt
-                  ? new Date(draft.submissionOpensAt).toLocaleString()
-                  : "not yet configured"}{" "}
-                to{" "}
-                {draft.submissionClosesAt
-                  ? new Date(draft.submissionClosesAt).toLocaleString()
-                  : "not configured"}
-                .
+                {t("appForm.buttons.formWindowClosed.description", {
+                  opensAt: draft.submissionOpensAt
+                    ? new Date(draft.submissionOpensAt).toLocaleString()
+                    : t("appForm.buttons.formWindowClosed.notConfigured"),
+                  closesAt: draft.submissionClosesAt
+                    ? new Date(draft.submissionClosesAt).toLocaleString()
+                    : t("appForm.buttons.formWindowClosed.notConfigured"),
+                })}
               </span>
             </div>
             <AlertDialog open={draft.clearDraftDialogOpen} onOpenChange={(open) => set({ clearDraftDialogOpen: open })}>
@@ -2058,17 +2123,17 @@ export function ApplicationForm({
                 className="bg-transparent text-muted-foreground text-xs border-0 cursor-pointer hover:text-foreground flex flex-row gap-2"
                 onClick={() => set({ clearDraftDialogOpen: true })}
               >
-                <RotateCcw size={15} /> Clear draft
+                <RotateCcw size={15} /> {t("appForm.buttons.clearDraft")}
               </button>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Clear this draft?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("appForm.buttons.clearDraftDialog.title")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will remove all saved data for this application from this device. You can reload it later using the access key.
+                    {t("appForm.buttons.clearDraftDialog.description")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t("appForm.buttons.clearDraftDialog.cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     variant="destructive"
                     onClick={() => {
@@ -2079,7 +2144,7 @@ export function ApplicationForm({
                       window.location.assign("/");
                     }}
                   >
-                    Clear draft
+                    {t("appForm.buttons.clearDraftDialog.confirm")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -2091,19 +2156,18 @@ export function ApplicationForm({
           <div className="flex items-start gap-3 px-(--card-spacing) py-4 bg-primary/8 border-t border-primary/20">
             <ShieldCheck size={18} className="mt-0.5" />
             <div className="grid gap-3 flex-1">
-              <strong>Request approval to submit</strong>
+              <strong>{t("appForm.buttons.submissionRequest.title")}</strong>
               <span className="text-sm text-muted-foreground">
-                The submission window is closed. Submit this request for admin
-                approval.
+                {t("appForm.buttons.submissionRequest.description")}
               </span>
               <div className="grid gap-2 max-w-md">
                 <Input
-                  placeholder="Your full name"
+                  placeholder={t("appForm.buttons.submissionRequest.namePlaceholder")}
                   value={draft.requestName}
                   onChange={(e) => set({ requestName: e.target.value })}
                 />
                 <Input
-                  placeholder="Contact phone number"
+                  placeholder={t("appForm.buttons.submissionRequest.phonePlaceholder")}
                   value={draft.requestPhone}
                   onChange={(e) => set({ requestPhone: e.target.value })}
                 />
@@ -2113,13 +2177,13 @@ export function ApplicationForm({
                   disabled={draft.requestSaving || !draft.requestName.trim() || !draft.requestPhone.trim()}
                   onClick={() => void submitApprovalRequest()}
                 >
-                  {draft.requestSaving ? "Sending\u2026" : "Send approval request"}
+                  {draft.requestSaving ? t("appForm.buttons.submissionRequest.sending") : t("appForm.buttons.submissionRequest.sendButton")}
                 </Button>
                 <Button
                   variant="secondary"
                   onClick={() => set({ showSubmissionRequest: false })}
                 >
-                  Cancel
+                  {t("appForm.buttons.submissionRequest.cancel")}
                 </Button>
               </div>
             </div>

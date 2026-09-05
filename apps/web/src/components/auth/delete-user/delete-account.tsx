@@ -123,7 +123,7 @@ export function DeleteAccount({ className }: DeleteAccountProps) {
           <AlertDialogContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <AlertDialogHeader>
-                <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+                <AlertDialogMedia className="bg-destructive/10 text-destructive">
                   <TriangleAlert />
                 </AlertDialogMedia>
 

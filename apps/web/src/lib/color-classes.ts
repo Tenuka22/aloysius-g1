@@ -29,10 +29,8 @@ export const FIELD_ICON_COLORS = {
 /** Emerald – success, submitted, verified, positive */
 export const STATUS_SUCCESS = {
   text:          "text-emerald-600",
-  textDark:      "dark:text-emerald-400",
   textStrong:    "text-emerald-700",
   bg:            "bg-emerald-50",
-  bgDark:        "dark:bg-emerald-950/30",
   bgSoft:        "bg-emerald-500/5",
   bgIcon:        "bg-emerald-500/10",
   bgSolid:       "bg-emerald-600",
@@ -45,12 +43,10 @@ export const STATUS_SUCCESS = {
 
 /** Amber – warning, pending, caution */
 export const STATUS_WARNING = {
-  text:          "text-amber-600",
-  textDark:      "dark:text-amber-400",
-  textStrong:    "text-amber-700",
-  textVeryStrong:"text-amber-800",
+  text:          "text-amber-700",
+  textStrong:    "text-amber-800",
+  textVeryStrong:"text-amber-950",
   bg:            "bg-amber-50",
-  bgDark:        "dark:bg-amber-950/20",
   bgSoft:        "bg-amber-500/5",
   bgIcon:        "bg-amber-500/10",
   bgIcon12:      "bg-amber-500/12",
@@ -64,15 +60,12 @@ export const STATUS_WARNING = {
 /** Red / Rose – error, destructive, flagged */
 export const STATUS_ERROR = {
   text:          "text-red-600",
-  textDark:      "dark:text-red-400",
   textStrong:    "text-red-700",
   textVeryStrong:"text-red-800",
   bg:            "bg-red-50",
-  bgDark:        "dark:bg-red-950/20",
   bgSoft:        "bg-red-500/5",
   bgIcon:        "bg-red-500/10",
   bgSolid:       "bg-red-100",
-  bgSolidDark:   "dark:bg-red-900/30",
   border:        "border-red-200",
   borderSoft:    "border-red-500/20",
   hoverBg:       "hover:bg-red-200",
@@ -83,10 +76,8 @@ export const STATUS_ERROR = {
 /** Blue – info, notes, interview edits */
 export const STATUS_INFO = {
   text:          "text-blue-600",
-  textDark:      "dark:text-blue-400",
   textStrong:    "text-blue-700",
   bg:            "bg-blue-50",
-  bgDark:        "dark:bg-blue-950/20",
   bgSoft:        "bg-blue-500/5",
   bgIcon:        "bg-blue-500/10",
   border:        "border-blue-200",
@@ -134,8 +125,8 @@ export const SECTION_COLORS = {
     label:   "text-amber-600",
   },
   info: {
-    card:    "border-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20",
-    label:   "text-blue-600 dark:text-blue-400",
+    card:    "border-blue-500/20 bg-blue-50/20",
+    label:   "text-blue-600",
   },
 } as const
 
@@ -161,8 +152,8 @@ export const SUBMITTED_badge = "text-emerald-600 font-medium"
 // ---------------------------------------------------------------------------
 
 export const INVITATION_STATUS = {
-  pending:  "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  accepted: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  pending:  "bg-amber-500/10 text-amber-600",
+  accepted: "bg-emerald-500/10 text-emerald-600",
 } as const
 
 // ---------------------------------------------------------------------------
@@ -170,9 +161,9 @@ export const INVITATION_STATUS = {
 // ---------------------------------------------------------------------------
 
 export const SCORE_ROW_BG = {
-  exceeds:  "bg-red-50 dark:bg-red-950/30",
-  mismatch: "bg-amber-50 dark:bg-amber-950/30",
-  match:    "bg-emerald-50 dark:bg-emerald-950/30",
+  exceeds:  "bg-red-50",
+  mismatch: "bg-amber-50",
+  match:    "bg-emerald-50",
 } as const
 
 // ---------------------------------------------------------------------------
@@ -180,14 +171,14 @@ export const SCORE_ROW_BG = {
 // ---------------------------------------------------------------------------
 
 export const MARK_TOOLTIP =
-  "inline-flex rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white dark:bg-emerald-700 dark:text-emerald-50"
+  "inline-flex rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white"
 
 // ---------------------------------------------------------------------------
 // Flag pill (clickable tag for flagged inputs)
 // ---------------------------------------------------------------------------
 
 export const FLAG_PILL =
-  "inline-flex items-center gap-1 rounded-md bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-[0.7rem] text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors"
+  "inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-[0.7rem] text-red-700 hover:bg-red-200 transition-colors"
 
 // ---------------------------------------------------------------------------
 // Admin badge (small label)
