@@ -76,8 +76,6 @@ export type NextStepDeps = {
 export function getNextStepReason(deps: NextStepDeps): string {
   const { step } = deps;
   if (step === 0) {
-    if (!locationIsReady(deps.location))
-      return "Select a location on the map to continue.";
     return "";
   }
   if (step === 1) {

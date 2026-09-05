@@ -1543,6 +1543,8 @@ export function ApplicationForm({
     if (nextDisabledReason) return;
     try {
       set({ submitError: "" });
+      if (restorePromise.current) await restorePromise.current;
+      await ensureAccessKey();
       const nextStep = Math.min(current + 1, steps.length - 1);
       draft.setStep(nextStep);
       await saveToServer();
@@ -1557,18 +1559,45 @@ export function ApplicationForm({
     }
   };
 
+  // Creates the draft application record (unpublished) on the server the
+  // first time the applicant advances past a step, and mirrors the resulting
+  // access key / session code into localStorage and the URL search params so
+  // the draft can be resumed after a reload or on another device. A no-op
+  // once an access key already exists.
+  const ensureAccessKey = async (): Promise<string> => {
+    let accessKey = useApplicationStore.getState().accessKey;
+    if (!accessKey && !adminApplicationId && !readOnly) {
+      const result = await client.application.create({ data: normalizeDraft(useApplicationStore.getState()) });
+      accessKey = result.accessKey;
+      localStorage.setItem("aloysius-g1-application-key", result.accessKey);
+      localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
+      const savedKeys = JSON.parse(
+        localStorage.getItem("aloysius-g1-application-keys") ?? "[]",
+      ) as unknown;
+      localStorage.setItem(
+        "aloysius-g1-application-keys",
+        JSON.stringify([
+          ...new Set([
+            ...(Array.isArray(savedKeys) ? savedKeys : []),
+            result.accessKey,
+          ]),
+        ]),
+      );
+      window.history.replaceState(
+        {},
+        "",
+        `/application?code=${encodeURIComponent(result.sessionCode)}&key=${encodeURIComponent(result.accessKey)}`,
+      );
+      set({ accessKey: result.accessKey, sessionCode: result.sessionCode });
+    }
+    return accessKey;
+  };
+
   const submitApplication = async () => {
     try {
       set({ isSubmitting: true, submitError: "" });
       if (restorePromise.current) await restorePromise.current;
-      let accessKey = useApplicationStore.getState().accessKey;
-      if (!accessKey && !adminApplicationId && !readOnly) {
-        const result = await client.application.create({ data: normalizeDraft(useApplicationStore.getState()) });
-        accessKey = result.accessKey;
-        localStorage.setItem("aloysius-g1-application-key", result.accessKey);
-        localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
-        set({ accessKey: result.accessKey, sessionCode: result.sessionCode });
-      }
+      let accessKey = await ensureAccessKey();
       await saveToServer(false);
       accessKey = useApplicationStore.getState().accessKey || accessKey;
       if (!accessKey) throw new Error(t("appForm.buttons.submitError.couldNotCreateDraft"));
@@ -1654,8 +1683,18 @@ export function ApplicationForm({
             <p className="mt-4 max-w-[48rem] text-[1.05rem] leading-relaxed text-muted-foreground">
               {t("appForm.buttons.applicantInfoDescription")}
             </p>
-            {(draft.sessionCode || draft.accessKey) && (
+            {(draft.sessionCode || draft.accessKey || draft.applicant.fullName) && (
               <div className="mt-5 grid max-w-[900px] grid-cols-1 gap-3 sm:grid-cols-2">
+                {draft.applicant.fullName && (
+                  <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
+                    <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
+                      <span>{t("appForm.reviewStep.fields.fullName")}</span>
+                    </div>
+                    <span className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
+                      {draft.applicant.fullName}
+                    </span>
+                  </div>
+                )}
                 {draft.sessionCode && (
                   <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
                     <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">

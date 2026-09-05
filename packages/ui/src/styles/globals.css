@@ -104,6 +104,19 @@
   html[lang="si"] {
     font-weight: 500;
     font-size: 106.25%;
+
+    /* Override Tailwind's font-weight scale itself so every font-normal /
+       font-medium / font-semibold / font-bold utility (shadcn components
+       included) also renders heavier, not just unstyled text. */
+    --font-weight-thin: 300;
+    --font-weight-extralight: 350;
+    --font-weight-light: 400;
+    --font-weight-normal: 500;
+    --font-weight-medium: 600;
+    --font-weight-semibold: 700;
+    --font-weight-bold: 800;
+    --font-weight-extrabold: 850;
+    --font-weight-black: 900;
   }
 
   button:not(:disabled), [role="button"]:not(:disabled) {

@@ -162,8 +162,6 @@ export const appRouter = {
       const accessKey = createAccessKey();
       const sessionCode = await uniqueSessionCode();
       const now = new Date();
-      const window = await getOrCreateApplicationWindow(input.intakeYear);
-      if (isSubmissionLocked(window)) throw new ORPCError("BAD_REQUEST", { message: "New applications can only be created during the configured form window" });
       const birthCertificateNumber = extractBirthCertificateNumber(input.data);
       const data = withoutSchoolPreferences(input.data);
       const existing = birthCertificateNumber ? await db.select({ id: applications.id }).from(applications).where(and(eq(applications.birthCertificateNumber, birthCertificateNumber), isNotNull(applications.submittedAt))).get() : null;
