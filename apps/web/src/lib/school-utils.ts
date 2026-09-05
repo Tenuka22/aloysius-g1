@@ -47,3 +47,24 @@ export function isGenderCompatible(schoolGenderType: GenderType, appliedSchoolGe
   if (appliedSchoolGenderType === "mixed") return true;
   return schoolGenderType === appliedSchoolGenderType || schoolGenderType === "mixed";
 }
+
+/**
+ * Objective "nearby schools" proximity criterion: draws a radius from the
+ * applicant's home to the applied-to school, then returns every OTHER school
+ * within that radius whose gender intake is compatible with the applied-to
+ * school (e.g. a boys' school never counts a girls'-only school as a
+ * competing alternative). This is a pure geometry + eligibility computation
+ * with no manual input required, so an applicant is never able to decide
+ * which nearby schools count toward their own proximity deduction.
+ */
+export function compatibleSchoolsWithinRadius(centerLat: number, centerLng: number, targetSchoolId: string): { radiusKm: number; schoolIds: string[] } {
+  const target = findSchoolById(targetSchoolId);
+  if (!target || target.lat == null || target.lng == null) return { radiusKm: DEFAULT_RADIUS_KM, schoolIds: [] };
+  const radiusKm = haversineDistanceKm(centerLat, centerLng, target.lat, target.lng);
+  const schoolIds = getAllSchoolsWithDistance(centerLat, centerLng)
+    .filter((school) => school.id !== targetSchoolId)
+    .filter((school) => school.distanceKm <= radiusKm)
+    .filter((school) => isGenderCompatible(school.genderType, target.genderType))
+    .map((school) => school.id);
+  return { radiusKm, schoolIds };
+}

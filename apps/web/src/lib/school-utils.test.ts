@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findSchoolById, getSchoolsWithinRadius, haversineDistanceKm } from "./school-utils";
+import { compatibleSchoolsWithinRadius, findSchoolById, getAllSchoolsWithDistance, getSchoolsWithinRadius, haversineDistanceKm, isGenderCompatible } from "./school-utils";
 
 describe("haversineDistanceKm", () => {
   it("returns 0 for identical points", () => {
@@ -52,5 +52,73 @@ describe("getSchoolsWithinRadius", () => {
 
   it("returns nothing for radius 0", () => {
     expect(getSchoolsWithinRadius(centerLat, centerLng, 0)).toHaveLength(0);
+  });
+});
+
+describe("isGenderCompatible", () => {
+  it("treats a mixed applied school as compatible with any nearby school", () => {
+    expect(isGenderCompatible("boys", "mixed")).toBe(true);
+    expect(isGenderCompatible("girls", "mixed")).toBe(true);
+  });
+
+  it("treats a mixed nearby school as compatible with any applied school", () => {
+    expect(isGenderCompatible("mixed", "boys")).toBe(true);
+    expect(isGenderCompatible("mixed", "girls")).toBe(true);
+  });
+
+  it("rejects an opposite-gender nearby school", () => {
+    expect(isGenderCompatible("girls", "boys")).toBe(false);
+    expect(isGenderCompatible("boys", "girls")).toBe(false);
+  });
+
+  it("accepts a same-gender nearby school", () => {
+    expect(isGenderCompatible("boys", "boys")).toBe(true);
+  });
+});
+
+describe("compatibleSchoolsWithinRadius", () => {
+  // St. Aloysius' College (Galle) is a boys' school; used throughout the
+  // scoring UI as the fixed "applied school" for the proximity criterion.
+  const targetId = "st-aloysius-galle";
+  const centerLat = 6.0343;
+  const centerLng = 80.217;
+
+  it("computes the radius as the home-to-applied-school distance", () => {
+    const target = findSchoolById(targetId)!;
+    const { radiusKm } = compatibleSchoolsWithinRadius(centerLat, centerLng, targetId);
+    expect(radiusKm).toBeCloseTo(haversineDistanceKm(centerLat, centerLng, target.lat!, target.lng!), 9);
+  });
+
+  it("never includes the applied-to school itself", () => {
+    const { schoolIds } = compatibleSchoolsWithinRadius(centerLat, centerLng, targetId);
+    expect(schoolIds).not.toContain(targetId);
+  });
+
+  it("excludes every girls' school regardless of distance, since the applied school is boys'", () => {
+    const { schoolIds } = compatibleSchoolsWithinRadius(centerLat, centerLng, targetId);
+    const included = getAllSchoolsWithDistance(centerLat, centerLng).filter((school) => schoolIds.includes(school.id));
+    expect(included.some((school) => school.genderType === "girls")).toBe(false);
+  });
+
+  it("only includes schools strictly within the computed radius", () => {
+    const { radiusKm, schoolIds } = compatibleSchoolsWithinRadius(centerLat, centerLng, targetId);
+    const included = getAllSchoolsWithDistance(centerLat, centerLng).filter((school) => schoolIds.includes(school.id));
+    expect(included.every((school) => school.distanceKm <= radiusKm)).toBe(true);
+  });
+
+  it("matches manually filtering getAllSchoolsWithDistance by radius and gender compatibility", () => {
+    const target = findSchoolById(targetId)!;
+    const { radiusKm, schoolIds } = compatibleSchoolsWithinRadius(centerLat, centerLng, targetId);
+    const expected = getAllSchoolsWithDistance(centerLat, centerLng)
+      .filter((school) => school.id !== targetId)
+      .filter((school) => school.distanceKm <= radiusKm)
+      .filter((school) => isGenderCompatible(school.genderType, target.genderType))
+      .map((school) => school.id)
+      .sort();
+    expect([...schoolIds].sort()).toEqual(expected);
+  });
+
+  it("returns an empty result for an unknown target school id", () => {
+    expect(compatibleSchoolsWithinRadius(centerLat, centerLng, "not-a-school")).toEqual({ radiusKm: 10, schoolIds: [] });
   });
 });

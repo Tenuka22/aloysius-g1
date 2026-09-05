@@ -13,7 +13,9 @@ type SchoolMapPickerProps = {
   selectedIds: string[];
   highlightSchoolId?: string;
   marksPerSchool?: number;
-  onToggle: (schoolId: string) => void;
+  onToggle?: (schoolId: string) => void;
+  /** When true, selection is computed automatically (objective radius + gender-compatibility rule) and cannot be manually toggled. */
+  readOnly?: boolean;
 };
 
 const GENDER_LABELS: Record<GenderType, string> = {
@@ -64,7 +66,7 @@ function MapResizeSync() {
   return null;
 }
 
-export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSchoolId, marksPerSchool, onToggle }: SchoolMapPickerProps) {
+export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSchoolId, marksPerSchool, onToggle, readOnly }: SchoolMapPickerProps) {
   const highlightSchool = highlightSchoolId ? findSchoolById(highlightSchoolId) : undefined;
   const appliedGenderType = highlightSchool?.genderType;
 
@@ -119,7 +121,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
             const icon = !compatible ? iconIneligible : selected ? (within ? iconSelectedIn : iconSelectedOut) : (within ? iconUnselectedIn : iconUnselectedOut);
             const offset = within ? -6 : -4;
             return (
-              <Marker key={school.id} position={[school.lat, school.lng]} icon={icon} eventHandlers={{ click: () => compatible && onToggle(school.id) }}>
+              <Marker key={school.id} position={[school.lat, school.lng]} icon={icon} eventHandlers={{ click: () => !readOnly && compatible && onToggle?.(school.id) }}>
                 <RlTooltip direction="top" offset={[0, offset]} opacity={1} className="school-tooltip">
                   <span style={{ fontWeight: 600 }}>{school.en}</span>
                   <span style={{ opacity: 0.7 }}>({GENDER_LABELS[school.genderType]})</span>
@@ -136,6 +138,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
 
       <p className="text-sm text-muted-foreground" role="status">
         Radius: {radiusKm.toFixed(1)} km (home to {highlightSchool?.en ?? "applied school"}) &middot; {withinRadius.length} within &middot; {justOutside.length} near boundary
+        {readOnly && <> &middot; automatically calculated, cannot be edited</>}
       </p>
       <a
         href={`https://earth.google.com/web/search/${centerLat},${centerLng}`}
@@ -170,7 +173,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           return (
             <li key={school.id}>
               <label htmlFor={rowId} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${compatible ? "hover:bg-muted/50" : "border-violet-200 bg-violet-50/50 text-violet-700 cursor-not-allowed"}`}>
-                <Checkbox id={rowId} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible} onCheckedChange={() => compatible && onToggle(school.id)} />
+                <Checkbox id={rowId} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible || readOnly} onCheckedChange={() => !readOnly && compatible && onToggle?.(school.id)} />
                 <span className="min-w-0 flex-1">
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
                   {!compatible && <span className="ml-1 text-xs text-violet-500 font-medium">Ineligible</span>}
@@ -208,7 +211,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           return (
             <li key={school.id} className={compatible ? "opacity-50" : ""}>
               <label htmlFor={`school-option-${school.id}`} className={`flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm ${compatible ? "hover:bg-muted/50" : "border-violet-200 bg-violet-50/50 text-violet-700 cursor-not-allowed"}`}>
-                <Checkbox id={`school-option-${school.id}`} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible} onCheckedChange={() => compatible && onToggle(school.id)} />
+                <Checkbox id={`school-option-${school.id}`} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible || readOnly} onCheckedChange={() => !readOnly && compatible && onToggle?.(school.id)} />
                 <span className="min-w-0 flex-1">
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
                   {!compatible && <span className="ml-1 text-xs text-violet-500 font-medium">Ineligible</span>}

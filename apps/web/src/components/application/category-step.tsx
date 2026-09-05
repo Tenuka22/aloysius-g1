@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   CATEGORY_TYPES,
   type CategoryApplication,
@@ -6,6 +7,7 @@ import {
   useApplicationStore,
 } from "@/lib/application-store";
 import { STATUS_ERROR, MARK_TOOLTIP } from "@/lib/color-classes";
+import { compatibleSchoolsWithinRadius } from "@/lib/school-utils";
 import {
   CATEGORY_MAX_MARKS,
   MAIN_DOCUMENT_MAX_61,
@@ -1733,6 +1735,19 @@ function CategoryCard({
   const hasCenter = centerLat != null && centerLng != null;
   const locked = category.locked;
   const proximityConfig = PROXIMITY_CATEGORY_CONFIG[category.categoryType];
+
+  // The applicant never manually selects nearby schools: it's an objective
+  // geometry + gender-compatibility computation (radius from home to the
+  // applied-to school, excluding incompatible-gender schools), so it can't
+  // be gamed by simply leaving everything unselected for a maximal score.
+  useEffect(() => {
+    if (!proximityConfig || !hasCenter || locked) return;
+    const { schoolIds } = compatibleSchoolsWithinRadius(centerLat!, centerLng!, "st-aloysius-galle");
+    const current = category.scoringInputs.schoolsWithinRadius ?? [];
+    const sameSet = current.length === schoolIds.length && current.every((id) => schoolIds.includes(id));
+    if (!sameSet) onUpdate({ schoolsWithinRadius: schoolIds });
+  }, [proximityConfig, hasCenter, locked, centerLat, centerLng, category.scoringInputs.schoolsWithinRadius, onUpdate]);
+
   return (
     <Card className={locked ? "border-muted bg-muted/30" : ""}>
       <CardHeader className="border-b bg-muted/20">
@@ -1789,14 +1804,14 @@ function CategoryCard({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="grid gap-1">
                 <p className="text-sm font-medium">Nearby schools</p>
-                <p className="text-xs text-muted-foreground">Select every school that is within the radius shown on the map.</p>
+                <p className="text-xs text-muted-foreground">Calculated automatically from the distance between your home and the applied school.</p>
               </div>
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                 {selectedSchoolIds.length} selected · {proximityConfig.marksPerSchool} marks each
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              The applied school is highlighted and cannot be selected as a nearby school. Your choices feed the {proximityConfig.maxMarks}-mark proximity section.
+              Every other school within that radius that admits the same gender as the applied school counts as a competing alternative and reduces the {proximityConfig.maxMarks}-mark proximity section by {proximityConfig.marksPerSchool} marks each. This cannot be edited manually; an admin can correct it during the interview if needed.
             </p>
             {locked ? (
               <p className="text-sm text-muted-foreground">
@@ -1811,13 +1826,7 @@ function CategoryCard({
                 selectedIds={selectedSchoolIds}
                 highlightSchoolId="st-aloysius-galle"
                 marksPerSchool={proximityConfig.marksPerSchool}
-                onToggle={(schoolId) =>
-                  onUpdate({
-                    schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
-                      ? selectedSchoolIds.filter((existing) => existing !== schoolId)
-                      : [...selectedSchoolIds, schoolId],
-                  })
-                }
+                readOnly
               />
             )}
           </div>

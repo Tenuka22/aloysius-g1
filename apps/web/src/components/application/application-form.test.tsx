@@ -69,6 +69,16 @@ vi.mock("./location-step", () => ({
   ),
 }));
 vi.mock("./school-map-picker", () => ({ SchoolMapPicker: () => <div data-testid="school-map-picker" /> }));
+vi.mock("@/lib/school-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/school-utils")>();
+  return {
+    ...actual,
+    // The applicant form now auto-computes nearby schools from real geo data
+    // (see category-step.tsx's CategoryCard effect); stub it so this file's
+    // indicative-score assertions don't depend on real school coordinates.
+    compatibleSchoolsWithinRadius: () => ({ radiusKm: 5, schoolIds: ["school-1"] }),
+  };
+});
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
