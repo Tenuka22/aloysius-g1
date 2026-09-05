@@ -49,7 +49,15 @@ export const account = sqliteTable(
   "account",
   {
     id: text("id").primaryKey(),
-    issuer: text("issuer").notNull(),
+    // better-auth's own internal account-creation code (sign-up, sign-in,
+    // OAuth callbacks) never sets this custom column — it isn't part of
+    // better-auth's standard account schema, which uses providerId for the
+    // same purpose. Without a default, any account created through
+    // better-auth itself (e.g. the public sign-up form) violated this NOT
+    // NULL constraint and crashed with a 500. This app only has
+    // emailAndPassword enabled (no OAuth providers configured), so
+    // "credential" is always the correct value when unset.
+    issuer: text("issuer").notNull().default("credential"),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: text("user_id")

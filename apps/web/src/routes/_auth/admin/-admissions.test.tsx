@@ -14,7 +14,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => (config: Record<string, unknown>) => config,
+  createFileRoute: () => (config: Record<string, unknown>) => ({ ...config, useSearch: () => ({ intakeYear: "2027" }) }),
   Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { id?: string } }) => <a href={`${to}${params?.id ? `/${params.id}` : ""}`}>{children}</a>,
   useNavigate: () => mockNavigate,
   useLocation: () => ({ pathname: "/admin/admissions" }),
@@ -33,7 +33,16 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 vi.mock("@/utils/orpc", () => ({
-  client: { admin: { admissions: { updateReview: vi.fn(), getMarks: vi.fn(), saveMarks: vi.fn() } } },
+  client: {
+    admin: { admissions: { updateReview: vi.fn(), getMarks: vi.fn(), saveMarks: vi.fn() } },
+    application: {
+      liveCount: vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: () => ({
+          next: async () => ({ done: true, value: undefined }),
+        }),
+      }),
+    },
+  },
   orpc: {
     admin: {
       settings: { get: { queryOptions: () => ({ queryKey: ["settings"] }) } },
@@ -108,6 +117,7 @@ describe("AdmissionsPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith({
       to: "/admin/admissions/$id",
       params: { id: "11111111-1111-4111-8111-111111111111" },
+      search: true,
     });
   });
 

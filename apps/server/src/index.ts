@@ -3,7 +3,6 @@ import { appRouter } from "@aloysius-g1/api/routers/index";
 import { createAuth, ensureSiteAdmin } from "@aloysius-g1/auth";
 import { env } from "@aloysius-g1/env/server";
 import { backup } from "@aloysius-g1/db/scripts/backup";
-import { ORPCError } from "@orpc/client";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
@@ -11,15 +10,7 @@ import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-
-// Expected, intentionally-thrown business errors (e.g. "access key not found",
-// "unauthorized") have a client status (4xx) and are not bugs — logging every
-// mistyped key or permission check would flood the server log. Only surface
-// genuine server-side failures (5xx / unclassified thrown errors) here.
-function logUnexpectedError(error: unknown) {
-  if (error instanceof ORPCError && error.status < 500) return;
-  console.error(error);
-}
+import { logUnexpectedError } from "./error-logging";
 
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
