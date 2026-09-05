@@ -1327,12 +1327,12 @@ export function ApplicationForm({
     let cancelled = false;
     const restore = async () => {
       const key =
-        new URLSearchParams(window.location.search).get("key") ??
-        localStorage.getItem("aloysius-g1-application-key") ??
+        localStorage.getItem("aloysius-g1-application-key") ||
+        new URLSearchParams(window.location.search).get("key") ||
         "";
       const code =
-        new URLSearchParams(window.location.search).get("code") ??
-        localStorage.getItem("aloysius-g1-application-session-code") ??
+        localStorage.getItem("aloysius-g1-application-session-code") ||
+        new URLSearchParams(window.location.search).get("code") ||
         "";
       if (key || code) set({ accessKey: key, sessionCode: code });
       let dataLoaded = false;
