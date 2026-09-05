@@ -94,6 +94,18 @@
   html {
     @apply font-sans;
   }
+
+  /* Sinhala glyphs render visually thinner and smaller than Latin at the same
+     size/weight in DM Sans Variable, so bump both when the Sinhala locale is
+     active. Bumping the root font-size scales every rem-based text-* utility
+     proportionally; font-weight only affects elements without their own
+     explicit weight utility, since inheritance never overrides a matching
+     local rule. */
+  html[lang="si"] {
+    font-weight: 500;
+    font-size: 106.25%;
+  }
+
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
   }
