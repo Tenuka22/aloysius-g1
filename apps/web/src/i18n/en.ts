@@ -561,6 +561,7 @@ const en = {
   "appForm.buttons.submitError.couldNotSave": "Could not save this step. Please try again.",
   "appForm.buttons.submitError.couldNotCreateDraft": "Could not create a secure application draft",
   "appForm.buttons.submitError.couldNotSubmit": "Could not submit the application. Please try again.",
+  "appForm.buttons.submitError.networkError": "Could not reach the server. Check your internet connection and try again.",
   "appForm.buttons.restoring": "Restoring your draft 2026",
   "appForm.buttons.applicantInfo": "Applicant information",
   "appForm.buttons.applicantInfoDescription": "G1 2026 intake · Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.",

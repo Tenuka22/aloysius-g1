@@ -16,6 +16,7 @@ import {
 
 const DUP_REASON = "This birth certificate number is already used by another applicant.";
 const FIELDS_REASON = "Complete all required applicant fields to continue.";
+const LOCATION_REASON = "Select a location on the map to continue.";
 const NIC_REASON = "Complete all required guardian fields to continue.";
 const NIC_INVALID_REASON = "Enter a valid NIC number for the guardian.";
 const DECLARATION_REASON = "You must confirm the declaration and provide consent to proceed.";
@@ -89,17 +90,17 @@ describe("applicantSectionComplete", () => {
   it("is incomplete for undefined applicant", () => expect(applicantSectionComplete(undefined)).toBe(false));
 });
 
-describe("getNextStepReason – step 0 (location)", () => {
+describe("getNextStepReason \u2013 step 0 (location)", () => {
   test.each([
-    ["map approved even without coordinates", { locationCanProceed: true, location: { latitude: null, longitude: null } }, ""],
+    ["map approved even without coordinates", { locationCanProceed: true, location: { latitude: null, longitude: null } }, LOCATION_REASON],
     ["map approved with coordinates", { locationCanProceed: true, location: { latitude: 7.29, longitude: 80.63 } }, ""],
     ["not approved but coordinates set", { locationCanProceed: false, location: { latitude: 7.29, longitude: 80.63 } }, ""],
-    ["not approved and no location", { locationCanProceed: false, location: undefined }, ""],
-    ["not approved and null location", { locationCanProceed: false, location: null }, ""],
-    ["not approved and empty location", { locationCanProceed: false, location: {} }, ""],
-    ["not approved and latitude only", { locationCanProceed: false, location: { latitude: 7.29 } }, ""],
-    ["not approved and longitude only", { locationCanProceed: false, location: { longitude: 80.63 } }, ""],
-    ["defaults when locationCanProceed missing", { location: { latitude: null, longitude: null } }, ""],
+    ["not approved and no location", { locationCanProceed: false, location: undefined }, LOCATION_REASON],
+    ["not approved and null location", { locationCanProceed: false, location: null }, LOCATION_REASON],
+    ["not approved and empty location", { locationCanProceed: false, location: {} }, LOCATION_REASON],
+    ["not approved and latitude only", { locationCanProceed: false, location: { latitude: 7.29 } }, LOCATION_REASON],
+    ["not approved and longitude only", { locationCanProceed: false, location: { longitude: 80.63 } }, LOCATION_REASON],
+    ["defaults when locationCanProceed missing", { location: { latitude: null, longitude: null } }, LOCATION_REASON],
   ])("%s", (_label, deps, expected) => expect(getNextStepReason({ step: 0, ...deps })).toBe(expected));
 });
 

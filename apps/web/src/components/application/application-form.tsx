@@ -1397,7 +1397,11 @@ export function ApplicationForm({
               isBanned: latest.isBanned,
               banReason: latest.banReason,
               flags: latest.flags,
-              maxVisitedStep: Math.max(useApplicationStore.getState().maxVisitedStep, loadedStep, loadedStep > 0 ? 6 : 0),
+              // Only a genuinely submitted application unlocks free navigation
+              // across every step (for post-submission review/editing).
+              // In-progress drafts must cap at the furthest step actually
+              // reached, otherwise every step wrongly shows as "completed".
+              maxVisitedStep: Math.max(useApplicationStore.getState().maxVisitedStep, loadedStep, result.submittedAt ? 6 : 0),
             });
             dataLoaded = true;
           }
@@ -1539,6 +1543,27 @@ export function ApplicationForm({
   };
 
 
+  // Raw browser/network failures ("Failed to fetch", "NetworkError when
+  // attempting to fetch resource", "Load failed", ...) are meaningless to an
+  // applicant. Only surface an error's own message when it came from the
+  // server (a validation or business-rule message); otherwise fall back to a
+  // friendly, translated explanation.
+  const isRawNetworkError = (message: string) => {
+    const normalized = message.trim().toLowerCase();
+    return (
+      normalized === "" ||
+      normalized.includes("failed to fetch") ||
+      normalized.includes("networkerror") ||
+      normalized.includes("network request failed") ||
+      normalized.includes("load failed") ||
+      normalized.includes("the internet connection appears to be offline")
+    );
+  };
+  const friendlyErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof Error && !isRawNetworkError(error.message)) return error.message;
+    return t("appForm.buttons.submitError.networkError") || fallback;
+  };
+
   const next = async () => {
     if (nextDisabledReason) return;
     try {
@@ -1550,10 +1575,7 @@ export function ApplicationForm({
       await saveToServer();
     } catch (error) {
       set({
-        submitError:
-          error instanceof Error
-            ? error.message
-            : t("appForm.buttons.submitError.couldNotSave"),
+        submitError: friendlyErrorMessage(error, t("appForm.buttons.submitError.couldNotSave")),
       });
       draft.setStep(current);
     }
@@ -1610,10 +1632,7 @@ export function ApplicationForm({
         set({ showSubmissionRequest: true });
       } else {
         set({
-          submitError:
-            error instanceof Error
-              ? error.message
-              : t("appForm.buttons.submitError.couldNotSubmit"),
+          submitError: friendlyErrorMessage(error, t("appForm.buttons.submitError.couldNotSubmit")),
         });
       }
     } finally {
@@ -1627,7 +1646,7 @@ export function ApplicationForm({
       await client.application.requestAccess({ accessKey: draft.accessKey, applicantName: draft.requestName.trim(), contactPhone: draft.requestPhone.trim(), requestType: "submission" });
       set({ showSubmissionRequest: false, saveStatus: t("appForm.buttons.approvalRequestSent") });
     } catch (error) {
-      set({ submitError: error instanceof Error ? error.message : t("appForm.buttons.approvalRequestError") });
+      set({ submitError: friendlyErrorMessage(error, t("appForm.buttons.approvalRequestError")) });
     } finally {
       set({ requestSaving: false });
     }
@@ -2122,7 +2141,7 @@ export function ApplicationForm({
           )}
         </div>
 
-        {nextDisabledReason && current < steps.length - 1 && (
+        {nextDisabledReason && current !== 0 && current < steps.length - 1 && (
           <div className="flex items-center gap-2 px-(--card-spacing) py-2 text-sm text-muted-foreground border-t">
             <span>{nextDisabledReason}</span>
           </div>

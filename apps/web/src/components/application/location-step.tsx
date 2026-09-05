@@ -10,6 +10,12 @@ import { useTranslation } from "@/lib/i18n";
 
 type LocationValue = { label: string; address: string; latitude: number | null; longitude: number | null; source: "manual" | "device" | "map" | "network" | "admin" | "" };
 type LocationError = { title: string; message: string };
+// Stores a status *key*, translated only at render time. Storing the already
+// translated string (as this used to) could freeze an untranslated fallback
+// (the raw i18n key) into state if a geolocation callback fired before the
+// translation bundle finished loading, and that stale text would never
+// re-translate since useState doesn't re-run on locale/load changes.
+type StatusKey = "" | "findingAddress" | "locationSelected" | "mapPointSaved" | "networkApproximate" | "findingAddressEllipsis" | "findingCurrent" | "tryingAnother";
 const DEFAULT_CENTER: [number, number] = [7.8731, 80.7718];
 const formatCoords = (entry: LocationValue) => `${entry.latitude?.toFixed(5) ?? "?"}, ${entry.longitude?.toFixed(5) ?? "?"}`;
 
@@ -30,7 +36,7 @@ function MapSync({ point, onSelect }: { point: [number, number] | null; onSelect
 export function LocationStep({ value, defaultValue, onChange, onAvailabilityChange, readOnly = false, autoRequestLocation = true, deviceLocationHistory = [], userLocationHistory = [] }: { value: LocationValue; defaultValue: LocationValue; onChange: (value: LocationValue, defaultValue?: LocationValue) => void; onAvailabilityChange?: (canProceed: boolean) => void; readOnly?: boolean; autoRequestLocation?: boolean; deviceLocationHistory?: LocationValue[]; userLocationHistory?: LocationValue[] }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState(value.address || value.label);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<StatusKey>("");
   const [locationError, setLocationError] = useState<LocationError | null>(null);
   const [deviceAccuracy, setDeviceAccuracy] = useState<number | null>(null);
   const activeLocationRequest = useRef<(() => void) | null>(null);
@@ -49,7 +55,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
       onChange(selected, undefined);
     }
 
-    setStatus(t("location.status.findingAddress"));
+    setStatus("findingAddress");
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`, { headers: { Accept: "application/json" } });
       const result: unknown = await response.json();
@@ -64,9 +70,9 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
       } else {
         onChange(resolvedSelected, undefined);
       }
-      setStatus(t("location.status.locationSelected"));
+      setStatus("locationSelected");
     } catch {
-      setStatus(t("location.status.mapPointSaved"));
+      setStatus("mapPointSaved");
     }
   };
 
@@ -81,7 +87,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
     };
     activeLocationRequest.current = cleanup;
     setLocationError(null);
-    setStatus(t("location.status.networkApproximate"));
+    setStatus("networkApproximate");
     onAvailabilityChange?.(true);
     try {
       const response = await fetch("https://ipapi.co/json/", { headers: { Accept: "application/json" }, signal: controller.signal });
@@ -96,7 +102,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) throw new Error("Network location did not include coordinates");
       const approximateAddress = [data.city, data.region, data.country_name, data.postal].filter((part): part is string => typeof part === "string" && part.trim() !== "").join(", ");
       cleanup();
-      setStatus(t("location.status.findingAddressEllipsis"));
+      setStatus("findingAddressEllipsis");
       await reverseGeocode(latitude, longitude, "network", false, undefined, approximateAddress);
     } catch (error) {
       if (cancelled || (error instanceof DOMException && error.name === "AbortError")) return;
@@ -116,7 +122,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
     }
 
     setLocationError(null);
-    setStatus(t("location.status.findingCurrent"));
+    setStatus("findingCurrent");
 
     let closed = false;
     let watchId: number | null = null;
@@ -148,7 +154,8 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
-      setStatus(t("location.status.tryingAnother"));
+      setStatus("tryingAnother");
+
       navigator.geolocation.getCurrentPosition(onSuccess, onFailure, { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 });
     };
 
@@ -160,7 +167,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
           onFailure(error);
           return;
         }
-        setStatus(t("location.status.findingCurrent"));
+        setStatus("findingCurrent");
       }, { enableHighAccuracy: true, timeout: 60000, maximumAge: 0 });
       if (closed) {
         if (watchId !== null) navigator.geolocation.clearWatch(watchId);
@@ -221,7 +228,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
           </div>
         )}
 
-        {status && !locationError && <p className="text-sm text-primary" role="status">{status}</p>}
+        {status && !locationError && <p className="text-sm text-primary" role="status">{t(`location.status.${status}`)}</p>}
 
         {point && (
           <div className="grid gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3" data-testid="location-resolution" aria-live="polite">
@@ -236,7 +243,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
               </div>
               <div className="grid gap-1">
                 <span className="text-muted-foreground">{t("location.resolved.address")}</span>
-                <strong className="break-words font-medium text-foreground">{value.address || (status === t("location.status.findingAddress") ? t("location.resolved.resolvingAddress") : t("location.resolved.addressNotResolved"))}</strong>
+                <strong className="break-words font-medium text-foreground">{value.address || (status === "findingAddress" ? t("location.resolved.resolvingAddress") : t("location.resolved.addressNotResolved"))}</strong>
               </div>
               {value.source === "network" && (
                 <p className="text-[0.72rem] leading-relaxed text-muted-foreground">
