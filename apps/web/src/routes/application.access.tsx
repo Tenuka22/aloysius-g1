@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@aloysius-g1/ui/components/drawer";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
@@ -51,5 +51,59 @@ function AccessPage() {
     }
   };
 
-  return <main className="min-h-svh grid content-center gap-4 p-8 max-w-[760px] mx-auto"><Drawer open><DrawerContent showCloseButton={false} className="max-w-[min(34rem,calc(100vw-2rem))]"><DrawerHeader><DrawerTitle>{t("access.title")}</DrawerTitle><DrawerDescription>{t("access.description")}</DrawerDescription></DrawerHeader><div className="flex gap-2"><Input className="min-h-12 w-full font-mono" value={sessionCode} onChange={(event) => { const v = event.target.value.toUpperCase(); setSessionCode(v); setFoundApplication(null); localStorage.setItem("aloysius-g1-application-session-code", v); }} placeholder={t("access.sessionPlaceholder")} autoComplete="off" /><Button variant="secondary" type="button" disabled={!sessionCode.trim()} onClick={() => void lookup()}>{t("access.findApplication")}</Button></div>{foundApplication && <p className="text-sm text-muted-foreground">{t("access.foundDescription", { applicantName: foundApplication.applicantName, status: foundApplication.status })}</p>}<Input className="min-h-12 w-full font-mono" value={key} onChange={(event) => { setKey(event.target.value); localStorage.setItem("aloysius-g1-application-key", event.target.value); }} placeholder={t("access.privateKeyPlaceholder")} autoComplete="off" autoFocus /><AccessKeyQrImporter onKey={(v) => { setKey(v); localStorage.setItem("aloysius-g1-application-key", v); }} />{error && <p className="flex items-center gap-1 text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2.5"><Button variant="secondary" type="button" onClick={() => void navigate({ to: "/" })}>{t("access.cancel")}</Button><Button type="button" disabled={!key.trim()} onClick={() => void load()}>{t("access.verifyAndLoad")}</Button></div></DrawerContent></Drawer></main>;
+  return (
+    <main className="min-h-svh grid content-center gap-4 p-8 max-w-[760px] mx-auto">
+      <Dialog open>
+        <DialogContent showCloseButton={false} className="max-w-[min(34rem,calc(100%-2rem))] gap-4">
+          <DialogHeader>
+            <DialogTitle>{t("access.title")}</DialogTitle>
+            <DialogDescription>{t("access.description")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input
+              className="min-h-12 w-full font-mono"
+              value={sessionCode}
+              onChange={(event) => {
+                const v = event.target.value.toUpperCase();
+                setSessionCode(v);
+                setFoundApplication(null);
+                localStorage.setItem("aloysius-g1-application-session-code", v);
+              }}
+              placeholder={t("access.sessionPlaceholder")}
+              autoComplete="off"
+            />
+            <Button variant="secondary" type="button" disabled={!sessionCode.trim()} onClick={() => void lookup()}>
+              {t("access.findApplication")}
+            </Button>
+          </div>
+          {foundApplication && (
+            <p className="text-sm text-muted-foreground">
+              {t("access.foundDescription", { applicantName: foundApplication.applicantName, status: foundApplication.status })}
+            </p>
+          )}
+          <Input
+            className="min-h-12 w-full font-mono"
+            value={key}
+            onChange={(event) => {
+              setKey(event.target.value);
+              localStorage.setItem("aloysius-g1-application-key", event.target.value);
+            }}
+            placeholder={t("access.privateKeyPlaceholder")}
+            autoComplete="off"
+            autoFocus
+          />
+          <AccessKeyQrImporter onKey={(v) => { setKey(v); localStorage.setItem("aloysius-g1-application-key", v); }} />
+          {error && <p className="flex items-center gap-1 text-sm text-destructive">{error}</p>}
+          <div className="flex justify-end gap-2.5">
+            <Button variant="secondary" type="button" onClick={() => void navigate({ to: "/" })}>
+              {t("access.cancel")}
+            </Button>
+            <Button type="button" disabled={!key.trim()} onClick={() => void load()}>
+              {t("access.verifyAndLoad")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </main>
+  );
 }

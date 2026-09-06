@@ -69,7 +69,34 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
     };
   }, [cameraOpen, onKey]);
 
-  return <><Button variant="secondary" type="button" className="h-full w-full" onClick={() => setCameraOpen(true)}><Camera size={16} /> Scan with camera</Button><label className="w-full inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-transparent bg-secondary text-secondary-foreground text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none h-full [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 px-2.5"><Upload size={16} /> Import QR image<input type="file" accept="image/*" className="sr-only" onChange={(event) => void readFile(event.target.files?.[0])} /></label>{error && <p className="col-span-full flex items-center gap-1 text-sm text-destructive">{error}</p>}<Dialog open={cameraOpen} onOpenChange={setCameraOpen}><DialogContent className="max-w-[min(34rem,calc(100%-2rem))]"><DialogHeader><DialogTitle>Scan access key</DialogTitle><DialogDescription>Allow camera access and hold the application QR code inside the frame.</DialogDescription></DialogHeader><div className="grid gap-2 justify-items-center overflow-hidden rounded-xl bg-[#111] text-white"><video ref={videoRef} muted playsInline />{cameraStarting && <span className="text-sm">Starting camera…</span>}{cameraError && <span className="text-sm text-destructive">{cameraError}</span>} {!cameraStarting && !cameraError && <span className="text-sm">Point your camera at the QR code</span>}</div></DialogContent></Dialog></>;
+  return (
+    <div className="grid gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="secondary" type="button" className="h-full w-full" onClick={() => setCameraOpen(true)}>
+          <Camera size={16} /> Scan with camera
+        </Button>
+        <label className="w-full inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-transparent bg-secondary text-secondary-foreground text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none h-full [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 px-2.5">
+          <Upload size={16} /> Import QR image
+          <input type="file" accept="image/*" className="sr-only" onChange={(event) => void readFile(event.target.files?.[0])} />
+        </label>
+      </div>
+      {error && <p className="flex items-center gap-1 text-sm text-destructive">{error}</p>}
+      <Dialog open={cameraOpen} onOpenChange={setCameraOpen}>
+        <DialogContent className="max-w-[min(34rem,calc(100%-2rem))]">
+          <DialogHeader>
+            <DialogTitle>Scan access key</DialogTitle>
+            <DialogDescription>Allow camera access and hold the application QR code inside the frame.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 justify-items-center overflow-hidden rounded-xl bg-[#111] text-white">
+            <video ref={videoRef} muted playsInline />
+            {cameraStarting && <span className="text-sm">Starting camera…</span>}
+            {cameraError && <span className="text-sm text-destructive">{cameraError}</span>}
+            {!cameraStarting && !cameraError && <span className="text-sm">Point your camera at the QR code</span>}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
 export function AccessKeyQrDialog({ accessKey, open, onOpenChange }: { accessKey: string; open: boolean; onOpenChange: (open: boolean) => void }) {
