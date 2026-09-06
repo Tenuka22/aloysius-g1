@@ -1,8 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ApplicationForm } from "@/components/application/application-form";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/application")({ component: ApplicationPage });
-
-function ApplicationPage() {
-  return <ApplicationForm />;
-}
+export const Route = createFileRoute("/application")({ component: Outlet });

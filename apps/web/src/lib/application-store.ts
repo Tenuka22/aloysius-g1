@@ -329,6 +329,19 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
     isBanned: Boolean(input?.isBanned),
     banReason: typeof input?.banReason === "string" ? input.banReason : null,
     flags: Array.isArray(input?.flags) ? input.flags : [],
+    // Never trust a persisted/server value for ephemeral UI state: a stale
+    // `true` here (e.g. from a tab closed mid-submit) would otherwise wedge
+    // the form permanently with no way for the user to recover.
+    hydrated: emptyDraft.hydrated,
+    saveStatus: emptyDraft.saveStatus,
+    submitError: emptyDraft.submitError,
+    isSubmitting: emptyDraft.isSubmitting,
+    copiedField: emptyDraft.copiedField,
+    showSubmissionRequest: emptyDraft.showSubmissionRequest,
+    requestSaving: emptyDraft.requestSaving,
+    bcDialogOpen: emptyDraft.bcDialogOpen,
+    bcRequestState: emptyDraft.bcRequestState,
+    clearDraftDialogOpen: emptyDraft.clearDraftDialogOpen,
   };
 }
 
@@ -342,6 +355,23 @@ type ApplicationStore = ApplicationDraft & {
 };
 
 export const APPLICATION_DRAFT_STORAGE_KEY = "aloysius-g1-application-draft";
+
+// Ephemeral UI state that must never survive a reload: if a page is closed or
+// navigated away from mid-request, a persisted `true`/error value here would
+// permanently wedge the form (e.g. a stuck `isSubmitting` disabling submit
+// forever) with no way for the user to recover.
+const TRANSIENT_DRAFT_KEYS = [
+  "hydrated",
+  "saveStatus",
+  "submitError",
+  "isSubmitting",
+  "copiedField",
+  "showSubmissionRequest",
+  "requestSaving",
+  "bcDialogOpen",
+  "bcRequestState",
+  "clearDraftDialogOpen",
+] as const satisfies readonly (keyof ApplicationDraft)[];
 
 export const useApplicationStore = create<ApplicationStore>()(
   persist(
@@ -372,6 +402,11 @@ export const useApplicationStore = create<ApplicationStore>()(
       name: APPLICATION_DRAFT_STORAGE_KEY,
       version: 1,
       storage: createJSONStorage(() => window.localStorage),
+      partialize: (state) => {
+        const persisted = { ...state } as Partial<ApplicationStore>;
+        for (const key of TRANSIENT_DRAFT_KEYS) delete persisted[key];
+        return persisted;
+      },
       merge: (persisted, current) => ({
         ...current,
         ...normalizeDraft(persisted as Partial<ApplicationDraft>),

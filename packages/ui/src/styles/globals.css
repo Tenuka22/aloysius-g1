@@ -92,7 +92,7 @@
     @apply font-sans bg-background text-foreground;
   }
   html {
-    @apply font-sans;
+    @apply font-sans h-full overflow-y-hidden;
   }
 
   /* Sinhala glyphs render visually thinner and smaller than Latin at the same
