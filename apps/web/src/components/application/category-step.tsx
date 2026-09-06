@@ -473,7 +473,7 @@ function DocumentTypeSelect({
   const value = category.scoringInputs.mainDocumentType ?? null;
   return (
     <Field>
-      <FieldLabel htmlFor={`main-document-type-${category.id}`}>{t("category.mainDocument.title")}</FieldLabel>
+      <FieldLabel htmlFor={`main-document-type-${category.id}`} className="sr-only">{t("category.mainDocument.title")}</FieldLabel>
       <Select
         value={value}
         onValueChange={(next) => onChange({ mainDocumentType: String(next) })}
@@ -1873,7 +1873,7 @@ function CategoryCard({
           <div className="grid gap-2 border-t pt-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="grid gap-1">
-                <p className="text-sm font-medium">{t("category.nearbySchools.title")}</p>
+                <p className="text-sm font-medium sr-only">{t("category.nearbySchools.title")}</p>
                 <p className="text-xs text-muted-foreground">{t("category.nearbySchools.calculated")}</p>
               </div>
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
@@ -1950,8 +1950,8 @@ export function CategoryStep() {
   const categoryCount = draft.categories.length;
 
   return (
-    <div className="grid w-full gap-6">
-      <div className="grid gap-4">
+    <div className="grid w-full grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4">
         <div>
           <h3 className="font-heading text-2xl">{t("category.sectionHeading.markingScheme")}</h3>
           <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
@@ -1985,11 +1985,11 @@ export function CategoryStep() {
         {CATEGORY_TYPES.map((categoryType) => {
           const entries = categoriesByType.get(categoryType) ?? [];
           return (
-            <TabsContent key={categoryType} value={categoryType} className="grid gap-4 mt-4">
+            <TabsContent key={categoryType} value={categoryType} className="grid grid-cols-1 gap-4 mt-4">
               <Button
                 type="button"
                 variant="outline"
-                className="justify-start"
+                className="h-auto w-full justify-start py-2 text-left whitespace-normal"
                 onClick={() => draft.addCategory(categoryType)}
               >
                 {t("category.buttons.addCategory", { category: categoryLabels[categoryType] })}

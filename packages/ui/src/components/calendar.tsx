@@ -3,11 +3,19 @@ import {
   DayPicker,
   getDefaultClassNames,
   type DayButton,
+  type DropdownProps,
   type Locale,
 } from "react-day-picker"
 
 import { cn } from "@aloysius-g1/ui/lib/utils"
 import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@aloysius-g1/ui/components/select"
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
 
 function Calendar({
@@ -67,16 +75,8 @@ function Calendar({
           defaultClassNames.month_caption
         ),
         dropdowns: cn(
-          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-medium",
+          "relative z-10 flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-medium",
           defaultClassNames.dropdowns
-        ),
-        dropdown_root: cn(
-          "relative rounded-(--cell-radius)",
-          defaultClassNames.dropdown_root
-        ),
-        dropdown: cn(
-          "absolute inset-0 bg-popover opacity-0",
-          defaultClassNames.dropdown
         ),
         caption_label: cn(
           "font-medium select-none",
@@ -162,6 +162,7 @@ function Calendar({
         DayButton: ({ ...props }) => (
           <CalendarDayButton locale={locale} {...props} />
         ),
+        Dropdown: CalendarDropdown,
         WeekNumber: ({ children, ...props }) => {
           return (
             <td {...props}>
@@ -175,6 +176,47 @@ function Calendar({
       }}
       {...props}
     />
+  )
+}
+
+function CalendarDropdown({
+  options,
+  value,
+  onChange,
+  disabled,
+  "aria-label": ariaLabel,
+}: DropdownProps) {
+  const selected = options?.find((option) => option.value === value)
+
+  return (
+    <Select
+      value={value != null ? String(value) : ""}
+      onValueChange={(next) => {
+        onChange?.({
+          target: { value: next },
+        } as React.ChangeEvent<HTMLSelectElement>)
+      }}
+      disabled={disabled}
+    >
+      <SelectTrigger
+        size="sm"
+        aria-label={ariaLabel}
+        className="h-7 w-fit gap-1 rounded-(--cell-radius) border-none bg-transparent px-1.5 text-sm font-medium shadow-none focus-visible:ring-2"
+      >
+        <SelectValue>{selected?.label}</SelectValue>
+      </SelectTrigger>
+      <SelectContent className="max-h-64 min-w-(--anchor-width)">
+        {options?.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={String(option.value)}
+            disabled={option.disabled}
+          >
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 
