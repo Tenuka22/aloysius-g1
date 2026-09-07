@@ -1,6 +1,25 @@
-import { afterEach } from "vitest";
+import { afterEach, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
+
+// `createIsomorphicFn`'s `.server()` branch runs under vitest (there is no real
+// Start/H3 request context in tests), so `@tanstack/react-start/server`'s real
+// cookie functions throw ("No StartEvent found in AsyncLocalStorage"). Mock our
+// own `@/lib/cookies` wrapper directly (rather than the underlying package) with
+// a `document.cookie`-backed implementation - jsdom provides a real `document`,
+// so this behaves like an actual browser for every test.
+vi.mock("@/lib/cookies", () => ({
+  getAppCookie: (name: string): string | null => {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${encodeURIComponent(name)}=([^;]*)`));
+    return match ? decodeURIComponent(match[1]) : null;
+  },
+  setAppCookie: (name: string, value: string, maxAgeDays = 365): void => {
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeDays * 24 * 60 * 60}`;
+  },
+  removeAppCookie: (name: string): void => {
+    document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0`;
+  },
+}));
 
 // Ensure React Testing Library cleanup runs between tests.
 afterEach(() => {

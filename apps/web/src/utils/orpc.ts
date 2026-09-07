@@ -4,6 +4,7 @@ import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import { getIncomingCookieHeader } from "@/lib/incoming-cookie";
 import { toast } from "sonner";
 
 export function createQueryClient() {
@@ -17,6 +18,7 @@ export function createQueryClient() {
     },
     queryCache: new QueryCache({
       onError: (error, query) => {
+        if (query.meta?.skipErrorToast) return;
         toast.error(`Error: ${error.message}`, {
           action: {
             label: "retry",
@@ -70,9 +72,17 @@ function getServerUrl(url: string) {
 
   return `http://localhost:3000${normalized}`;
 }
+
 export const link = new RPCLink({
   url: `${getServerUrl(env.VITE_SERVER_URL)}/rpc`,
   fetch(url, options) {
+    const cookie = getIncomingCookieHeader();
+    if (cookie) {
+      return fetch(url, {
+        ...(options as RequestInit),
+        headers: { ...(options as RequestInit)?.headers, cookie },
+      });
+    }
     return fetch(url, {
       ...options,
       credentials: "include",

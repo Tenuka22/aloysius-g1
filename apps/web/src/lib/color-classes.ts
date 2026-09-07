@@ -196,3 +196,19 @@ export const FORM_WINDOW_WARNING = {
   icon:  "bg-amber-500/12 text-amber-600",
   text:  "text-amber-600 font-semibold text-sm",
 }
+
+// ---------------------------------------------------------------------------
+// Marking category colours (application form category tabs & cards)
+// ---------------------------------------------------------------------------
+
+/** One distinct hue per 6.x marking category, used on the category tab bar
+ * and each category card so applicants can visually track which section
+ * they're in at a glance. */
+export const CATEGORY_COLORS = {
+  "6.1": { dot: "bg-sky-500", text: "text-sky-700", border: "border-sky-500", bg: "bg-sky-500/10", activeBg: "data-[state=active]:bg-sky-600 data-[state=active]:text-white" },
+  "6.2": { dot: "bg-violet-500", text: "text-violet-700", border: "border-violet-500", bg: "bg-violet-500/10", activeBg: "data-[state=active]:bg-violet-600 data-[state=active]:text-white" },
+  "6.3": { dot: "bg-emerald-500", text: "text-emerald-700", border: "border-emerald-500", bg: "bg-emerald-500/10", activeBg: "data-[state=active]:bg-emerald-600 data-[state=active]:text-white" },
+  "6.4": { dot: "bg-amber-500", text: "text-amber-700", border: "border-amber-500", bg: "bg-amber-500/10", activeBg: "data-[state=active]:bg-amber-500 data-[state=active]:text-white" },
+  "6.5": { dot: "bg-rose-500", text: "text-rose-700", border: "border-rose-500", bg: "bg-rose-500/10", activeBg: "data-[state=active]:bg-rose-600 data-[state=active]:text-white" },
+  "6.6": { dot: "bg-orange-500", text: "text-orange-700", border: "border-orange-500", bg: "bg-orange-500/10", activeBg: "data-[state=active]:bg-orange-600 data-[state=active]:text-white" },
+} as const

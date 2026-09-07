@@ -450,4 +450,4 @@ export const SCHOOLS: School[] = [
   { id: "dr-richard-pathirana-primary-school-galle", en: "Dr Richard Pathirana Primary School", si: "", lat: 6.071357, lng: 80.217823, genderType: "mixed", schoolType: "provincial", districtId: "galle", dsId: "akmeemana" },
 ];
 
-
+export const HOME_SCHOOL_ID = "st-aloysius-galle";

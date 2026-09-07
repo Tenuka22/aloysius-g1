@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { useEffect, lazy, useMemo, useRef, useState } from "react";
+import { ClientOnly } from "@tanstack/react-router";
 import { LocateFixed, MapPin, TriangleAlert } from "lucide-react";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { Field, FieldLabel, FieldDescription } from "@aloysius-g1/ui/components/field";
 import { Input } from "@aloysius-g1/ui/components/input";
-import "leaflet/dist/leaflet.css";
 import { STATUS_WARNING } from "@/lib/color-classes";
 import { useTranslation } from "@/lib/i18n";
 
@@ -25,13 +24,9 @@ function getLocationError(error: GeolocationPositionError, t: (key: string) => s
   if (error.code === 3) return { title: t("location.error.timeout.title"), message: t("location.error.timeout.message") };
   return { title: t("location.error.unavailable.title"), message: t("location.error.unavailable.message") };
 }
+const LocationStepMap = lazy(() => import("./location-step-map"));
 
-function MapSync({ point, onSelect }: { point: [number, number] | null; onSelect: (lat: number, lng: number) => void }) {
-  const map = useMap();
-  useEffect(() => { if (point) map.flyTo(point, Math.max(map.getZoom(), 13), { duration: 0.6 }); }, [map, point]);
-  useMapEvents({ click: (event) => onSelect(event.latlng.lat, event.latlng.lng) });
-  return point ? <CircleMarker center={point} radius={10} pathOptions={{ color: "#087f5b", fillColor: "#13b77e", fillOpacity: 0.9, weight: 3 }} /> : null;
-}
+
 
 export function LocationStep({ value, defaultValue, onChange, onAvailabilityChange, readOnly = false, autoRequestLocation = true, deviceLocationHistory = [], userLocationHistory = [] }: { value: LocationValue; defaultValue: LocationValue; onChange: (value: LocationValue, defaultValue?: LocationValue) => void; onAvailabilityChange?: (canProceed: boolean) => void; readOnly?: boolean; autoRequestLocation?: boolean; deviceLocationHistory?: LocationValue[]; userLocationHistory?: LocationValue[] }) {
   const { t } = useTranslation();
@@ -195,7 +190,21 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
     useDeviceLocation(true);
   }, []);
   useEffect(() => () => activeLocationRequest.current?.(), []);
-  const latestLocation = userLocationHistory[0] ?? deviceLocationHistory[0] ?? null;
+  // All previously selected/captured points, newest first, deduplicated by coordinate
+  // and excluding the currently selected point (shown separately above).
+  const previousLocations = useMemo(() => {
+    const seen = new Set<string>();
+    const result: LocationValue[] = [];
+    for (const entry of [...userLocationHistory, ...deviceLocationHistory]) {
+      if (entry.latitude == null || entry.longitude == null) continue;
+      if (value.latitude === entry.latitude && value.longitude === entry.longitude) continue;
+      const key = `${entry.latitude},${entry.longitude}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push(entry);
+    }
+    return result;
+  }, [userLocationHistory, deviceLocationHistory, value.latitude, value.longitude]);
 
   return (
     <div className="grid grid-cols-[minmax(260px,.8fr)_minmax(0,1.4fr)] gap-6 max-md:grid-cols-1">
@@ -258,36 +267,40 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
           <p className="text-sm text-muted-foreground"><TriangleAlert size={16} /> {t("location.noPointHint")}</p>
         )}
 
-        {(userLocationHistory.length > 0 || deviceLocationHistory.length > 0) && (
+        {previousLocations.length > 0 && (
           <div className="grid gap-2 rounded-lg border p-3">
             <p className="text-[0.78rem] font-semibold text-muted-foreground">{t("location.latestSaved.title")}</p>
-            <button
-              type="button"
-              className="grid gap-1 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50"
-              disabled={readOnly}
-              onClick={() => {
-                setLocationError(null);
-                setDeviceAccuracy(null);
-                setQuery(latestLocation?.address || latestLocation?.label || "");
-                if (latestLocation) onChange(latestLocation, latestLocation.source === "device" ? latestLocation : undefined);
-              }}
-            >
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                {latestLocation?.source === "device" ? <LocateFixed size={12} className="text-blue-500" /> : <MapPin size={12} className="text-primary" />}
-                {latestLocation?.source === "device" ? t("location.latestSaved.deviceLocation") : t("location.latestSaved.mapSelection")}
-              </span>
-              <span className="font-medium text-foreground leading-snug">{latestLocation?.address || latestLocation?.label || t("location.latestSaved.unnamed")}</span>
-              {latestLocation && <code className="text-xs font-medium tabular-nums text-muted-foreground">{formatCoords(latestLocation)}</code>}
-            </button>
+            <div className="grid gap-1 max-h-[16rem] overflow-y-auto">
+              {previousLocations.map((entry, index) => (
+                <button
+                  key={`${entry.latitude}-${entry.longitude}-${index}`}
+                  type="button"
+                  className="grid gap-1 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50"
+                  disabled={readOnly}
+                  onClick={() => {
+                    setLocationError(null);
+                    setDeviceAccuracy(null);
+                    setQuery(entry.address || entry.label || "");
+                    onChange(entry, entry.source === "device" ? entry : undefined);
+                  }}
+                >
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {entry.source === "device" ? <LocateFixed size={12} className="text-blue-500" /> : <MapPin size={12} className="text-primary" />}
+                    {entry.source === "device" ? t("location.latestSaved.deviceLocation") : t("location.latestSaved.mapSelection")}
+                  </span>
+                  <span className="font-medium text-foreground leading-snug">{entry.address || entry.label || t("location.latestSaved.unnamed")}</span>
+                  <code className="text-xs font-medium tabular-nums text-muted-foreground">{formatCoords(entry)}</code>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
       <div className="min-h-[360px] border rounded-xl overflow-hidden relative max-md:min-h-[300px]" aria-label="OpenStreetMap location picker">
-        <MapContainer center={point ?? DEFAULT_CENTER} zoom={point ? 13 : 7} scrollWheelZoom className="h-full min-h-[360px] z-0 max-md:min-h-[300px]">
-          <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {!readOnly && <MapSync point={point} onSelect={(lat, lng) => { void reverseGeocode(lat, lng, "map"); }} />}
-        </MapContainer>
+        <ClientOnly fallback={<div className="h-full min-h-[360px] max-md:min-h-[300px] bg-muted/50" />}>
+          <LocationStepMap point={point} readOnly={readOnly} onSelect={(lat, lng) => { void reverseGeocode(lat, lng, "map"); }} />
+        </ClientOnly>
         <div className="absolute z-500 left-4 bottom-4 bg-card border rounded-lg p-2 text-xs shadow-[0_4px_12px_#0002]">
           {t("location.mapHint")}
         </div>

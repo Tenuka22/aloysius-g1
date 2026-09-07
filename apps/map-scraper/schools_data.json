@@ -4297,8 +4297,8 @@
     "id": "karagoda-dharmaraja-k-v-galle",
     "en": "Karagoda Dharmaraja K.V.",
     "si": "",
-    "lat": 6.0352435,
-    "lng": 80.210495,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -4310,7 +4310,7 @@
       "zone": "Udugama",
       "division": "Udugama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Karagoda/data=!4m7!3m6!1s0x3ae173d4b3925541:0x14165dd276872326!8m2!3d6.0352435!4d80.210495!16s%2Fg%2F11q1tqx2bs!19sChIJQVWSs9Rz4ToRJiOHdtJdFhQ?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "kottawa-kanishta-vidyalaya-galle",

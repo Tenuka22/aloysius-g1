@@ -1,18 +1,25 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import en from "@/i18n/en";
+import si from "@/i18n/si";
+import { getAppCookie, setAppCookie } from "./cookies";
 
 export type Locale = "en" | "si";
 
-const LOCALE_KEY = "aloysius-g1-locale";
+const LOCALE_COOKIE = "aloysius-g1-locale";
+
+// Statically imported (not dynamically loaded on mount) so the very first
+// server-rendered response already contains real translated text — the
+// previous dynamic `import()` in a client-only effect meant SSR always shipped
+// raw translation keys until hydration swapped them in.
+const translations: Record<Locale, Record<string, string>> = { en, si };
 
 function isLocale(value: string): value is Locale {
   return value === "en" || value === "si";
 }
 
 function getSavedLocale(): Locale {
-  try {
-    const saved = localStorage.getItem(LOCALE_KEY);
-    if (saved && isLocale(saved)) return saved;
-  } catch {}
+  const saved = getAppCookie(LOCALE_COOKIE);
+  if (saved && isLocale(saved)) return saved;
   return "en";
 }
 
@@ -27,13 +34,13 @@ const I18nContext = createContext<I18nContextValue>({
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
+  // Cookie-backed (not localStorage) so the server renders the same locale the
+  // client would have picked — no post-hydration locale flash/mismatch.
   const [locale, setLocaleState] = useState<Locale>(getSavedLocale);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    try {
-      localStorage.setItem(LOCALE_KEY, newLocale);
-    } catch {}
+    setAppCookie(LOCALE_COOKIE, newLocale);
   }, []);
 
   useEffect(() => {
@@ -51,33 +58,12 @@ export function useLocale() {
   return useContext(I18nContext);
 }
 
-let translations: Record<Locale, Record<string, string>> | null = null;
-
-async function loadTranslations() {
-  if (translations) return translations;
-  const [enMod, siMod] = await Promise.all([
-    import("@/i18n/en"),
-    import("@/i18n/si"),
-  ]);
-  translations = { en: enMod.default, si: siMod.default };
-  return translations;
-}
-
 export function useTranslation() {
   const { locale } = useLocale();
-  const [loaded, setLoaded] = useState(translations !== null);
-  const [currentTranslations, setCurrentTranslations] = useState<Record<string, string>>(() => translations?.[locale] ?? {});
-
-  useEffect(() => {
-    void loadTranslations().then((t) => {
-      setCurrentTranslations(t[locale]);
-      setLoaded(true);
-    });
-  }, [locale]);
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
-      let value = currentTranslations[key] ?? key;
+      let value = translations[locale][key] ?? key;
       if (params) {
         for (const [k, v] of Object.entries(params)) {
           value = value.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
@@ -85,8 +71,8 @@ export function useTranslation() {
       }
       return value;
     },
-    [currentTranslations],
+    [locale],
   );
 
-  return { t, locale, loaded };
+  return { t, locale, loaded: true };
 }

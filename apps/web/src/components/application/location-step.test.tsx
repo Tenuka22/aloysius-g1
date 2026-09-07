@@ -103,12 +103,23 @@ describe("LocationStep", () => {
     expect(screen.getByLabelText("OpenStreetMap location picker")).toBeInTheDocument();
   });
 
-  it("shows only the newest saved location", () => {
+  it("shows all previously selected locations, newest first, excluding the current selection", () => {
     render(<LocationStep value={emptyLocation} defaultValue={emptyLocation} autoRequestLocation={false} onChange={vi.fn()} userLocationHistory={[{ label: "Newest pin", address: "18 Church Street, Galle", latitude: 6.03022, longitude: 80.21461, source: "map" }, { label: "Older pin", address: "12 Lighthouse Street, Galle", latitude: 6.03241, longitude: 80.21692, source: "map" }]} deviceLocationHistory={[{ label: "Device fix", address: "Device address", latitude: 6.031, longitude: 80.215, source: "device" }]} />);
 
     expect(screen.getByText("Latest saved location")).toBeInTheDocument();
     expect(screen.getByText("18 Church Street, Galle")).toBeInTheDocument();
-    expect(screen.queryByText("12 Lighthouse Street, Galle")).not.toBeInTheDocument();
-    expect(screen.queryByText("Device address")).not.toBeInTheDocument();
+    expect(screen.getByText("12 Lighthouse Street, Galle")).toBeInTheDocument();
+    expect(screen.getByText("Device address")).toBeInTheDocument();
+  });
+
+  it("excludes the currently selected point from the previous-locations list", () => {
+    const current = { label: "", address: "18 Church Street, Galle", latitude: 6.03022, longitude: 80.21461, source: "map" as const };
+    render(<LocationStep value={current} defaultValue={emptyLocation} autoRequestLocation={false} onChange={vi.fn()} userLocationHistory={[current, { label: "Older pin", address: "12 Lighthouse Street, Galle", latitude: 6.03241, longitude: 80.21692, source: "map" }]} />);
+
+    expect(screen.getByText("Latest saved location")).toBeInTheDocument();
+    // The current selection's address still appears once, in the resolved-location card above —
+    // just not repeated inside the previous-locations list.
+    expect(screen.getAllByText("18 Church Street, Galle")).toHaveLength(1);
+    expect(screen.getByText("12 Lighthouse Street, Galle")).toBeInTheDocument();
   });
 });

@@ -1,9 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState, lazy } from "react";
+import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, ExternalLink, Globe, MapPin, MapPinned, Save, Trash2 } from "lucide-react";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
-import { DivIcon } from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useMutation } from "@tanstack/react-query";
 import { Badge } from "@aloysius-g1/ui/components/badge";
 import { Button } from "@aloysius-g1/ui/components/button";
@@ -17,6 +14,7 @@ import { getSchools, refreshSchoolCoordinateOverrides, schoolCoordinateOverride,
 import type { School } from "@/lib/schools";
 import { toast } from "sonner";
 import { cn } from "@aloysius-g1/ui/lib/utils";
+const SchoolMap = lazy(() => import("./-schools-map"));
 
 export const Route = createFileRoute("/_auth/admin/schools")({
   loader: async () => {
@@ -43,25 +41,11 @@ function searchLinks(school: School) {
   };
 }
 
-function SchoolPinIcon({ size = 30 }: { size?: number } = {}) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
-  return new DivIcon({
-    className: "",
-    iconSize: [size, size + 8],
-    iconAnchor: [size / 2, size],
-    popupAnchor: [0, -size],
-    html: `<div style="display:grid;place-items:center;width:${size}px;height:${size}px;background:#0e7490;border:2px solid #155e75;border-radius:50% 50% 50% 0;transform:rotate(-45deg) translateY(-4px);box-shadow:0 2px 8px rgba(0,0,0,.3)"><div style="transform:rotate(45deg) translateY(2px);display:grid;place-items:center">${svg}</div></div>`,
-  });
-}
 
-const iconSchool = SchoolPinIcon();
 
-function MapClickPicker({ onPick, position }: { onPick: (lat: number, lng: number) => void; position: [number, number] | null }) {
-  useMapEvents({
-    click: (event) => onPick(event.latlng.lat, event.latlng.lng),
-  });
-  return position ? <Marker position={position} icon={iconSchool} draggable eventHandlers={{ dragend: (e) => { const p = e.target.getLatLng(); onPick(p.lat, p.lng); } }} /> : null;
-}
+
+
+
 
 type CoordinateDialogState = {
   school: School;
@@ -122,10 +106,9 @@ function SetCoordinatesDialog({ state, onClose, onSaved }: { state: CoordinateDi
               <Button type="button" variant="ghost" size="sm" render={<a href={links.web} target="_blank" rel="noopener noreferrer" />} nativeButton={false}><ExternalLink size={15} /> Google</Button>
             </div>
             <div className="relative overflow-hidden rounded-xl border">
-              <MapContainer center={GALLE_CENTER} zoom={11} scrollWheelZoom className="h-[360px] w-full z-0">
-                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <MapClickPicker position={[lat, lng]} onPick={(nextLat, nextLng) => { setLat(nextLat); setLng(nextLng); }} />
-              </MapContainer>
+              <ClientOnly fallback={<div className="h-[360px] w-full" />}>
+                <SchoolMap lat={lat} lng={lng} onPick={(nextLat, nextLng) => { setLat(nextLat); setLng(nextLng); }} />
+              </ClientOnly>
             </div>
           </div>
 
@@ -169,10 +152,6 @@ function AdminSchoolsPage() {
   const [seedMode, setSeedMode] = useState<"add" | "upsert">("add");
 
   const bump = () => setTick((tick) => tick + 1);
-
-  useEffect(() => {
-    void refreshSchoolCoordinateOverrides().then(bump);
-  }, []);
 
   const schools = getSchools();
   const located = schoolsWithCoordinates().length;

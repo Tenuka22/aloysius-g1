@@ -27,7 +27,6 @@ const point = (lat: number, lng: number, overrides: Partial<LocationDraft> = {})
 
 beforeEach(() => {
   useApplicationStore.getState().reset();
-  localStorage.clear();
 });
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -275,24 +274,6 @@ describe("Normalization on rehydrate", () => {
   });
 });
 
-/* ════════════════════════════════════════════════════════════════════════════
-   5. DRAFT PERSISTENCE - zustand persist middleware
-   ════════════════════════════════════════════════════════════════════════════ */
-
-describe("Draft persistence to localStorage", () => {
-  it("sets state and persists to localStorage", () => {
-    useApplicationStore.getState().addCategory("6.1");
-    useApplicationStore.getState().updateCategoryInputs(
-      useApplicationStore.getState().categories[0]?.id!,
-      { mainDocumentType: "title-deed-applicant" },
-    );
-    const raw = localStorage.getItem("aloysius-g1-application-draft");
-    expect(raw).toBeTruthy();
-    const parsed = JSON.parse(raw!);
-    expect(parsed.state.categories).toHaveLength(1);
-    expect(parsed.state.categories[0]?.scoringInputs.mainDocumentType).toBe("title-deed-applicant");
-  });
-});
 
 /* ════════════════════════════════════════════════════════════════════════════
    6. STEP NAVIGATION

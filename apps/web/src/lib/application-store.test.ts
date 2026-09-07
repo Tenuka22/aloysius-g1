@@ -2,7 +2,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   applyLocationChange,
-  APPLICATION_DRAFT_STORAGE_KEY,
   emptyDraft,
   LOCATION_HISTORY_LIMIT,
   normalizeDraft,
@@ -316,57 +315,5 @@ describe("useApplicationStore category actions", () => {
     expect(categories.find((category) => category.id === targetId)?.scoringInputs).toEqual({ serviceStartDate: "2014-09-01", difficultServiceType: "current" });
     const other = categories.find((category) => category.id !== targetId);
     expect(other?.scoringInputs).toEqual({});
-  });
-});
-
-describe("useApplicationStore persistence", () => {
-  beforeEach(() => {
-    localStorage.clear();
-    useApplicationStore.getState().reset();
-  });
-
-  it("writes draft state including categories to localStorage on every change", () => {
-    useApplicationStore.getState().addCategory("6.4");
-    useApplicationStore.getState().updateCategoryInputs(
-      useApplicationStore.getState().categories[0]?.id ?? "",
-      { serviceStartDate: "2019-09-01" },
-    );
-    const raw = localStorage.getItem(APPLICATION_DRAFT_STORAGE_KEY);
-    expect(raw).not.toBeNull();
-    const parsed = JSON.parse(raw ?? "{}") as { state?: Partial<ApplicationDraft> };
-    const persistedCategories = parsed.state?.categories ?? [];
-    expect(persistedCategories).toHaveLength(1);
-    expect(persistedCategories[0]?.categoryType).toBe("6.4");
-    expect(persistedCategories[0]?.scoringInputs).toEqual({ serviceStartDate: "2019-09-01" });
-  });
-
-  it("clears the persisted draft on reset", () => {
-    useApplicationStore.getState().addCategory("6.1");
-    useApplicationStore.getState().reset();
-    const parsed = JSON.parse(localStorage.getItem(APPLICATION_DRAFT_STORAGE_KEY) ?? "{}") as {
-      state?: Partial<ApplicationDraft>;
-    };
-    expect(parsed.state?.categories).toEqual([]);
-  });
-
-  it("rehydrates and normalizes a persisted draft from localStorage", async () => {
-    localStorage.setItem(
-      APPLICATION_DRAFT_STORAGE_KEY,
-      JSON.stringify({
-        state: {
-          currentStep: 4,
-          categories: [
-            { id: "kept-1", categoryType: "6.6", scoringInputs: { abroadStartDate: "2022-09-01", abroadEndDate: "2026-09-01" } },
-            { categoryType: "6.9" },
-          ],
-        },
-        version: 1,
-      }),
-    );
-    await useApplicationStore.persist.rehydrate();
-    const state = useApplicationStore.getState();
-    expect(state.currentStep).toBe(4);
-    expect(state.categories).toHaveLength(1);
-    expect(state.categories[0]).toEqual({ id: "kept-1", categoryType: "6.6", scoringInputs: { abroadStartDate: "2022-09-01", abroadEndDate: "2026-09-01" }, locked: false });
   });
 });

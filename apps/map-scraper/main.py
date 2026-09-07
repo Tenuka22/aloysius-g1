@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -26,22 +27,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-json", type=Path, default=DEFAULT_JSON, help="Normalized JSON output")
     parser.add_argument("--output-ts", type=Path, default=DEFAULT_TS, help="Generated TypeScript output")
     parser.add_argument("--map-cache", type=Path, default=DEFAULT_MAP_CACHE, help="Google Maps coordinate cache")
-    parser.add_argument("--scrape-maps", action="store_true", help="Scrape the Galle Government school result feed")
-    parser.add_argument("--skip-feed", action="store_true", help="Reuse the cached Government school feed instead of scraping it again")
-    parser.add_argument("--headful", action="store_true", help="Show the browser while scraping Google Maps")
-    parser.add_argument("--delay", type=float, default=1.1, help="Seconds between lookups")
-    parser.add_argument(
-        "--school-timeout",
-        type=float,
-        default=60.0,
-        help="Maximum seconds for each individual per-school Google Maps lookup",
-    )
-    parser.add_argument("--timeout", type=float, default=900.0, help="Maximum seconds for the Google Maps result feed")
-    parser.add_argument(
-        "--retry-unmatched",
-        action="store_true",
-        help="Re-request schools whose earlier lookups found nothing (recorded in map_attempts.json)",
-    )
     return parser.parse_args()
 
 
@@ -55,20 +40,20 @@ def main() -> None:
     sources = parse_galle_schools(pdf_path)
     print(f"Extracted {len(sources)} Galle schools from {pdf_path}")
 
-    if args.scrape_maps:
-        from src.scraper import GoogleMapsScraper
-
-        print("Looking up remaining coordinates in Google Maps...")
-        # The scraper's timeout_ms bounds every per-school lookup, while the
-        # feed scrape keeps its own (long) --timeout budget.
-        GoogleMapsScraper(headless=not args.headful, timeout_ms=int(args.school_timeout * 1_000)).scrape_coordinates(
-            sources,
-            cache_path=map_cache,
-            delay_seconds=args.delay,
-            scrape_feed=not args.skip_feed,
-            feed_timeout_seconds=args.timeout,
-            retry_unmatched=args.retry_unmatched,
-        )
+    # Prune the coordinate cache to only schools present in the PDF.
+    # Previously scraped Google Maps coordinates for schools that are not in
+    # the Galle PDF are discarded so the web app never sees them.
+    pdf_school_ids = {school.school_id for school in sources}
+    if map_cache.exists():
+        raw = json.loads(map_cache.read_text(encoding="utf-8"))
+        before = len(raw)
+        raw = {key: value for key, value in raw.items() if key in pdf_school_ids}
+        if len(raw) < before:
+            print(f"Pruned {before - len(raw)} cached coordinates not in the PDF")
+            map_cache.write_text(
+                json.dumps(raw, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
 
     records = build_school_records(
         sources,

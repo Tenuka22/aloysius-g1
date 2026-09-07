@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApplicationForm } from "./application-form";
 import { emptyDraft, useApplicationStore, type ApplicationDraft, type CategoryApplication } from "@/lib/application-store";
 import { scoreCategory } from "@/lib/scoring";
+import { G1_DOB_LATEST } from "@/lib/eligibility";
+import { removeAppCookie } from "@/lib/cookies";
 
 /* ───────── mock infrastructure ───────── */
 
@@ -101,7 +103,7 @@ const applicant = {
   gender: "Male",
   religion: "Buddhist",
   educationMedium: "Sinhala",
-  dateOfBirth: "2021-01-01",
+  dateOfBirth: G1_DOB_LATEST(),
   birthCertificateNumber: "ABC123",
 };
 
@@ -135,7 +137,9 @@ const declaration = { confirmed: true, consent: true };
 
 beforeEach(() => {
   useApplicationStore.getState().reset();
-  localStorage.clear();
+  removeAppCookie("aloysius-g1-application-key");
+  removeAppCookie("aloysius-g1-application-keys");
+  removeAppCookie("aloysius-g1-application-session-code");
   locationChangePayload.current = null;
   window.history.replaceState({}, "", "/");
   createMock.mockReset().mockImplementation(async () => ({
@@ -431,7 +435,7 @@ describe("Indicative marks notice", () => {
     renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
-    expect(screen.getByText("Example marks – 6.1 – Residence Verification & Proximity")).toBeInTheDocument();
+    expect(screen.getByText("Marks summary – 6.1 – Residence Verification & Proximity")).toBeInTheDocument();
     expect(screen.getByText("Indicative total")).toBeInTheDocument();
     expect(screen.getByText(/baseline estimate/)).toBeInTheDocument();
     expect(screen.getByText(/interview panel/)).toBeInTheDocument();

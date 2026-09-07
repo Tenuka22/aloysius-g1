@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { Check, CircleAlert, MapPin, Save, X, User, Phone, Mail, Calendar, CreditCard, Hash, Map, FileText, Building, Globe, ChevronRight, CircleDot, Settings, Eye, EyeOff, LayoutGrid, Rows3 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CircleMarker, MapContainer, Marker, TileLayer, Tooltip } from "react-leaflet";
-import { divIcon } from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { client, orpc } from "@/utils/orpc";
 import { emptyDraft, normalizeDraft, prependLocationHistory, type ApplicationDraft, type CategoryApplication, type CategoryType, type LocationDraft, type ScoringInputs } from "@/lib/application-store";
 import { scoreCategory } from "@/lib/scoring";
@@ -277,7 +275,6 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["employmentPurpose", "Employment purpose"],
 ];
 
-const selectedLocationIcon = divIcon({ className: "bg-transparent border-0", html: "<span></span>", iconSize: [22, 22], iconAnchor: [11, 11] });
 
 function parseScoringNumber(value: string): number | undefined {
   const trimmed = value.trim();
@@ -385,46 +382,17 @@ function LocationSummary({ label, value }: { label: string; value?: LocationDraf
   return <div className="border rounded-xl p-4"><div className="flex items-center gap-2 text-primary mb-1"><MapPin size={16} /><strong>{label}</strong></div><Value label="Label" value={value?.label} /><Value label="Address" value={value?.address} /><Value label="Coordinates" value={value?.latitude != null && value?.longitude != null ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}` : "Not captured"} /><Value label="Source" value={sourceLabels[value?.source ?? ""] ?? (value?.source || "Not recorded")} /></div>;
 }
 
+const AdminLocationMapComponent = lazy(() => import("./admin-application-editor-map"));
+
 function AdminLocationMap({ browser, selected, history = [], editable = false, onSelectedChange }: { browser?: LocationDraft; selected?: LocationDraft; history?: LocationDraft[]; editable?: boolean; onSelectedChange?: (latitude: number, longitude: number) => void }) {
-  const browserPoint = browser?.latitude != null && browser?.longitude != null ? [browser.latitude, browser.longitude] as [number, number] : null;
-  const selectedPoint = selected?.latitude != null && selected?.longitude != null ? [selected.latitude, selected.longitude] as [number, number] : null;
   const historyPoints = history
     .filter((entry) => entry.latitude != null && entry.longitude != null)
     .map((entry, index) => ({ coords: [entry.latitude!, entry.longitude!] as [number, number], label: entry.address || entry.label || `Previous pin ${index + 1}`, source: entry.source || "unknown" }));
-  const allPoints = [...historyPoints.map((h) => h.coords), ...(browserPoint ? [browserPoint] : []), ...(selectedPoint ? [selectedPoint] : [])];
-  const center = selectedPoint ?? browserPoint ?? (historyPoints.length > 0 ? historyPoints[0].coords : null) ?? [7.8731, 80.7718] as [number, number];
   return (
     <div className="relative overflow-hidden border rounded-xl w-full">
-      <MapContainer center={center} zoom={allPoints.length > 0 ? 13 : 7} scrollWheelZoom style={{ height: "390px", width: "100%" }}>
-        <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {browserPoint && (
-          <CircleMarker center={browserPoint} radius={8} pathOptions={{ color: "#1d4ed8", fillColor: "#60a5fa", fillOpacity: .9, weight: 2 }}>
-            <Tooltip direction="top" permanent>Browser location</Tooltip>
-          </CircleMarker>
-        )}
-        {historyPoints.map((entry, index) => {
-          const isLast = index === historyPoints.length - 1;
-          return (
-            <CircleMarker key={`history-${index}`} center={entry.coords} radius={isLast ? 8 : 6} pathOptions={{ color: isLast ? "#d97706" : "#7c3aed", fillColor: isLast ? "#fbbf24" : "#a78bfa", fillOpacity: .9, weight: isLast ? 3 : 2 }}>
-              <Tooltip direction="top">
-                {entry.label}<br />
-                <span className="font-mono text-[0.7rem]">{entry.coords[0].toFixed(5)}, {entry.coords[1].toFixed(5)}</span><br />
-                Source: {entry.source}
-                {isLast && <><br /><strong>Latest pin</strong></>}
-              </Tooltip>
-            </CircleMarker>
-          );
-        })}
-        {selectedPoint && (editable ? (
-          <Marker icon={selectedLocationIcon} draggable position={selectedPoint} eventHandlers={{ dragend: (event) => { const point = event.target.getLatLng(); onSelectedChange?.(point.lat, point.lng); } }}>
-            <Tooltip direction="top" permanent>Selected location (drag to edit)</Tooltip>
-          </Marker>
-        ) : (
-          <CircleMarker center={selectedPoint} radius={10} pathOptions={{ color: "#087f5b", fillColor: "#13b77e", fillOpacity: .9, weight: 3 }}>
-            <Tooltip direction="top" permanent>Last selected location</Tooltip>
-          </CircleMarker>
-        ))}
-      </MapContainer>
+      <ClientOnly fallback={<div style={{ height: "390px", width: "100%" }} className="border rounded-lg bg-muted" />}>
+        <AdminLocationMapComponent browser={browser} selected={selected} history={history} editable={editable} onSelectedChange={onSelectedChange} />
+      </ClientOnly>
       <div className="absolute z-500 left-4 bottom-4 flex flex-wrap gap-3 p-2.5 border rounded-lg bg-[color-mix(in_oklch,var(--card)_92%,transparent)] shadow-[0_4px_12px_#0002] text-[0.76rem]">
         <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#60a5fa]" /> Browser location</span>
         <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#13b77e]" /> {editable ? "Drag to edit" : "Last selected"}</span>
@@ -694,12 +662,12 @@ function EditorStepIndicator({ current, steps: stepLabels, onStepClick }: { curr
 export function AdminApplicationEditor({ id }: { id: string }) {
   const navigate = useNavigate();
   const detail = useQuery(orpc.admin.application.get.queryOptions({ input: { id } }));
-  const [draft, setDraft] = useState<ApplicationDraft>(emptyDraft);
+  const [draft, setDraft] = useState<ApplicationDraft>(() => detail.data?.data ? normalizeDraft(detail.data.data as Partial<ApplicationDraft>) : emptyDraft);
   const [saveState, setSaveState] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
-  useEffect(() => { if (detail.data?.data) setDraft(normalizeDraft(detail.data.data as Partial<ApplicationDraft>)); }, [detail.data?.data]);
+  useEffect(() => { if (detail.data?.data) setDraft(normalizeDraft(detail.data.data as Partial<ApplicationDraft>)); }, [detail.data?.data, setDraft]);
   const set = (section: keyof ApplicationDraft, key: string, value: string | boolean) => setDraft((current) => ({ ...current, [section]: { ...(current[section] as object), [key]: value } }));
   const save = async () => {
     if (saving) return;

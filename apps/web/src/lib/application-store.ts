@@ -1,13 +1,4 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import {
-  capturedSignature,
-  extractCaptured,
-  readLocationSeal,
-  restoreCapturedLocations,
-  writeLocationSeal,
-  type SealedLocations,
-} from "./location-seal";
 
 export type LocationDraft = {
   id?: string;
@@ -136,11 +127,12 @@ export type ApplicationDraft = {
   sessionCode: string;
   duplicateBirthCertificate: boolean;
   locationCanProceed: boolean;
+  locationSkipped: boolean;
+  birthCertificateSkipped: boolean;
   submittedAt: string | null;
   submissionLocked: boolean;
   submissionOpensAt: string;
   submissionClosesAt: string;
-  hydrated: boolean;
   saveStatus: string;
   submitError: string;
   isSubmitting: boolean;
@@ -193,11 +185,12 @@ export const emptyDraft: ApplicationDraft = {
   sessionCode: "",
   duplicateBirthCertificate: false,
   locationCanProceed: false,
+  locationSkipped: false,
+  birthCertificateSkipped: false,
   submittedAt: null,
   submissionLocked: false,
   submissionOpensAt: "",
   submissionClosesAt: "",
-  hydrated: false,
   saveStatus: "",
   submitError: "",
   isSubmitting: false,
@@ -332,7 +325,6 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
     // Never trust a persisted/server value for ephemeral UI state: a stale
     // `true` here (e.g. from a tab closed mid-submit) would otherwise wedge
     // the form permanently with no way for the user to recover.
-    hydrated: emptyDraft.hydrated,
     saveStatus: emptyDraft.saveStatus,
     submitError: emptyDraft.submitError,
     isSubmitting: emptyDraft.isSubmitting,
@@ -354,118 +346,31 @@ type ApplicationStore = ApplicationDraft & {
   reset: () => void;
 };
 
-export const APPLICATION_DRAFT_STORAGE_KEY = "aloysius-g1-application-draft";
-
-// Ephemeral UI state that must never survive a reload: if a page is closed or
-// navigated away from mid-request, a persisted `true`/error value here would
-// permanently wedge the form (e.g. a stuck `isSubmitting` disabling submit
-// forever) with no way for the user to recover.
-const TRANSIENT_DRAFT_KEYS = [
-  "hydrated",
-  "saveStatus",
-  "submitError",
-  "isSubmitting",
-  "copiedField",
-  "showSubmissionRequest",
-  "requestSaving",
-  "bcDialogOpen",
-  "bcRequestState",
-  "clearDraftDialogOpen",
-] as const satisfies readonly (keyof ApplicationDraft)[];
-
-export const useApplicationStore = create<ApplicationStore>()(
-  persist(
-    (set) => ({
-      ...emptyDraft,
-      updateDraft: (patch) => set({ ...patch, lastSavedAt: new Date().toISOString() }),
-      setStep: (currentStep) => set((state) => ({ currentStep, maxVisitedStep: Math.max(state.maxVisitedStep, currentStep) })),
-      addCategory: (categoryType) =>
-        set((state) => ({
-          categories: [...state.categories, createCategory(categoryType, state.categories.length)],
-          lastSavedAt: new Date().toISOString(),
-        })),
-      removeCategory: (id) =>
-        set((state) => ({
-          categories: state.categories.filter((category) => category.id !== id),
-          lastSavedAt: new Date().toISOString(),
-        })),
-      updateCategoryInputs: (id, patch) =>
-        set((state) => ({
-          categories: state.categories.map((category) =>
-            category.id === id ? { ...category, scoringInputs: { ...category.scoringInputs, ...patch } } : category,
-          ),
-          lastSavedAt: new Date().toISOString(),
-        })),
-      reset: () => set(emptyDraft),
-    }),
-    {
-      name: APPLICATION_DRAFT_STORAGE_KEY,
-      version: 1,
-      storage: createJSONStorage(() => window.localStorage),
-      partialize: (state) => {
-        const persisted = { ...state } as Partial<ApplicationStore>;
-        for (const key of TRANSIENT_DRAFT_KEYS) delete persisted[key];
-        return persisted;
-      },
-      merge: (persisted, current) => ({
-        ...current,
-        ...normalizeDraft(persisted as Partial<ApplicationDraft>),
-      }),
-    },
-  ),
-);
-
-// ---------------------------------------------------------------------------
-// Sealed browser-captured locations
-//
-// Every change to the captured (device/network) location re-encrypts its
-// authoritative copy into localStorage (see lib/location-seal.ts). When the
-// draft is loaded, reconcileCapturedLocations() compares the plaintext draft
-// against the seal and restores the captured fields from the seal, so editing
-// the auto-saved draft in devtools cannot silently move the recorded location.
-// ---------------------------------------------------------------------------
-
-let lastCapturedSignature: string | null = null;
-
-function capturedSignatureOfState(): string {
-  return capturedSignature(extractCaptured(useApplicationStore.getState()));
-}
-
-function resealIfChanged() {
-  if (typeof window === "undefined") return;
-  const signature = capturedSignatureOfState();
-  if (signature === lastCapturedSignature) return;
-  lastCapturedSignature = signature;
-  void writeLocationSeal(useApplicationStore.getState()).catch(() => {
-    // Sealing is best-effort; storage or crypto failures must not break the draft.
-  });
-}
-
-/**
- * Verifies the persisted draft against the sealed captured locations and
- * restores the sealed values when the plaintext was modified. Safe to call
- * repeatedly after hydration; no-op when the draft already matches the seal.
- */
-export async function reconcileCapturedLocations(): Promise<void> {
-  if (typeof window === "undefined") return;
-  const sealed: SealedLocations | null = await readLocationSeal();
-  const current = useApplicationStore.getState();
-  if (!sealed) {
-    // No seal yet (first run of this feature, cleared storage, or fresh draft):
-    // adopt the current captured locations as the baseline.
-    lastCapturedSignature = capturedSignature(extractCaptured(current));
-    await writeLocationSeal(current);
-    return;
-  }
-  const patch = restoreCapturedLocations(current, sealed);
-  if (patch) {
-    useApplicationStore.setState(patch as Partial<ApplicationDraft>);
-  }
-  lastCapturedSignature = capturedSignatureOfState();
-  await writeLocationSeal(useApplicationStore.getState());
-}
-
-useApplicationStore.subscribe(resealIfChanged);
-void reconcileCapturedLocations().catch(() => {
-  // Best-effort on first load; the form re-runs reconcile after hydration.
-});
+// No client persistence: the DB is the only source of truth. Each step saves
+// to the server on advance (see ApplicationForm's `next()`), and the SSR
+// route loader seeds this store's initial values synchronously from the DB
+// (see ApplicationForm's render-time seed) \u2014 there is nothing left to
+// hydrate asynchronously, and nothing here ever touches `window`/localStorage.
+export const useApplicationStore = create<ApplicationStore>()((set) => ({
+  ...emptyDraft,
+  updateDraft: (patch) => set({ ...patch, lastSavedAt: new Date().toISOString() }),
+  setStep: (currentStep) => set((state) => ({ currentStep, maxVisitedStep: Math.max(state.maxVisitedStep, currentStep) })),
+  addCategory: (categoryType) =>
+    set((state) => ({
+      categories: [...state.categories, createCategory(categoryType, state.categories.length)],
+      lastSavedAt: new Date().toISOString(),
+    })),
+  removeCategory: (id) =>
+    set((state) => ({
+      categories: state.categories.filter((category) => category.id !== id),
+      lastSavedAt: new Date().toISOString(),
+    })),
+  updateCategoryInputs: (id, patch) =>
+    set((state) => ({
+      categories: state.categories.map((category) =>
+        category.id === id ? { ...category, scoringInputs: { ...category.scoringInputs, ...patch } } : category,
+      ),
+      lastSavedAt: new Date().toISOString(),
+    })),
+  reset: () => set(emptyDraft),
+}));

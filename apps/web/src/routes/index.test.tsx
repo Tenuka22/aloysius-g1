@@ -3,34 +3,57 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useEffect, useState } from "react";
 
 /* ───────── mock infrastructure (hoisted before imports) ───────── */
 
-const { createMock, getMock, countMock, liveCountMock } = vi.hoisted(() => ({
-  createMock: vi.fn(),
+const { getMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
-  countMock: vi.fn(),
-  liveCountMock: vi.fn(),
 }));
 
 vi.mock("@/utils/orpc", () => ({
-  client: {
+  orpc: {
     application: {
-      create: createMock,
-      get: getMock,
-      count: countMock,
-      liveCount: liveCountMock,
+      get: {
+        queryOptions: ({ input }: { input: { accessKey: string } }) => ({
+          queryKey: ["application-get", input.accessKey],
+          queryFn: () => getMock(input),
+        }),
+      },
     },
   },
 }));
 
-vi.mock("@orpc/client", () => ({
-  consumeEventIterator: vi.fn(() => ({ cancel: vi.fn() })),
-}));
+type MockQueryDescriptor = { queryKey: unknown[]; queryFn: () => unknown };
+type MockQueryResult = { isPending: boolean; isError: boolean; data: unknown; error: unknown };
 
-vi.mock("@/lib/auth-client", () => ({
-  authClient: {
-    getSession: vi.fn().mockResolvedValue({ data: { user: { role: "user" } } }),
+vi.mock("@tanstack/react-query", () => ({
+  useQueries: ({ queries }: { queries: MockQueryDescriptor[] }) => {
+    const [results, setResults] = useState<MockQueryResult[]>(() =>
+      queries.map(() => ({ isPending: true, isError: false, data: undefined, error: undefined })),
+    );
+    const key = queries.map((q) => JSON.stringify(q.queryKey)).join("|");
+    useEffect(() => {
+      let cancelled = false;
+      setResults(queries.map(() => ({ isPending: true, isError: false, data: undefined, error: undefined })));
+      queries.forEach((query, index) => {
+        Promise.resolve()
+          .then(() => query.queryFn())
+          .then((data) => {
+            if (cancelled) return;
+            setResults((prev) => prev.map((r, i) => (i === index ? { isPending: false, isError: false, data, error: undefined } : r)));
+          })
+          .catch((error) => {
+            if (cancelled) return;
+            setResults((prev) => prev.map((r, i) => (i === index ? { isPending: false, isError: true, data: undefined, error } : r)));
+          });
+      });
+      return () => {
+        cancelled = true;
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [key]);
+    return results;
   },
 }));
 
@@ -38,7 +61,7 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, ...props }: any) => (
     <a href={props.to ?? "#"}>{children}</a>
   ),
-  createFileRoute: () => (_opts: any) => ({ component: () => null }),
+  createFileRoute: () => (opts: any) => ({ ...opts, useLoaderData: () => ({ isAdmin: false }) }),
   lazyRouteComponent: vi.fn(),
   Outlet: () => null,
 }));
@@ -63,25 +86,46 @@ vi.mock("@/components/application/access-recovery-dialog", () => ({
 }));
 
 // Import the real component
-import { HomeComponent } from "./index";
+import { HomeComponent } from "@/components/home/home-page";
+import { useHomeUiStore } from "@/lib/home-ui-store";
+import { useSavedApplicationsStore } from "@/lib/saved-applications-store";
 
 /* ───────── helpers ───────── */
+
+function setCookie(name: string, value: string) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/`;
+}
+
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function clearCookies() {
+  document.cookie.split(";").forEach((c) => {
+    const name = c.split("=")[0].trim();
+    if (name) document.cookie = `${name}=; path=/; max-age=0`;
+  });
+}
 
 afterEach(() => {
   cleanup();
 });
 
 beforeEach(() => {
-  localStorage.clear();
-  createMock.mockReset();
+  clearCookies();
   getMock.mockReset();
-  countMock.mockReset().mockResolvedValue({ count: 5 });
-  liveCountMock.mockReset();
-  liveCountMock.mockReturnValue({
-    [Symbol.asyncIterator]: () => ({
-      next: async () => ({ done: true, value: undefined }),
-    }),
+  useHomeUiStore.setState({
+    removeKey: null,
+    recoveryKey: null,
+    recoveryOpen: false,
+    manageKeysOpen: false,
+    loadKeyOpen: false,
+    loadKeyInput: "",
+    loadKeyError: "",
+    qrImportOpen: false,
   });
+  useSavedApplicationsStore.setState({ keys: [] });
   Object.defineProperty(window, "location", {
     value: { assign: vi.fn(), href: "http://localhost:3000/" },
     writable: true,
@@ -94,26 +138,25 @@ beforeEach(() => {
 
 describe("HomeComponent – renders correctly", () => {
   it("shows the dashboard heading", () => {
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     expect(screen.getByText(/application dashboard/i)).toBeInTheDocument();
   });
 
   it("shows the quick actions section", () => {
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     expect(screen.getByText(/quick actions/i)).toBeInTheDocument();
     expect(screen.getByText(/new application/i)).toBeInTheDocument();
   });
 
   it("shows the stats section", () => {
-    render(<HomeComponent />);
-    expect(screen.getByText("Total")).toBeInTheDocument();
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     expect(screen.getByText("Saved")).toBeInTheDocument();
     expect(screen.getByText("Submitted")).toBeInTheDocument();
     expect(screen.getByText("Drafts")).toBeInTheDocument();
   });
 
   it("shows the G1 2026 intake badge", () => {
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     expect(screen.getByText(/G1 2026 intake/i)).toBeInTheDocument();
   });
 });
@@ -125,7 +168,7 @@ describe("HomeComponent – renders correctly", () => {
 describe("HomeComponent – new application", () => {
   it("navigates to /application when new application is clicked", async () => {
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await user.click(screen.getByRole("button", { name: /new application/i }));
     expect(window.location.assign).toHaveBeenCalledWith("/application");
   });
@@ -138,7 +181,7 @@ describe("HomeComponent – new application", () => {
 describe("HomeComponent – load with key dialog", () => {
   it("opens the load key dialog when clicking the button", async () => {
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await user.click(screen.getByRole("button", { name: /load with a key/i }));
     expect(screen.getByText(/load application with a key/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/paste access key/i)).toBeInTheDocument();
@@ -146,7 +189,7 @@ describe("HomeComponent – load with key dialog", () => {
 
   it("shows error when submitting empty key", async () => {
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await user.click(screen.getByRole("button", { name: /load with a key/i }));
     await user.click(screen.getByRole("button", { name: /open application/i }));
     expect(screen.getByText(/enter an access key/i)).toBeInTheDocument();
@@ -154,7 +197,7 @@ describe("HomeComponent – load with key dialog", () => {
 
   it("navigates to application page with key when valid key is entered", async () => {
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await user.click(screen.getByRole("button", { name: /load with a key/i }));
     await user.type(screen.getByPlaceholderText(/paste access key/i), "TEST-KEY-123");
     await user.click(screen.getByRole("button", { name: /open application/i }));
@@ -166,13 +209,13 @@ describe("HomeComponent – load with key dialog", () => {
     );
   });
 
-  it("stores key in localStorage after loading", async () => {
+  it("stores key in a cookie after loading", async () => {
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await user.click(screen.getByRole("button", { name: /load with a key/i }));
     await user.type(screen.getByPlaceholderText(/paste access key/i), "MY-KEY-XYZ");
     await user.click(screen.getByRole("button", { name: /open application/i }));
-    expect(localStorage.getItem("aloysius-g1-application-key")).toBe("MY-KEY-XYZ");
+    expect(getCookie("aloysius-g1-application-key")).toBe("MY-KEY-XYZ");
   });
 });
 
@@ -182,19 +225,19 @@ describe("HomeComponent – load with key dialog", () => {
 
 describe("HomeComponent – manage saved keys", () => {
   it("disables manage keys button when no keys are saved", () => {
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     expect(screen.getByRole("button", { name: /manage saved keys/i })).toBeDisabled();
   });
 
   it("shows saved keys in the manage dialog", async () => {
-    localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(["key-1", "key-2"]));
+    setCookie("aloysius-g1-application-keys", JSON.stringify(["key-1", "key-2"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "Test App" } },
       sessionCode: "26ABC123",
       submittedAt: null,
     });
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await waitFor(() => expect(screen.getByText("Test App")).toBeInTheDocument());
     const manageButton = screen.getByRole("button", { name: /manage saved keys/i });
     expect(manageButton).toBeEnabled();
@@ -203,13 +246,13 @@ describe("HomeComponent – manage saved keys", () => {
   });
 
   it("shows key count in saved applications section", async () => {
-    localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(["k1", "k2", "k3"]));
+    setCookie("aloysius-g1-application-keys", JSON.stringify(["k1", "k2", "k3"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "App A" } },
       sessionCode: "26ABC123",
       submittedAt: null,
     });
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await waitFor(() => expect(screen.getByText("App A")).toBeInTheDocument());
     expect(screen.getByText(/3 applications/i)).toBeInTheDocument();
   });
@@ -221,14 +264,14 @@ describe("HomeComponent – manage saved keys", () => {
 
 describe("HomeComponent – remove application", () => {
   it("shows confirmation dialog when trash button is clicked", async () => {
-    localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(["key-1"]));
+    setCookie("aloysius-g1-application-keys", JSON.stringify(["key-1"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "Test App" } },
       sessionCode: "26ABC123",
       submittedAt: null,
     });
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await waitFor(() => expect(screen.getByText("Test App")).toBeInTheDocument());
     const trashButtons = screen.getAllByRole("button", { name: "" });
     const trashButton = trashButtons.find((btn) => btn.querySelector("svg"));
@@ -246,7 +289,7 @@ describe("HomeComponent – remove application", () => {
 describe("HomeComponent – QR import", () => {
   it("opens the QR import dialog", async () => {
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await user.click(screen.getByRole("button", { name: /import qr/i }));
     expect(screen.getByText(/scan qr code/i)).toBeInTheDocument();
   });
@@ -258,19 +301,19 @@ describe("HomeComponent – QR import", () => {
 
 describe("HomeComponent – forgot a key", () => {
   it("still enables the forgot key button when no keys are saved (recovery works via session code/birth certificate too)", () => {
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     expect(screen.getByRole("button", { name: /forgot a key/i })).toBeEnabled();
   });
 
   it("opens recovery dialog when forgot key is clicked with saved keys", async () => {
-    localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(["key-1"]));
+    setCookie("aloysius-g1-application-keys", JSON.stringify(["key-1"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "Test App" } },
       sessionCode: "26ABC123",
       submittedAt: null,
     });
     const user = userEvent.setup();
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await waitFor(() => expect(screen.getByText("Test App")).toBeInTheDocument());
     const forgotButton = screen.getByRole("button", { name: /forgot a key/i });
     expect(forgotButton).toBeEnabled();
@@ -285,19 +328,19 @@ describe("HomeComponent – forgot a key", () => {
 
 describe("HomeComponent – submitted vs draft cards", () => {
   it("shows Submitted badge for submitted applications", async () => {
-    localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(["sub-key"]));
+    setCookie("aloysius-g1-application-keys", JSON.stringify(["sub-key"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "Submitted App" } },
       sessionCode: "26ABC123",
       submittedAt: "2026-08-20T00:00:00.000Z",
     });
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await waitFor(() => expect(screen.getByText("Submitted App")).toBeInTheDocument());
     expect(screen.getAllByText("Submitted", { exact: true })).toHaveLength(2);
   });
 
   it("shows completion percentage for draft applications", async () => {
-    localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(["draft-key"]));
+    setCookie("aloysius-g1-application-keys", JSON.stringify(["draft-key"]));
     getMock.mockResolvedValue({
       data: {
         applicant: { fullName: "Draft App" },
@@ -306,7 +349,7 @@ describe("HomeComponent – submitted vs draft cards", () => {
       sessionCode: "26ABC123",
       submittedAt: null,
     });
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await waitFor(() => expect(screen.getByText("Draft App")).toBeInTheDocument());
     expect(screen.getByText(/^\d+% complete$/)).toBeInTheDocument();
   });
@@ -318,9 +361,9 @@ describe("HomeComponent – submitted vs draft cards", () => {
 
 describe("HomeComponent – error handling", () => {
   it("shows error state when application fetch fails", async () => {
-    localStorage.setItem("aloysius-g1-application-keys", JSON.stringify(["bad-key"]));
+    setCookie("aloysius-g1-application-keys", JSON.stringify(["bad-key"]));
     getMock.mockRejectedValue(new Error("Not found"));
-    render(<HomeComponent />);
+    render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await waitFor(() => expect(screen.getByText(/no longer exists on the server/i)).toBeInTheDocument());
   });
 });

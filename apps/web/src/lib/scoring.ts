@@ -125,7 +125,7 @@ export function deedAgeWeight(years: number | undefined): number {
   return DEED_AGE_MIN_WEIGHT;
 }
 
-const MAIN_DOCUMENT_MARKS_61: Record<string, number> = {
+export const MAIN_DOCUMENT_MARKS_61: Record<string, number> = {
   "title-deed-applicant": 20,
   "title-deed-parents": 16,
   "feeder-electoral-5yrs": 15,
@@ -378,7 +378,7 @@ export function scoreCategory63(inputs: ScoringInputs): CategoryScore {
   return { categoryType: "6.3", total, breakdown: rows };
 }
 
-function tieredDistanceMarks(km: number | undefined, tiers: Array<[number, number]>, fallback: number): number {
+export function tieredDistanceMarks(km: number | undefined, tiers: Array<[number, number]>, fallback: number): number {
   if (km == null) return 0;
   for (const [limit, marks] of tiers) {
     if (km <= limit) return marks;
@@ -386,7 +386,7 @@ function tieredDistanceMarks(km: number | undefined, tiers: Array<[number, numbe
   return fallback;
 }
 
-function difficultDistanceMarks(km: number | undefined): number {
+export function difficultDistanceMarks(km: number | undefined): number {
   if (km == null) return 0;
   for (const [minKm, marks] of DIFFICULT_DISTANCE_TIERS) {
     if (km >= minKm) return marks;
@@ -394,7 +394,7 @@ function difficultDistanceMarks(km: number | undefined): number {
   return 0;
 }
 
-function workplaceDistanceMarks(km: number | undefined): number {
+export function workplaceDistanceMarks(km: number | undefined): number {
   if (km == null) return 0;
   for (const [minKm, marks] of WORKPLACE_DISTANCE_TIERS) {
     if (km >= minKm) return marks;
@@ -402,22 +402,22 @@ function workplaceDistanceMarks(km: number | undefined): number {
   return WORKPLACE_DISTANCE_FALLBACK;
 }
 
-function transferDistanceMarks(km: number | undefined): number {
+export function transferDistanceMarks(km: number | undefined): number {
   if (km == null) return 0;
   for (const [minKm, marks] of TRANSFER_DISTANCE_TIERS) {
-    if (km > minKm) return marks;
+    if (km >= minKm) return marks;
   }
   return 0;
 }
 
-function previousPeriodMarks(years: number): number {
+export function previousPeriodMarks(years: number): number {
   for (const [minYears, marks] of TRANSFER_PREVIOUS_PERIOD_TIERS) {
     if (years >= minYears) return marks;
   }
   return 0;
 }
 
-function transferElapsedMarks(elapsed: number): number {
+export function transferElapsedMarks(elapsed: number): number {
   for (const [maxYears, marks] of TRANSFER_ELAPSED_TIERS) {
     if (elapsed <= maxYears) return marks;
   }
@@ -482,7 +482,7 @@ export function scoreCategory65(inputs: ScoringInputs): CategoryScore {
   return { categoryType: "6.5", total, breakdown: rows };
 }
 
-function abroadPeriodMarks(years: number): number {
+export function abroadPeriodMarks(years: number): number {
   for (const [minYears, marks] of ABROAD_PERIOD_TIERS) {
     if (years >= minYears) return marks;
   }

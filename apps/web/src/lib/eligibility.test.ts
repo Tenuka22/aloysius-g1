@@ -3,7 +3,8 @@ import {
   ALLOWED_EDUCATION_MEDIUMS,
   DISALLOWED_GENDERS,
   DISALLOWED_RELIGIONS,
-  G1_DOB_CUTOFF,
+  G1_DOB_EARLIEST,
+  G1_DOB_LATEST,
   applicantSectionComplete,
   educationMediumAllowed,
   getNextStepReason,
@@ -35,12 +36,19 @@ describe("isRestrictedReligion", () => {
 });
 
 describe("isG1EligibleDob", () => {
-  const nextYear = new Date().getFullYear() + 1;
-  it("is eligible exactly on the cutoff", () => expect(isG1EligibleDob(G1_DOB_CUTOFF())).toBe(true));
-  it("is eligible before the cutoff", () => expect(isG1EligibleDob("2021-12-31")).toBe(true));
-  it("is eligible in early years", () => expect(isG1EligibleDob("2019-06-15")).toBe(true));
-  it("is not eligible after the cutoff", () => expect(isG1EligibleDob(`${nextYear}-02-01`)).toBe(false));
-  it("is not eligible far after the cutoff", () => expect(isG1EligibleDob(`${nextYear + 1}-05-10`)).toBe(false));
+  it("is eligible exactly on the latest boundary (turns 5 on the cutoff)", () => expect(isG1EligibleDob(G1_DOB_LATEST())).toBe(true));
+  it("is eligible exactly on the earliest boundary (still 5, not yet 6, by the cutoff)", () => expect(isG1EligibleDob(G1_DOB_EARLIEST())).toBe(true));
+  it("is eligible mid-window", () => expect(isG1EligibleDob("2021-06-15")).toBe(true));
+  it("is not eligible one day after the latest boundary (not yet 5 by the cutoff)", () => {
+    const [year] = G1_DOB_LATEST().split("-");
+    expect(isG1EligibleDob(`${year}-02-01`)).toBe(false);
+  });
+  it("is not eligible one day before the earliest boundary (already 6 by the cutoff)", () => {
+    const [year] = G1_DOB_EARLIEST().split("-");
+    expect(isG1EligibleDob(`${year}-01-31`)).toBe(false);
+  });
+  it("is not eligible for a much older child", () => expect(isG1EligibleDob("2015-06-15")).toBe(false));
+  it("is not eligible for a newborn", () => expect(isG1EligibleDob("2026-06-15")).toBe(false));
   it("is not eligible when empty", () => expect(isG1EligibleDob("")).toBe(false));
   it("is not eligible when whitespace only", () => expect(isG1EligibleDob("   ")).toBe(false));
   it("is not eligible when undefined", () => expect(isG1EligibleDob(undefined)).toBe(false));
@@ -119,11 +127,11 @@ describe("getNextStepReason – step 1 (applicant) exhaustive combinations", () 
     const fieldBlocked =
       case_.gender === "Female" ||
       case_.religion === "Christian" ||
-      !case_.dateOfBirth ||
-      case_.dateOfBirth > G1_DOB_CUTOFF() ||
+      !isG1EligibleDob(case_.dateOfBirth) ||
       !case_.certificate ||
       !case_.name ||
-      !case_.medium;
+      !case_.medium ||
+      !educationMediumAllowed(case_.medium);
     return fieldBlocked ? FIELDS_REASON : "";
   }
 

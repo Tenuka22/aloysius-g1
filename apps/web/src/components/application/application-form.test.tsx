@@ -5,6 +5,9 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApplicationForm } from "./application-form";
 import { emptyDraft, useApplicationStore } from "@/lib/application-store";
+import { G1_DOB_LATEST } from "@/lib/eligibility";
+import { getActiveKey, setActiveKey, setActiveSessionCode } from "@/lib/saved-keys";
+import { removeAppCookie } from "@/lib/cookies";
 
 const { MOCK_ACCESS_KEY, MOCK_SESSION_CODE } = vi.hoisted(() => ({
   MOCK_ACCESS_KEY: "ALY-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO",
@@ -110,7 +113,9 @@ function currentDraftData(): typeof emptyDraft {
 
 beforeEach(() => {
   useApplicationStore.getState().reset();
-  localStorage.clear();
+  removeAppCookie("aloysius-g1-application-key");
+  removeAppCookie("aloysius-g1-application-keys");
+  removeAppCookie("aloysius-g1-application-session-code");
   locationChangePayload.current = null;
   window.history.replaceState({}, "", "/");
   createMock.mockReset().mockImplementation(async () => ({
@@ -138,7 +143,7 @@ const validApplicant = {
   gender: "Male",
   religion: "Buddhist",
   educationMedium: "Sinhala",
-  dateOfBirth: "2021-01-01",
+  dateOfBirth: G1_DOB_LATEST(),
   birthCertificateNumber: "ABC123",
 };
 
@@ -398,6 +403,7 @@ describe("ApplicationForm – keys", () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    setActiveKey(MOCK_ACCESS_KEY);
     await renderForm();
     const copyButton = await screen.findByRole("button", { name: "Copy access key" });
     await user.click(copyButton);
@@ -409,6 +415,7 @@ describe("ApplicationForm – keys", () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    setActiveKey(MOCK_ACCESS_KEY);
     await renderForm();
     const copyButton = await screen.findByRole("button", { name: "Copy session code" });
     await user.click(copyButton);
@@ -516,6 +523,7 @@ describe("ApplicationForm – submit flow", () => {
 
   it("submits even with no unsaved changes", async () => {
     setStore({ ...fullValidDraft, currentStep: 6, lastSavedAt: new Date().toISOString() });
+    setActiveKey(MOCK_ACCESS_KEY);
     await renderReview();
     await screen.findByText(MOCK_ACCESS_KEY);
     await userEvent.click(screen.getByRole("button", { name: /(submit|update) application/i }));
@@ -525,8 +533,8 @@ describe("ApplicationForm – submit flow", () => {
 
 describe("ApplicationForm – submit a restored application", () => {
   it("submits a fully valid restored draft", async () => {
-    localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
-    localStorage.setItem("aloysius-g1-application-session-code", MOCK_SESSION_CODE);
+    setActiveKey(MOCK_ACCESS_KEY);
+    setActiveSessionCode(MOCK_SESSION_CODE);
     getMock.mockResolvedValue({
       data: { ...fullValidDraft, currentStep: 6 },
       sessionCode: MOCK_SESSION_CODE,
@@ -593,16 +601,16 @@ describe("ApplicationForm – server errors", () => {
     await renderForm();
     expect(useApplicationStore.getState().currentStep).toBe(0);
     expect(useApplicationStore.getState().applicant.fullName).toBe("");
-    expect(localStorage.getItem("aloysius-g1-application-key")).toBeNull();
+    expect(getActiveKey()).toBe("");
   });
 
   it("resets the draft when restore get fails", async () => {
-    localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
+    setActiveKey(MOCK_ACCESS_KEY);
     getMock.mockReset().mockRejectedValue(new Error("Key not found"));
     await renderForm();
     expect(useApplicationStore.getState().currentStep).toBe(0);
     expect(useApplicationStore.getState().applicant.fullName).toBe("");
-    expect(localStorage.getItem("aloysius-g1-application-key")).toBeNull();
+    expect(getActiveKey()).toBe("");
   });
 
   it("shows an error when the submit fails", async () => {
@@ -745,14 +753,13 @@ describe("ApplicationForm – submission locked state", () => {
     });
     // Need submittedAt set so collectionOnly = true
     getMock.mockResolvedValue({
-      data: currentDraftData(),
+      data: { ...fullValidDraft, currentStep: 6 },
       sessionCode: MOCK_SESSION_CODE,
       accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
       submittedAt: "2026-08-01T00:00:00Z",
     });
-    localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
-    localStorage.setItem("aloysius-g1-application-session-code", MOCK_SESSION_CODE);
-    setStore({ ...fullValidDraft, currentStep: 6 });
+    setActiveKey(MOCK_ACCESS_KEY);
+    setActiveSessionCode(MOCK_SESSION_CODE);
     await renderReview();
     expect(screen.getByText(/submission is outside/i)).toBeInTheDocument();
     expect(screen.getByText(/Submission opens 9 Sep 2026/i)).toBeInTheDocument();
@@ -772,8 +779,8 @@ describe("ApplicationForm – submission locked state", () => {
       accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
       submittedAt: "2026-08-01T00:00:00Z",
     });
-    localStorage.setItem("aloysius-g1-application-key", MOCK_ACCESS_KEY);
-    localStorage.setItem("aloysius-g1-application-session-code", MOCK_SESSION_CODE);
+    setActiveKey(MOCK_ACCESS_KEY);
+    setActiveSessionCode(MOCK_SESSION_CODE);
     await renderReview();
     expect(screen.getByText(/Submission opens 9 Sep 2026/)).toBeInTheDocument();
   });

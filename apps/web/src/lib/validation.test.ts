@@ -11,7 +11,7 @@ import {
   signInSchema,
   signUpSchema,
 } from "./validation";
-import { G1_DOB_CUTOFF, nicRegex } from "./eligibility";
+import { G1_DOB_EARLIEST, G1_DOB_LATEST, nicRegex } from "./eligibility";
 
 describe("signInSchema", () => {
   it("accepts valid credentials", () =>
@@ -54,7 +54,7 @@ const validApplicant = {
   gender: "Male",
   religion: "Buddhist",
   educationMedium: "Sinhala",
-  dateOfBirth: "2021-01-15",
+  dateOfBirth: G1_DOB_LATEST(),
   birthCertificateNumber: "1234567890",
 };
 
@@ -78,11 +78,17 @@ describe("applicantStepSchema", () => {
     expect(applicantStepSchema.safeParse({ ...validApplicant, educationMedium: "English" }).success).toBe(false));
   it("rejects a missing education medium", () =>
     expect(applicantStepSchema.safeParse({ ...validApplicant, educationMedium: "" }).success).toBe(false));
-  it("accepts DOB exactly on the cutoff", () =>
-    expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: G1_DOB_CUTOFF() }).success).toBe(true));
-  it("rejects DOB after the cutoff", () => {
-    const nextYear = new Date().getFullYear() + 1;
-    expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: `${nextYear}-02-01` }).success).toBe(false);
+  it("accepts DOB exactly on the latest boundary", () =>
+    expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: G1_DOB_LATEST() }).success).toBe(true));
+  it("accepts DOB exactly on the earliest boundary", () =>
+    expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: G1_DOB_EARLIEST() }).success).toBe(true));
+  it("rejects DOB after the latest boundary (not yet five)", () => {
+    const [year] = G1_DOB_LATEST().split("-");
+    expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: `${year}-02-01` }).success).toBe(false);
+  });
+  it("rejects DOB before the earliest boundary (already six)", () => {
+    const [year] = G1_DOB_EARLIEST().split("-");
+    expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: `${year}-01-31` }).success).toBe(false);
   });
   it("rejects an empty DOB", () =>
     expect(applicantStepSchema.safeParse({ ...validApplicant, dateOfBirth: "" }).success).toBe(false));

@@ -3,6 +3,7 @@ import type { RouterClient } from "@orpc/server";
 import { ORPCError } from "@orpc/client";
 
 import { adminProcedure, subAdminProcedure, protectedProcedure, publicProcedure } from "../index";
+import { hasAdminRole, hasSubAdminRole } from "../auth-policy";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
@@ -613,6 +614,22 @@ export const appRouter = {
   healthCheck: publicProcedure.handler(() => {
     return "OK";
   }),
+  // Public (never throws for an anonymous visitor, unlike protectedProcedure) —
+  // the home page needs to know whether to show the admin-panel shortcut for
+  // any visitor, logged in or not. Reuses the same per-request session the
+  // oRPC context already resolves (packages/api/src/context.ts), so callers
+  // don't need a separate better-auth client call to get this.
+  session: {
+    isAdmin: publicProcedure.handler(({ context }) => {
+      return { isAdmin: hasAdminRole(context.session?.user) };
+    }),
+    // Separate from isAdmin: sub-admins get their own panel shortcut (with a
+    // narrower set of pages) distinct from the full admin panel. Admins also
+    // pass this check \u2014 same hierarchy as subAdminProcedure server-side.
+    isSubAdmin: publicProcedure.handler(({ context }) => {
+      return { isSubAdmin: hasSubAdminRole(context.session?.user) };
+    }),
+  },
   privateData: protectedProcedure.handler(({ context }) => {
     return {
       message: "This is private",

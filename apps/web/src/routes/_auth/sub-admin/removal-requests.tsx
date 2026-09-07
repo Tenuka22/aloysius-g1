@@ -24,9 +24,20 @@ import {
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { FORM_WINDOW_WARNING } from "@/lib/color-classes";
+import { intakeYearSearchSchema } from "@/lib/intake-year";
 import { useTranslation } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_auth/sub-admin/removal-requests")({ component: SubAdminRemovalRequestsPage });
+export const Route = createFileRoute("/_auth/sub-admin/removal-requests")({
+  validateSearch: intakeYearSearchSchema,
+  loaderDeps: ({ search }) => ({ intakeYear: search.intakeYear }),
+  loader: async ({ context, deps }) => {
+    const { intakeYear } = deps;
+    await context.queryClient.prefetchQuery(context.orpc.subAdmin.removalRequests.queryOptions({
+      input: { page: 1, pageSize: 10, query: "", intakeYear },
+    }));
+  },
+  component: SubAdminRemovalRequestsPage,
+});
 
 type RemovalRequestRow = {
   id: string;

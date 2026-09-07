@@ -72,10 +72,10 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
   return (
     <div className="grid gap-2">
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary" type="button" className="h-full w-full" onClick={() => setCameraOpen(true)}>
+        <Button variant="secondary" type="button" className="w-full" onClick={() => setCameraOpen(true)}>
           <Camera size={16} /> Scan with camera
         </Button>
-        <label className="w-full inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-transparent bg-secondary text-secondary-foreground text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none h-full [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 px-2.5">
+        <label className="w-full inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-transparent bg-secondary text-secondary-foreground text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 px-2.5">
           <Upload size={16} /> Import QR image
           <input type="file" accept="image/*" className="sr-only" onChange={(event) => void readFile(event.target.files?.[0])} />
         </label>

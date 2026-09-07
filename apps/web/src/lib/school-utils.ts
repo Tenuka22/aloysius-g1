@@ -5,6 +5,8 @@ export { findSchoolById };
 
 type LocatedSchool = School & { lat: number; lng: number };
 
+export type SchoolWithDistance = LocatedSchool & { distanceKm: number };
+
 function hasCoordinates(school: School): school is LocatedSchool {
   return school.lat !== null && school.lng !== null;
 }

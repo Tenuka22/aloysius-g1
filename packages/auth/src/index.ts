@@ -60,6 +60,17 @@ export function createAuth() {
     emailAndPassword: {
       enabled: true,
     },
+    session: {
+      // Without this, every authClient.getSession() call (route beforeLoad
+      // guards run this on every navigation) hits the DB to revalidate the
+      // session token, adding a network+DB round trip before the page can
+      // render. The cookie cache embeds a short-lived signed session copy in
+      // the cookie itself so repeat calls within the window are free.
+      cookieCache: {
+        enabled: true,
+        maxAge: 60, // seconds
+      },
+    },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {

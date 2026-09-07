@@ -10,17 +10,17 @@ import {
   applyLocationChange,
   emptyDraft,
   normalizeDraft,
-  reconcileCapturedLocations,
   useApplicationStore,
   type ApplicationDraft,
   type CategoryApplication,
   type CategoryType,
 } from "@/lib/application-store";
-import { G1_DOB_CUTOFF, getNextStepReason } from "@/lib/eligibility";
+import { G1_DOB_CUTOFF, G1_DOB_EARLIEST, G1_DOB_LATEST, ageAsOf, getNextStepReason, isG1EligibleDob, locationIsReady } from "@/lib/eligibility";
 import { ADMISSION_RESTRICTIONS } from "@/lib/school-config";
 import { scoreCategory } from "@/lib/scoring";
 import { client } from "@/utils/orpc";
 import { useTranslation } from "@/lib/i18n";
+import { clearActiveKey, getActiveKey, getActiveSessionCode, setActiveApplication, setActiveSessionCode } from "@/lib/saved-keys";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,6 +94,27 @@ import {
   residenceStepSchema,
   declarationStepSchema,
 } from "@/lib/validation";
+
+// Shape of the loader-resolved (isomorphic) application fetch passed down from
+// routes/application.index.tsx, so a returning applicant's draft is part of
+// the server-rendered HTML instead of only appearing after a client fetch.
+type RestoredApplication = {
+  data: unknown;
+  sessionCode: string;
+  submittedAt: string | Date | null;
+  admissionStatus?: string;
+  interviewNotes?: string;
+  isBanned?: boolean;
+  banReason?: string | null;
+  flags?: Array<{ type: string; key: string; label: string }>;
+};
+
+export type ApplicationInitialData = {
+  key: string;
+  code: string;
+  application: RestoredApplication | null;
+  status?: { submissionLocked: boolean; submissionOpensAt: string; submissionClosesAt: string } | null;
+};
 
 function getSteps(t: (key: string) => string) {
   return [
@@ -333,6 +354,7 @@ function BirthCertificateField({
             set({
               applicant: { ...draft.applicant, birthCertificateNumber: e.target.value },
               bcRequestState: "",
+              ...(e.target.value.trim() ? { birthCertificateSkipped: false } : {}),
             });
             scheduleCheck(e.target.value);
           }}
@@ -347,6 +369,17 @@ function BirthCertificateField({
           <RotateCcw size={14} /> {t("appForm.birthCert.refresh")}
         </Button>
       </div>
+      {!draft.applicant.birthCertificateNumber.trim() && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+          <p className="flex-1 text-sm text-muted-foreground">{t("appForm.birthCert.skipHint")}</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => set({ birthCertificateSkipped: true })}>
+            {t("appForm.birthCert.skipButton")}
+          </Button>
+        </div>
+      )}
+      {draft.birthCertificateSkipped && !draft.applicant.birthCertificateNumber.trim() && (
+        <p className="text-sm text-primary">{t("appForm.birthCert.skippedNotice")}</p>
+      )}
       <Drawer open={draft.bcDialogOpen} onOpenChange={(open) => set({ bcDialogOpen: open })}>
         {draft.duplicateBirthCertificate && (
           <DrawerTrigger className="border-0 bg-transparent p-0 text-destructive text-sm underline w-fit">
@@ -445,6 +478,7 @@ function LocationStepCard({
           set({
             location: value,
             selectedLocation: value,
+            locationSkipped: false,
             ...(histories.defaultLocations !== draft.defaultLocations
               ? { defaultLocations: histories.defaultLocations }
               : {}),
@@ -457,6 +491,17 @@ function LocationStepCard({
           });
         }}
       />
+      {!readOnly && !locationIsReady(draft.location) && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+          <p className="flex-1 text-sm text-muted-foreground">{t("appForm.locationStep.skipHint")}</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => set({ locationSkipped: true })}>
+            {t("appForm.locationStep.skipButton")}
+          </Button>
+        </div>
+      )}
+      {draft.locationSkipped && !locationIsReady(draft.location) && (
+        <p className="text-sm text-primary">{t("appForm.locationStep.skippedNotice")}</p>
+      )}
     </div>
   );
 }
@@ -464,7 +509,8 @@ function LocationStepCard({
 function DateOfBirthPicker({ value, onChange }: { value: string; onChange: (dateStr: string) => void }) {
   const [open, setOpen] = useState(false);
   const parsedDate = value ? new Date(value + "T00:00:00") : undefined;
-  const maxDate = new Date(G1_DOB_CUTOFF() + "T00:00:00");
+  const maxDate = new Date(G1_DOB_LATEST() + "T00:00:00");
+  const minDate = new Date(G1_DOB_EARLIEST() + "T00:00:00");
 
   return (
     <Popover
@@ -495,9 +541,11 @@ function DateOfBirthPicker({ value, onChange }: { value: string; onChange: (date
         <Calendar
           mode="single"
           selected={parsedDate}
-          defaultMonth={parsedDate}
+          defaultMonth={parsedDate ?? maxDate}
           captionLayout="dropdown"
-          disabled={(date) => date > maxDate}
+          startMonth={minDate}
+          endMonth={maxDate}
+          disabled={(date) => date > maxDate || date < minDate}
           onSelect={(date) => {
             if (date) {
               const y = date.getFullYear();
@@ -647,9 +695,38 @@ function ApplicantStep({
           onChange={(dateStr) => set({ applicant: { ...draft.applicant, dateOfBirth: dateStr } })}
         />
         <FieldDescription>
-          {t("appForm.applicantStep.dateOfBirthDescription")}
+          {t("appForm.applicantStep.dateOfBirthDescription", {
+            earliest: format(new Date(G1_DOB_EARLIEST() + "T00:00:00"), "dd/MM/yyyy"),
+            latest: format(new Date(G1_DOB_LATEST() + "T00:00:00"), "dd/MM/yyyy"),
+          })}
         </FieldDescription>
+        {draft.applicant.dateOfBirth && (() => {
+          const age = ageAsOf(draft.applicant.dateOfBirth);
+          const cutoffAge = ageAsOf(draft.applicant.dateOfBirth, new Date(G1_DOB_CUTOFF() + "T00:00:00"));
+          return age && (
+            <div className="grid gap-0.5">
+              <p className="text-sm text-muted-foreground">
+                {t("appForm.applicantStep.dateOfBirthCurrentAge", { years: age.years, months: age.months })}
+              </p>
+              {cutoffAge && (
+                <p className="text-sm text-muted-foreground">
+                  {t("appForm.applicantStep.dateOfBirthCutoffAge", {
+                    date: format(new Date(G1_DOB_CUTOFF() + "T00:00:00"), "d MMM yyyy"),
+                    years: cutoffAge.years,
+                    months: cutoffAge.months,
+                  })}
+                </p>
+              )}
+            </div>
+          );
+        })()}
       </Field>
+
+      {draft.applicant.dateOfBirth && !isG1EligibleDob(draft.applicant.dateOfBirth) && (
+        <p className="col-span-full text-sm text-destructive">
+          {t("appForm.applicantStep.dateOfBirthRestriction")}
+        </p>
+      )}
 
       <div className="col-span-full">
         <BirthCertificateField draft={draft} set={set} />
@@ -976,6 +1053,8 @@ function DeclarationStep({
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   const { t } = useTranslation();
+  const locationMissing = draft.locationSkipped && !locationIsReady(draft.location);
+  const birthCertMissing = draft.birthCertificateSkipped && !draft.applicant.birthCertificateNumber.trim();
   return (
     <div className="grid max-w-[920px] gap-5">
       <div className="mb-4">
@@ -984,6 +1063,42 @@ function DeclarationStep({
           {t("appForm.declarationStep.description")}
         </p>
       </div>
+
+      {(locationMissing || birthCertMissing) && (
+        <div className="grid gap-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <p className="text-sm font-medium text-primary">{t("appForm.declarationStep.completeSkippedHeading")}</p>
+          {locationMissing && (
+            <div className="grid gap-2">
+              <span className="text-sm font-medium">{t("appForm.locationStep.heading")}</span>
+              <LocationStep
+                readOnly={false}
+                autoRequestLocation={draft.location?.latitude == null && draft.selectedLocation?.latitude == null}
+                value={draft.location ?? emptyDraft.location}
+                defaultValue={draft.defaultLocations[0] ?? emptyDraft.location}
+                deviceLocationHistory={draft.deviceLocationHistory ?? []}
+                userLocationHistory={draft.userLocationHistory ?? []}
+                onAvailabilityChange={(canProceed) => set({ locationCanProceed: canProceed })}
+                onChange={(value, defaultValue) => {
+                  const histories = applyLocationChange(draft, value, defaultValue);
+                  set({
+                    location: value,
+                    selectedLocation: value,
+                    locationSkipped: false,
+                    ...(histories.defaultLocations !== draft.defaultLocations ? { defaultLocations: histories.defaultLocations } : {}),
+                    ...(histories.deviceLocationHistory !== draft.deviceLocationHistory ? { deviceLocationHistory: histories.deviceLocationHistory } : {}),
+                    ...(histories.userLocationHistory !== draft.userLocationHistory ? { userLocationHistory: histories.userLocationHistory } : {}),
+                  });
+                }}
+              />
+            </div>
+          )}
+          {birthCertMissing && (
+            <div className="grid gap-2">
+              <BirthCertificateField draft={draft} set={set} />
+            </div>
+          )}
+        </div>
+      )}
 
       <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
         <Checkbox
@@ -1301,19 +1416,75 @@ function ReviewStep({
 export function ApplicationForm({
   adminApplicationId,
   readOnly = false,
+  initialData,
 }: {
   adminApplicationId?: string;
   readOnly?: boolean;
+  initialData?: ApplicationInitialData;
 }) {
   const { t } = useTranslation();
-  const draft = useApplicationStore();
   const saveQueue = useRef(Promise.resolve());
   const restorePromise = useRef<Promise<void> | null>(null);
   const navigate = useNavigate();
 
+  // Seeds the store synchronously during the FIRST render (not in an effect)
+  // from the loader-provided `initialData` — it's a plain prop, computed
+  // identically by the same loader on both server and client, so there's no
+  // hydration-mismatch risk. This is why the correct step/fields show
+  // immediately instead of flashing an empty draft for a frame before an
+  // effect fires after mount. Only the admin-editing path (no SSR loader
+  // today) and the defensive "no initialData at all" fallback (e.g. tests
+  // that render ApplicationForm directly) still resolve via the effect below.
+  const seededRef = useRef(false);
+  if (!seededRef.current && !adminApplicationId && initialData) {
+    seededRef.current = true;
+    const key = initialData.key;
+    const code = initialData.code;
+    if (initialData.application) {
+      const result = initialData.application;
+      const latest = normalizeDraft({
+        ...(result.data as Partial<ApplicationDraft>),
+        admissionStatus: result.admissionStatus,
+        interviewNotes: result.interviewNotes,
+        isBanned: result.isBanned,
+        banReason: result.banReason,
+        flags: result.flags,
+      });
+      const restoredSessionCode = result.sessionCode || code || "";
+      setActiveApplication(key, restoredSessionCode);
+      const loadedStep = latest.currentStep ?? 0;
+      useApplicationStore.setState({
+        ...latest,
+        accessKey: key,
+        sessionCode: restoredSessionCode,
+        submittedAt: result.submittedAt ? String(result.submittedAt) : null,
+        // Only a genuinely submitted application unlocks free navigation
+        // across every step (for post-submission review/editing).
+        // In-progress drafts must cap at the furthest step actually reached,
+        // otherwise every step wrongly shows as "completed".
+        maxVisitedStep: Math.max(latest.maxVisitedStep, loadedStep, result.submittedAt ? 6 : 0),
+      });
+    } else if (key || code) {
+      useApplicationStore.setState({ accessKey: key, sessionCode: code });
+    }
+    if (initialData.status) {
+      useApplicationStore.setState({
+        submissionLocked: initialData.status.submissionLocked,
+        submissionOpensAt: initialData.status.submissionOpensAt,
+        submissionClosesAt: initialData.status.submissionClosesAt,
+      });
+    }
+  }
+
+  const draft = useApplicationStore();
+
   const set = (patch: Partial<ApplicationDraft>) => draft.updateDraft(patch);
 
   const collectionOnly = draft.submissionLocked && draft.submittedAt !== null;
+
+  // Blocks a second Continue click while the previous one is still saving to
+  // the server, so the step transition genuinely waits for the save.
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
   const marksQuery = useQuery({
     queryKey: ["application-marks", draft.accessKey],
@@ -1324,18 +1495,25 @@ export function ApplicationForm({
   const adminMarks = marksQuery.data ?? [];
 
   useEffect(() => {
+    // Already handled synchronously above (see `seededRef`) for the common
+    // case: a route rendered through routes/application.index.tsx's loader.
+    // This effect only has real work left for the admin-editing path (no SSR
+    // loader wired up for it) and the defensive fallback when this component
+    // is rendered without `initialData` at all (e.g. component tests).
+    if (seededRef.current && !adminApplicationId) {
+      if (!initialData?.status) {
+        void client.application.status().then(
+          (status) => set({ submissionLocked: status.submissionLocked, submissionOpensAt: status.submissionOpensAt, submissionClosesAt: status.submissionClosesAt }),
+          () => set({ submissionLocked: true }),
+        );
+      }
+      return;
+    }
     let cancelled = false;
     const restore = async () => {
-      const key =
-        localStorage.getItem("aloysius-g1-application-key") ||
-        new URLSearchParams(window.location.search).get("key") ||
-        "";
-      const code =
-        localStorage.getItem("aloysius-g1-application-session-code") ||
-        new URLSearchParams(window.location.search).get("code") ||
-        "";
+      const key = initialData?.key || getActiveKey();
+      const code = initialData?.code || getActiveSessionCode();
       if (key || code) set({ accessKey: key, sessionCode: code });
-      let dataLoaded = false;
       try {
         if (adminApplicationId) {
           const result = await client.admin.application.get({
@@ -1346,7 +1524,6 @@ export function ApplicationForm({
               result.data as Partial<ApplicationDraft>,
             );
             set({ ...latest, submittedAt: result.submittedAt ? String(result.submittedAt) : null });
-            dataLoaded = true;
           }
         } else if (key) {
           const result = await client.application.get({ accessKey: key });
@@ -1359,115 +1536,41 @@ export function ApplicationForm({
               banReason: result.banReason,
               flags: result.flags,
             });
-            const restoredSessionCode =
-              result.sessionCode ||
-              new URLSearchParams(window.location.search).get("code") ||
-              localStorage.getItem(
-                "aloysius-g1-application-session-code",
-              ) ||
-              "";
-            if (restoredSessionCode) {
-              localStorage.setItem(
-                "aloysius-g1-application-session-code",
-                restoredSessionCode,
-              );
-            }
-            const local = useApplicationStore.getState();
-            const localHasData = Boolean(
-              local.applicant.fullName ||
-              local.applicant.birthCertificateNumber ||
-              local.guardian.fullName ||
-              local.residence.permanentAddress,
-            );
-            const serverHasData = Boolean(
-              latest.applicant.fullName ||
-              latest.applicant.birthCertificateNumber ||
-              latest.guardian.fullName ||
-              latest.residence.permanentAddress,
-            );
-            const merged: Partial<ApplicationDraft> = serverHasData || !localHasData ? latest : {};
-            const loadedStep = merged.currentStep ?? 0;
+            const restoredSessionCode = result.sessionCode || code || "";
+            // Always persist the resolved key/session code so the home page's
+            // saved-applications list picks it up, even when `key` only came
+            // from a bookmarked/shared `?key=&code=` link.
+            setActiveApplication(key, restoredSessionCode);
+            // The DB is the only source of truth now (no local draft cache to
+            // merge against), so the server's record always wins outright.
+            const loadedStep = latest.currentStep ?? 0;
             set({
-              ...merged,
-              accessKey: key || latest.accessKey || draft.accessKey,
+              ...latest,
+              accessKey: key,
               sessionCode: restoredSessionCode || draft.sessionCode,
               submittedAt: result.submittedAt ? String(result.submittedAt) : null,
-              admissionStatus: latest.admissionStatus,
-              interviewNotes: latest.interviewNotes,
-              isBanned: latest.isBanned,
-              banReason: latest.banReason,
-              flags: latest.flags,
               // Only a genuinely submitted application unlocks free navigation
               // across every step (for post-submission review/editing).
               // In-progress drafts must cap at the furthest step actually
               // reached, otherwise every step wrongly shows as "completed".
               maxVisitedStep: Math.max(useApplicationStore.getState().maxVisitedStep, loadedStep, result.submittedAt ? 6 : 0),
             });
-            dataLoaded = true;
-          }
-        } else if (!adminApplicationId && !readOnly) {
-          const result = await client.application.create({ data: {} });
-          if (!cancelled) {
-            localStorage.setItem(
-              "aloysius-g1-application-key",
-              result.accessKey,
-            );
-            const savedKeys = JSON.parse(
-              localStorage.getItem("aloysius-g1-application-keys") ?? "[]",
-            ) as unknown;
-            localStorage.setItem(
-              "aloysius-g1-application-keys",
-              JSON.stringify([
-                ...new Set([
-                  ...(Array.isArray(savedKeys) ? savedKeys : []),
-                  result.accessKey,
-                ]),
-              ]),
-            );
-            localStorage.setItem(
-              "aloysius-g1-application-session-code",
-              result.sessionCode,
-            );
-            window.history.replaceState(
-              {},
-              "",
-              `/application?code=${encodeURIComponent(result.sessionCode)}&key=${encodeURIComponent(result.accessKey)}`,
-            );
-            const latest = normalizeDraft(
-              result.data as Partial<ApplicationDraft>,
-            );
-            set({
-              ...latest,
-              accessKey: result.accessKey,
-              sessionCode: result.sessionCode,
-              submittedAt: null,
-            });
-            dataLoaded = true;
           }
         }
-        try {
-          const status = await client.application.status();
-          if (!cancelled) {
-            set({
-              submissionLocked: status.submissionLocked,
-              submissionOpensAt: status.submissionOpensAt,
-              submissionClosesAt: status.submissionClosesAt,
-            });
-          }
-        } catch {
-          if (!cancelled) {
-            set({ submissionLocked: true });
-          }
+        const status = await client.application.status().catch(() => null);
+        if (!cancelled) {
+          set(
+            status
+              ? { submissionLocked: status.submissionLocked, submissionOpensAt: status.submissionOpensAt, submissionClosesAt: status.submissionClosesAt }
+              : { submissionLocked: true },
+          );
         }
       } catch {
-        if (!cancelled && !dataLoaded) {
+        if (!cancelled) {
           draft.reset();
-          localStorage.removeItem("aloysius-g1-application-key");
-          localStorage.removeItem("aloysius-g1-application-session-code");
+          clearActiveKey();
           set({ accessKey: "", sessionCode: "", submissionLocked: true, submittedAt: null });
         }
-      } finally {
-        if (!cancelled) set({ hydrated: true });
       }
     };
     restorePromise.current = restore();
@@ -1476,19 +1579,11 @@ export function ApplicationForm({
     };
   }, []);
 
-  // Restore the browser-captured location from its sealed copy once hydration
-  // settles. Only the applicant's own draft flow does this: admin/read-only and
-  // already-submitted loads come from the server and must not be clobbered.
-  useEffect(() => {
-    if (!draft.hydrated || readOnly || Boolean(adminApplicationId) || draft.submittedAt) return;
-    void reconcileCapturedLocations();
-  }, [draft.hydrated, readOnly, adminApplicationId, draft.submittedAt]);
-
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastSavedSnapshot = useRef("");
 
   useEffect(() => {
-    if (!draft.hydrated || !draft.accessKey) return;
+    if (!draft.accessKey) return;
     if (draft.submittedAt && draft.submissionLocked) return;
     const snapshot = JSON.stringify(normalizeDraft(draft));
     if (!lastSavedSnapshot.current) {
@@ -1504,7 +1599,7 @@ export function ApplicationForm({
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
-  }, [draft.categories, draft.applicant, draft.guardian, draft.residence, draft.declaration, draft.currentStep, draft.hydrated, draft.accessKey, draft.submittedAt, draft.submissionLocked]);
+  }, [draft.categories, draft.applicant, draft.guardian, draft.residence, draft.declaration, draft.currentStep, draft.accessKey, draft.submittedAt, draft.submissionLocked]);
 
   const current = draft.currentStep;
   const steps = getSteps(t);
@@ -1566,6 +1661,8 @@ export function ApplicationForm({
 
   const next = async () => {
     if (nextDisabledReason) return;
+    if (isAdvancing) return;
+    setIsAdvancing(true);
     try {
       set({ submitError: "" });
       if (restorePromise.current) await restorePromise.current;
@@ -1578,6 +1675,8 @@ export function ApplicationForm({
         submitError: friendlyErrorMessage(error, t("appForm.buttons.submitError.couldNotSave")),
       });
       draft.setStep(current);
+    } finally {
+      setIsAdvancing(false);
     }
   };
 
@@ -1591,20 +1690,7 @@ export function ApplicationForm({
     if (!accessKey && !adminApplicationId && !readOnly) {
       const result = await client.application.create({ data: normalizeDraft(useApplicationStore.getState()) });
       accessKey = result.accessKey;
-      localStorage.setItem("aloysius-g1-application-key", result.accessKey);
-      localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
-      const savedKeys = JSON.parse(
-        localStorage.getItem("aloysius-g1-application-keys") ?? "[]",
-      ) as unknown;
-      localStorage.setItem(
-        "aloysius-g1-application-keys",
-        JSON.stringify([
-          ...new Set([
-            ...(Array.isArray(savedKeys) ? savedKeys : []),
-            result.accessKey,
-          ]),
-        ]),
-      );
+      setActiveApplication(result.accessKey, result.sessionCode);
       window.history.replaceState(
         {},
         "",
@@ -1653,8 +1739,7 @@ export function ApplicationForm({
   };
 
   const startAnotherApplication = () => {
-    localStorage.removeItem("aloysius-g1-application-key");
-    localStorage.removeItem("aloysius-g1-application-session-code");
+    clearActiveKey();
     draft.reset();
     window.location.assign("/application");
   };
@@ -1671,18 +1756,13 @@ export function ApplicationForm({
     );
   };
 
-  if (!draft.hydrated)
-    return (
-      <div className="grid place-items-center min-h-[50vh] text-muted-foreground">
-        {t("appForm.buttons.restoring")}
-      </div>
-    );
-
   const nextDisabledReason = getNextStepReason({
     step: current,
     locationCanProceed: draft.locationCanProceed,
     location: draft.location,
+    locationSkipped: draft.locationSkipped,
     duplicateBirthCertificate: draft.duplicateBirthCertificate,
+    birthCertificateSkipped: draft.birthCertificateSkipped,
     applicant: draft.applicant,
     guardian: draft.guardian,
     categories: draft.categories,
@@ -2109,7 +2189,7 @@ export function ApplicationForm({
                 )}
                 {current < steps.length - 1 ? (
                   <Button
-                    disabled={isNextDisabled}
+                    disabled={isNextDisabled || isAdvancing}
                     onClick={next}
                   >
                     {t("appForm.buttons.continue")} <ArrowRight size={17} />
@@ -2195,8 +2275,7 @@ export function ApplicationForm({
                   <AlertDialogAction
                     variant="destructive"
                     onClick={() => {
-                      localStorage.removeItem("aloysius-g1-application-key");
-                      localStorage.removeItem("aloysius-g1-application-session-code");
+                      clearActiveKey();
                       draft.reset();
                       set({ clearDraftDialogOpen: false });
                       window.location.assign("/");

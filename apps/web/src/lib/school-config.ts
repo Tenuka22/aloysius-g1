@@ -43,3 +43,22 @@ export const ADMISSION_RESTRICTIONS: AdmissionRestrictions = {
   restrictReligionMessage: "This intake is not available to Christian applicants.",
   restrictMediumMessage: "",
 };
+
+export type G1AgeEligibility = {
+  /**
+   * The applicant must be at least this many years old on the admission
+   * cutoff date (31 January of the intake year).
+   */
+  minYears: number;
+  /**
+   * The applicant must not yet have turned `maxYears + 1` by the admission
+   * cutoff date — e.g. with `maxYears: 5`, a child who has already turned 6
+   * (or older) by the cutoff is not eligible.
+   */
+  maxYears: number;
+};
+
+export const G1_AGE_ELIGIBILITY: G1AgeEligibility = {
+  minYears: 5,
+  maxYears: 5,
+};

@@ -3,15 +3,17 @@ import { Toaster } from "@aloysius-g1/ui/components/sonner";
 import { createORPCClient } from "@orpc/client";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { HeadContent, Link, Outlet, createRootRouteWithContext, useNavigate } from "@tanstack/react-router";
+import { HeadContent, Link, Outlet, Scripts, createRootRouteWithContext, useNavigate } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { I18nProvider } from "@/lib/i18n";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin";
 import { authClient } from "@/lib/auth-client";
+import { refreshSchoolCoordinateOverrides } from "@/lib/school-coordinates";
 import { link, orpc } from "@/utils/orpc";
 
 import "../index.css";
@@ -25,6 +27,13 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
   head: () => ({
     meta: [
+      {
+        charSet: "utf-8",
+      },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1.0",
+      },
       {
         title: "aloysius-g1",
       },
@@ -43,27 +52,43 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootComponent() {
+  // Client-only: this hydrates a module-level cache from a network call, which
+  // would leak across concurrent requests if it ran during server rendering.
+  useEffect(() => {
+    void refreshSchoolCoordinateOverrides();
+  }, []);
+  return (
+    <RootDocument>
+      <Outlet />
+    </RootDocument>
+  );
+}
+
+function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));
   const navigate = useNavigate();
   return (
-    <>
-      <HeadContent />
-      <AuthProvider
-        authClient={authClient}
-        navigate={navigate}
-        Link={({ href, ...props }) => <Link to={href} {...props} />}
-        plugins={[multiSessionPlugin()]}
-      >
-        <I18nProvider>
-          <div className="h-svh overflow-auto">
-            <Outlet />
-          </div>
-          <Toaster richColors />
-          <LocaleSwitcher />
-        </I18nProvider>
-      </AuthProvider>
-      {/*<TanStackRouterDevtools position="bottom-left" />
-      <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />*/}
-    </>
+    <html>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <AuthProvider
+          authClient={authClient}
+          navigate={navigate}
+          Link={({ href, ...props }) => <Link to={href} {...props} />}
+          plugins={[multiSessionPlugin()]}
+        >
+          <I18nProvider>
+            <div className="h-svh overflow-auto">{children}</div>
+            <Toaster richColors />
+            <LocaleSwitcher />
+          </I18nProvider>
+        </AuthProvider>
+        {/*<TanStackRouterDevtools position="bottom-left" />
+        <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />*/}
+        <Scripts />
+      </body>
+    </html>
   );
 }

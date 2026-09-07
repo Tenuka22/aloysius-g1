@@ -1,23 +1,47 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
+import { z } from "zod";
 import { Input } from "@aloysius-g1/ui/components/input";
 import { Button } from "@aloysius-g1/ui/components/button";
 import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
 import { normalizeDraft, useApplicationStore } from "@/lib/application-store";
 import { client } from "@/utils/orpc";
 import { useTranslation } from "@/lib/i18n";
+import { getActiveKey, getActiveSessionCode, setActiveApplication, setActiveKey, setActiveSessionCode } from "@/lib/saved-keys";
 
-export const Route = createFileRoute("/application/access")({ component: AccessPage });
+const accessSearchSchema = z.object({
+  key: z.string().optional(),
+  code: z.string().optional(),
+});
+
+export const Route = createFileRoute("/application/access")({
+  validateSearch: accessSearchSchema,
+  loaderDeps: ({ search }) => ({ code: search.code }),
+  loader: async ({ deps }) => {
+    const code = deps.code || getActiveSessionCode();
+    if (!/^\d{2}[A-Z]{3}\d{3}$/.test(code)) {
+      return { foundApplication: null };
+    }
+    try {
+      const result = await client.application.lookup({ sessionCode: code });
+      return { foundApplication: { applicantName: result.applicantName, status: result.status } };
+    } catch {
+      return { foundApplication: null };
+    }
+  },
+  component: AccessPage,
+});
 
 function AccessPage() {
   const navigate = useNavigate();
   const search = Route.useSearch() as { key?: string; code?: string };
+  const loaderData = Route.useLoaderData();
   const updateDraft = useApplicationStore((state) => state.updateDraft);
   const { t } = useTranslation();
-  const [key, setKey] = useState(search.key ?? localStorage.getItem("aloysius-g1-application-key") ?? "");
-  const [sessionCode, setSessionCode] = useState(search.code ?? localStorage.getItem("aloysius-g1-application-session-code") ?? "");
-  const [foundApplication, setFoundApplication] = useState<{ applicantName: string; status: string } | null>(null);
+  const [key, setKey] = useState(search.key ?? getActiveKey());
+  const [sessionCode, setSessionCode] = useState(search.code ?? getActiveSessionCode());
+  const [foundApplication, setFoundApplication] = useState<{ applicantName: string; status: string } | null>(loaderData.foundApplication);
   const [error, setError] = useState("");
 
   const lookup = async () => {
@@ -26,11 +50,9 @@ function AccessPage() {
       const result = await client.application.lookup({ sessionCode: sessionCode.trim().toUpperCase() });
       setSessionCode(result.sessionCode);
       setFoundApplication({ applicantName: result.applicantName, status: result.status });
-      localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
+      setActiveSessionCode(result.sessionCode);
     } catch { setFoundApplication(null); setError(t("access.error.sessionNotFound")); }
   };
-
-  useEffect(() => { if (/^\d{2}[A-Z]{3}\d{3}$/.test(sessionCode)) void lookup(); }, []);
 
   const load = async () => {
     setError("");
@@ -40,10 +62,7 @@ function AccessPage() {
       if (normalizedCode && !/^\d{2}[A-Z]{3}\d{3}$/.test(normalizedCode)) throw new Error(t("access.error.invalidSessionCode"));
       const result = await client.application.get({ accessKey: normalized });
       if (normalizedCode && result.sessionCode !== normalizedCode) throw new Error(t("access.error.keyMismatch"));
-      localStorage.setItem("aloysius-g1-application-key", normalized);
-      const savedKeys = JSON.parse(localStorage.getItem("aloysius-g1-application-keys") ?? "[]") as unknown;
-      localStorage.setItem("aloysius-g1-application-keys", JSON.stringify([...new Set([...(Array.isArray(savedKeys) ? savedKeys : []), normalized])]));
-      localStorage.setItem("aloysius-g1-application-session-code", result.sessionCode);
+      setActiveApplication(normalized, result.sessionCode);
       updateDraft(normalizeDraft(result.data as any));
       await navigate({ to: "/application", search: { code: result.sessionCode, key: normalized } as never });
     } catch (loadError) {
@@ -67,12 +86,12 @@ function AccessPage() {
                 const v = event.target.value.toUpperCase();
                 setSessionCode(v);
                 setFoundApplication(null);
-                localStorage.setItem("aloysius-g1-application-session-code", v);
+                setActiveSessionCode(v);
               }}
               placeholder={t("access.sessionPlaceholder")}
               autoComplete="off"
             />
-            <Button variant="secondary" type="button" disabled={!sessionCode.trim()} onClick={() => void lookup()}>
+            <Button variant="secondary" className="h-full min-h-12" type="button" disabled={!sessionCode.trim()} onClick={() => void lookup()}>
               {t("access.findApplication")}
             </Button>
           </div>
@@ -86,13 +105,13 @@ function AccessPage() {
             value={key}
             onChange={(event) => {
               setKey(event.target.value);
-              localStorage.setItem("aloysius-g1-application-key", event.target.value);
+              setActiveKey(event.target.value);
             }}
             placeholder={t("access.privateKeyPlaceholder")}
             autoComplete="off"
             autoFocus
           />
-          <AccessKeyQrImporter onKey={(v) => { setKey(v); localStorage.setItem("aloysius-g1-application-key", v); }} />
+          <AccessKeyQrImporter onKey={(v) => { setKey(v); setActiveKey(v); }} />
           {error && <p className="flex items-center gap-1 text-sm text-destructive">{error}</p>}
           <div className="flex justify-end gap-2.5">
             <Button variant="secondary" type="button" onClick={() => void navigate({ to: "/" })}>

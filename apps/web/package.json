@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "serve": "vite preview",
-    "start": "vite",
+    "start": "node .output/server/index.mjs",
     "check-types": "vite build && tsc --noEmit"
   },
   "dependencies": {
@@ -31,6 +30,7 @@
     "@tanstack/react-pacer": "^0.23.0",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-router": "^1.170.18",
+    "@tanstack/react-start": "^1.168.50",
     "@types/leaflet": "^1.9.22",
     "@types/qrcode": "^1.5.6",
     "better-auth": "catalog:",
@@ -62,11 +62,11 @@
     "@aloysius-g1/config": "workspace:*",
     "@tanstack/react-query-devtools": "^5.101.4",
     "@tanstack/react-router-devtools": "^1.167.0",
-    "@tanstack/router-plugin": "^1.168.23",
     "@types/node": "^22.20.1",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^6.0.4",
+    "nitro": "^3.0.260903-beta",
     "postcss": "^8.5.24",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",

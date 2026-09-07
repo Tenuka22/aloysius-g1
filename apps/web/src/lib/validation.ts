@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { G1_DOB_CUTOFF, g1SchoolYear, nicRegex } from "./eligibility";
+import { g1DobEligibilityMessage, isG1EligibleDob, nicRegex } from "./eligibility";
 import { CATEGORY_TYPES } from "./application-store";
 
 export const signInSchema = z.object({
@@ -22,7 +22,7 @@ export const applicantStepSchema = z.object({
   dateOfBirth: z
     .string()
     .min(1, "Date of birth is required")
-    .refine((val) => val <= G1_DOB_CUTOFF(), `The child must be at least five years old by 31 January ${g1SchoolYear()}`),
+    .refine((val) => isG1EligibleDob(val), g1DobEligibilityMessage()),
   birthCertificateNumber: z.string().min(1, "Birth certificate number is required"),
 });
 

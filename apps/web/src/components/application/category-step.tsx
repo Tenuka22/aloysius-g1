@@ -1,4 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import type { DropdownProps } from "react-day-picker";
+import { Calendar } from "@aloysius-g1/ui/components/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-g1/ui/components/popover";
 import {
   CATEGORY_TYPES,
   type CategoryApplication,
@@ -6,7 +11,7 @@ import {
   type ScoringInputs,
   useApplicationStore,
 } from "@/lib/application-store";
-import { STATUS_ERROR, MARK_TOOLTIP } from "@/lib/color-classes";
+import { STATUS_ERROR, MARK_TOOLTIP, CATEGORY_COLORS } from "@/lib/color-classes";
 import { compatibleSchoolsWithinRadius } from "@/lib/school-utils";
 import { HOME_SCHOOL_ID, getHomeSchoolDisplayName } from "@/lib/school-config";
 import {
@@ -51,7 +56,6 @@ import {
   DIFFICULT_SERVICE_CURRENT_MARKS,
   DIFFICULT_SERVICE_PREVIOUS_BASE,
   DIFFICULT_SERVICE_MAX,
-  DIFFICULT_DISTANCE_TIERS,
   DIFFICULT_EXTRA_PERIOD_MARKS,
   UNUTILIZED_LEAVE_MARKS_PER_YEAR,
   UNUTILIZED_LEAVE_MAX,
@@ -60,8 +64,6 @@ import {
   RESIDENCE_DISTANCE_TIERS_64,
   RESIDENCE_DISTANCE_FALLBACK_64,
   RESIDENCE_DISTANCE_MAX_64,
-  WORKPLACE_DISTANCE_TIERS,
-  WORKPLACE_DISTANCE_FALLBACK,
   WORKPLACE_DISTANCE_MAX,
   TRANSFER_DISTANCE_MAX,
   TRANSFER_SERVICE_PERIOD_MAX,
@@ -95,6 +97,7 @@ import {
   yearsFromDate,
   yearsBetween,
   deedAgeWeight,
+  MAIN_DOCUMENT_MARKS_61,
   OL_CEILINGS,
   AL_CEILINGS,
   gradeRate,
@@ -107,6 +110,13 @@ import {
   OTHER_ACTIVITY_MARKS,
   DEGREE_MARKS,
   electoralYearsRegistered,
+  difficultDistanceMarks,
+  workplaceDistanceMarks,
+  tieredDistanceMarks,
+  transferDistanceMarks,
+  previousPeriodMarks as previousPeriodMarksFn,
+  transferElapsedMarks as transferElapsedMarksFn,
+  abroadPeriodMarks,
 } from "@/lib/scoring";
 import { Flag } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
@@ -151,15 +161,25 @@ function getCategoryMeta(t: TFn) {
   };
 }
 
+// Every discrete choice (radio option / dropdown item) shows how many marks it
+// is worth, so applicants can see how marks are allocated before choosing --
+// not just after, in a hover-only tooltip.
+function markSuffix(t: TFn, marks: number) {
+  return t("category.common.marksSuffix", { marks: marks.toLocaleString(undefined, { maximumFractionDigits: 2 }) });
+}
+function withMarks(options: readonly (readonly [string, string])[], marksMap: Record<string, number>, t: TFn) {
+  return options.map(([value, label]) => [value, `${label} \u2014 ${markSuffix(t, marksMap[value] ?? 0)}`] as const);
+}
+
 function getMainDocumentOptions(t: TFn) {
-  return [
+  return withMarks([
     ["title-deed-applicant", t("category.mainDocumentOptions.titleDeedApplicant")],
     ["title-deed-parents", t("category.mainDocumentOptions.titleDeedParents")],
     ["feeder-electoral-5yrs", t("category.mainDocumentOptions.feederElectoral5yrs")],
     ["lease-deed", t("category.mainDocumentOptions.leaseDeed")],
     ["municipal-ds-certificate", t("category.mainDocumentOptions.municipalDsCertificate")],
     ["other-documents", t("category.mainDocumentOptions.otherDocuments")],
-  ] as const;
+  ] as const, MAIN_DOCUMENT_MARKS_61, t);
 }
 
 function getAdditionalDocOptions(t: TFn) {
@@ -191,19 +211,19 @@ function getAlSubjectOptions(t: TFn) {
   ] as const;
 }
 
-function getSportsLevelOptions(t: TFn) {
-  return [
+function getSportsLevelOptions(t: TFn, marksMap: Record<string, number> = SPORTS_LEVEL_MARKS) {
+  return withMarks([
     ["inter-house", t("category.sportsLevelOptions.interHouse")],
     ["zonal", t("category.sportsLevelOptions.zonal")],
     ["district", t("category.sportsLevelOptions.district")],
     ["provincial", t("category.sportsLevelOptions.provincial")],
     ["national", t("category.sportsLevelOptions.national")],
     ["international", t("category.sportsLevelOptions.international")],
-  ] as const;
+  ] as const, marksMap, t);
 }
 
 function getLeadershipRoleOptions(t: TFn) {
-  return [
+  return withMarks([
     ["prefect-primary", t("category.leadershipRoleOptions.prefectPrimary")],
     ["prefect-junior", t("category.leadershipRoleOptions.prefectJunior")],
     ["prefect-senior", t("category.leadershipRoleOptions.prefectSenior")],
@@ -211,19 +231,19 @@ function getLeadershipRoleOptions(t: TFn) {
     ["head-prefect", t("category.leadershipRoleOptions.headPrefect")],
     ["first-team-vice-captain", t("category.leadershipRoleOptions.firstTeamViceCaptain")],
     ["first-team-captain", t("category.leadershipRoleOptions.firstTeamCaptain")],
-  ] as const;
+  ] as const, LEADERSHIP_ROLE_MARKS, t);
 }
 
 function getStudentSocietiesRoleOptions(t: TFn) {
-  return [
+  return withMarks([
     ["committee-member", t("category.studentSocietiesRoleOptions.committeeMember")],
     ["vice-president", t("category.studentSocietiesRoleOptions.vicePresident")],
     ["president", t("category.studentSocietiesRoleOptions.president")],
-  ] as const;
+  ] as const, STUDENT_SOCIETIES_ROLE_MARKS, t);
 }
 
 function getOtherActivityOptions(t: TFn) {
-  return [
+  return withMarks([
     ["junior-band-leader", t("category.otherActivityOptions.juniorBandLeader")],
     ["junior-band-member", t("category.otherActivityOptions.juniorBandMember")],
     ["senior-band-leader", t("category.otherActivityOptions.seniorBandLeader")],
@@ -238,35 +258,35 @@ function getOtherActivityOptions(t: TFn) {
     ["st-john-ambulance-leader", t("category.otherActivityOptions.stJohnAmbulanceLeader")],
     ["st-john-ambulance-member", t("category.otherActivityOptions.stJohnAmbulanceMember")],
     ["other", t("category.otherActivityOptions.other")],
-  ] as const;
+  ] as const, OTHER_ACTIVITY_MARKS, t);
 }
 
 function getDegreeOptions(t: TFn) {
-  return [
+  return withMarks([
     ["first-degree", t("category.degreeOptions.firstDegree")],
     ["postgraduate", t("category.degreeOptions.postgraduate")],
     ["doctorate", t("category.degreeOptions.doctorate")],
     ["chartered-professional", t("category.degreeOptions.charteredProfessional")],
-  ] as const;
+  ] as const, DEGREE_MARKS, t);
 }
 
 function getSiblingExamOptions(t: TFn) {
-  return [
+  return withMarks([
     ["scholarship", t("category.siblingExamOptions.scholarship")],
     ["ol", t("category.siblingExamOptions.ol")],
     ["al", t("category.siblingExamOptions.al")],
-  ] as const;
+  ] as const, SIBLING_EXAM_MARKS, t);
 }
 
 function getSiblingDocumentOptions(t: TFn) {
-  return [
+  return withMarks([
     ["title-deed-applicant-spouse", t("category.siblingDocumentOptions.titleDeedApplicantSpouse")],
     ["title-deed-parents", t("category.siblingDocumentOptions.titleDeedParents")],
     ["feeder-electoral-5yrs", t("category.siblingDocumentOptions.feederElectoral5yrs")],
     ["lease-deed", t("category.siblingDocumentOptions.leaseDeed")],
     ["municipal-ds-rentact-cert", t("category.siblingDocumentOptions.municipalDsRentactCert")],
     ["other-documents", t("category.siblingDocumentOptions.otherDocuments")],
-  ] as const;
+  ] as const, MAIN_DOCUMENT_MARKS_63, t);
 }
 
 const YEAR_OPTIONS = [0, 1, 2, 3, 4, 5];
@@ -377,13 +397,107 @@ function DateField({
           </TooltipProvider>
         )}
       </FieldLabel>
-      <Input
-        id={id}
-        type="date"
-        value={value ?? ""}
-        onChange={(event) => onChange(event.target.value || undefined)}
-      />
+      <CalendarDatePicker id={id} value={value} onChange={onChange} />
     </Field>
+  );
+}
+
+function CalendarDatePicker({
+  id,
+  value,
+  onChange,
+  minDate,
+  maxDate,
+}: {
+  id: string;
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+  minDate?: Date;
+  maxDate?: Date;
+}) {
+  const [open, setOpen] = useState(false);
+  const parsedDate = value ? new Date(value + "T00:00:00") : undefined;
+  // Bound the year dropdown by default - without min/max, react-day-picker
+  // renders an effectively unbounded year list, which breaks the nested
+  // Select popover's floating-ui positioning (it renders detached at the top
+  // of the viewport instead of anchored under the trigger).
+  const now = new Date();
+  const effectiveMinDate = minDate ?? new Date(now.getFullYear() - 100, 0, 1);
+  const effectiveMaxDate = maxDate ?? new Date(now.getFullYear() + 5, 11, 31);
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(isOpen, details) => {
+        if (!isOpen && details.reason === "outside-press") {
+          const target = details.event?.target as HTMLElement | undefined;
+          if (target?.tagName === "SELECT" || target?.closest?.("[data-slot='calendar']")) {
+            details.cancel();
+            return;
+          }
+        }
+        setOpen(isOpen);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          id={id}
+          type="button"
+          className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1"
+        >
+          <span className={parsedDate ? "" : "text-muted-foreground"}>
+            {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
+          </span>
+          <CalendarIcon className="size-4 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={parsedDate}
+          defaultMonth={parsedDate ?? maxDate ?? now}
+          captionLayout="dropdown"
+          startMonth={effectiveMinDate}
+          endMonth={effectiveMaxDate}
+          disabled={(date) => (maxDate != null && date > maxDate) || (minDate != null && date < minDate)}
+          components={{ Dropdown: NativeCalendarDropdown }}
+          onSelect={(date) => {
+            if (date) {
+              const y = date.getFullYear();
+              const m = String(date.getMonth() + 1).padStart(2, "0");
+              const d = String(date.getDate()).padStart(2, "0");
+              onChange(`${y}-${m}-${d}`);
+            } else {
+              onChange(undefined);
+            }
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// A native <select> for the calendar's month/year navigation, instead of the
+// shared Calendar's own popover-based Select - nesting that Select's
+// floating popover inside this component's own Popover breaks floating-ui's
+// position calculation (it renders detached at the top of the viewport). A
+// native select has no popover of its own, so there's nothing to conflict.
+function NativeCalendarDropdown({ options, value, onChange, disabled, "aria-label": ariaLabel }: DropdownProps) {
+  return (
+    <select
+      value={value != null ? String(value) : ""}
+      onChange={(event) => onChange?.(event)}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="h-7 w-fit rounded-md border border-input bg-transparent px-1.5 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+    >
+      {options?.map((option) => (
+        <option key={option.value} value={option.value} disabled={option.disabled}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -451,11 +565,13 @@ function ElectoralYearSelect({
   );
 }
 
-function RadioOption({ id, value, label }: { id: string; value: string; label: string }) {
+function RadioOption({ id, value, label, marks }: { id: string; value: string; label: string; marks?: number }) {
+  const { t } = useTranslation();
   return (
     <FieldLabel htmlFor={id} className="flex w-fit cursor-pointer items-center gap-2 font-normal">
       <RadioGroupItem id={id} value={value} />
       {label}
+      {marks != null && <span className="text-xs text-muted-foreground">({markSuffix(t, marks)})</span>}
     </FieldLabel>
   );
 }
@@ -1223,7 +1339,7 @@ export function Category63Fields({
 
   const siblingDocumentOptions = getSiblingDocumentOptions(t);
   const siblingExamOptions = getSiblingExamOptions(t);
-  const sportsLevelOptions = getSportsLevelOptions(t);
+  const siblingPrefectLevelOptions = getSportsLevelOptions(t, SIBLING_PREFECT_LEVEL_MARKS);
 
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
@@ -1281,7 +1397,7 @@ export function Category63Fields({
             id={`sibling-prefect-level-${id}`}
             label={t("category.63.cocurricular.prefectLevel")}
             value={inputs.siblingPrefectLevel}
-            options={sportsLevelOptions}
+            options={siblingPrefectLevelOptions}
             placeholder={t("category.63.cocurricular.prefectLevelPlaceholder")}
             onChange={(siblingPrefectLevel) => onChange({ siblingPrefectLevel })}
           />
@@ -1327,9 +1443,6 @@ export function Category63Fields({
       </div>
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t("category.63.electoralTotal")}</span>
-          </div>
           <ElectoralYearSelect
             id={`electoral-mother-year-${id}`}
             label={t("category.63.electoralMother.yearLabel")}
@@ -1339,9 +1452,6 @@ export function Category63Fields({
           />
         </div>
         <div className="grid gap-1.5">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t("category.63.electoralTotal")}</span>
-          </div>
           <ElectoralYearSelect
             id={`electoral-father-year-${id}`}
             label={t("category.63.electoralFather.yearLabel")}
@@ -1383,11 +1493,8 @@ export function Category64Fields({
   if (inputs.difficultServiceType === "current") {
     difficultMarks = DIFFICULT_SERVICE_CURRENT_MARKS;
   } else if (inputs.difficultServiceType === "previous") {
-    let distance = 0;
     const km = inputs.difficultServiceDistanceKm;
-    if (km != null && km >= 150) distance = DIFFICULT_DISTANCE_TIERS[0][1];
-    else if (km != null && km > 100) distance = DIFFICULT_DISTANCE_TIERS[1][1];
-    else if (km != null && km > 75) distance = DIFFICULT_DISTANCE_TIERS[2][1];
+    const distance = difficultDistanceMarks(km);
     difficultMarks = Math.max(DIFFICULT_SERVICE_PREVIOUS_BASE, distance) + (inputs.difficultServiceExtraPeriods ?? 0) * DIFFICULT_EXTRA_PERIOD_MARKS;
   }
   difficultMarks = Math.min(difficultMarks, DIFFICULT_SERVICE_MAX);
@@ -1395,18 +1502,9 @@ export function Category64Fields({
   const locationMap: Record<string, number> = SERVICE_LOCATION_MARKS;
   const locationMarks = Math.min(locationMap[inputs.serviceLocationLevel ?? ""] ?? 0, SERVICE_LOCATION_MAX);
   const resKm = inputs.residenceToSchoolKm;
-  let residenceDistance = 0;
-  if (resKm != null && resKm <= RESIDENCE_DISTANCE_TIERS_64[0][0]) residenceDistance = RESIDENCE_DISTANCE_TIERS_64[0][1];
-  else if (resKm != null && resKm <= RESIDENCE_DISTANCE_TIERS_64[1][0]) residenceDistance = RESIDENCE_DISTANCE_TIERS_64[1][1];
-  else if (resKm != null && resKm <= RESIDENCE_DISTANCE_TIERS_64[2][0]) residenceDistance = RESIDENCE_DISTANCE_TIERS_64[2][1];
-  else residenceDistance = RESIDENCE_DISTANCE_FALLBACK_64;
+  const residenceDistance = tieredDistanceMarks(resKm, RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64);
   const workKm = inputs.workplaceToSchoolKm;
-  let workplaceDistance = 0;
-  if (workKm != null && workKm >= WORKPLACE_DISTANCE_TIERS[0][0]) workplaceDistance = WORKPLACE_DISTANCE_TIERS[0][1];
-  else if (workKm != null && workKm >= WORKPLACE_DISTANCE_TIERS[1][0]) workplaceDistance = WORKPLACE_DISTANCE_TIERS[1][1];
-  else if (workKm != null && workKm >= WORKPLACE_DISTANCE_TIERS[2][0]) workplaceDistance = WORKPLACE_DISTANCE_TIERS[2][1];
-  else if (workKm != null && workKm >= WORKPLACE_DISTANCE_TIERS[3][0]) workplaceDistance = WORKPLACE_DISTANCE_TIERS[3][1];
-  else workplaceDistance = WORKPLACE_DISTANCE_FALLBACK;
+  const workplaceDistance = workplaceDistanceMarks(workKm);
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
@@ -1436,9 +1534,9 @@ export function Category64Fields({
             onValueChange={(next) => onChange({ difficultServiceType: next as ScoringInputs["difficultServiceType"] })}
             className="flex flex-wrap gap-x-6 gap-y-2"
           >
-            <RadioOption id={`dst-current-${category.id}`} value="current" label={t("category.64.difficultService.currentSchool")} />
+            <RadioOption id={`dst-current-${category.id}`} value="current" label={t("category.64.difficultService.currentSchool")} marks={DIFFICULT_SERVICE_CURRENT_MARKS} />
             <RadioOption id={`dst-previous-${category.id}`} value="previous" label={t("category.64.difficultService.previousSchool")} />
-            <RadioOption id={`dst-none-${category.id}`} value="none" label={t("category.64.difficultService.none")} />
+            <RadioOption id={`dst-none-${category.id}`} value="none" label={t("category.64.difficultService.none")} marks={0} />
           </RadioGroup>
         </Field>
         {inputs.difficultServiceType === "previous" && (
@@ -1484,10 +1582,10 @@ export function Category64Fields({
             onValueChange={(next) => onChange({ serviceLocationLevel: String(next) })}
             className="flex flex-wrap gap-x-6 gap-y-2"
           >
-            <RadioOption id={`sll-same-school-${category.id}`} value="same-school" label={t("category.64.serviceLocation.sameSchool")} />
-            <RadioOption id={`sll-zone-${category.id}`} value="zone" label={t("category.64.serviceLocation.zone")} />
-            <RadioOption id={`sll-province-${category.id}`} value="province" label={t("category.64.serviceLocation.province")} />
-            <RadioOption id={`sll-education-institution-${category.id}`} value="education-institution" label={t("category.64.serviceLocation.educationInstitution")} />
+            <RadioOption id={`sll-same-school-${category.id}`} value="same-school" label={t("category.64.serviceLocation.sameSchool")} marks={SERVICE_LOCATION_MARKS["same-school"]} />
+            <RadioOption id={`sll-zone-${category.id}`} value="zone" label={t("category.64.serviceLocation.zone")} marks={SERVICE_LOCATION_MARKS.zone} />
+            <RadioOption id={`sll-province-${category.id}`} value="province" label={t("category.64.serviceLocation.province")} marks={SERVICE_LOCATION_MARKS.province} />
+            <RadioOption id={`sll-education-institution-${category.id}`} value="education-institution" label={t("category.64.serviceLocation.educationInstitution")} marks={SERVICE_LOCATION_MARKS["education-institution"]} />
           </RadioGroup>
         </Field>
       </div>
@@ -1539,25 +1637,12 @@ export function Category65Fields({
   const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
   const hasCenter = centerLat != null && centerLng != null;
   const km = inputs.previousWorkplaceDistanceKm;
-  let distanceMarks = 0;
-  if (km != null && km > 150) distanceMarks = 35;
-  else if (km != null && km > 100) distanceMarks = 28;
-  else if (km != null && km >= 50) distanceMarks = 21;
+  const distanceMarks = transferDistanceMarks(km);
   const periodMarks = Math.min(yearsFromDate(inputs.serviceStartDate), TRANSFER_SERVICE_PERIOD_MAX);
   const prevYears = yearsFromDate(inputs.previousWorkplaceStartDate);
-  let previousPeriodMarks = 0;
-  if (prevYears >= 3) previousPeriodMarks = 10;
-  else if (prevYears >= 2) previousPeriodMarks = 8;
-  else if (prevYears >= 1) previousPeriodMarks = 5;
+  const previousPeriodMarks = previousPeriodMarksFn(prevYears);
   const elapsed = yearsFromDate(inputs.transferDate);
-  let elapsedMarks = 0;
-  if (inputs.transferDate) {
-    if (elapsed <= 1) elapsedMarks = 5;
-    else if (elapsed <= 2) elapsedMarks = 4;
-    else if (elapsed <= 3) elapsedMarks = 3;
-    else if (elapsed <= 4) elapsedMarks = 2;
-    else if (elapsed <= 5) elapsedMarks = 1;
-  }
+  const elapsedMarks = inputs.transferDate ? transferElapsedMarksFn(elapsed) : 0;
   const leaveMarks = Math.min((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX);
   const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_65, PROXIMITY_MAX_65);
   return (
@@ -1680,10 +1765,7 @@ export function Category66Fields({
   const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
   const hasCenter = centerLat != null && centerLng != null;
   const abroad = yearsBetween(inputs.abroadStartDate, inputs.abroadEndDate);
-  let abroadMarks = 0;
-  if (abroad >= 3) abroadMarks = 25;
-  else if (abroad >= 2) abroadMarks = 15;
-  else if (abroad >= 1) abroadMarks = 10;
+  const abroadMarks = abroadPeriodMarks(abroad);
   const purposeMap: Record<string, number> = EMPLOYMENT_PURPOSE_MARKS;
   const purposeMarks = Math.min(purposeMap[inputs.employmentPurpose ?? ""] ?? 0, EMPLOYMENT_PURPOSE_MAX);
   const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_66, PROXIMITY_MAX_66);
@@ -1723,10 +1805,10 @@ export function Category66Fields({
             onValueChange={(next) => onChange({ employmentPurpose: next as ScoringInputs["employmentPurpose"] })}
             className="flex flex-wrap gap-x-6 gap-y-2"
           >
-            <RadioOption id={`ep-board-${category.id}`} value="board" label={t("category.66.employmentPurpose.board")} />
-            <RadioOption id={`ep-personal-${category.id}`} value="personal" label={t("category.66.employmentPurpose.personal")} />
-            <RadioOption id={`ep-government-${category.id}`} value="government" label={t("category.66.employmentPurpose.government")} />
-            <RadioOption id={`ep-education-${category.id}`} value="education" label={t("category.66.employmentPurpose.education")} />
+            <RadioOption id={`ep-board-${category.id}`} value="board" label={t("category.66.employmentPurpose.board")} marks={EMPLOYMENT_PURPOSE_MARKS.board} />
+            <RadioOption id={`ep-personal-${category.id}`} value="personal" label={t("category.66.employmentPurpose.personal")} marks={EMPLOYMENT_PURPOSE_MARKS.personal} />
+            <RadioOption id={`ep-government-${category.id}`} value="government" label={t("category.66.employmentPurpose.government")} marks={EMPLOYMENT_PURPOSE_MARKS.government} />
+            <RadioOption id={`ep-education-${category.id}`} value="education" label={t("category.66.employmentPurpose.education")} marks={EMPLOYMENT_PURPOSE_MARKS.education} />
           </RadioGroup>
         </Field>
       </div>
@@ -1806,41 +1888,46 @@ function CategoryCard({
   const locked = category.locked;
   const proximityConfig = PROXIMITY_CATEGORY_CONFIG[category.categoryType];
 
-  // The applicant never manually selects nearby schools: it's an objective
-  // geometry + gender-compatibility computation (radius from home to the
-  // applied-to school, excluding incompatible-gender schools), so it can't
-  // be gamed by simply leaving everything unselected for a maximal score.
+  // Nearby schools default to the objective geometry + gender-compatibility
+  // computation (radius from home to the applied-to school, excluding
+  // incompatible-gender schools), but the applicant can now manually
+  // uncheck/include compatible schools \u2014 so this only seeds the initial
+  // value once per category (when nothing has been chosen yet), it never
+  // re-asserts the computed set over a manual edit afterwards.
+  const seededSchoolsRef = useRef(false);
   useEffect(() => {
-    if (!proximityConfig || !hasCenter || locked) return;
+    if (!proximityConfig || !hasCenter || locked || seededSchoolsRef.current) return;
+    if (category.scoringInputs.schoolsWithinRadius !== undefined) {
+      seededSchoolsRef.current = true;
+      return;
+    }
+    seededSchoolsRef.current = true;
     const { schoolIds } = compatibleSchoolsWithinRadius(centerLat!, centerLng!, HOME_SCHOOL_ID);
-    const current = category.scoringInputs.schoolsWithinRadius ?? [];
-    const sameSet = current.length === schoolIds.length && current.every((id) => schoolIds.includes(id));
-    if (!sameSet) onUpdate({ schoolsWithinRadius: schoolIds });
+    onUpdate({ schoolsWithinRadius: schoolIds });
   }, [proximityConfig, hasCenter, locked, centerLat, centerLng, category.scoringInputs.schoolsWithinRadius, onUpdate]);
 
   return (
-    <Card className={locked ? "border-muted bg-muted/30" : ""}>
+    <Card className={locked ? "border-2 border-muted bg-muted/30" : `border-2 ${CATEGORY_COLORS[category.categoryType].border}`}>
       <CardHeader className="border-b bg-muted/20">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="grid min-w-0 gap-1">
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{t("category.sectionHeading.markingCategoryBadge")}</span>
-            <CardTitle className="flex flex-wrap items-center gap-2">
-              {categoryLabels[category.categoryType]}
-              {occurrence != null && (
-                <span className="text-muted-foreground font-normal">{t("category.sectionHeading.entryNumber", { number: occurrence })}</span>
-              )}
-              {locked && <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">{t("category.sectionHeading.locked")}</span>}
-            </CardTitle>
-            <CardDescription>{categoryMeta[category.categoryType].description}</CardDescription>
-          </div>
-          <div className="grid shrink-0 gap-0.5 rounded-lg border bg-background px-3 py-2 text-right">
+        <div className="grid min-w-0 gap-1">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{t("category.sectionHeading.markingCategoryBadge")}</span>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            {categoryLabels[category.categoryType]}
+            {occurrence != null && (
+              <span className="text-muted-foreground font-normal">{t("category.sectionHeading.entryNumber", { number: occurrence })}</span>
+            )}
+            {locked && <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">{t("category.sectionHeading.locked")}</span>}
+          </CardTitle>
+          <CardDescription>{categoryMeta[category.categoryType].description}</CardDescription>
+        </div>
+        <CardAction className="grid gap-2 justify-items-end">
+          <div className="grid gap-0.5 rounded-lg border bg-background px-3 py-2 text-right">
             <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">{t("category.sectionHeading.indicativeScore")}</span>
             <strong className="font-mono text-lg tabular-nums">
               {score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}<span className="text-sm font-normal text-muted-foreground"> / {categoryMeta[category.categoryType].maxMarks}</span>
             </strong>
           </div>
-        </div>
-        <CardAction className="flex gap-1">
+          <div className="flex gap-1">
           <Button
             type="button"
             variant={locked ? "default" : "ghost"}
@@ -1854,6 +1941,7 @@ function CategoryCard({
               {t("category.buttons.remove")}
             </Button>
           )}
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent className="grid gap-5">
@@ -1896,7 +1984,13 @@ function CategoryCard({
                 selectedIds={selectedSchoolIds}
             highlightSchoolId={HOME_SCHOOL_ID}
                 marksPerSchool={proximityConfig.marksPerSchool}
-                readOnly
+                onToggle={(schoolId) =>
+                  onUpdate({
+                    schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
+                      ? selectedSchoolIds.filter((id) => id !== schoolId)
+                      : [...selectedSchoolIds, schoolId],
+                  })
+                }
               />
             )}
           </div>
@@ -1974,8 +2068,10 @@ export function CategoryStep() {
         <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-muted/60 p-1">
           {CATEGORY_TYPES.map((categoryType) => {
             const count = categoriesByType.get(categoryType)?.length ?? 0;
+            const colors = CATEGORY_COLORS[categoryType];
             return (
-              <TabsTrigger key={categoryType} value={categoryType} className="shrink-0 text-xs">
+              <TabsTrigger key={categoryType} value={categoryType} className={`shrink-0 flex items-center gap-1.5 text-xs ${colors.activeBg}`}>
+                <span className={`size-1.5 shrink-0 rounded-full ${colors.dot}`} />
                 {tabLabels[categoryType]}{count > 0 ? ` (${count})` : ""}
               </TabsTrigger>
             );

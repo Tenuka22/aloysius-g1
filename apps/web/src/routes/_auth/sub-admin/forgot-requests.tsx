@@ -26,7 +26,14 @@ import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
 import { useTranslation } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_auth/sub-admin/forgot-requests")({ component: SubAdminForgotRequestsPage });
+export const Route = createFileRoute("/_auth/sub-admin/forgot-requests")({
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(context.orpc.subAdmin.forgotRequests.queryOptions({
+      input: { page: 1, pageSize: 10, query: "" },
+    }));
+  },
+  component: SubAdminForgotRequestsPage,
+});
 
 type ForgotRequestRow = {
   id: string;
