@@ -75,16 +75,10 @@ app.use("/*", async (c, next) => {
 
 app.get("/", (c) => c.text("OK"));
 
-export default {
-  fetch: app.fetch,
-};
-
 Bun.serve({
   fetch: app.fetch,
   port: 3000,
 });
-
-console.log("Server is running on http://localhost:3000");
 
 // Periodic backup every 6 hours
 const SIX_HOURS = 6 * 60 * 60 * 1000;
