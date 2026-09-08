@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "dcb84222-94fe-475c-90e0-76c6f077e3f5",
+  "id": "c687f855-03fe-43a2-87a9-9812e3e3271c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -402,8 +402,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "application_access_requests": {
-      "name": "application_access_requests",
+    "g1_application_access_requests": {
+      "name": "g1_application_access_requests",
       "columns": {
         "id": {
           "name": "id",
@@ -500,8 +500,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "application_marks": {
-      "name": "application_marks",
+    "g1_application_marks": {
+      "name": "g1_application_marks",
       "columns": {
         "id": {
           "name": "id",
@@ -569,8 +569,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "application_settings": {
-      "name": "application_settings",
+    "g1_application_settings": {
+      "name": "g1_application_settings",
       "columns": {
         "id": {
           "name": "id",
@@ -607,8 +607,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "applications": {
-      "name": "applications",
+    "g1_applications": {
+      "name": "g1_applications",
       "columns": {
         "id": {
           "name": "id",
@@ -726,18 +726,34 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'[]'"
+        },
+        "location_skip_status": {
+          "name": "location_skip_status",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "birth_certificate_skip_status": {
+          "name": "birth_certificate_skip_status",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {
-        "applications_session_code_unique": {
-          "name": "applications_session_code_unique",
+        "g1_applications_session_code_unique": {
+          "name": "g1_applications_session_code_unique",
           "columns": [
             "session_code"
           ],
           "isUnique": true
         },
-        "applications_access_key_hash_unique": {
-          "name": "applications_access_key_hash_unique",
+        "g1_applications_access_key_hash_unique": {
+          "name": "g1_applications_access_key_hash_unique",
           "columns": [
             "access_key_hash"
           ],
@@ -749,8 +765,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "school_coordinate_overrides": {
-      "name": "school_coordinate_overrides",
+    "g1_school_coordinate_overrides": {
+      "name": "g1_school_coordinate_overrides",
       "columns": {
         "id": {
           "name": "id",

@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1788859768471,
-      "tag": "0000_perpetual_ben_urich",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1788862621828,
-      "tag": "0001_nosy_dormammu",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1788865667273,
-      "tag": "0002_foamy_nomad",
+      "when": 1788876669364,
+      "tag": "0000_lazy_layla_miller",
       "breakpoints": true
     }
   ]

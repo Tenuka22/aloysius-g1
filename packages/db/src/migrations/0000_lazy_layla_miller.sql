@@ -58,7 +58,7 @@ CREATE TABLE `verification` (
 );
 --> statement-breakpoint
 CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);--> statement-breakpoint
-CREATE TABLE `application_access_requests` (
+CREATE TABLE `g1_application_access_requests` (
 	`id` text PRIMARY KEY NOT NULL,
 	`application_id` text NOT NULL,
 	`birth_certificate_number` text NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE `application_access_requests` (
 	`resolved_at` integer
 );
 --> statement-breakpoint
-CREATE TABLE `application_marks` (
+CREATE TABLE `g1_application_marks` (
 	`id` text PRIMARY KEY NOT NULL,
 	`application_id` text NOT NULL,
 	`category_type` text NOT NULL,
@@ -84,14 +84,14 @@ CREATE TABLE `application_marks` (
 	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `application_settings` (
+CREATE TABLE `g1_application_settings` (
 	`id` text PRIMARY KEY NOT NULL,
 	`opens_at` integer NOT NULL,
 	`closes_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `applications` (
+CREATE TABLE `g1_applications` (
 	`id` text PRIMARY KEY NOT NULL,
 	`session_code` text NOT NULL,
 	`access_key_hash` text NOT NULL,
@@ -107,12 +107,14 @@ CREATE TABLE `applications` (
 	`is_banned` integer DEFAULT false NOT NULL,
 	`ban_reason` text,
 	`admission_updated_at` integer,
-	`flags` text DEFAULT '[]' NOT NULL
+	`flags` text DEFAULT '[]' NOT NULL,
+	`location_skip_status` integer DEFAULT 0 NOT NULL,
+	`birth_certificate_skip_status` integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `applications_session_code_unique` ON `applications` (`session_code`);--> statement-breakpoint
-CREATE UNIQUE INDEX `applications_access_key_hash_unique` ON `applications` (`access_key_hash`);--> statement-breakpoint
-CREATE TABLE `school_coordinate_overrides` (
+CREATE UNIQUE INDEX `g1_applications_session_code_unique` ON `g1_applications` (`session_code`);--> statement-breakpoint
+CREATE UNIQUE INDEX `g1_applications_access_key_hash_unique` ON `g1_applications` (`access_key_hash`);--> statement-breakpoint
+CREATE TABLE `g1_school_coordinate_overrides` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`latitude` real NOT NULL,
