@@ -378,7 +378,7 @@ function BirthCertificateField({
         </div>
       )}
       {draft.birthCertificateSkipped && !draft.applicant.birthCertificateNumber.trim() && (
-        <p className="text-sm text-primary">{t("appForm.birthCert.skippedNotice")}</p>
+        <p className="text-sm text-primary">{t("appForm.birthCert.alreadySkippedNotice")}</p>
       )}
       <Drawer open={draft.bcDialogOpen} onOpenChange={(open) => set({ bcDialogOpen: open })}>
         {draft.duplicateBirthCertificate && (

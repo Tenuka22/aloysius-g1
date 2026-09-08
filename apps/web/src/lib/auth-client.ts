@@ -1,12 +1,12 @@
-import { env } from "@aloysius-admissions/env/web";
 import { createAuthClient } from "better-auth/react";
 import { multiSessionClient } from "better-auth/client/plugins";
 import { getIncomingCookieHeader } from "./incoming-cookie";
+import { getServerUrl } from "@/utils/server-url";
 
 export const authClient = createAuthClient({
   // better-auth derives its route-matching base from this URL's path, so the
   // public auth path must equal the server-side mount (/api/auth everywhere)
-  baseURL: new URL("/api/auth", env.VITE_SERVER_URL).toString(),
+  baseURL: new URL("/api/auth", getServerUrl()).toString(),
   plugins: [multiSessionClient()],
   fetchOptions: {
     // Server-side `fetch` has no browser cookie jar, so beforeLoad's
