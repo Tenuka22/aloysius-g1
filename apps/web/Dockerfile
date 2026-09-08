@@ -1,20 +1,34 @@
-FROM node:24-slim AS builder
-COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
+FROM oven/bun:1 AS builder
 WORKDIR /app
+ENV SKIP_ENV_VALIDATION=1
 
-COPY . .
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install
+COPY package.json bun.lock* ./
+COPY packages/config/package.json packages/config/
+COPY packages/ui/package.json packages/ui/
+COPY packages/env/package.json packages/env/
+COPY apps/web/package.json apps/web/
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install --frozen-lockfile
+
+COPY packages/config/ packages/config/
+COPY packages/ui/ packages/ui/
+COPY packages/env/ packages/env/
+COPY apps/web/ apps/web/
 
 ARG VITE_SERVER_URL
 ENV VITE_SERVER_URL=${VITE_SERVER_URL}
 ENV NODE_ENV=production
 RUN cd apps/web && bun run build
 
-FROM node:24-slim AS runner
+FROM oven/bun:1 AS runner
 WORKDIR /app
-COPY --from=builder /app/apps/web/.output ./.output
-
 ENV NODE_ENV=production
+
+RUN groupadd -r appgroup && useradd -r -g appgroup -d /app -s /sbin/nologin appuser
+
+COPY --from=builder --chown=appuser:appgroup /app/apps/web/.output ./.output
+
+USER appuser
+
 ENV PORT=80
 EXPOSE 80
-CMD ["node", ".output/server/index.mjs"]
+CMD ["bun", ".output/server/index.mjs"]

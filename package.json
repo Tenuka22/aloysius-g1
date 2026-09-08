@@ -50,7 +50,10 @@
     "docker:build": "docker compose -f packages/docker/docker-compose.yml build",
     "docker:up": "docker compose -f packages/docker/docker-compose.yml up -d --build",
     "docker:down": "docker compose -f packages/docker/docker-compose.yml down",
-    "docker:logs": "docker compose -f packages/docker/docker-compose.yml logs -f"
+    "docker:logs": "docker compose -f packages/docker/docker-compose.yml logs -f",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
   },
   "dependencies": {
     "@aloysius-admissions/env": "workspace:*",
@@ -61,6 +64,7 @@
   },
   "devDependencies": {
     "@aloysius-admissions/config": "workspace:*",
+    "@biomejs/biome": "^1.9.4",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.5",

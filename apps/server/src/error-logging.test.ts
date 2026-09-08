@@ -6,14 +6,14 @@ describe("logUnexpectedError", () => {
   it("logs a plain, unclassified thrown error", () => {
     const log = vi.fn();
     const error = new Error("boom");
-    logUnexpectedError(error, log);
+    logUnexpectedError(error, { log });
     expect(log).toHaveBeenCalledWith(error);
   });
 
   it("logs an ORPCError with a 5xx server status", () => {
     const log = vi.fn();
     const error = new ORPCError("INTERNAL_SERVER_ERROR", { message: "db unavailable" });
-    logUnexpectedError(error, log);
+    logUnexpectedError(error, { log });
     expect(log).toHaveBeenCalledWith(error);
   });
 
@@ -26,7 +26,7 @@ describe("logUnexpectedError", () => {
   ] as const)("does not log an expected %s (%d) client error", (code) => {
     const log = vi.fn();
     const error = new ORPCError(code);
-    logUnexpectedError(error, log);
+    logUnexpectedError(error, { log });
     expect(log).not.toHaveBeenCalled();
   });
 
