@@ -1,5 +1,6 @@
 **/node_modules
 .git
+.github
 
 **/dist
 **/build
@@ -27,6 +28,28 @@ docker-compose.yml
 **/.env.*
 !**/.env.example
 
-local.db
-local.db-*
-.data
+# Database files (mounted at runtime via volumes)
+data/
+*.db
+*.db-*
+
+# Non-app directories
+plans/
+apps/map-scraper/
+schools.pdf
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.tgz
+.cache
+tmp/
+temp/
