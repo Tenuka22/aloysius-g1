@@ -3,7 +3,7 @@ import { useAuth, useAuthPlugin } from "@better-auth-ui/react"
 import { useAddPasskey } from "@better-auth-ui/react/plugins/passkey"
 import { Fingerprint } from "lucide-react"
 import type { SyntheticEvent } from "react"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   Dialog,
   DialogClose,
@@ -12,10 +12,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from "@aloysius-g1/ui/components/dialog"
-import { Field, FieldError, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/dialog"
+import { Field, FieldError, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { passkeyPlugin } from "@/lib/auth/passkey-plugin"
 
 export type AddPasskeyDialogProps = {

@@ -6,16 +6,16 @@ import { Trash2, Upload } from "lucide-react"
 import { type ChangeEvent, useRef, useState } from "react"
 import { toast } from "sonner"
 import { UserAvatar } from "@/components/auth/user/user-avatar"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from "@aloysius-g1/ui/components/dropdown-menu"
-import { Field, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
+import { Field, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type ChangeAvatarProps = {
   className?: string

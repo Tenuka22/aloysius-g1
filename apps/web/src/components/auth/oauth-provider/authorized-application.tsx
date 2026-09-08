@@ -9,9 +9,9 @@ import { usePublicOAuthClient } from "@better-auth-ui/react/plugins/oauth-provid
 import { ShieldCheck } from "lucide-react"
 import { useState } from "react"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@aloysius-g1/ui/components/avatar"
-import { Badge } from "@aloysius-g1/ui/components/badge"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@aloysius-admissions/ui/components/avatar"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Item,
   ItemActions,
@@ -19,8 +19,8 @@ import {
   ItemDescription,
   ItemMedia,
   ItemTitle
-} from "@aloysius-g1/ui/components/item"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
+} from "@aloysius-admissions/ui/components/item"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
 import { oauthProviderPlugin } from "@/lib/auth/oauth-provider-plugin"
 import { RemoveAuthorizationDialog } from "./remove-authorization-dialog"
 

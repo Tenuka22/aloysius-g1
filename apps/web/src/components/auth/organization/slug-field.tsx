@@ -5,13 +5,13 @@ import { useDebouncer } from "@tanstack/react-pacer"
 import { Check, X } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { Field, FieldError, FieldLabel } from "@aloysius-g1/ui/components/field"
+import { Field, FieldError, FieldLabel } from "@aloysius-admissions/ui/components/field"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/input-group"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
 
 /** Props for the `SlugField` component. */

@@ -6,8 +6,8 @@ import Bowser from "bowser"
 import { LogOut, Monitor, Smartphone, X } from "lucide-react"
 import { toast } from "sonner"
 
-import { Badge } from "@aloysius-g1/ui/components/badge"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Item,
   ItemActions,
@@ -15,8 +15,8 @@ import {
   ItemDescription,
   ItemMedia,
   ItemTitle
-} from "@aloysius-g1/ui/components/item"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/item"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 
 function timeAgo(date: Date) {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000)

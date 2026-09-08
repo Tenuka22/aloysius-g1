@@ -18,9 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle
-} from "@aloysius-g1/ui/components/alert-dialog"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/alert-dialog"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { oauthProviderPlugin } from "@/lib/auth/oauth-provider-plugin"
 
 export type RemoveAuthorizationDialogProps = {

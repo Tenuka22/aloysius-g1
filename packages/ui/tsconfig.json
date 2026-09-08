@@ -1,11 +1,11 @@
 {
-  "extends": "@aloysius-g1/config/tsconfig.base.json",
+  "extends": "@aloysius-admissions/config/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": [],
     "paths": {
-      "@aloysius-g1/ui/*": ["./src/*"]
+      "@aloysius-admissions/ui/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],

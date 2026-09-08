@@ -6,18 +6,18 @@ import {
 } from "@better-auth-ui/react"
 import { type SyntheticEvent, useState } from "react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { RESET_LINK_SENT_STORAGE_KEY } from "./reset-link-sent"
 
 export type ForgotPasswordProps = {

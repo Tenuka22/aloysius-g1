@@ -14,7 +14,7 @@ import {
 import { Check, Copy, ShieldCheck } from "lucide-react"
 import { type SyntheticEvent, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   Dialog,
   DialogClose,
@@ -23,16 +23,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from "@aloysius-g1/ui/components/dialog"
-import { Field, FieldError, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
+} from "@aloysius-admissions/ui/components/dialog"
+import { Field, FieldError, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/input-group"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { twoFactorPlugin } from "@/lib/auth/two-factor-plugin"
 import { useTwoFactorPasswordRequirement } from "@/lib/auth/use-two-factor-password"
 import { OtpField } from "../otp-field"

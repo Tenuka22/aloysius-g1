@@ -1,6 +1,6 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 function TooltipProvider({
   delay = 0,

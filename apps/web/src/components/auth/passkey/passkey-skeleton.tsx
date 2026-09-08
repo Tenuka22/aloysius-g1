@@ -1,7 +1,7 @@
 "use client"
 
-import { Item, ItemContent, ItemMedia } from "@aloysius-g1/ui/components/item"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
+import { Item, ItemContent, ItemMedia } from "@aloysius-admissions/ui/components/item"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
 
 export function PasskeySkeleton() {
   return (

@@ -1,6 +1,6 @@
 import { Slider as SliderPrimitive } from "@base-ui/react/slider"
 
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 function Slider({
   className,

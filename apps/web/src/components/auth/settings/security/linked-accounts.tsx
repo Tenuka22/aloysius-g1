@@ -1,15 +1,15 @@
 import { useAuth, useListAccounts } from "@better-auth-ui/react"
 import { Fragment } from "react"
-import { Card, CardContent } from "@aloysius-g1/ui/components/card"
+import { Card, CardContent } from "@aloysius-admissions/ui/components/card"
 import {
   Item,
   ItemContent,
   ItemGroup,
   ItemMedia,
   ItemSeparator
-} from "@aloysius-g1/ui/components/item"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/item"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { LinkedAccount } from "./linked-account"
 
 export type LinkedAccountsProps = {

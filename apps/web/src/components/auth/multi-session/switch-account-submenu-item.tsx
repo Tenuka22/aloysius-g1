@@ -5,8 +5,8 @@ import type {
 import { useAuth } from "@better-auth-ui/react"
 import { useSetActiveSession } from "@better-auth-ui/react/plugins/multi-session"
 import { UserView } from "@/components/auth/user/user-view"
-import { DropdownMenuItem } from "@aloysius-g1/ui/components/dropdown-menu"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+import { DropdownMenuItem } from "@aloysius-admissions/ui/components/dropdown-menu"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 
 export type SwitchAccountSubmenuItemProps = {
   deviceSession: ListDeviceSession

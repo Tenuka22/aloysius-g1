@@ -13,8 +13,8 @@ import {
 import { Check, ShieldCheck } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@aloysius-g1/ui/components/avatar"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@aloysius-admissions/ui/components/avatar"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Card,
   CardContent,
@@ -22,12 +22,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle
-} from "@aloysius-g1/ui/components/card"
-import { Separator } from "@aloysius-g1/ui/components/separator"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/card"
+import { Separator } from "@aloysius-admissions/ui/components/separator"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { oauthProviderPlugin } from "@/lib/auth/oauth-provider-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { UserAvatar } from "../user/user-avatar"
 
 export type OAuthConsentProps = {

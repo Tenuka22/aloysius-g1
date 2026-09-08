@@ -1,16 +1,16 @@
 import { isTwoFactorRedirect } from "@better-auth-ui/core/plugins/two-factor"
 import { useAuth, useSession, useSignInEmail } from "@better-auth-ui/react"
 import { type FormEvent, useState } from "react"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { useSignInContinuation } from "@/lib/auth/use-sign-in-continuation"
 
 export interface FreshSessionPromptProps {
@@ -46,10 +46,10 @@ export function FreshSessionPrompt({ onFresh }: FreshSessionPromptProps) {
       <FieldGroup className="gap-4">
         <div className="flex flex-col gap-1">
           <h3 className="text-sm font-medium">
-            {auth.localization.settings.freshSessionTitle}
+            {auth.localization.settings.reauthenticationTitle}
           </h3>
           <FieldDescription>
-            {auth.localization.settings.freshSessionDescription}
+            {auth.localization.settings.reauthenticationDescription}
           </FieldDescription>
         </div>
         {auth.emailAndPassword?.enabled ? (
@@ -75,7 +75,7 @@ export function FreshSessionPrompt({ onFresh }: FreshSessionPromptProps) {
             </Field>
             <Button disabled={!password || signIn.isPending} type="submit">
               {signIn.isPending && <Spinner />}
-              {auth.localization.settings.freshSessionSubmit}
+              {auth.localization.settings.reauthenticationAction}
             </Button>
           </form>
         ) : (
@@ -86,7 +86,7 @@ export function FreshSessionPrompt({ onFresh }: FreshSessionPromptProps) {
               })
             }
           >
-            {auth.localization.settings.freshSessionSignIn}
+            {auth.localization.settings.reauthenticationAction}
           </Button>
         )}
       </FieldGroup>

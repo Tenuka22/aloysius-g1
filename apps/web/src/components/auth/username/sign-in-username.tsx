@@ -17,9 +17,9 @@ import {
   ProviderButtons,
   type SocialLayout
 } from "@/components/auth/provider-buttons"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card"
-import { Checkbox } from "@aloysius-g1/ui/components/checkbox"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card"
+import { Checkbox } from "@aloysius-admissions/ui/components/checkbox"
 import {
   Field,
   FieldDescription,
@@ -27,18 +27,18 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSeparator
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/input-group"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { useSignInContinuation } from "@/lib/auth/use-sign-in-continuation"
 import { usernamePlugin } from "@/lib/auth/username-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { LastUsedBadge } from "../last-login-method/last-used-badge"
 
 export type SignInUsernameProps = {

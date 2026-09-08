@@ -9,17 +9,17 @@ import { Trash2, Upload } from "lucide-react"
 import { type ChangeEvent, useRef, useState } from "react"
 import { toast } from "sonner"
 
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from "@aloysius-g1/ui/components/dropdown-menu"
-import { Label } from "@aloysius-g1/ui/components/label"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
+import { Label } from "@aloysius-admissions/ui/components/label"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { OrganizationLogo } from "./organization-logo"
 
 export type ChangeOrganizationLogoProps = {

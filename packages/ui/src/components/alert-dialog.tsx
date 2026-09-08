@@ -3,8 +3,8 @@
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
 
-import { cn } from "@aloysius-g1/ui/lib/utils"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
+import { Button } from "@aloysius-admissions/ui/components/button"
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />

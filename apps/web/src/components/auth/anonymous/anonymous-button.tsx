@@ -7,10 +7,10 @@ import { useSignInAnonymous } from "@better-auth-ui/react/plugins/anonymous"
 import { useIsMutating } from "@tanstack/react-query"
 import { UserRound } from "lucide-react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { anonymousPlugin } from "@/lib/auth/anonymous-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 /** Sign in with a temporary anonymous account. */
 export function AnonymousButton() {

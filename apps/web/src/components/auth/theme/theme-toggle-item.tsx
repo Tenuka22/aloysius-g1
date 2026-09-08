@@ -4,8 +4,8 @@ import { useAuthPlugin } from "@better-auth-ui/react"
 import { Monitor, Moon, PaletteIcon, Sun } from "lucide-react"
 import { useRef } from "react"
 
-import { DropdownMenuItem } from "@aloysius-g1/ui/components/dropdown-menu"
-import { Tabs, TabsList, TabsTrigger } from "@aloysius-g1/ui/components/tabs"
+import { DropdownMenuItem } from "@aloysius-admissions/ui/components/dropdown-menu"
+import { Tabs, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs"
 import { themePlugin } from "@/lib/auth/theme-plugin"
 
 /**

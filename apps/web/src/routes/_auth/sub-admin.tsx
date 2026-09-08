@@ -2,10 +2,10 @@ import { useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
 import { ArrowLeft, FileWarning, KeyRound, LayoutDashboard, ShieldCheck, Trash2, X } from "lucide-react";
-import { cn } from "@aloysius-g1/ui/lib/utils";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@aloysius-g1/ui/components/sidebar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-g1/ui/components/card";
-import { Button } from "@aloysius-g1/ui/components/button";
+import { cn } from "@aloysius-admissions/ui/lib/utils";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@aloysius-admissions/ui/components/sidebar";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-admissions/ui/components/card";
+import { Button } from "@aloysius-admissions/ui/components/button";
 import Footer from "@/components/footer";
 
 export const Route = createFileRoute("/_auth/sub-admin")({ component: SubAdminPage });

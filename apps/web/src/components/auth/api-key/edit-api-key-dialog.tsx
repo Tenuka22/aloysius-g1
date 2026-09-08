@@ -5,7 +5,7 @@ import type {
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react"
 import { useUpdateApiKey } from "@better-auth-ui/react/plugins/api-key"
 import { type FormEvent, useEffect, useRef, useState } from "react"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   Dialog,
   DialogClose,
@@ -13,17 +13,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from "@aloysius-g1/ui/components/dialog"
+} from "@aloysius-admissions/ui/components/dialog"
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { Switch } from "@aloysius-g1/ui/components/switch"
-import { Textarea } from "@aloysius-g1/ui/components/textarea"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { Switch } from "@aloysius-admissions/ui/components/switch"
+import { Textarea } from "@aloysius-admissions/ui/components/textarea"
 import { apiKeyPlugin } from "@/lib/auth/api-key-plugin"
 
 const optionalNumber = (formData: FormData, name: string) => {

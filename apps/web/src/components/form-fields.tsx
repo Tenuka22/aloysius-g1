@@ -6,10 +6,10 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
-} from "@aloysius-g1/ui/components/field";
-import { Input } from "@aloysius-g1/ui/components/input";
-import { Textarea } from "@aloysius-g1/ui/components/textarea";
-import { Button } from "@aloysius-g1/ui/components/button";
+} from "@aloysius-admissions/ui/components/field";
+import { Input } from "@aloysius-admissions/ui/components/input";
+import { Textarea } from "@aloysius-admissions/ui/components/textarea";
+import { Button } from "@aloysius-admissions/ui/components/button";
 import { useFieldContext, useFormContext } from "@/lib/form-context";
 
 export function AppTextField({

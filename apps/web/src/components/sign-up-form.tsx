@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { useAppForm } from "@/lib/app-form";
 import { signUpSchema } from "@/lib/validation";
 import { FieldGroup } from "@/components/form-fields";
-import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
 import Loader from "./loader";
 
 export default function SignUpForm({

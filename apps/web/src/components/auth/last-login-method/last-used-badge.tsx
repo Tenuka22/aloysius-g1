@@ -2,7 +2,7 @@
 
 import { useLastLoginMethod } from "@better-auth-ui/react"
 
-import { Badge } from "@aloysius-g1/ui/components/badge"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
 
 export type LastUsedBadgeProps = {
   /** Login method IDs that should display the indicator. */

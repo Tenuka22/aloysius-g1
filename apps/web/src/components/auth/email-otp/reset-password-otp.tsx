@@ -8,31 +8,31 @@ import { Eye, EyeOff } from "lucide-react"
 import { type SyntheticEvent, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle
-} from "@aloysius-g1/ui/components/card"
+} from "@aloysius-admissions/ui/components/card"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/input-group"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { emailOtpPlugin } from "@/lib/auth/email-otp-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { OpenEmailButton } from "../open-email-button"
 import { OtpField } from "../otp-field"
 import { useIsHydrated } from "../use-is-hydrated"

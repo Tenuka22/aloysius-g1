@@ -1,1 +1,0 @@
-ALTER TABLE `applications` ADD `submitted_at` integer;

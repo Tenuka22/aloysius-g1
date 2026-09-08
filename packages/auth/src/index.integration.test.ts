@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, spyOn } from "bun:test";
 import { eq } from "drizzle-orm";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
-import { provisionTestDatabase, type TestDatabase } from "@aloysius-g1/db/test-utils";
-import * as authSchema from "@aloysius-g1/db/schema/auth";
+import { provisionTestDatabase, type TestDatabase } from "@aloysius-admissions/db/test-utils";
+import * as authSchema from "@aloysius-admissions/db/schema/auth";
 import type { Auth } from "better-auth";
 import type { createAuth as CreateAuthFn, ensureSiteAdmin as EnsureSiteAdminFn, ensureSubAdmin as EnsureSubAdminFn } from "./index";
 
@@ -18,7 +18,7 @@ interface TestContext {
 
 /**
  * Dynamic imports here are required, not stylistic: packages/auth/src/index.ts
- * and @aloysius-g1/db both call createDb()/createAuth() as a *module-load-time*
+ * and @aloysius-admissions/db both call createDb()/createAuth() as a *module-load-time*
  * side effect (`export const auth = createAuth()`, `export const db =
  * createDb()`), which reads DATABASE_URL/BETTER_AUTH_SECRET from process.env at
  * that instant. A static import would be hoisted and evaluated before
@@ -32,7 +32,7 @@ interface TestContext {
 async function setUpTestContext(): Promise<TestContext> {
   const testDb = provisionTestDatabase();
   const authModule = await import("./index");
-  const dbModule = await import("@aloysius-g1/db");
+  const dbModule = await import("@aloysius-admissions/db");
   const createAuthFn: typeof CreateAuthFn = authModule.createAuth;
   return {
     testDb,

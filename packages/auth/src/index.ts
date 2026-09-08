@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { createDb } from "@aloysius-g1/db";
-import * as schema from "@aloysius-g1/db/schema/auth";
-import { env } from "@aloysius-g1/env/server";
+import { createDb } from "@aloysius-admissions/db";
+import * as schema from "@aloysius-admissions/db/schema/auth";
+import { env } from "@aloysius-admissions/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { hashPassword } from "better-auth/crypto";

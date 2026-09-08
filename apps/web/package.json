@@ -10,9 +10,9 @@
     "check-types": "vite build && tsc --noEmit"
   },
   "dependencies": {
-    "@aloysius-g1/api": "workspace:*",
-    "@aloysius-g1/env": "workspace:*",
-    "@aloysius-g1/ui": "workspace:*",
+    "@aloysius-admissions/api": "workspace:*",
+    "@aloysius-admissions/env": "workspace:*",
+    "@aloysius-admissions/ui": "workspace:*",
     "@base-ui/react": "^1.7.0",
     "@better-auth-ui/core": "^1.7.0",
     "@better-auth-ui/react": "^1.7.0",
@@ -59,7 +59,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@aloysius-g1/config": "workspace:*",
+    "@aloysius-admissions/config": "workspace:*",
     "@tanstack/react-query-devtools": "^5.101.4",
     "@tanstack/react-router-devtools": "^1.167.0",
     "@types/node": "^22.20.1",

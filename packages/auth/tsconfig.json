@@ -1,5 +1,5 @@
 {
-  "extends": "@aloysius-g1/config/tsconfig.base.json",
+  "extends": "@aloysius-admissions/config/tsconfig.base.json",
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,

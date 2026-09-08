@@ -12,7 +12,7 @@ The auto-save indicator shows "Saved locally" immediately even when the user mak
 Supporting infrastructure to delete:
 - `lib/form-context.ts` – wraps `createFormHookContexts` from TanStack Form
 - `lib/app-form.ts` – wraps `createFormHook` from TanStack Form  
-- `components/form-fields.tsx` – `App*` field components (keep `Field`/`FieldGroup` re-exports from `@aloysius-g1/ui`)
+- `components/form-fields.tsx` – `App*` field components (keep `Field`/`FieldGroup` re-exports from `@aloysius-admissions/ui`)
 
 ## Step 1: Install react-hook-form + zod resolver
 ```bash
@@ -95,7 +95,7 @@ Simple forms – replace `useAppForm` with `useForm` from react-hook-form + `Con
 ## Step 4: Delete TanStack Form infrastructure
 - Delete `lib/form-context.ts`
 - Delete `lib/app-form.ts`
-- Remove `App*` components from `components/form-fields.tsx` (keep the `Field`/`FieldGroup` re-exports on line 196 which come from `@aloysius-g1/ui`)
+- Remove `App*` components from `components/form-fields.tsx` (keep the `Field`/`FieldGroup` re-exports on line 196 which come from `@aloysius-admissions/ui`)
 - Remove `@tanstack/react-form` from `apps/web/package.json`
 
 ## Step 5: Update tests

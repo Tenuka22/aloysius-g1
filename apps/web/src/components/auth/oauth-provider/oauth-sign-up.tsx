@@ -13,17 +13,17 @@ import {
 } from "@better-auth-ui/react/plugins/oauth-provider"
 import { useEffect, useState } from "react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Card,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle
-} from "@aloysius-g1/ui/components/card"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/card"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { oauthProviderPlugin } from "@/lib/auth/oauth-provider-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import type { SocialLayout } from "../provider-buttons"
 import { SignUp } from "../sign-up"
 

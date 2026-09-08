@@ -1,5 +1,5 @@
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { TableCell, TableRow } from "@aloysius-g1/ui/components/table"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { TableCell, TableRow } from "@aloysius-admissions/ui/components/table"
 
 /**
  * Placeholder row matching `OrganizationInvitationRow` while invitations load.

@@ -4,26 +4,26 @@ import { ArrowLeft, KeyRound, QrCode, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-g1/ui/components/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-g1/ui/components/card";
-import { Button } from "@aloysius-g1/ui/components/button";
-import { Badge } from "@aloysius-g1/ui/components/badge";
-import { Input } from "@aloysius-g1/ui/components/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-admissions/ui/components/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-admissions/ui/components/card";
+import { Button } from "@aloysius-admissions/ui/components/button";
+import { Badge } from "@aloysius-admissions/ui/components/badge";
+import { Input } from "@aloysius-admissions/ui/components/input";
 import {
   DataTable,
   DataTableColumnHeader,
   DataTablePagination,
   DataTableViewOptions,
-} from "@aloysius-g1/ui/components/data-table";
+} from "@aloysius-admissions/ui/components/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@aloysius-g1/ui/components/dropdown-menu";
+} from "@aloysius-admissions/ui/components/dropdown-menu";
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
-import { AccessKeyQrDialog } from "@/components/application/access-key-qr";
+import { AccessKeyQrDialog } from "@/components/g1/application/access-key-qr";
 import { useTranslation } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_auth/sub-admin/forgot-requests")({

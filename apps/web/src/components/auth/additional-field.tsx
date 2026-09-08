@@ -8,9 +8,9 @@ import { CalendarIcon, Check, ChevronDownIcon, Copy } from "lucide-react"
 import { type ComponentType, useRef, useState } from "react"
 import { toast } from "sonner"
 
-import { buttonVariants } from "@aloysius-g1/ui/components/button"
-import { Calendar } from "@aloysius-g1/ui/components/calendar"
-import { Checkbox } from "@aloysius-g1/ui/components/checkbox"
+import { buttonVariants } from "@aloysius-admissions/ui/components/button"
+import { Calendar } from "@aloysius-admissions/ui/components/calendar"
+import { Checkbox } from "@aloysius-admissions/ui/components/checkbox"
 import {
   Combobox,
   ComboboxContent,
@@ -18,25 +18,25 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList
-} from "@aloysius-g1/ui/components/combobox"
+} from "@aloysius-admissions/ui/components/combobox"
 import {
   Field,
   FieldContent,
   FieldError,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
+} from "@aloysius-admissions/ui/components/input-group"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
-} from "@aloysius-g1/ui/components/popover"
+} from "@aloysius-admissions/ui/components/popover"
 import {
   Select,
   SelectContent,
@@ -44,11 +44,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@aloysius-g1/ui/components/select"
-import { Slider } from "@aloysius-g1/ui/components/slider"
-import { Switch } from "@aloysius-g1/ui/components/switch"
-import { Textarea } from "@aloysius-g1/ui/components/textarea"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/select"
+import { Slider } from "@aloysius-admissions/ui/components/slider"
+import { Switch } from "@aloysius-admissions/ui/components/switch"
+import { Textarea } from "@aloysius-admissions/ui/components/textarea"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type AdditionalFieldProps = {
   name: string

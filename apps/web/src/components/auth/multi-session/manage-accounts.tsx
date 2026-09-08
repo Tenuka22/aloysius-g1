@@ -3,10 +3,10 @@ import { useAuth, useAuthPlugin, useSession } from "@better-auth-ui/react"
 import { useListDeviceSessions } from "@better-auth-ui/react/plugins/multi-session"
 import { Fragment } from "react"
 
-import { Card, CardContent } from "@aloysius-g1/ui/components/card"
-import { ItemGroup, ItemSeparator } from "@aloysius-g1/ui/components/item"
+import { Card, CardContent } from "@aloysius-admissions/ui/components/card"
+import { ItemGroup, ItemSeparator } from "@aloysius-admissions/ui/components/item"
 import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { ManageAccount } from "./manage-account"
 
 export type ManageAccountsProps = {

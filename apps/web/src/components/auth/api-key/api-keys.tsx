@@ -5,9 +5,9 @@ import { useAuth, useAuthPlugin } from "@better-auth-ui/react"
 import { useListApiKeys } from "@better-auth-ui/react/plugins/api-key"
 import { Fragment, useState } from "react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent } from "@aloysius-g1/ui/components/card"
-import { ItemGroup, ItemSeparator } from "@aloysius-g1/ui/components/item"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent } from "@aloysius-admissions/ui/components/card"
+import { ItemGroup, ItemSeparator } from "@aloysius-admissions/ui/components/item"
 import {
   Select,
   SelectContent,
@@ -15,9 +15,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@aloysius-g1/ui/components/select"
+} from "@aloysius-admissions/ui/components/select"
 import { apiKeyPlugin } from "@/lib/auth/api-key-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { ApiKey } from "./api-key"
 import { ApiKeySkeleton } from "./api-key-skeleton"
 import { ApiKeysEmpty } from "./api-keys-empty"

@@ -6,7 +6,7 @@ import {
 } from "@better-auth-ui/react/plugins/organization"
 import { useState } from "react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
 import { DeleteOrganizationDialog } from "./delete-organization-dialog"
 import { DeleteOrganizationSkeleton } from "./delete-organization-skeleton"

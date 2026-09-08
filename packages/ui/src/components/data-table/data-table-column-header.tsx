@@ -1,6 +1,6 @@
 import { type Column } from "@tanstack/react-table"
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, EyeOffIcon } from "lucide-react"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@aloysius-g1/ui/components/dropdown-menu"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>

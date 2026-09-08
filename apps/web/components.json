@@ -14,8 +14,8 @@
   "rtl": false,
   "aliases": {
     "components": "@/components",
-    "utils": "@aloysius-g1/ui/lib/utils",
-    "ui": "@aloysius-g1/ui/components",
+    "utils": "@aloysius-admissions/ui/lib/utils",
+    "ui": "@aloysius-admissions/ui/components",
     "lib": "@/lib",
     "hooks": "@/hooks"
   },

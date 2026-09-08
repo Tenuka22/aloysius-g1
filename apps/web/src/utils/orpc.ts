@@ -1,5 +1,5 @@
-import type { AppRouterClient } from "@aloysius-g1/api/routers/index";
-import { env } from "@aloysius-g1/env/web";
+import type { AppRouterClient } from "@aloysius-admissions/api/routers/index";
+import { env } from "@aloysius-admissions/env/web";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";

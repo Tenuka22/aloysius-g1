@@ -12,17 +12,17 @@ import {
 import { ArrowLeftRight, LogOut, MoreHorizontal } from "lucide-react"
 import { toast } from "sonner"
 import { UserView } from "@/components/auth/user/user-view"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from "@aloysius-g1/ui/components/dropdown-menu"
-import { Item, ItemActions } from "@aloysius-g1/ui/components/item"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
+import { Item, ItemActions } from "@aloysius-admissions/ui/components/item"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type ManageAccountProps = {
   deviceSession?: ListDeviceSession | null

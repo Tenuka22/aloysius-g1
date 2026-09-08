@@ -1,16 +1,16 @@
-import { isSessionNotFreshError } from "@better-auth-ui/core"
+import { isReauthenticationRequiredError } from "@better-auth-ui/core"
 import { useAuth, useListSessions, useSession } from "@better-auth-ui/react"
 import { Fragment } from "react"
-import { Card, CardContent } from "@aloysius-g1/ui/components/card"
+import { Card, CardContent } from "@aloysius-admissions/ui/components/card"
 import {
   Item,
   ItemContent,
   ItemGroup,
   ItemMedia,
   ItemSeparator
-} from "@aloysius-g1/ui/components/item"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/item"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { ActiveSession } from "./active-session"
 import { FreshSessionPrompt } from "./fresh-session-prompt"
 
@@ -45,7 +45,7 @@ export function ActiveSessions({ className }: ActiveSessionsProps) {
 
       <Card className={cn("p-0", className)}>
         <CardContent className="p-0">
-          {isSessionNotFreshError(error) ? (
+          {isReauthenticationRequiredError(error) ? (
             <FreshSessionPrompt onFresh={() => sessionsQuery.refetch()} />
           ) : isPending ? (
             <SessionRowSkeleton />

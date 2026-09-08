@@ -15,8 +15,8 @@ import { useIsMutating } from "@tanstack/react-query"
 import { Eye, EyeOff } from "lucide-react"
 import { type SyntheticEvent, useState } from "react"
 import { toast } from "sonner"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card"
 import {
   Field,
   FieldDescription,
@@ -24,16 +24,16 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSeparator
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/input-group"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { AdditionalField } from "./additional-field"
 import { ProviderButtons, type SocialLayout } from "./provider-buttons"
 

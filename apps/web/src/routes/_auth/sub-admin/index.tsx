@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { KeyRound, ShieldCheck, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-g1/ui/components/card";
-import { Button } from "@aloysius-g1/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-admissions/ui/components/card";
+import { Button } from "@aloysius-admissions/ui/components/button";
 import { useTranslation } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_auth/sub-admin/")({ component: SubAdminOverviewPage });

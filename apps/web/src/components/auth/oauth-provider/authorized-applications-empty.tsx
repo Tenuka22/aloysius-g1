@@ -9,7 +9,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle
-} from "@aloysius-g1/ui/components/empty"
+} from "@aloysius-admissions/ui/components/empty"
 import { oauthProviderPlugin } from "@/lib/auth/oauth-provider-plugin"
 
 export function AuthorizedApplicationsEmpty() {

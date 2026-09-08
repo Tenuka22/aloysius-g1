@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Globe } from "lucide-react";
 import { useLocale } from "@/lib/i18n";
-import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-g1/ui/components/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-admissions/ui/components/popover";
 
 export function LocaleSwitcher() {
   const { locale, setLocale } = useLocale();

@@ -7,16 +7,16 @@ import {
 import { Monitor, Moon, Sun } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { Card, CardContent } from "@aloysius-g1/ui/components/card"
+import { Card, CardContent } from "@aloysius-admissions/ui/components/card"
 import {
   Field,
   FieldContent,
   FieldLabel,
   FieldTitle
-} from "@aloysius-g1/ui/components/field"
-import { RadioGroup, RadioGroupItem } from "@aloysius-g1/ui/components/radio-group"
+} from "@aloysius-admissions/ui/components/field"
+import { RadioGroup, RadioGroupItem } from "@aloysius-admissions/ui/components/radio-group"
 import { themePlugin } from "@/lib/auth/theme-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type AppearanceProps = {
   className?: string

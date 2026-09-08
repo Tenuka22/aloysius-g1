@@ -10,7 +10,7 @@ import {
 } from "lucide-react"
 import { isValidElement, type ReactElement, type ReactNode } from "react"
 
-import { buttonVariants } from "@aloysius-g1/ui/components/button"
+import { buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +19,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from "@aloysius-g1/ui/components/dropdown-menu"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { UserAvatar } from "./user-avatar"
 import { UserView } from "./user-view"
 

@@ -1,6 +1,6 @@
 import { type Table } from "@tanstack/react-table"
 import { Settings2Icon } from "lucide-react"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -9,7 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@aloysius-g1/ui/components/dropdown-menu"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>

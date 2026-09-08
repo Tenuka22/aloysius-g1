@@ -1,8 +1,8 @@
-import { createContext } from "@aloysius-g1/api/context";
-import { appRouter } from "@aloysius-g1/api/routers/index";
-import { createAuth, ensureSiteAdmin } from "@aloysius-g1/auth";
-import { env } from "@aloysius-g1/env/server";
-import { backup } from "@aloysius-g1/db/scripts/backup";
+import { createContext } from "@aloysius-admissions/api/context";
+import { appRouter } from "@aloysius-admissions/api/routers/index";
+import { createAuth, ensureSiteAdmin } from "@aloysius-admissions/auth";
+import { env } from "@aloysius-admissions/env/server";
+import { backup } from "@aloysius-admissions/db/scripts/backup";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";

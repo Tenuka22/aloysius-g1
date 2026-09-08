@@ -3,7 +3,7 @@
 import { useAuth } from "@better-auth-ui/react"
 import type { ComponentProps } from "react"
 
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { OrganizationDangerZone } from "./organization-danger-zone"
 import { OrganizationProfile } from "./organization-profile"
 

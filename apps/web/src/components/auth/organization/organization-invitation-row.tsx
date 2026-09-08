@@ -9,12 +9,12 @@ import {
 import type { Invitation } from "better-auth/client"
 import { X } from "lucide-react"
 
-import { Badge } from "@aloysius-g1/ui/components/badge"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { TableCell, TableRow } from "@aloysius-g1/ui/components/table"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { TableCell, TableRow } from "@aloysius-admissions/ui/components/table"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { INVITATION_STATUS } from "@/lib/color-classes"
 import { OrganizationInvitationRowSkeleton } from "./organization-invitation-row-skeleton"
 

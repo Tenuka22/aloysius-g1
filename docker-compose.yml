@@ -1,4 +1,4 @@
-name: aloysius-g1-podman
+name: aloysius-admissions-podman
 
 services:
   web:

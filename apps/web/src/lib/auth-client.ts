@@ -1,4 +1,4 @@
-import { env } from "@aloysius-g1/env/web";
+import { env } from "@aloysius-admissions/env/web";
 import { createAuthClient } from "better-auth/react";
 import { multiSessionClient } from "better-auth/client/plugins";
 import { getIncomingCookieHeader } from "./incoming-cookie";

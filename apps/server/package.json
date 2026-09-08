@@ -10,10 +10,10 @@
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
-    "@aloysius-g1/api": "workspace:*",
-    "@aloysius-g1/auth": "workspace:*",
-    "@aloysius-g1/db": "workspace:*",
-    "@aloysius-g1/env": "workspace:*",
+    "@aloysius-admissions/api": "workspace:*",
+    "@aloysius-admissions/auth": "workspace:*",
+    "@aloysius-admissions/db": "workspace:*",
+    "@aloysius-admissions/env": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
@@ -24,7 +24,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aloysius-g1/config": "workspace:*",
+    "@aloysius-admissions/config": "workspace:*",
     "@types/bun": "catalog:",
     "tsdown": "^0.22.14",
     "typescript": "catalog:"

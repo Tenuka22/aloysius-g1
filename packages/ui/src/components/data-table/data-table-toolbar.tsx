@@ -1,8 +1,8 @@
 import { type Table } from "@tanstack/react-table"
 import { XIcon } from "lucide-react"
 import type { RefObject } from "react"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Input } from "@aloysius-g1/ui/components/input"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import { DataTableViewOptions } from "./data-table-view-options"
 
 interface DataTableToolbarProps<TData> {

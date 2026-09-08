@@ -5,8 +5,8 @@ import { useAuth, useAuthenticate } from "@better-auth-ui/react"
 import { Shield, User2 } from "lucide-react"
 import { useMemo } from "react"
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-g1/ui/components/tabs"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { AccountSettings } from "./account/account-settings"
 import { SecuritySettings } from "./security/security-settings"
 

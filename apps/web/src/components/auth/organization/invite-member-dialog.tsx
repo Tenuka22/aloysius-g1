@@ -11,7 +11,7 @@ import {
 import { UserPlus } from "lucide-react"
 import { type SyntheticEvent, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   Dialog,
   DialogClose,
@@ -20,9 +20,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from "@aloysius-g1/ui/components/dialog"
-import { Field, FieldError, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
+} from "@aloysius-admissions/ui/components/dialog"
+import { Field, FieldError, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import {
   Select,
   SelectContent,
@@ -30,8 +30,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@aloysius-g1/ui/components/select"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/select"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
 
 /** Props for the `InviteMemberDialog` component. */

@@ -4,7 +4,7 @@ import { ArrowLeftRight } from "lucide-react"
 import {
   DropdownMenuSub,
   DropdownMenuSubTrigger
-} from "@aloysius-g1/ui/components/dropdown-menu"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
 import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin"
 import { SwitchAccountSubmenuContent } from "./switch-account-submenu-content"
 

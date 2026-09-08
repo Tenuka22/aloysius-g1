@@ -5,99 +5,22 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1787158045621,
-      "tag": "0000_known_gateway",
+      "when": 1788859768471,
+      "tag": "0000_perpetual_ben_urich",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "6",
-      "when": 1787214057704,
-      "tag": "0002_clever_killer_shrike",
+      "when": 1788862621828,
+      "tag": "0001_nosy_dormammu",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "6",
-      "when": 1787215556986,
-      "tag": "0002_brief_photon",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1787215724426,
-      "tag": "0003_brainy_giant_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1787227532302,
-      "tag": "0004_overrated_red_wolf",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1787228180597,
-      "tag": "0005_bumpy_magdalene",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1787233207199,
-      "tag": "0006_right_red_wolf",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
-      "when": 1787235661359,
-      "tag": "0007_broad_lorna_dane",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "6",
-      "when": 1787238564188,
-      "tag": "0008_bitter_dreadnoughts",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "6",
-      "when": 1787239550212,
-      "tag": "0009_faithful_crusher_hogan",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "6",
-      "when": 1788008597082,
-      "tag": "0010_dusty_microchip",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "6",
-      "when": 1788112808151,
-      "tag": "0011_eminent_flatman",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "6",
-      "when": 1788166273114,
-      "tag": "0012_lowly_wonder_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "6",
-      "when": 1788442921684,
-      "tag": "0013_parched_serpent_society",
+      "when": 1788865667273,
+      "tag": "0002_foamy_nomad",
       "breakpoints": true
     }
   ]

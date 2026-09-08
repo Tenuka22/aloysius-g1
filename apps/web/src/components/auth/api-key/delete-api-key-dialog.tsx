@@ -17,11 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle
-} from "@aloysius-g1/ui/components/alert-dialog"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Field, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/alert-dialog"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Field, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { apiKeyPlugin } from "@/lib/auth/api-key-plugin"
 
 export type DeleteApiKeyDialogProps = {

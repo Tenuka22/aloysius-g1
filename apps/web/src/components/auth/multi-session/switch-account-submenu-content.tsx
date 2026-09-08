@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuSubContent
-} from "@aloysius-g1/ui/components/dropdown-menu"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
 import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin"
 import { SwitchAccountSubmenuItem } from "./switch-account-submenu-item"
 

@@ -3,8 +3,8 @@
 import { getAuthRedirectAction } from "@better-auth-ui/core"
 import { useAuth, useSession } from "@better-auth-ui/react"
 import { useEffect, useRef } from "react"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type AuthRedirectProps = {
   className?: string

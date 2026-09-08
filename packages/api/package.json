@@ -1,5 +1,5 @@
 {
-  "name": "@aloysius-g1/api",
+  "name": "@aloysius-admissions/api",
   "type": "module",
   "exports": {
     ".": {
@@ -11,9 +11,9 @@
   },
   "scripts": {},
   "dependencies": {
-    "@aloysius-g1/auth": "workspace:*",
-    "@aloysius-g1/db": "workspace:*",
-    "@aloysius-g1/env": "workspace:*",
+    "@aloysius-admissions/auth": "workspace:*",
+    "@aloysius-admissions/db": "workspace:*",
+    "@aloysius-admissions/env": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
@@ -23,7 +23,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aloysius-g1/config": "workspace:*",
+    "@aloysius-admissions/config": "workspace:*",
     "hono": "catalog:",
     "typescript": "catalog:"
   }

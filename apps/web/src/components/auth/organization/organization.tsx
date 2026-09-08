@@ -11,9 +11,9 @@ import {
 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-g1/ui/components/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { OrganizationPeople } from "./organization-people"
 import { OrganizationSettings } from "./organization-settings"
 import { OrganizationTeams } from "./organization-teams"

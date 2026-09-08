@@ -8,8 +8,8 @@ import { useAuth, useAuthPlugin, useSession } from "@better-auth-ui/react"
 import { useStopImpersonating } from "@better-auth-ui/react/plugins/admin"
 import { UserRoundCheck } from "lucide-react"
 
-import { DropdownMenuItem } from "@aloysius-g1/ui/components/dropdown-menu"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+import { DropdownMenuItem } from "@aloysius-admissions/ui/components/dropdown-menu"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { adminPlugin } from "@/lib/auth/admin-plugin"
 
 export type StopImpersonatingProps = {

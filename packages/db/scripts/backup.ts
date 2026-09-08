@@ -1,4 +1,4 @@
-import { env } from "@aloysius-g1/env/server";
+import { env } from "@aloysius-admissions/env/server";
 import { Database } from "bun:sqlite";
 import { dirname, isAbsolute, join } from "node:path";
 import { mkdirSync, readdirSync, statSync, unlinkSync, existsSync } from "node:fs";

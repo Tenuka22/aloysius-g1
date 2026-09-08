@@ -6,14 +6,14 @@ import type { VariantProps } from "class-variance-authority"
 import { QrCode } from "lucide-react"
 import { useMemo } from "react"
 
-import { buttonVariants } from "@aloysius-g1/ui/components/button"
+import { buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from "@aloysius-g1/ui/components/tooltip"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/tooltip"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type OpenEmailButtonProps = {
   /** Email address used to detect the provider, e.g. from the verify-email flow. */

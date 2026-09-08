@@ -12,7 +12,7 @@ import type { Account, SocialProvider } from "better-auth"
 import { Link2, Link2Off, Plug } from "lucide-react"
 import { toast } from "sonner"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Item,
   ItemActions,
@@ -20,10 +20,10 @@ import {
   ItemDescription,
   ItemMedia,
   ItemTitle
-} from "@aloysius-g1/ui/components/item"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/item"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type LinkedAccountProps = {
   account?: Account

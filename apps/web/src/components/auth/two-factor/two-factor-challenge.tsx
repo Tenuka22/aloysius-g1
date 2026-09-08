@@ -12,23 +12,23 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import { type SyntheticEvent, useEffect, useState } from "react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle
-} from "@aloysius-g1/ui/components/card"
-import { Checkbox } from "@aloysius-g1/ui/components/checkbox"
+} from "@aloysius-admissions/ui/components/card"
+import { Checkbox } from "@aloysius-admissions/ui/components/checkbox"
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import {
   clearTwoFactorMethods,
   readTwoFactorMethods,
@@ -39,7 +39,7 @@ import {
   RESEND_COOLDOWN_SECONDS,
   useResendCooldown
 } from "@/lib/auth/use-resend-cooldown"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { OtpField } from "../otp-field"
 import { useIsHydrated } from "../use-is-hydrated"
 

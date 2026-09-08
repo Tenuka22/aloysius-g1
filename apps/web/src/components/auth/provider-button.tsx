@@ -10,9 +10,9 @@ import { useIsMutating } from "@tanstack/react-query"
 import type { SocialProvider } from "better-auth/social-providers"
 import type { ComponentProps } from "react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { LastUsedBadge } from "./last-login-method/last-used-badge"
 
 export type ProviderButtonProps = {

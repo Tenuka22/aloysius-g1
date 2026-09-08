@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { useAppForm } from "@/lib/app-form";
 import { signInSchema } from "@/lib/validation";
 import { FieldGroup } from "@/components/form-fields";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-g1/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-admissions/ui/components/card";
 import { useTranslation } from "@/lib/i18n";
 import Loader from "./loader";
 

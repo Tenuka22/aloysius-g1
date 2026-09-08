@@ -1,7 +1,7 @@
 import { useAuthPlugin } from "@better-auth-ui/react"
 import { Fingerprint } from "lucide-react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Empty,
   EmptyContent,
@@ -9,7 +9,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle
-} from "@aloysius-g1/ui/components/empty"
+} from "@aloysius-admissions/ui/components/empty"
 import { passkeyPlugin } from "@/lib/auth/passkey-plugin"
 
 export type PasskeysEmptyProps = {

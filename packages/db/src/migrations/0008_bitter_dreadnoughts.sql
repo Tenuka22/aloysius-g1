@@ -1,1 +1,0 @@
-ALTER TABLE `application_access_requests` ADD `request_type` text DEFAULT 'access' NOT NULL;

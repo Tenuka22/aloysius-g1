@@ -1,10 +1,10 @@
-import { Button } from "@aloysius-g1/ui/components/button";
+import { Button } from "@aloysius-admissions/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@aloysius-g1/ui/components/dropdown-menu";
+} from "@aloysius-admissions/ui/components/dropdown-menu";
 import { Moon, Sun } from "lucide-react";
 
 import { useTheme } from "@/components/theme-provider";

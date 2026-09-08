@@ -10,21 +10,21 @@ import {
 import { ChevronUp, Filter, Search, X } from "lucide-react"
 import { type ComponentProps, type ReactNode, useMemo, useState } from "react"
 
-import { Badge } from "@aloysius-g1/ui/components/badge"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
-import { Card } from "@aloysius-g1/ui/components/card"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
+import { Card } from "@aloysius-admissions/ui/components/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger
-} from "@aloysius-g1/ui/components/dropdown-menu"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
+} from "@aloysius-admissions/ui/components/input-group"
 import {
   Table,
   TableBody,
@@ -32,9 +32,9 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from "@aloysius-g1/ui/components/table"
+} from "@aloysius-admissions/ui/components/table"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { InviteMemberDialog } from "./invite-member-dialog"
 import { OrganizationInvitationRow } from "./organization-invitation-row"
 import { OrganizationInvitationRowSkeleton } from "./organization-invitation-row-skeleton"

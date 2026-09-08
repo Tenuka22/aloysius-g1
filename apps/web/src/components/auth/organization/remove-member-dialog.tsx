@@ -16,11 +16,11 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle
-} from "@aloysius-g1/ui/components/alert-dialog"
-import { Badge } from "@aloysius-g1/ui/components/badge"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent } from "@aloysius-g1/ui/components/card"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/alert-dialog"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent } from "@aloysius-admissions/ui/components/card"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
 import { UserView } from "../user/user-view"
 

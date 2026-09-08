@@ -22,7 +22,7 @@ import {
   useState
 } from "react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Card,
   CardContent,
@@ -30,23 +30,23 @@ import {
   CardFooter,
   CardHeader,
   CardTitle
-} from "@aloysius-g1/ui/components/card"
+} from "@aloysius-admissions/ui/components/card"
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
+} from "@aloysius-admissions/ui/components/field"
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot
-} from "@aloysius-g1/ui/components/input-otp"
-import { Separator } from "@aloysius-g1/ui/components/separator"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/input-otp"
+import { Separator } from "@aloysius-admissions/ui/components/separator"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { deviceAuthorizationPlugin } from "@/lib/auth/device-authorization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 type DeviceAuthorizationStep = "code" | "approval" | "approved" | "denied"
 

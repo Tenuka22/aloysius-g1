@@ -17,16 +17,16 @@ import {
 import { ShieldCheck } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@aloysius-g1/ui/components/avatar"
-import { Badge } from "@aloysius-g1/ui/components/badge"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@aloysius-admissions/ui/components/avatar"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle
-} from "@aloysius-g1/ui/components/card"
+} from "@aloysius-admissions/ui/components/card"
 import {
   Item,
   ItemActions,
@@ -35,11 +35,11 @@ import {
   ItemGroup,
   ItemMedia,
   ItemTitle
-} from "@aloysius-g1/ui/components/item"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/item"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { oauthProviderPlugin } from "@/lib/auth/oauth-provider-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { UserAvatar } from "../user/user-avatar"
 
 export type OAuthSelectAccountProps = {

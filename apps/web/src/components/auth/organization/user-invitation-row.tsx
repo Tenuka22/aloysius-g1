@@ -9,8 +9,8 @@ import {
 import type { Invitation } from "better-auth/client"
 import { Check, Clock, X } from "lucide-react"
 
-import { Badge } from "@aloysius-g1/ui/components/badge"
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Item,
   ItemActions,
@@ -18,8 +18,8 @@ import {
   ItemDescription,
   ItemMedia,
   ItemTitle
-} from "@aloysius-g1/ui/components/item"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/item"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
 
 export type UserInvitationRowProps = {

@@ -11,7 +11,7 @@ import {
 import { Check, Copy, Download, Printer } from "lucide-react"
 import { toast } from "sonner"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import { twoFactorPlugin } from "@/lib/auth/two-factor-plugin"
 
 export type BackupCodesProps = {

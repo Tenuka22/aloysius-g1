@@ -2,7 +2,7 @@ import type { AuthView } from "@better-auth-ui/core"
 import { useAuth } from "@better-auth-ui/react"
 import { useMemo } from "react"
 
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { ProviderButton } from "./provider-button"
 
 export type ProviderButtonsProps = {

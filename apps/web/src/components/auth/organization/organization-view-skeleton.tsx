@@ -2,8 +2,8 @@
 
 import type { ComponentProps } from "react"
 
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import {
   OrganizationLogo,
   type OrganizationLogoSize

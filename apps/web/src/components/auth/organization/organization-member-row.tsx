@@ -9,17 +9,17 @@ import { LogOut, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from "@aloysius-g1/ui/components/dropdown-menu"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { TableCell, TableRow } from "@aloysius-g1/ui/components/table"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { TableCell, TableRow } from "@aloysius-admissions/ui/components/table"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { UserView } from "../user/user-view"
 import { LeaveOrganizationDialog } from "./leave-organization-dialog"
 import { OrganizationMemberRowSkeleton } from "./organization-member-row-skeleton"

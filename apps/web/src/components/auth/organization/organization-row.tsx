@@ -6,9 +6,9 @@ import { useSetActiveOrganization } from "@better-auth-ui/react/plugins/organiza
 import type { Organization } from "better-auth/client"
 import { Settings as SettingsIcon } from "lucide-react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Item, ItemActions } from "@aloysius-g1/ui/components/item"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Item, ItemActions } from "@aloysius-admissions/ui/components/item"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
 import { OrganizationView } from "./organization-view"
 

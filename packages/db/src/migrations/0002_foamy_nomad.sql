@@ -1,0 +1,2 @@
+ALTER TABLE `g1_applications` ADD `location_skip_status` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `g1_applications` ADD `birth_certificate_skip_status` integer DEFAULT 0 NOT NULL;

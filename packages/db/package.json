@@ -1,5 +1,5 @@
 {
-  "name": "@aloysius-g1/db",
+  "name": "@aloysius-admissions/db",
   "type": "module",
   "exports": {
     ".": {
@@ -24,13 +24,13 @@
     "db:seed": "bun --env-file ../../apps/server/.env src/seed.ts"
   },
   "dependencies": {
-    "@aloysius-g1/env": "workspace:*",
+    "@aloysius-admissions/env": "workspace:*",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.2",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aloysius-g1/config": "workspace:*",
+    "@aloysius-admissions/config": "workspace:*",
     "@libsql/client": "^0.17.4",
     "@types/better-sqlite3": "^9.6.0",
     "better-sqlite3": "^13.0.3",

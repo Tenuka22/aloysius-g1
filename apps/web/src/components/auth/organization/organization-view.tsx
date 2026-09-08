@@ -7,9 +7,9 @@ import {
 import type { Organization } from "better-auth/client"
 import type { ComponentProps } from "react"
 
-import { Badge } from "@aloysius-g1/ui/components/badge"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import {
   OrganizationLogo,
   type OrganizationLogoSize

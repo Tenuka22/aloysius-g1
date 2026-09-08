@@ -4,7 +4,7 @@ import { useAuth, useAuthPlugin } from "@better-auth-ui/react"
 import { Fingerprint, Pencil, X } from "lucide-react"
 import { useState } from "react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Item,
   ItemActions,
@@ -12,7 +12,7 @@ import {
   ItemDescription,
   ItemMedia,
   ItemTitle
-} from "@aloysius-g1/ui/components/item"
+} from "@aloysius-admissions/ui/components/item"
 import { passkeyPlugin } from "@/lib/auth/passkey-plugin"
 
 import {

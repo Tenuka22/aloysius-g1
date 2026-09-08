@@ -6,6 +6,6 @@ export default defineConfig({
   outDir: "./dist",
   clean: true,
   deps: {
-    alwaysBundle: [/@aloysius-g1\/.*/],
+    alwaysBundle: [/@aloysius-admissions\/.*/],
   },
 });

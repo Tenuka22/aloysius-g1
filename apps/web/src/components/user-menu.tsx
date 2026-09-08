@@ -1,4 +1,4 @@
-import { Button } from "@aloysius-g1/ui/components/button";
+import { Button } from "@aloysius-admissions/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,8 +7,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@aloysius-g1/ui/components/dropdown-menu";
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton";
+} from "@aloysius-admissions/ui/components/dropdown-menu";
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";

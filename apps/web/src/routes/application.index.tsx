@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
-import { ApplicationForm } from "@/components/application/application-form";
+import { ApplicationForm } from "@/components/g1/application/application-form";
 import { client } from "@/utils/orpc";
-import { getActiveKey, getActiveSessionCode, setActiveApplication } from "@/lib/saved-keys";
+import { getActiveKey, getActiveSessionCode, setActiveApplication } from "@/lib/g1/saved-keys";
 
 const applicationSearchSchema = z.object({
   key: z.string().optional(),
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/application/")({
   loaderDeps: ({ search }) => ({ key: search.key, code: search.code }),
   // Resolves the accessKey/sessionCode (search param or cookie) and loads the
   // application + submission-window status isomorphically, so a returning
-  // applicant's draft is part of the server-rendered HTML — no client fetch,
+  // applicant's draft is part of the server-rendered HTML - no client fetch,
   // no loading gate, no localStorage. A brand-new visit (no key at all)
   // creates the draft row here and redirects to the canonical `?key=&code=`
   // URL, so ApplicationForm always mounts with a resolved key.

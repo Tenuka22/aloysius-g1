@@ -1,5 +1,5 @@
 {
-  "name": "aloysius-g1",
+  "name": "aloysius-admissions",
   "private": true,
   "workspaces": {
     "packages": [
@@ -37,12 +37,12 @@
     "test:all": "bun run test && bun run test:integration",
     "dev:web": "nx run-many -t dev --projects=web",
     "dev:server": "nx run-many -t dev --projects=server",
-    "db:push": "nx run-many -t db:push --projects=@aloysius-g1/db",
-    "db:studio": "nx run-many -t db:studio --projects=@aloysius-g1/db",
-    "db:generate": "nx run-many -t db:generate --projects=@aloysius-g1/db",
-    "db:migrate": "nx run-many -t db:migrate --projects=@aloysius-g1/db",
-    "db:auth": "nx run-many -t db:auth --projects=@aloysius-g1/db",
-    "db:seed": "nx run-many -t db:seed --projects=@aloysius-g1/db",
+    "db:push": "nx run-many -t db:push --projects=@aloysius-admissions/db",
+    "db:studio": "nx run-many -t db:studio --projects=@aloysius-admissions/db",
+    "db:generate": "nx run-many -t db:generate --projects=@aloysius-admissions/db",
+    "db:migrate": "nx run-many -t db:migrate --projects=@aloysius-admissions/db",
+    "db:auth": "nx run-many -t db:auth --projects=@aloysius-admissions/db",
+    "db:seed": "nx run-many -t db:seed --projects=@aloysius-admissions/db",
     "podman:build": "podman compose -f docker-compose.yml build",
     "podman:up": "podman compose -f docker-compose.yml up -d --build",
     "podman:down": "podman compose -f docker-compose.yml down",
@@ -53,14 +53,14 @@
     "docker:logs": "docker compose -f packages/docker/docker-compose.yml logs -f"
   },
   "dependencies": {
-    "@aloysius-g1/env": "workspace:*",
+    "@aloysius-admissions/env": "workspace:*",
     "@tanstack/react-table": "8",
     "dotenv": "catalog:",
     "zod": "catalog:",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@aloysius-g1/config": "workspace:*",
+    "@aloysius-admissions/config": "workspace:*",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.5",

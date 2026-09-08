@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { PanelLeftIcon } from "lucide-react"
 
 function SidebarProvider({ className, children, ...props }: React.ComponentProps<"div">) {

@@ -7,10 +7,10 @@ import { useSignInPasskey } from "@better-auth-ui/react/plugins/passkey"
 import { useIsMutating } from "@tanstack/react-query"
 import { Fingerprint } from "lucide-react"
 
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { passkeyPlugin } from "@/lib/auth/passkey-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type PasskeyButtonProps = {
   /** @remarks `AuthView` */

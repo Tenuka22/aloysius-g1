@@ -66,11 +66,11 @@ vi.mock("@tanstack/react-router", () => ({
   Outlet: () => null,
 }));
 
-vi.mock("@/components/application/access-key-qr", () => ({
+vi.mock("@/components/g1/application/access-key-qr", () => ({
   AccessKeyQrImporter: () => <div data-testid="qr-importer" />,
 }));
 
-vi.mock("@/components/application/access-recovery-dialog", () => ({
+vi.mock("@/components/g1/application/access-recovery-dialog", () => ({
   AccessRecoveryDialog: ({
     open,
     onOpenChange,
@@ -86,9 +86,9 @@ vi.mock("@/components/application/access-recovery-dialog", () => ({
 }));
 
 // Import the real component
-import { HomeComponent } from "@/components/home/home-page";
-import { useHomeUiStore } from "@/lib/home-ui-store";
-import { useSavedApplicationsStore } from "@/lib/saved-applications-store";
+import { HomeComponent } from "@/components/g1/home/home-page";
+import { useHomeUiStore } from "@/lib/g1/home-ui-store";
+import { useSavedApplicationsStore } from "@/lib/g1/saved-applications-store";
 
 /* ───────── helpers ───────── */
 
@@ -215,7 +215,7 @@ describe("HomeComponent – load with key dialog", () => {
     await user.click(screen.getByRole("button", { name: /load with a key/i }));
     await user.type(screen.getByPlaceholderText(/paste access key/i), "MY-KEY-XYZ");
     await user.click(screen.getByRole("button", { name: /open application/i }));
-    expect(getCookie("aloysius-g1-application-key")).toBe("MY-KEY-XYZ");
+    expect(getCookie("aloysius-admissions-application-key")).toBe("MY-KEY-XYZ");
   });
 });
 
@@ -230,7 +230,7 @@ describe("HomeComponent – manage saved keys", () => {
   });
 
   it("shows saved keys in the manage dialog", async () => {
-    setCookie("aloysius-g1-application-keys", JSON.stringify(["key-1", "key-2"]));
+    setCookie("aloysius-admissions-application-keys", JSON.stringify(["key-1", "key-2"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "Test App" } },
       sessionCode: "26ABC123",
@@ -246,7 +246,7 @@ describe("HomeComponent – manage saved keys", () => {
   });
 
   it("shows key count in saved applications section", async () => {
-    setCookie("aloysius-g1-application-keys", JSON.stringify(["k1", "k2", "k3"]));
+    setCookie("aloysius-admissions-application-keys", JSON.stringify(["k1", "k2", "k3"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "App A" } },
       sessionCode: "26ABC123",
@@ -264,7 +264,7 @@ describe("HomeComponent – manage saved keys", () => {
 
 describe("HomeComponent – remove application", () => {
   it("shows confirmation dialog when trash button is clicked", async () => {
-    setCookie("aloysius-g1-application-keys", JSON.stringify(["key-1"]));
+    setCookie("aloysius-admissions-application-keys", JSON.stringify(["key-1"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "Test App" } },
       sessionCode: "26ABC123",
@@ -306,7 +306,7 @@ describe("HomeComponent – forgot a key", () => {
   });
 
   it("opens recovery dialog when forgot key is clicked with saved keys", async () => {
-    setCookie("aloysius-g1-application-keys", JSON.stringify(["key-1"]));
+    setCookie("aloysius-admissions-application-keys", JSON.stringify(["key-1"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "Test App" } },
       sessionCode: "26ABC123",
@@ -328,7 +328,7 @@ describe("HomeComponent – forgot a key", () => {
 
 describe("HomeComponent – submitted vs draft cards", () => {
   it("shows Submitted badge for submitted applications", async () => {
-    setCookie("aloysius-g1-application-keys", JSON.stringify(["sub-key"]));
+    setCookie("aloysius-admissions-application-keys", JSON.stringify(["sub-key"]));
     getMock.mockResolvedValue({
       data: { applicant: { fullName: "Submitted App" } },
       sessionCode: "26ABC123",
@@ -340,7 +340,7 @@ describe("HomeComponent – submitted vs draft cards", () => {
   });
 
   it("shows completion percentage for draft applications", async () => {
-    setCookie("aloysius-g1-application-keys", JSON.stringify(["draft-key"]));
+    setCookie("aloysius-admissions-application-keys", JSON.stringify(["draft-key"]));
     getMock.mockResolvedValue({
       data: {
         applicant: { fullName: "Draft App" },
@@ -361,7 +361,7 @@ describe("HomeComponent – submitted vs draft cards", () => {
 
 describe("HomeComponent – error handling", () => {
   it("shows error state when application fetch fails", async () => {
-    setCookie("aloysius-g1-application-keys", JSON.stringify(["bad-key"]));
+    setCookie("aloysius-admissions-application-keys", JSON.stringify(["bad-key"]));
     getMock.mockRejectedValue(new Error("Not found"));
     render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
     await waitFor(() => expect(screen.getByText(/no longer exists on the server/i)).toBeInTheDocument());

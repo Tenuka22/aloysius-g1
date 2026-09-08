@@ -15,10 +15,10 @@ import {
 } from "@better-auth-ui/react/plugins/organization"
 import { type FormEvent, useState } from "react"
 import { toast } from "sonner"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card"
-import { Field, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card"
+import { Field, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import {
   Select,
   SelectContent,
@@ -26,8 +26,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@aloysius-g1/ui/components/select"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/select"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
 
 export function OrganizationTeams() {

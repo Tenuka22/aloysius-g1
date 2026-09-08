@@ -4,23 +4,23 @@ import { Eye, EyeOff } from "lucide-react"
 import { type SyntheticEvent, useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
+} from "@aloysius-admissions/ui/components/field"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/input-group"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type ResetPasswordProps = {
   className?: string

@@ -4,9 +4,9 @@ import type { Organization } from "better-auth/client"
 import { Briefcase } from "lucide-react"
 import type { ComponentProps, CSSProperties, ReactNode } from "react"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@aloysius-g1/ui/components/avatar"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@aloysius-admissions/ui/components/avatar"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type OrganizationLogoSize = "sm" | "md" | "lg"
 

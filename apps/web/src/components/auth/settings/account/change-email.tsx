@@ -5,13 +5,13 @@ import { useAuth, useChangeEmail, useSession } from "@better-auth-ui/react"
 import { type SyntheticEvent, useState } from "react"
 import { toast } from "sonner"
 
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent, CardFooter } from "@aloysius-g1/ui/components/card"
-import { Field, FieldError, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent, CardFooter } from "@aloysius-admissions/ui/components/card"
+import { Field, FieldError, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type ChangeEmailProps = {
   className?: string

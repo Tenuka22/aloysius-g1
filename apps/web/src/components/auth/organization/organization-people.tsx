@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react"
 
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { OrganizationInvitations } from "./organization-invitations"
 import { OrganizationMembers } from "./organization-members"
 

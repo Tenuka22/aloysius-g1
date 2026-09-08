@@ -12,11 +12,11 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@aloysius-g1/ui/components",
-    "utils": "@aloysius-g1/ui/lib/utils",
-    "hooks": "@aloysius-g1/ui/hooks",
-    "lib": "@aloysius-g1/ui/lib",
-    "ui": "@aloysius-g1/ui/components"
+    "components": "@aloysius-admissions/ui/components",
+    "utils": "@aloysius-admissions/ui/lib/utils",
+    "hooks": "@aloysius-admissions/ui/hooks",
+    "lib": "@aloysius-admissions/ui/lib",
+    "ui": "@aloysius-admissions/ui/components"
   },
   "menuColor": "default",
   "menuAccent": "subtle",

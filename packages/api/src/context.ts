@@ -1,4 +1,4 @@
-import { createAuth } from "@aloysius-g1/auth";
+import { createAuth } from "@aloysius-admissions/auth";
 import type { Context as HonoContext } from "hono";
 
 export type CreateContextOptions = {

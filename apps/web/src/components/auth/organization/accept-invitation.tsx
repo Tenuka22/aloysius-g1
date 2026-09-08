@@ -11,14 +11,14 @@ import {
 import type { Invitation } from "better-auth/client"
 import { BriefcaseBusiness, Check, X } from "lucide-react"
 
-import { Badge } from "@aloysius-g1/ui/components/badge"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card"
-import { FieldDescription } from "@aloysius-g1/ui/components/field"
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+import { Badge } from "@aloysius-admissions/ui/components/badge"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card"
+import { FieldDescription } from "@aloysius-admissions/ui/components/field"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { useIsHydrated } from "../use-is-hydrated"
 
 type UserInvitation = Invitation & { organizationName?: string }

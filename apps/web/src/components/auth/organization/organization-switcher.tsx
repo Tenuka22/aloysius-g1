@@ -13,16 +13,16 @@ import {
 } from "lucide-react"
 import { type ComponentProps, type ReactElement, useState } from "react"
 
-import { buttonVariants } from "@aloysius-g1/ui/components/button"
+import { buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from "@aloysius-g1/ui/components/dropdown-menu"
+} from "@aloysius-admissions/ui/components/dropdown-menu"
 import { organizationPlugin } from "@/lib/auth/organization-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { UserView } from "../user/user-view"
 import { CreateOrganizationDialog } from "./create-organization-dialog"
 import { OrganizationView } from "./organization-view"

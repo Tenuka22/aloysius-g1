@@ -1,5 +1,5 @@
 {
-  "name": "@aloysius-g1/docker",
+  "name": "@aloysius-admissions/docker",
   "private": true,
   "scripts": {
     "build": "docker compose -f docker-compose.yml build",

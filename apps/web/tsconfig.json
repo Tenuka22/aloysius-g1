@@ -12,7 +12,7 @@
     "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@aloysius-g1/ui/*": ["../../packages/ui/src/*"],
+      "@aloysius-admissions/ui/*": ["../../packages/ui/src/*"],
       "@schools/*": ["../map-scraper/*"]
     }
   }

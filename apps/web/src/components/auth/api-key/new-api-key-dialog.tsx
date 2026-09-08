@@ -6,7 +6,7 @@ import {
 import { Check, Copy, Key } from "lucide-react"
 import { toast } from "sonner"
 
-import { Button } from "@aloysius-g1/ui/components/button"
+import { Button } from "@aloysius-admissions/ui/components/button"
 import {
   Dialog,
   DialogContent,
@@ -14,14 +14,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from "@aloysius-g1/ui/components/dialog"
+} from "@aloysius-admissions/ui/components/dialog"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
-import { Label } from "@aloysius-g1/ui/components/label"
+} from "@aloysius-admissions/ui/components/input-group"
+import { Label } from "@aloysius-admissions/ui/components/label"
 import { apiKeyPlugin } from "@/lib/auth/api-key-plugin"
 
 export type NewApiKeyDialogProps = {

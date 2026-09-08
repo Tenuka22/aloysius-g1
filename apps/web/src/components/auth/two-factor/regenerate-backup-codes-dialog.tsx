@@ -16,11 +16,11 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle
-} from "@aloysius-g1/ui/components/alert-dialog"
-import { Button } from "@aloysius-g1/ui/components/button"
-import { Field, FieldError, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/alert-dialog"
+import { Button } from "@aloysius-admissions/ui/components/button"
+import { Field, FieldError, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { twoFactorPlugin } from "@/lib/auth/two-factor-plugin"
 import { useTwoFactorPasswordRequirement } from "@/lib/auth/use-two-factor-password"
 import { BackupCodes } from "./backup-codes"

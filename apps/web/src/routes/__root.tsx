@@ -1,5 +1,5 @@
-import type { AppRouterClient } from "@aloysius-g1/api/routers/index";
-import { Toaster } from "@aloysius-g1/ui/components/sonner";
+import type { AppRouterClient } from "@aloysius-admissions/api/routers/index";
+import { Toaster } from "@aloysius-admissions/ui/components/sonner";
 import { createORPCClient } from "@orpc/client";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -13,7 +13,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin";
 import { authClient } from "@/lib/auth-client";
-import { refreshSchoolCoordinateOverrides } from "@/lib/school-coordinates";
+import { refreshSchoolCoordinateOverrides } from "@/lib/g1/school-coordinates";
 import { link, orpc } from "@/utils/orpc";
 
 import "../index.css";
@@ -35,11 +35,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1.0",
       },
       {
-        title: "aloysius-g1",
+        title: "aloysius-admissions",
       },
       {
         name: "description",
-        content: "aloysius-g1 is a web application",
+        content: "aloysius-admissions is a web application",
       },
     ],
     links: [

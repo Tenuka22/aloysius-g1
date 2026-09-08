@@ -21,19 +21,19 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
   AlertDialogTrigger
-} from "@aloysius-g1/ui/components/alert-dialog"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
-import { Card, CardContent } from "@aloysius-g1/ui/components/card"
-import { Field, FieldError, FieldLabel } from "@aloysius-g1/ui/components/field"
+} from "@aloysius-admissions/ui/components/alert-dialog"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
+import { Card, CardContent } from "@aloysius-admissions/ui/components/card"
+import { Field, FieldError, FieldLabel } from "@aloysius-admissions/ui/components/field"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput
-} from "@aloysius-g1/ui/components/input-group"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/input-group"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { deleteUserPlugin } from "@/lib/auth/delete-user-plugin"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type DeleteAccountProps = {
   className?: string

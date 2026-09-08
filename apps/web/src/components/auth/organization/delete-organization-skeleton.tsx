@@ -1,6 +1,6 @@
 "use client"
 
-import { Skeleton } from "@aloysius-g1/ui/components/skeleton"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton"
 
 /**
  * Placeholder matching `DeleteOrganization` while the delete permission resolves.

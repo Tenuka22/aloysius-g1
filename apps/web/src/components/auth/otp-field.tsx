@@ -1,13 +1,13 @@
 import { REGEXP_ONLY_DIGITS } from "input-otp"
 import { useId } from "react"
 
-import { Field, FieldError, FieldLabel } from "@aloysius-g1/ui/components/field"
+import { Field, FieldError, FieldLabel } from "@aloysius-admissions/ui/components/field"
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot
-} from "@aloysius-g1/ui/components/input-otp"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+} from "@aloysius-admissions/ui/components/input-otp"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 
 export type OtpFieldProps = {
   /** Visible label rendered above the slots. */

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-g1/ui/components/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { z } from "zod";
-import { Input } from "@aloysius-g1/ui/components/input";
-import { Button } from "@aloysius-g1/ui/components/button";
-import { AccessKeyQrImporter } from "@/components/application/access-key-qr";
-import { normalizeDraft, useApplicationStore } from "@/lib/application-store";
+import { Input } from "@aloysius-admissions/ui/components/input";
+import { Button } from "@aloysius-admissions/ui/components/button";
+import { AccessKeyQrImporter } from "@/components/g1/application/access-key-qr";
+import { normalizeDraft, useApplicationStore } from "@/lib/g1/application-store";
 import { client } from "@/utils/orpc";
 import { useTranslation } from "@/lib/i18n";
-import { getActiveKey, getActiveSessionCode, setActiveApplication, setActiveKey, setActiveSessionCode } from "@/lib/saved-keys";
+import { getActiveKey, getActiveSessionCode, setActiveApplication, setActiveKey, setActiveSessionCode } from "@/lib/g1/saved-keys";
 
 const accessSearchSchema = z.object({
   key: z.string().optional(),

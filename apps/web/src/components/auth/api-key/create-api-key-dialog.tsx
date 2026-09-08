@@ -8,8 +8,8 @@ import { useAuth, useAuthPlugin } from "@better-auth-ui/react"
 import { useCreateApiKey } from "@better-auth-ui/react/plugins/api-key"
 import { Key } from "lucide-react"
 import { type SyntheticEvent, useState } from "react"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
-import { Checkbox } from "@aloysius-g1/ui/components/checkbox"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
+import { Checkbox } from "@aloysius-admissions/ui/components/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -18,14 +18,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from "@aloysius-g1/ui/components/dialog"
+} from "@aloysius-admissions/ui/components/dialog"
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel
-} from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
+} from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
 import {
   Select,
   SelectContent,
@@ -33,10 +33,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@aloysius-g1/ui/components/select"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
-import { Switch } from "@aloysius-g1/ui/components/switch"
-import { Textarea } from "@aloysius-g1/ui/components/textarea"
+} from "@aloysius-admissions/ui/components/select"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
+import { Switch } from "@aloysius-admissions/ui/components/switch"
+import { Textarea } from "@aloysius-admissions/ui/components/textarea"
 import { apiKeyPlugin } from "@/lib/auth/api-key-plugin"
 import { NewApiKeyDialog } from "./new-api-key-dialog"
 

@@ -5,10 +5,10 @@ import { getAppCookie, setAppCookie } from "./cookies";
 
 export type Locale = "en" | "si";
 
-const LOCALE_COOKIE = "aloysius-g1-locale";
+const LOCALE_COOKIE = "aloysius-admissions-locale";
 
 // Statically imported (not dynamically loaded on mount) so the very first
-// server-rendered response already contains real translated text — the
+// server-rendered response already contains real translated text - the
 // previous dynamic `import()` in a client-only effect meant SSR always shipped
 // raw translation keys until hydration swapped them in.
 const translations: Record<Locale, Record<string, string>> = { en, si };
@@ -35,7 +35,7 @@ const I18nContext = createContext<I18nContextValue>({
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   // Cookie-backed (not localStorage) so the server renders the same locale the
-  // client would have picked — no post-hydration locale flash/mismatch.
+  // client would have picked - no post-hydration locale flash/mismatch.
   const [locale, setLocaleState] = useState<Locale>(getSavedLocale);
 
   const setLocale = useCallback((newLocale: Locale) => {

@@ -11,7 +11,7 @@ export default defineConfig({
   envDir: fileURLToPath(new URL("./apps/web", import.meta.url)),
   resolve: {
     alias: [
-      { find: "@aloysius-g1/ui", replacement: fileURLToPath(new URL("./packages/ui/src", import.meta.url)) },
+      { find: "@aloysius-admissions/ui", replacement: fileURLToPath(new URL("./packages/ui/src", import.meta.url)) },
       { find: "@", replacement: fileURLToPath(new URL("./apps/web/src", import.meta.url)) },
     ],
   },

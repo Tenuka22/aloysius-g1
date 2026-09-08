@@ -1,5 +1,5 @@
 {
-  "name": "@aloysius-g1/auth",
+  "name": "@aloysius-admissions/auth",
   "type": "module",
   "exports": {
     ".": {
@@ -11,15 +11,15 @@
   },
   "scripts": {},
   "dependencies": {
-    "@aloysius-g1/db": "workspace:*",
-    "@aloysius-g1/env": "workspace:*",
+    "@aloysius-admissions/db": "workspace:*",
+    "@aloysius-admissions/env": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.2",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aloysius-g1/config": "workspace:*",
+    "@aloysius-admissions/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

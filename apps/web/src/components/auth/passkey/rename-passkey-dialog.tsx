@@ -2,7 +2,7 @@ import type { PasskeyAuthClient } from "@better-auth-ui/core/plugins/passkey"
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react"
 import { useUpdatePasskey } from "@better-auth-ui/react/plugins/passkey"
 import { type FormEvent, useEffect, useState } from "react"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   Dialog,
   DialogClose,
@@ -10,10 +10,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from "@aloysius-g1/ui/components/dialog"
-import { Field, FieldLabel } from "@aloysius-g1/ui/components/field"
-import { Input } from "@aloysius-g1/ui/components/input"
-import { Spinner } from "@aloysius-g1/ui/components/spinner"
+} from "@aloysius-admissions/ui/components/dialog"
+import { Field, FieldLabel } from "@aloysius-admissions/ui/components/field"
+import { Input } from "@aloysius-admissions/ui/components/input"
+import { Spinner } from "@aloysius-admissions/ui/components/spinner"
 import { passkeyPlugin } from "@/lib/auth/passkey-plugin"
 import type { ListedPasskey } from "./delete-passkey-dialog"
 

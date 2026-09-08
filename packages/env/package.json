@@ -1,5 +1,5 @@
 {
-  "name": "@aloysius-g1/env",
+  "name": "@aloysius-admissions/env",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aloysius-g1/config": "workspace:*",
+    "@aloysius-admissions/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   }

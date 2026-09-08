@@ -4,9 +4,9 @@ import { getAuthLinkURL } from "@better-auth-ui/core"
 import { useAuth } from "@better-auth-ui/react"
 import { useEffect, useState } from "react"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-g1/ui/components/card"
-import { FieldDescription } from "@aloysius-g1/ui/components/field"
-import { cn } from "@aloysius-g1/ui/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card"
+import { FieldDescription } from "@aloysius-admissions/ui/components/field"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
 import { OpenEmailButton } from "./open-email-button"
 import { useIsHydrated } from "./use-is-hydrated"
 

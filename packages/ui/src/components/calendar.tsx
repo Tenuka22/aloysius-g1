@@ -7,15 +7,15 @@ import {
   type Locale,
 } from "react-day-picker"
 
-import { cn } from "@aloysius-g1/ui/lib/utils"
-import { Button, buttonVariants } from "@aloysius-g1/ui/components/button"
+import { cn } from "@aloysius-admissions/ui/lib/utils"
+import { Button, buttonVariants } from "@aloysius-admissions/ui/components/button"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@aloysius-g1/ui/components/select"
+} from "@aloysius-admissions/ui/components/select"
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
 
 function Calendar({
