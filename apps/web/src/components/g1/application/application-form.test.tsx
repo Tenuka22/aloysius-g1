@@ -197,10 +197,12 @@ describe("ApplicationForm – step 0 (location)", () => {
     await renderForm();
     const continueButton = screen.getByRole("button", { name: /continue/i });
     expect(continueButton).toBeDisabled();
-    expect(screen.getByText("Select a location on the map to continue.")).toBeInTheDocument();
+    // The location step shows its own skip affordance; the footer reason is
+    // deliberately withheld on step 0 (it only renders for steps 1..n-2).
+    expect(screen.getByText("Don't know the location yet? You can skip it for now and add it before you submit.")).toBeInTheDocument();
     setStore({ location: { ...emptyDraft.location, latitude: 7.29, longitude: 80.63 } });
     expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
-    expect(screen.queryByText("Select a location on the map to continue.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Don't know the location yet? You can skip it for now and add it before you submit.")).not.toBeInTheDocument();
   });
 });
 
@@ -459,8 +461,10 @@ describe("ApplicationForm – step 6 (review)", () => {
     setStore({ ...fullValidDraft, currentStep: 6 });
     await renderReview();
     expect(screen.getByText("Review your draft")).toBeInTheDocument();
-    expect(screen.getByText("Ashan Perera")).toBeInTheDocument();
-    expect(screen.getByText("Kamal Perera")).toBeInTheDocument();
+    // The applicant/guardian names appear both in the header identity panel
+    // and in the review rows.
+    expect(screen.getAllByText("Ashan Perera").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Kamal Perera").length).toBeGreaterThan(0);
     expect(screen.getByText("123 Temple St, Colombo")).toBeInTheDocument();
     expect(screen.getAllByText("Colombo").length).toBeGreaterThan(0);
   });
@@ -565,7 +569,8 @@ describe("ApplicationForm – state transitions", () => {
     await user.click(screen.getByRole("button", { name: /parent \/ guardian/i }));
     await waitFor(() => expect(screen.getByText("NIC number")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: /applicant/i }));
-    expect(screen.getByText("Full name in English")).toBeInTheDocument();
+    // "Full name in English" renders as both a field label and a legend span.
+    expect(screen.getAllByText("Full name in English").length).toBeGreaterThan(0);
   });
 
   it("resets the draft and navigates home when starting another application", async () => {
