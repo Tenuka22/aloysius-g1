@@ -11,6 +11,7 @@ import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { applyClientIp } from "./client-ip";
 import { logUnexpectedError } from "./error-logging";
 import { checkRateLimit } from "./rate-limit";
 
@@ -141,15 +142,19 @@ app.get("/health", async (c) => {
 });
 
 Bun.serve({
-  fetch: app.fetch,
+  fetch: (request, server) => app.fetch(applyClientIp(request, server), server),
   port: 3000,
 });
 
 const SIX_HOURS = 6 * 60 * 60 * 1000;
 const backupInterval = setInterval(() => {
   try {
-    backup();
-    console.log("[backup] periodic backup completed");
+    const created = backup();
+    console.log(
+      created
+        ? "[backup] periodic backup completed"
+        : "[backup] periodic backup skipped (database unchanged)",
+    );
   } catch (err) {
     console.error("[backup] periodic backup failed:", err);
   }

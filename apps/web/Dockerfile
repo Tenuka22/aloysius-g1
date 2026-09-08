@@ -32,6 +32,7 @@ COPY --from=builder --chown=appuser:appgroup /app/apps/web/.output ./.output
 
 USER appuser
 
-ENV PORT=80
-EXPOSE 80
+# Non-root cannot bind privileged ports under Podman/Docker without extra caps.
+ENV PORT=3000
+EXPOSE 3000
 CMD ["bun", ".output/server/index.mjs"]

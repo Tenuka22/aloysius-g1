@@ -1,3 +1,5 @@
+import { CLIENT_IP_HEADER } from "@aloysius-admissions/auth/client-ip-header";
+
 interface RateLimitEntry {
   count: number;
   resetAt: number;
@@ -16,13 +18,14 @@ const configs = {
   default: { windowMs: 60 * 1000, maxRequests: 100 },
 } as const satisfies Record<string, RateLimitConfig>;
 
+/**
+ * Only the socket peer address stamped on by `applyClientIp` is trusted.
+ * Reading `x-forwarded-for` here would be a bypass: it is caller-controlled
+ * while nothing proxies this process, so rotating it would hand every request
+ * a fresh bucket and make the auth limit unenforceable.
+ */
 function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0];
-    return first?.trim() ?? "unknown";
-  }
-  return "unknown";
+  return request.headers.get(CLIENT_IP_HEADER)?.trim() || "unknown";
 }
 
 function getRateLimitKey(ip: string, route: string): string {

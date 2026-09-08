@@ -43,4 +43,7 @@ USER appuser
 EXPOSE 3000
 
 WORKDIR /app/apps/server
-CMD ["sh", "-c", "bun /app/packages/db/scripts/backup.ts && bun run drizzle-kit migrate --config /app/packages/db/drizzle.config.ts && bun dist/index.mjs"]
+# drizzle-kit resolves its bin and its relative config paths (schema/out) from the
+# working directory, and it is hoisted to packages/db/node_modules/.bin, so the
+# migration must run from the db package rather than from apps/server.
+CMD ["sh", "-c", "bun /app/packages/db/scripts/backup-cli.ts && (cd /app/packages/db && bun run drizzle-kit migrate) && exec bun dist/index.mjs"]

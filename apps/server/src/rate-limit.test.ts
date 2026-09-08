@@ -1,9 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { CLIENT_IP_HEADER } from "@aloysius-admissions/auth/client-ip-header";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { checkRateLimit } from "./rate-limit";
 
 function makeRequest(ip?: string): Request {
   const headers = new Headers();
-  if (ip) headers.set("x-forwarded-for", ip);
+  if (ip) headers.set(CLIENT_IP_HEADER, ip);
   return new Request("http://localhost/api/auth/sign-in", { headers });
 }
 
@@ -102,10 +103,23 @@ describe("checkRateLimit", () => {
     expect(blocked.allowed).toBe(false);
   });
 
-  it("handles missing x-forwarded-for header", () => {
+  it("handles a request with no trusted client IP header", () => {
     const req = makeRequest();
     const result = checkRateLimit(req, "auth");
     expect(result.allowed).toBe(true);
+  });
+
+  it("ignores a caller-supplied x-forwarded-for so the limit cannot be bypassed", () => {
+    const spoof = (forwarded: string) => {
+      const headers = new Headers({ [CLIENT_IP_HEADER]: "8.8.8.8", "x-forwarded-for": forwarded });
+      return new Request("http://localhost/api/auth/sign-in", { headers });
+    };
+
+    for (let i = 0; i < 10; i++) {
+      checkRateLimit(spoof(`10.0.0.${i}`), "auth");
+    }
+
+    expect(checkRateLimit(spoof("10.0.0.99"), "auth").allowed).toBe(false);
   });
 
   it("returns a resetAt in the future", () => {

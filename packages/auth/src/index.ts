@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { CLIENT_IP_HEADER } from "./client-ip-header";
 import { createDb } from "@aloysius-admissions/db";
 import * as schema from "@aloysius-admissions/db/schema/auth";
 import { env } from "@aloysius-admissions/env/server";
@@ -8,6 +9,7 @@ import { hashPassword } from "better-auth/crypto";
 import { admin, multiSession } from "better-auth/plugins";
 
 const SITE_ADMIN_EMAIL = "admin@aloysiuscollege.lk";
+
 const EMAIL_ROLES: Record<string, string> = {
   [SITE_ADMIN_EMAIL]: "admin",
 };
@@ -73,6 +75,9 @@ export function createAuth() {
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
+      ipAddress: {
+        ipAddressHeaders: [CLIENT_IP_HEADER],
+      },
       defaultCookieAttributes: {
         sameSite: "none",
         secure: true,
