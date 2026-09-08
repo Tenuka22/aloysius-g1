@@ -4,6 +4,9 @@ ENV SKIP_ENV_VALIDATION=1
 
 COPY package.json bun.lock* ./
 COPY packages/config/package.json packages/config/
+COPY packages/db/package.json packages/db/
+COPY packages/auth/package.json packages/auth/
+COPY packages/api/package.json packages/api/
 COPY packages/ui/package.json packages/ui/
 COPY packages/env/package.json packages/env/
 COPY apps/web/package.json apps/web/

@@ -12,13 +12,12 @@ const EMAIL_ROLES: Record<string, string> = {
   [SITE_ADMIN_EMAIL]: "admin",
 };
 
-/**
- * Generates a one-time random password for a freshly-provisioned admin account.
- * Never reused: printed once at creation time so the operator can hand it off
- * and the real admin can change it immediately.
- */
-function generateTemporaryPassword(): string {
-  return `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, "");
+function getAdminPassword(): string {
+  return env.ADMIN_PASSWORD;
+}
+
+function getSubAdminPassword(): string {
+  return env.SUB_ADMIN_PASSWORD;
 }
 
 export function createAuth() {
@@ -96,7 +95,7 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
   const user = existing[0];
 
   if (!user) {
-    const password = generateTemporaryPassword();
+    const password = getAdminPassword();
     await authInstance.api.createUser({
       body: {
         email: SITE_ADMIN_EMAIL,
@@ -106,7 +105,7 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
       },
     });
     console.log(`[auth] Created site admin: ${SITE_ADMIN_EMAIL}`);
-    console.log(`[auth] Temporary password (shown once, change immediately): ${password}`);
+    console.log(`[auth] Password set from ADMIN_PASSWORD env var`);
     return;
   }
 
@@ -120,11 +119,7 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
   );
 
   if (!existingCredential) {
-    // Site admin user exists (e.g. provisioned via another provider) but has no
-    // password credential yet: create one with a fresh one-time password. An
-    // existing credential's password is NEVER touched here, since rotating it
-    // on every boot would silently undo any password the admin has since set.
-    const password = generateTemporaryPassword();
+    const password = getAdminPassword();
     const hashed = await hashPassword(password);
     await db.insert(schema.account).values({
       id: crypto.randomUUID(),
@@ -137,7 +132,7 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
       updatedAt: new Date(),
     });
     console.log(`[auth] Added missing credential for site admin: ${SITE_ADMIN_EMAIL}`);
-    console.log(`[auth] Temporary password (shown once, change immediately): ${password}`);
+    console.log(`[auth] Password set from ADMIN_PASSWORD env var`);
   }
 
   await db
@@ -162,7 +157,7 @@ export async function ensureSubAdmin(
   const user = existing[0];
 
   if (!user) {
-    const password = generateTemporaryPassword();
+    const password = getSubAdminPassword();
     await authInstance.api.createUser({
       body: {
         email,
@@ -175,7 +170,7 @@ export async function ensureSubAdmin(
       await db.update(schema.user).set({ role: "sub-admin" }).where(eq(schema.user.id, created[0].id));
     }
     console.log(`[auth] Created sub-admin: ${email}`);
-    console.log(`[auth] Temporary password (shown once, change immediately): ${password}`);
+    console.log(`[auth] Password set from SUB_ADMIN_PASSWORD env var`);
     return;
   }
 
@@ -189,11 +184,7 @@ export async function ensureSubAdmin(
   );
 
   if (!existingCredential) {
-    // Sub-admin user exists but has no password credential yet: create one with
-    // a fresh one-time password. An existing credential's password is NEVER
-    // touched here, since rotating it on every run would silently undo a password
-    // the sub-admin has since set.
-    const password = generateTemporaryPassword();
+    const password = getSubAdminPassword();
     const hashed = await hashPassword(password);
     await db.insert(schema.account).values({
       id: crypto.randomUUID(),
@@ -206,7 +197,7 @@ export async function ensureSubAdmin(
       updatedAt: new Date(),
     });
     console.log(`[auth] Added missing credential for sub-admin: ${email}`);
-    console.log(`[auth] Temporary password (shown once, change immediately): ${password}`);
+    console.log(`[auth] Password set from SUB_ADMIN_PASSWORD env var`);
   }
 
   await db
