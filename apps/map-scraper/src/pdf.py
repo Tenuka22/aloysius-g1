@@ -3,11 +3,12 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from pypdf import PdfReader
-
 from .models import SourceSchool
 
-# pypdf's layout extraction preserves the fixed-width columns in schools.pdf.
+# schools.txt is the layout-preserving text extraction of the 2018
+# "List of Government Schools" PDF, which laid its rows out in fixed-width
+# columns. Those column offsets survive the extraction, so rows can be sliced
+# positionally when the whitespace-splitting heuristics below fall short.
 NAME_START = 40
 ADDRESS_START = 145
 CONTACT_START = 248
@@ -17,13 +18,6 @@ TAIL_COLUMNS = 11
 
 def _clean(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
-
-
-def _layout_text(page: object) -> str:
-    try:
-        return page.extract_text(extraction_mode="layout") or ""  # type: ignore[attr-defined]
-    except TypeError:
-        return page.extract_text() or ""  # type: ignore[attr-defined]
 
 
 def _parse_row(line: str) -> SourceSchool | None:
@@ -87,28 +81,26 @@ def _parse_row(line: str) -> SourceSchool | None:
     )
 
 
-def parse_galle_schools(pdf_path: Path) -> list[SourceSchool]:
-    """Extract every Southern/Galle row from the 2018 government-school PDF."""
-    reader = PdfReader(str(pdf_path))
+def parse_galle_schools(source_path: Path) -> list[SourceSchool]:
+    """Extract every Southern/Galle row from the 2018 government-school listing."""
     schools: list[SourceSchool] = []
     seen_ids: set[str] = set()
 
-    for page in reader.pages:
-        for line in _layout_text(page).splitlines():
-            school = _parse_row(line)
-            if school is None or school.school_id in seen_ids:
-                continue
-            seen_ids.add(school.school_id)
-            schools.append(school)
+    for line in source_path.read_text(encoding="utf-8").splitlines():
+        school = _parse_row(line)
+        if school is None or school.school_id in seen_ids:
+            continue
+        seen_ids.add(school.school_id)
+        schools.append(school)
 
     schools.sort(key=lambda school: school.sequence)
     if not schools:
-        raise ValueError(f"No Galle schools found in {pdf_path}")
+        raise ValueError(f"No Galle schools found in {source_path}")
     return schools
 
 
 def display_name(source_name: str) -> str:
-    """Turn the PDF's uppercase school name into a readable English label."""
+    """Turn the listing's uppercase school name into a readable English label."""
     name = _clean(source_name).title()
     name = re.sub(r"\bSt\.", "St. ", name)
     name = re.sub(r"\bDr\.", "Dr. ", name)

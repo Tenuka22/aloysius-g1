@@ -79,7 +79,7 @@ export const g1ApplicationMarks = sqliteTable("g1_application_marks", {
  * Manual lat/lng overrides for the Galle government school catalog.
  *
  * The base catalog (apps/web/src/lib/g1/schools.ts) is generated from the
- * schools.pdf scrape and ships with the web bundle. Schools that Google
+ * government-school listing scrape and ships with the web bundle. Schools that Google
  * Maps could not pin down are filled in by an admin through the schools hub;
  * those coordinates live here so every deployment and every client reads the
  * same overrides instead of editing checked-in JSON files.

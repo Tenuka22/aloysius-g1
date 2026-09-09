@@ -27,7 +27,7 @@ from .pdf import parse_galle_schools
 from .scraper import GoogleMapsScraper, load_attempts, record_attempt, save_attempts
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_PDF = HERE.parents[2] / "schools.pdf"
+DEFAULT_SOURCE = HERE.parent / "schools.txt"
 DEFAULT_CACHE = HERE.parent / "map_coordinates.json"  # same cache the main scraper writes
 REVIEW_PATH = HERE / "rescue_review.txt"
 
@@ -36,8 +36,8 @@ for _stream in (sys.stdout, sys.stderr):
         _stream.reconfigure(encoding="utf-8", line_buffering=True)
 
 
-def load_sources(pdf_path: Path) -> list[SourceSchool]:
-    return parse_galle_schools(pdf_path)
+def load_sources(source_path: Path) -> list[SourceSchool]:
+    return parse_galle_schools(source_path)
 
 
 def load_cache(cache_path: Path) -> dict[str, MapSchool]:
@@ -57,7 +57,7 @@ def save_cache(cache_path: Path, cache: dict[str, MapSchool]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pdf", type=Path, default=DEFAULT_PDF)
+    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
     parser.add_argument("--map-cache", type=Path, default=DEFAULT_CACHE)
     parser.add_argument("--delay", type=float, default=1.1)
     parser.add_argument("--headful", action="store_true")
@@ -70,7 +70,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    sources = load_sources(args.pdf)
+    sources = load_sources(args.source)
     cache = load_cache(args.map_cache)
     located = {
         school_id

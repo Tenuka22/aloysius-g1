@@ -1,128 +1,261 @@
-# aloysius-admissions
+# Aloysius Admissions
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Elysia, ORPC, and more.
+Grade 1 admissions portal for **St. Aloysius' College, Galle**.
 
-## Features
+Guardians open an application with a private access key, fill in applicant,
+guardian, residence and marking-scheme details, and submit. Staff score and
+manage those applications from an admin console covering applications,
+admissions, the school catalog, map view, mark allocation, data extraction and
+access/removal requests.
 
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Elysia** - Type-safe, high-performance framework
-- **oRPC** - End-to-end type-safe APIs with OpenAPI integration
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **SQLite** - File-based database engine
-- **Authentication** - Better-Auth
-- **Nx** - Smart monorepo task orchestration and caching
+- Public portal: <http://localhost:3001>
+- API: <http://localhost:3000>
 
-## Getting Started
+## Stack
 
-First, install the dependencies:
+| Layer | Choice |
+| --- | --- |
+| Runtime / package manager | Bun 1.3 |
+| Monorepo orchestration | Nx, Bun workspaces |
+| Web | TanStack Start + TanStack Router, React 19, Vite 8 |
+| Styling | Tailwind CSS 4, shadcn/Base UI primitives in `packages/ui` |
+| API server | Hono |
+| RPC | oRPC (typed RPC plus a generated OpenAPI reference) |
+| Auth | Better Auth (admin + multi-session plugins) |
+| Database | SQLite via `bun:sqlite`, Drizzle ORM + drizzle-kit migrations |
+| Lint / format | Biome |
+| Tests | Vitest (unit), `bun test` (database integration) |
+
+## Prerequisites
+
+- [Bun](https://bun.sh) 1.3 or newer
+- Podman or Docker, only for the container workflows
+- [uv](https://docs.astral.sh/uv/), only to run the school-catalog scraper
+
+## Quick start
 
 ```bash
 bun install
 ```
 
-## Database Setup
-
-This project uses SQLite with Drizzle ORM. The database file is stored at `data/local.db` and is ignored by Git.
-
-1. Install the dependencies:
+Create `apps/server/.env` and `apps/web/.env` (see [Environment](#environment)),
+then create the database and start everything:
 
 ```bash
-bun install
+bun run db:push   # create/refresh the SQLite schema
+bun run dev       # web on :3001, server on :3000
 ```
 
-2. Generate or update the Better Auth Drizzle schema when auth fields or plugins change:
+On first boot the server ensures a site admin exists:
+
+- Email: `admin@aloysiuscollege.lk`
+- Password: whatever `ADMIN_PASSWORD` is set to
+
+## Environment
+
+Both apps validate their environment at import time and refuse to start when a
+variable is missing, so fill these in before running anything.
+
+### `apps/server/.env`
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `DATABASE_URL` | yes | SQLite path. Relative values resolve from the repo root, e.g. `../../data/local.db`. A `file:` prefix is accepted. |
+| `BETTER_AUTH_SECRET` | yes | At least 32 characters. |
+| `BETTER_AUTH_URL` | yes | Public URL of the API, e.g. `http://localhost:3000`. |
+| `CORS_ORIGIN` | yes | Allowed origin(s), comma-separated. Must include the web origin. |
+| `NODE_ENV` | no | `development` (default), `production` or `test`. |
+| `ADMIN_PASSWORD` | no | Site-admin password, min 8 chars. Change it before deploying. |
+| `SUB_ADMIN_PASSWORD` | no | Sub-admin password, min 8 chars. |
+
+Set `SKIP_ENV_VALIDATION=1` to bypass validation during builds that never read
+these values.
+
+### `apps/web/.env`
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `VITE_SERVER_URL` | yes | API URL the browser calls, e.g. `http://localhost:3000`. Baked into the build. |
+
+During server-side rendering the web app prefers the `SERVER_URL` environment
+variable, which lets containers reach the API over the internal network while
+the browser still uses the public URL.
+
+## Project layout
+
+```
+aloysius-g1/
+├── apps/
+│   ├── web/           # TanStack Start front end (React 19, Vite)
+│   ├── server/        # Hono API: oRPC handlers, Better Auth
+│   └── map-scraper/   # Python/uv tool that builds the school catalog
+├── packages/
+│   ├── api/           # oRPC routers and business logic
+│   ├── auth/          # Better Auth configuration and admin bootstrap
+│   ├── db/            # Drizzle schema, migrations, seed, backup/restore
+│   ├── env/           # Validated server and web environment schemas
+│   ├── ui/            # Shared shadcn/Base UI components and design tokens
+│   ├── config/        # Shared TypeScript config
+│   └── docker/        # Side-by-side Docker Compose stack
+├── data/              # SQLite database and backups (git-ignored)
+└── docker-compose.yml # Podman Compose stack
+```
+
+## Scripts
+
+### Development
+
+| Command | Description |
+| --- | --- |
+| `bun run dev` | Start web and server together |
+| `bun run dev:web` | Start only the web app |
+| `bun run dev:server` | Start only the API |
+| `bun run build` | Build every app |
+| `bun run check-types` | TypeScript check across the workspace |
+| `bun run lint` / `lint:fix` | Biome check, optionally autofixing |
+| `bun run format` | Biome formatter |
+
+### Database
+
+| Command | Description |
+| --- | --- |
+| `bun run db:push` | Push the schema straight to SQLite (development) |
+| `bun run db:generate` | Generate a migration from schema changes |
+| `bun run db:migrate` | Back up, then apply pending migrations |
+| `bun run db:studio` | Open Drizzle Studio |
+| `bun run db:seed` | Seed reference data |
+| `bun run db:auth` | Regenerate the Better Auth Drizzle schema |
+
+Run backup and restore from `packages/db`:
 
 ```bash
-bun run db:auth
+bun --cwd packages/db run db:backup
+bun --cwd packages/db run db:restore            # newest backup
+bun --cwd packages/db run db:restore 2026-01-01_12-00-00-000.db
 ```
 
-3. Apply the schema to the SQLite file:
+Backups land in `data/backups`. A snapshot is taken before every migration and
+every six hours while the server runs. Snapshots identical to the previous one
+are skipped, so a restart loop cannot churn through the retention window.
+Retention keeps everything from the last 30 days, never fewer than 10 backups
+and never more than 200.
+
+### Tests
+
+| Command | Description |
+| --- | --- |
+| `bun run test` | Vitest unit and component suites |
+| `bun run test:integration` | `bun test` suites that hit a real SQLite database |
+| `bun run test:all` | Both of the above |
+
+Integration suites are named `*.integration.test.ts` and run under Bun rather
+than Vitest, because they import `bun:sqlite`.
+
+## UI
+
+Shared primitives live in `packages/ui`.
+
+- Design tokens and global styles: `packages/ui/src/styles/globals.css`
+- Components: `packages/ui/src/components/*`
+- shadcn aliases: `packages/ui/components.json`, `apps/web/components.json`
+
+Add shared primitives from the repo root:
 
 ```bash
-bun run db:push
+bunx shadcn@latest add dialog popover sheet table -c packages/ui
 ```
 
-Then, run the development server:
-
-```bash
-bun run dev
-```
-
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
-
-## UI Customization
-
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
-
-```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
-```
-
-Import shared components like this:
+Import them through the workspace alias:
 
 ```tsx
 import { Button } from "@aloysius-admissions/ui/components/button";
 ```
 
-### Add app-specific blocks
+For blocks that only one app needs, run the shadcn CLI from `apps/web` instead.
 
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
+## School catalog
+
+`apps/web/src/lib/g1/schools.json` holds the 429-school catalog and is
+generated, not hand-written. `apps/web/src/lib/g1/schools.ts` only declares the
+types and gives that JSON a type once, so application code imports `SCHOOLS`
+from the module rather than reaching for the JSON directly.
+
+The data comes from `apps/map-scraper`, which parses
+`apps/map-scraper/schools.txt` — the layout-preserving text extraction of the
+2018 *List of Government Schools* — and merges Google Maps coordinates cached
+in `map_coordinates.json`.
+
+```bash
+cd apps/map-scraper
+uv sync
+uv run main.py          # parse the listing and regenerate the catalog
+uv run python -m src.rescue   # re-scrape coordinates that are still missing
+```
+
+Regeneration is idempotent: rerunning `main.py` against an unchanged listing and
+cache reproduces the committed catalog byte for byte, so any diff is a real
+change worth reviewing. Coordinates already present in the catalog are carried
+forward when the scrape cache has nothing newer, so a refresh never silently
+drops a location.
+
+Schools that Maps cannot pin down are left without coordinates and are filled in
+by an admin through the schools hub; those overrides live in the database, not
+in the generated file. The admin hub can also bulk-seed overrides from
+`apps/map-scraper/schools_data.json` — the scraper's richer output, which keeps
+the source address and Maps URL that the web catalog deliberately omits.
 
 ## Deployment
 
 ### Podman Compose
 
-- Target: web + server
-- Config: `docker-compose.yml` (used with Podman; app Dockerfiles live in `apps/*/Dockerfile`)
-- Build images: `bun run podman:build`
-- Start: `bun run podman:up`
-- Logs: `bun run podman:logs`
-- Stop: `bun run podman:down`
+`docker-compose.yml` at the repo root builds and runs both apps. Web is
+published on `3001`, the API on `3000`.
 
-Environment variables are read from each app's `.env` file (baked into web builds for public variables) and overridden in `docker-compose.yml` for container networking. The server applies Drizzle migrations before it starts.
+| Command | Description |
+| --- | --- |
+| `bun run podman:build` | Build both images |
+| `bun run podman:up` | Build and start in the background |
+| `bun run podman:logs` | Tail logs |
+| `bun run podman:down` | Stop and remove |
 
-### Docker Compose side by side
+Runtime configuration comes from each app's `.env`, with container networking
+values overridden in the compose file. Public web values are baked in at build
+time through the `VITE_SERVER_URL` build argument. The server takes a backup and
+applies pending Drizzle migrations before it starts serving.
 
-The Docker stack is kept in `packages/docker/docker-compose.yml`. It uses ports `3100` (server) and `3101` (web), so it can run alongside the Podman stack. The SQLite file is persisted through the repository’s `data/` directory. Run it with `bun --cwd packages/docker run up` or the root `docker:up` script.
+Both containers run as a non-root user and therefore listen on unprivileged
+ports inside the container; the published host ports are unchanged.
 
-For more details, see the guide on [Deploying with Docker Compose](https://www.better-t-stack.dev/docs/guides/docker).
+### Docker Compose, side by side
 
-### Published container images
-
-Images are published to the GitHub Container Registry:
-
-| Service | Image | Package page |
-| --- | --- | --- |
-| Server | `ghcr.io/tenuka22/aloysius-g1-server` | [packages/aloysius-g1-server](https://github.com/users/Tenuka22/packages/container/package/aloysius-g1-server) |
-| Web | `ghcr.io/tenuka22/aloysius-g1-web` | [packages/aloysius-g1-web](https://github.com/users/Tenuka22/packages/container/package/aloysius-g1-web) |
-
-Each is tagged `latest` plus the short commit SHA it was built from (for example `4b40c24`). Pull them with:
+`packages/docker/docker-compose.yml` runs the same stack on `3100` (API) and
+`3101` (web) so it can coexist with the Podman stack. Both share the repository's
+`data/` directory for SQLite.
 
 ```bash
-podman pull ghcr.io/tenuka22/aloysius-g1-server:latest
-podman pull ghcr.io/tenuka22/aloysius-g1-web:latest
+bun run docker:up
+bun run docker:logs
+bun run docker:down
 ```
 
-The packages are private, so pull requires a login with a token carrying `read:packages`:
+### Published images
+
+| Service | Image | Package |
+| --- | --- | --- |
+| Server | `ghcr.io/tenuka22/aloysius-g1-server` | [aloysius-g1-server](https://github.com/users/Tenuka22/packages/container/package/aloysius-g1-server) |
+| Web | `ghcr.io/tenuka22/aloysius-g1-web` | [aloysius-g1-web](https://github.com/users/Tenuka22/packages/container/package/aloysius-g1-web) |
+
+Each image is tagged `latest` plus the short commit SHA it was built from.
+Public packages can be pulled anonymously; while a package is private, pulling
+needs a token with `read:packages`:
 
 ```bash
 gh auth token | podman login ghcr.io -u <github-username> --password-stdin
+podman pull ghcr.io/tenuka22/aloysius-g1-server:latest
 ```
 
-To publish a new build, tag the compose-built images and push:
+Publishing needs `write:packages`
+(`gh auth refresh -h github.com -s write:packages`):
 
 ```bash
 bun run podman:build
@@ -135,36 +268,11 @@ for svc in server web; do
 done
 ```
 
-Pushing needs `write:packages` on the token (`gh auth refresh -h github.com -s write:packages`).
+## Operational notes
 
-## Project Structure
-
-```
-aloysius-admissions/
-├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Elysia, ORPC)
-├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
-```
-
-## Available Scripts
-
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:server`: Start only the server
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:auth`: Generate the Better Auth Drizzle schema
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `bun run podman:build`: Build the Podman Compose images
-- `bun run podman:up`: Build and start the Podman Compose stack
-- `bun run podman:logs`: Tail logs from the Podman Compose stack
-- `bun run podman:down`: Stop the Podman Compose stack
-- `bun run docker:up`: Build and start the side-by-side Docker Compose stack
+- The API resolves each caller's IP from the socket rather than from
+  `X-Forwarded-For`, which is caller-controlled while nothing proxies the
+  process. If you put a reverse proxy in front, resolve the forwarded chain in
+  `apps/server/src/client-ip.ts` — it is the single place that decides.
+- No request rate limiting is applied: the server has no limiter of its own and
+  better-auth's built-in per-IP limiter is disabled in `packages/auth/src/index.ts`.

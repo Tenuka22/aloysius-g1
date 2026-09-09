@@ -36,7 +36,6 @@ data/
 # Non-app directories
 plans/
 apps/map-scraper/
-schools.pdf
 
 # IDE / editor
 .vscode
