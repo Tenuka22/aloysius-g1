@@ -100,6 +100,43 @@ The Docker stack is kept in `packages/docker/docker-compose.yml`. It uses ports 
 
 For more details, see the guide on [Deploying with Docker Compose](https://www.better-t-stack.dev/docs/guides/docker).
 
+### Published container images
+
+Images are published to the GitHub Container Registry:
+
+| Service | Image | Package page |
+| --- | --- | --- |
+| Server | `ghcr.io/tenuka22/aloysius-g1-server` | [packages/aloysius-g1-server](https://github.com/users/Tenuka22/packages/container/package/aloysius-g1-server) |
+| Web | `ghcr.io/tenuka22/aloysius-g1-web` | [packages/aloysius-g1-web](https://github.com/users/Tenuka22/packages/container/package/aloysius-g1-web) |
+
+Each is tagged `latest` plus the short commit SHA it was built from (for example `4b40c24`). Pull them with:
+
+```bash
+podman pull ghcr.io/tenuka22/aloysius-g1-server:latest
+podman pull ghcr.io/tenuka22/aloysius-g1-web:latest
+```
+
+The packages are private, so pull requires a login with a token carrying `read:packages`:
+
+```bash
+gh auth token | podman login ghcr.io -u <github-username> --password-stdin
+```
+
+To publish a new build, tag the compose-built images and push:
+
+```bash
+bun run podman:build
+SHA=$(git rev-parse --short HEAD)
+for svc in server web; do
+  podman tag "aloysius-admissions-podman-$svc" "ghcr.io/tenuka22/aloysius-g1-$svc:$SHA"
+  podman tag "aloysius-admissions-podman-$svc" "ghcr.io/tenuka22/aloysius-g1-$svc:latest"
+  podman push "ghcr.io/tenuka22/aloysius-g1-$svc:$SHA"
+  podman push "ghcr.io/tenuka22/aloysius-g1-$svc:latest"
+done
+```
+
+Pushing needs `write:packages` on the token (`gh auth refresh -h github.com -s write:packages`).
+
 ## Project Structure
 
 ```
