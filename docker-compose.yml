@@ -1,12 +1,12 @@
 name: aloysius-admissions-podman
 
 services:
+  # One service: the TanStack Start app serves the UI and the API (auth, RPC,
+  # OpenAPI) from a single origin, so there is no cross-origin wiring left.
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-      args:
-        VITE_SERVER_URL: http://localhost:3000
     init: true
     ports:
       - "3001:3000"
@@ -14,37 +14,20 @@ services:
       - path: apps/web/.env
         required: false
     environment:
-      SERVER_URL: http://server:3000
-    depends_on:
-      server:
-        condition: service_healthy
+      # Absolute, and inside the volume mount rather than the image.
+      DATABASE_URL: /app/data/local.db
+      # The public origin, used for auth callbacks and cookies.
+      BETTER_AUTH_URL: http://localhost:3001
     healthcheck:
-      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
-    restart: unless-stopped
-
-  server:
-    build:
-      context: .
-      dockerfile: apps/server/Dockerfile
-    init: true
-    ports:
-      - "3000:3000"
-    env_file:
-      - path: apps/server/.env
-        required: false
-    environment:
-      CORS_ORIGIN: http://localhost:3001
-      DATABASE_URL: ../../data/local.db
-    healthcheck:
-      test: ["CMD", "bun", "-e", "fetch('http://localhost:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
+      start_period: 30s
     restart: unless-stopped
     volumes:
       - ./data:/app/data

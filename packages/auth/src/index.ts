@@ -5,6 +5,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { hashPassword } from "better-auth/crypto";
 import { admin, multiSession } from "better-auth/plugins";
+import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 import { CLIENT_IP_HEADER } from "./client-ip-header";
 
@@ -38,7 +39,9 @@ export function createAuth() {
 
       schema: schema,
     }),
-    trustedOrigins: [env.CORS_ORIGIN],
+    // The app is served from a single origin now, so the only trusted origin
+    // is its own public URL.
+    trustedOrigins: [env.BETTER_AUTH_URL],
     user: {
       additionalFields: {
         role: {
@@ -92,12 +95,17 @@ export function createAuth() {
         ipAddressHeaders: [CLIENT_IP_HEADER],
       },
       defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
+        // The API is served from the same origin as the app, so the cookie no
+        // longer has to be a cross-site one. `none` would additionally force
+        // `secure`, which breaks plain-http local development.
+        sameSite: "lax",
+        secure: env.NODE_ENV === "production",
         httpOnly: true,
       },
     },
-    plugins: [admin(), multiSession()],
+    // tanstackStartCookies must stay last: it wraps the preceding plugins so
+    // any Set-Cookie they produce is written through TanStack Start.
+    plugins: [admin(), multiSession(), tanstackStartCookies()],
   });
 }
 

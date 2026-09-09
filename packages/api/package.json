@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "@aloysius-admissions/config": "workspace:*",
-    "hono": "catalog:",
     "typescript": "catalog:"
   }
 }

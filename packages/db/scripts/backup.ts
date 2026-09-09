@@ -1,8 +1,8 @@
-import { Database } from "bun:sqlite";
+import Database from "better-sqlite3";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
-import { dirname, isAbsolute, join } from "node:path";
-import { env } from "@aloysius-admissions/env/server";
+import { dirname, join } from "node:path";
+import { resolveDatabasePath } from "../src/path";
 
 /** Newest backups are always kept, however old they are. */
 const MIN_BACKUPS = 10;
@@ -12,10 +12,7 @@ const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_BACKUPS = 200;
 
 function resolveDbPath(): string {
-  const configuredPath = env.DATABASE_URL.replace(/^file:/, "");
-  return isAbsolute(configuredPath)
-    ? configuredPath
-    : join(import.meta.dir, "../../../", configuredPath.replace(/^([.][.][\\/])+/, ""));
+  return resolveDatabasePath();
 }
 
 function backupsDir(dbPath: string): string {

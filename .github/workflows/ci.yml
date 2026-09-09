@@ -59,7 +59,5 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - name: Build server image
-        run: docker build -f apps/server/Dockerfile -t aloysius-server:${{ github.sha }} .
-      - name: Build web image
+      - name: Build app image
         run: docker build -f apps/web/Dockerfile -t aloysius-web:${{ github.sha }} .

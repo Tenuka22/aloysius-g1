@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useEffect, useState } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /* ───────── mock infrastructure (hoisted before imports) ───────── */
 
@@ -35,17 +35,27 @@ vi.mock("@tanstack/react-query", () => ({
     const key = queries.map((q) => JSON.stringify(q.queryKey)).join("|");
     useEffect(() => {
       let cancelled = false;
-      setResults(queries.map(() => ({ isPending: true, isError: false, data: undefined, error: undefined })));
+      setResults(
+        queries.map(() => ({ isPending: true, isError: false, data: undefined, error: undefined })),
+      );
       queries.forEach((query, index) => {
         Promise.resolve()
           .then(() => query.queryFn())
           .then((data) => {
             if (cancelled) return;
-            setResults((prev) => prev.map((r, i) => (i === index ? { isPending: false, isError: false, data, error: undefined } : r)));
+            setResults((prev) =>
+              prev.map((r, i) =>
+                i === index ? { isPending: false, isError: false, data, error: undefined } : r,
+              ),
+            );
           })
           .catch((error) => {
             if (cancelled) return;
-            setResults((prev) => prev.map((r, i) => (i === index ? { isPending: false, isError: true, data: undefined, error } : r)));
+            setResults((prev) =>
+              prev.map((r, i) =>
+                i === index ? { isPending: false, isError: true, data: undefined, error } : r,
+              ),
+            );
           });
       });
       return () => {
@@ -58,9 +68,7 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, ...props }: any) => (
-    <a href={props.to ?? "#"}>{children}</a>
-  ),
+  Link: ({ children, ...props }: any) => <a href={props.to ?? "#"}>{children}</a>,
   createFileRoute: () => (opts: any) => ({ ...opts, useLoaderData: () => ({ isAdmin: false }) }),
   lazyRouteComponent: vi.fn(),
   Outlet: () => null,
@@ -166,11 +174,10 @@ describe("HomeComponent – renders correctly", () => {
    ════════════════════════════════════════════════════════════════════════════ */
 
 describe("HomeComponent – new application", () => {
-  it("navigates to /application when new application is clicked", async () => {
-    const user = userEvent.setup();
+  it("links to /application from the new application action", () => {
     render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
-    await user.click(screen.getByRole("button", { name: /new application/i }));
-    expect(window.location.assign).toHaveBeenCalledWith("/application");
+    const action = screen.getByRole("button", { name: /new application/i });
+    expect(action.closest("a")).toHaveAttribute("href", "/application");
   });
 });
 
@@ -202,11 +209,9 @@ describe("HomeComponent – load with key dialog", () => {
     await user.type(screen.getByPlaceholderText(/paste access key/i), "TEST-KEY-123");
     await user.click(screen.getByRole("button", { name: /open application/i }));
     expect(window.location.assign).toHaveBeenCalledWith(
-      expect.stringContaining("/application/access?key=")
+      expect.stringContaining("/application/access?key="),
     );
-    expect(window.location.assign).toHaveBeenCalledWith(
-      expect.stringContaining("TEST-KEY-123")
-    );
+    expect(window.location.assign).toHaveBeenCalledWith(expect.stringContaining("TEST-KEY-123"));
   });
 
   it("stores key in a cookie after loading", async () => {
@@ -364,6 +369,8 @@ describe("HomeComponent – error handling", () => {
     setCookie("aloysius-admissions-application-keys", JSON.stringify(["bad-key"]));
     getMock.mockRejectedValue(new Error("Not found"));
     render(<HomeComponent isAdmin={false} isSubAdmin={false} />);
-    await waitFor(() => expect(screen.getByText(/no longer exists on the server/i)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText(/no longer exists on the server/i)).toBeInTheDocument(),
+    );
   });
 });

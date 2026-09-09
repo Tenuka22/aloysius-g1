@@ -1,10 +1,12 @@
-import { env } from "@aloysius-admissions/env/server";
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { dirname, isAbsolute, join } from "node:path";
 import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 
 import * as schema from "./schema";
+import { resolveDatabasePath } from "./path";
+
+export { resolveDatabasePath } from "./path";
 
 export {
   g1Applications,
@@ -15,11 +17,10 @@ export {
 } from "./schema/g1-logic";
 
 export function createDb() {
-  const configuredPath = env.DATABASE_URL.replace(/^file:/, "");
-  const databasePath = isAbsolute(configuredPath)
-    ? configuredPath
-    : join(import.meta.dir, "../../../", configuredPath.replace(/^([.][.][\\/])+/, ""));
+  const databasePath = resolveDatabasePath();
   mkdirSync(dirname(databasePath), { recursive: true });
+  // better-sqlite3 rather than bun:sqlite: the server is a TanStack Start app
+  // whose dev SSR environment runs under Node, which cannot load `bun:sqlite`.
   return drizzle(new Database(databasePath), { schema });
 }
 

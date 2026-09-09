@@ -1,14 +1,19 @@
 import { createAuth } from "@aloysius-admissions/auth";
-import type { Context as HonoContext } from "hono";
 
 export type CreateContextOptions = {
-  context: HonoContext;
+  /** Incoming request headers; the session cookie is read from these. */
+  headers: Headers;
 };
 
-export async function createContext({ context }: CreateContextOptions) {
-  const session = await createAuth().api.getSession({
-    headers: context.req.raw.headers,
-  });
+/**
+ * Builds the oRPC request context.
+ *
+ * Takes plain `Headers` rather than a framework request object so the router
+ * can be mounted from a TanStack Start server route without the API package
+ * depending on a server framework.
+ */
+export async function createContext({ headers }: CreateContextOptions) {
+  const session = await createAuth().api.getSession({ headers });
   return {
     auth: null,
     session,

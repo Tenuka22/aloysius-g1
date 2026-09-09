@@ -85,10 +85,7 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
     };
   });
 
-  const createNewApplication = () => {
-    clearActiveKey();
-    window.location.assign("/application");
-  };
+
   const removeApplication = (key: string) => {
     removeSavedApplication(key);
     ui.setRemoveKey(null);
@@ -170,10 +167,10 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
             {t("home.quickActions.heading")}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            <Button type="button" className="h-auto py-4 flex-col items-center gap-2 text-sm font-medium shadow-sm shadow-primary/10" onClick={createNewApplication}><Plus size={18} strokeWidth={2.5} /> {t("home.quickActions.newApplication")}</Button>
+            <Link to="/application" onClick={clearActiveKey} className="contents"><Button type="button" className="h-auto py-4 flex-col items-center gap-2 text-sm font-medium shadow-sm shadow-primary/10 w-full"><Plus size={18} strokeWidth={2.5} /> {t("home.quickActions.newApplication")}</Button></Link>
             <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => ui.openLoadKey()}><KeyRound size={18} /> {t("home.quickActions.loadWithKey")}</Button>
-            {isAdmin && <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => window.location.assign("/g1/admin")}><ShieldCheck size={18} /> {t("home.quickActions.adminPanel")}</Button>}
-            {!isAdmin && isSubAdmin && <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => window.location.assign("/sub-admin")}><ShieldCheck size={18} /> {t("home.quickActions.subAdminPanel")}</Button>}
+            {isAdmin && <Link to="/g1/admin" className="contents"><Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm w-full"><ShieldCheck size={18} /> {t("home.quickActions.adminPanel")}</Button></Link>}
+            {!isAdmin && isSubAdmin && <Link to="/sub-admin" className="contents"><Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm w-full"><ShieldCheck size={18} /> {t("home.quickActions.subAdminPanel")}</Button></Link>}
             <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => ui.setManageKeysOpen(true)} disabled={keys.length === 0}><KeyRound size={18} /> {t("home.quickActions.manageSavedKeys")}</Button>
             <Button type="button" variant="secondary" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => ui.setQrImportOpen(true)}><Upload size={18} /> {t("home.quickActions.importQrImage")}</Button>
             <Button type="button" variant="outline" className="h-auto py-4 flex-col items-center gap-2 text-sm" onClick={() => ui.openRecovery(keys[0] ?? null)}><Trash2 size={18} /> {t("home.quickActions.forgotKey")}</Button>

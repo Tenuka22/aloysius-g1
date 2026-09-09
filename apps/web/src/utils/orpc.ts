@@ -1,12 +1,11 @@
 import type { AppRouterClient } from "@aloysius-admissions/api/routers/index";
-import { env } from "@aloysius-admissions/env/web";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
-import { getIncomingCookieHeader } from "@/lib/incoming-cookie";
+import { createIsomorphicFn } from "@tanstack/react-start";
+import { getRequest, getRequestHeaders } from "@tanstack/react-start/server";
 import { toast } from "sonner";
-import { getServerUrl } from "./server-url";
 
 export function createQueryClient() {
   return new QueryClient({
@@ -40,22 +39,25 @@ export function createQueryClient() {
 
 export const queryClient = createQueryClient();
 
-export const link = new RPCLink({
-  url: `${getServerUrl(env.VITE_SERVER_URL)}/rpc`,
-  fetch(url, options) {
-    const cookie = getIncomingCookieHeader();
-    if (cookie) {
-      return fetch(url, {
-        ...(options as RequestInit),
-        headers: { ...(options as RequestInit)?.headers, cookie },
-      });
-    }
-    return fetch(url, {
-      ...options,
-      credentials: "include",
-    });
-  },
-});
+/**
+ * The RPC endpoint lives on this app's own origin, so the browser just uses a
+ * relative URL. During SSR there is no origin and no cookie jar, so the link
+ * resolves both from the incoming request instead of forwarding cookies by
+ * hand the way the separate-server setup had to.
+ */
+export const link = createIsomorphicFn()
+  // Absolute on both sides: oRPC resolves this with `new URL(...)`, which
+  // throws on a bare path because there is no base to resolve it against.
+  .client(() => new RPCLink({ url: new URL("/api/rpc", window.location.origin).toString() }))
+  .server(
+    () =>
+      new RPCLink({
+        // Absolute during SSR: there is no document to resolve a relative URL
+        // against. Resolved per request so it works behind any host.
+        url: () => new URL("/api/rpc", new URL(getRequest().url).origin).toString(),
+        headers: () => getRequestHeaders(),
+      }),
+  )();
 
 export const client: AppRouterClient = createORPCClient(link);
 

@@ -8,8 +8,7 @@ manage those applications from an admin console covering applications,
 admissions, the school catalog, map view, mark allocation, data extraction and
 access/removal requests.
 
-- Public portal: <http://localhost:3001>
-- API: <http://localhost:3000>
+- Public portal and API: <http://localhost:3001>
 
 ## Stack
 
@@ -19,7 +18,7 @@ access/removal requests.
 | Monorepo orchestration | Nx, Bun workspaces |
 | Web | TanStack Start + TanStack Router, React 19, Vite 8 |
 | Styling | Tailwind CSS 4, shadcn/Base UI primitives in `packages/ui` |
-| API server | Hono |
+| API | TanStack Start server routes, same origin as the UI |
 | RPC | oRPC (typed RPC plus a generated OpenAPI reference) |
 | Auth | Better Auth (admin + multi-session plugins) |
 | Database | SQLite via `bun:sqlite`, Drizzle ORM + drizzle-kit migrations |
@@ -38,32 +37,31 @@ access/removal requests.
 bun install
 ```
 
-Create `apps/server/.env` and `apps/web/.env` (see [Environment](#environment)),
-then create the database and start everything:
+Create `apps/web/.env` (see [Environment](#environment)), then create the
+database and start everything:
 
 ```bash
 bun run db:push   # create/refresh the SQLite schema
-bun run dev       # web on :3001, server on :3000
+bun run dev       # UI and API together on :3001
 ```
 
-On first boot the server ensures a site admin exists:
+On first boot the app ensures a site admin exists:
 
 - Email: `admin@aloysiuscollege.lk`
 - Password: whatever `ADMIN_PASSWORD` is set to
 
 ## Environment
 
-Both apps validate their environment at import time and refuse to start when a
+The app validates its environment at import time and refuses to start when a
 variable is missing, so fill these in before running anything.
 
-### `apps/server/.env`
+### `apps/web/.env`
 
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `DATABASE_URL` | yes | SQLite path. Relative values resolve from the repo root, e.g. `../../data/local.db`. A `file:` prefix is accepted. |
 | `BETTER_AUTH_SECRET` | yes | At least 32 characters. |
-| `BETTER_AUTH_URL` | yes | Public URL of the API, e.g. `http://localhost:3000`. |
-| `CORS_ORIGIN` | yes | Allowed origin(s), comma-separated. Must include the web origin. |
+| `BETTER_AUTH_URL` | yes | Public origin of the app, e.g. `http://localhost:3001`. |
 | `NODE_ENV` | no | `development` (default), `production` or `test`. |
 | `ADMIN_PASSWORD` | no | Site-admin password, min 8 chars. Change it before deploying. |
 | `SUB_ADMIN_PASSWORD` | no | Sub-admin password, min 8 chars. |
@@ -72,29 +70,18 @@ variable is missing, so fill these in before running anything.
 Set `SKIP_ENV_VALIDATION=1` to bypass validation during builds that never read
 these values.
 
-### `apps/web/.env`
-
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `VITE_SERVER_URL` | yes | API URL the browser calls, e.g. `http://localhost:3000`. Baked into the build. |
-
-During server-side rendering the web app prefers the `SERVER_URL` environment
-variable, which lets containers reach the API over the internal network while
-the browser still uses the public URL.
-
 ## Project layout
 
 ```
 aloysius-g1/
 ├── apps/
-│   ├── web/           # TanStack Start front end (React 19, Vite)
-│   ├── server/        # Hono API: oRPC handlers, Better Auth
+│   ├── web/           # TanStack Start app: React 19 UI plus the API it serves
 │   └── map-scraper/   # Python/uv tool that builds the school catalog
 ├── packages/
 │   ├── api/           # oRPC routers and business logic
 │   ├── auth/          # Better Auth configuration and admin bootstrap
 │   ├── db/            # Drizzle schema, migrations, seed, backup/restore
-│   ├── env/           # Validated server and web environment schemas
+│   ├── env/           # Validated environment schema
 │   ├── ui/            # Shared shadcn/Base UI components and design tokens
 │   ├── config/        # Shared TypeScript config
 │   └── docker/        # Side-by-side Docker Compose stack
@@ -214,24 +201,23 @@ published on `3001`, the API on `3000`.
 
 | Command | Description |
 | --- | --- |
-| `bun run podman:build` | Build both images |
+| `bun run podman:build` | Build the image |
 | `bun run podman:up` | Build and start in the background |
 | `bun run podman:logs` | Tail logs |
 | `bun run podman:down` | Stop and remove |
 
-Runtime configuration comes from each app's `.env`, with container networking
-values overridden in the compose file. Public web values are baked in at build
-time through the `VITE_SERVER_URL` build argument. The server takes a backup and
+Runtime configuration comes from `apps/web/.env`, with the database path and
+public origin overridden in the compose file. The container takes a backup and
 applies pending Drizzle migrations before it starts serving.
 
-Both containers run as a non-root user and therefore listen on unprivileged
-ports inside the container; the published host ports are unchanged.
+The container runs as a non-root user and therefore listens on an unprivileged
+port inside the container; the published host port is unchanged.
 
 ### Docker Compose, side by side
 
-`packages/docker/docker-compose.yml` runs the same stack on `3100` (API) and
-`3101` (web) so it can coexist with the Podman stack. Both share the repository's
-`data/` directory for SQLite.
+`packages/docker/docker-compose.yml` runs the same app on `3101` so it can
+coexist with the Podman stack. Both share the repository's `data/` directory
+for SQLite.
 
 ```bash
 bun run docker:up
@@ -274,6 +260,6 @@ done
 - The API resolves each caller's IP from the socket rather than from
   `X-Forwarded-For`, which is caller-controlled while nothing proxies the
   process. If you put a reverse proxy in front, resolve the forwarded chain in
-  `apps/server/src/client-ip.ts` — it is the single place that decides.
+  `packages/auth/src/client-ip-header.ts` — it is the single place that decides.
 - No request rate limiting is applied: the server has no limiter of its own and
   better-auth's built-in per-IP limiter is disabled in `packages/auth/src/index.ts`.

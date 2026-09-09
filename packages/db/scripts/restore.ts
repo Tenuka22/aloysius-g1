@@ -1,13 +1,10 @@
-import { env } from "@aloysius-admissions/env/server";
-import { Database } from "bun:sqlite";
-import { dirname, isAbsolute, join } from "node:path";
+import Database from "better-sqlite3";
+import { dirname, join } from "node:path";
 import { mkdirSync, readdirSync, statSync, copyFileSync } from "node:fs";
+import { resolveDatabasePath } from "../src/path";
 
 function resolveDbPath(): string {
-  const configuredPath = env.DATABASE_URL.replace(/^file:/, "");
-  return isAbsolute(configuredPath)
-    ? configuredPath
-    : join(import.meta.dir, "../../../", configuredPath.replace(/^([.][.][\\/])+/, ""));
+  return resolveDatabasePath();
 }
 
 function backupsDir(dbPath: string): string {

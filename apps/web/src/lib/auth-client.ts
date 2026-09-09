@@ -1,21 +1,20 @@
-import { createAuthClient } from "better-auth/react";
 import { multiSessionClient } from "better-auth/client/plugins";
-import { getIncomingCookieHeader } from "./incoming-cookie";
-import { getServerUrl } from "@/utils/server-url";
+import { createAuthClient } from "better-auth/react";
 
+/**
+ * Browser-side Better Auth client, talking to `/api/auth` on this app's own
+ * origin.
+ *
+ * It is deliberately not used during SSR. The client is constructed once at
+ * module load, but a server-rendered request needs a per-request origin and
+ * cookie header, and Better Auth rejects a relative base URL outright. Route
+ * guards use `getSession` in `./auth-functions` instead, which calls the auth
+ * API directly on the server with no HTTP hop.
+ */
 export const authClient = createAuthClient({
-  // better-auth derives its route-matching base from this URL's path, so the
-  // public auth path must equal the server-side mount (/api/auth everywhere)
-  baseURL: new URL("/api/auth", getServerUrl()).toString(),
+  baseURL:
+    typeof window === "undefined"
+      ? "http://localhost/api/auth"
+      : new URL("/api/auth", window.location.origin).toString(),
   plugins: [multiSessionClient()],
-  fetchOptions: {
-    // Server-side `fetch` has no browser cookie jar, so beforeLoad's
-    // getSession() during SSR would always look logged-out without this \u2014
-    // forward the incoming request's session cookie explicitly.
-    customFetchImpl: (input, init) => {
-      const cookie = getIncomingCookieHeader();
-      if (!cookie) return fetch(input, init);
-      return fetch(input, { ...init, headers: { ...init?.headers, cookie } });
-    },
-  },
 });

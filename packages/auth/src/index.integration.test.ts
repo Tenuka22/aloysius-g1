@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, spyOn } from "bun:test";
 import { eq } from "drizzle-orm";
-import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { provisionTestDatabase, type TestDatabase } from "@aloysius-admissions/db/test-utils";
 import * as authSchema from "@aloysius-admissions/db/schema/auth";
 import type { Auth } from "better-auth";
@@ -12,7 +12,7 @@ interface TestContext {
   testDb: TestDatabase;
   ensureSiteAdmin: typeof EnsureSiteAdminFn;
   ensureSubAdmin: typeof EnsureSubAdminFn;
-  db: BunSQLiteDatabase<AuthSchema>;
+  db: BetterSQLite3Database<AuthSchema>;
   auth: Auth;
 }
 
