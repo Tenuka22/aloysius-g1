@@ -104,6 +104,18 @@ export function locationIsReady(location: { latitude?: number | null; longitude?
   return location?.latitude != null && location?.longitude != null;
 }
 
+/**
+ * True when a deferrable field needs the applicant's attention: either it was
+ * explicitly skipped (a sticky flag that survives the value being filled in
+ * later - the field then simply moves from "skipped, empty" to "skipped, but
+ * review it in Declaration"), or its step was already passed and the value is
+ * missing anyway - covering an applicant who never clicked skip but cleared a
+ * previously entered value after moving on.
+ */
+export function fieldNeedsAttention(status: FieldStatus | undefined, visitedPastStep: boolean, hasValue: boolean): boolean {
+  return status === "skipped" || (visitedPastStep && !hasValue);
+}
+
 export type NextStepDeps = {
   step: number;
   locationCanProceed?: boolean;

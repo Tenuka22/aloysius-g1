@@ -83,6 +83,48 @@ describe("normalizeDraft", () => {
     expect(result.categories[0]?.id).toBe("same");
     expect(new Set(result.categories.map((category) => category.id)).size).toBe(3);
   });
+  it("keeps locationStatus \"skipped\" sticky across reloads even once a coordinate is present", () => {
+    const result = normalizeDraft({
+      locationStatus: "skipped",
+      location: { ...emptyDraft.location, latitude: 6.03, longitude: 80.21 },
+    });
+    expect(result.locationStatus).toBe("skipped");
+  });
+  it("keeps birthCertificateStatus \"skipped\" sticky across reloads even once a number is present", () => {
+    const result = normalizeDraft({
+      birthCertificateStatus: "skipped",
+      applicant: { ...emptyDraft.applicant, birthCertificateNumber: "ABC123" },
+    });
+    expect(result.birthCertificateStatus).toBe("skipped");
+  });
+  it("honors a legacy locationSkipped boolean as sticky skipped, value present or not", () => {
+    expect(normalizeDraft({ locationSkipped: true } as Partial<ApplicationDraft>).locationStatus).toBe("skipped");
+    expect(
+      normalizeDraft({
+        locationSkipped: true,
+        location: { ...emptyDraft.location, latitude: 6.03, longitude: 80.21 },
+      } as Partial<ApplicationDraft>).locationStatus,
+    ).toBe("skipped");
+  });
+  it("honors a legacy birthCertificateSkipped boolean as sticky skipped, value present or not", () => {
+    expect(normalizeDraft({ birthCertificateSkipped: true } as Partial<ApplicationDraft>).birthCertificateStatus).toBe("skipped");
+    expect(
+      normalizeDraft({
+        birthCertificateSkipped: true,
+        applicant: { ...emptyDraft.applicant, birthCertificateNumber: "ABC123" },
+      } as Partial<ApplicationDraft>).birthCertificateStatus,
+    ).toBe("skipped");
+  });
+  it("computes \"provided\" for a value present when never skipped", () => {
+    const result = normalizeDraft({
+      applicant: { ...emptyDraft.applicant, birthCertificateNumber: "ABC123" },
+    });
+    expect(result.birthCertificateStatus).toBe("provided");
+  });
+  it("computes \"pending\" for an untouched, never-skipped field", () => {
+    expect(normalizeDraft({}).locationStatus).toBe("pending");
+    expect(normalizeDraft({}).birthCertificateStatus).toBe("pending");
+  });
 });
 
 describe("prependLocationHistory", () => {

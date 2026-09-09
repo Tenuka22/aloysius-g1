@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApplicationForm } from "./application-form";
 import { emptyDraft, useApplicationStore } from "@/lib/g1/application-store";
@@ -976,4 +976,79 @@ describe("ApplicationForm – select dropdown interactions", () => {
     await user.click(motherOption!);
     expect(useApplicationStore.getState().guardian.relationship).toBe("Mother");
   });
+  
+});
+
+describe("ApplicationForm – skip stickiness and outstanding detection", () => {
+    it("birth cert typing after skip stays sticky", async () => {
+      const user = userEvent.setup();
+      setStore({ currentStep: 1, applicant: { ...validApplicant, birthCertificateNumber: "" }, birthCertificateStatus: "skipped" });
+      await renderForm();
+      expect(screen.getByText("Already skipped — enter the number below or continue without it.")).toBeInTheDocument();
+      const birthCertInput = screen.getByPlaceholderText(/enter birth certificate number/i);
+      await user.type(birthCertInput, "ABC999");
+      expect(useApplicationStore.getState().birthCertificateStatus).toBe("skipped");
+      expect(screen.getByText("Previously skipped — you can update or remove this field.")).toBeInTheDocument();
+  });
+
+    it("location map-click after skip stays sticky", async () => {
+      const user = userEvent.setup();
+      setStore({ currentStep: 0, locationStatus: "skipped" });
+      locationChangePayload.current = { value: { label: "Test Location", address: "Test Address", latitude: 6.03, longitude: 80.21, source: "map" } };
+      await renderForm();
+      await user.click(screen.getByTestId("fire-location-change"));
+      expect(useApplicationStore.getState().locationStatus).toBe("skipped");
+});
+
+    it("declaration step keeps showing a skipped-then-filled field", async () => {
+      setStore({
+        currentStep: 5,
+        locationStatus: "skipped",
+        location: { ...emptyDraft.location, latitude: 6.03, longitude: 80.21 },
+        birthCertificateStatus: "skipped",
+        applicant: { ...validApplicant, birthCertificateNumber: "ABC999" },
+        maxVisitedStep: 5,
+      });
+      await renderForm();
+      expect(screen.getByTestId("location-step")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/enter birth certificate number/i)).toBeInTheDocument();
+    });
+
+    it("declaration step catches a silently-cleared, never-explicitly-skipped field", async () => {
+      setStore({
+        currentStep: 5,
+        locationStatus: "pending",
+        location: emptyDraft.location,
+        maxVisitedStep: 5,
+        birthCertificateStatus: "provided",
+        applicant: { ...validApplicant, birthCertificateNumber: "" },
+      });
+      await renderForm();
+      expect(screen.getByTestId("location-step")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/enter birth certificate number/i)).toBeInTheDocument();
+    });
+
+    it("declaration step negative/regression control: fully valid state doesn't show recap", async () => {
+      setStore({ ...fullValidDraft, currentStep: 5, maxVisitedStep: 5 });
+      await renderForm();
+      expect(screen.queryByTestId("location-step")).not.toBeInTheDocument();
+      expect(screen.queryByPlaceholderText(/enter birth certificate number/i)).not.toBeInTheDocument();
+      expect(screen.queryByText("You skipped some details earlier — complete them before submitting.")).not.toBeInTheDocument();
+    });
+
+    it("stepper flags a silently-cleared field even without an explicit skip", async () => {
+      setStore({ currentStep: 1, maxVisitedStep: 5, birthCertificateStatus: "provided", applicant: { ...validApplicant, birthCertificateNumber: "" } });
+      await renderForm();
+      const nav = screen.getByRole("navigation", { name: /form steps/i });
+      const applicantButton = within(nav).getByRole("button", { name: /applicant/i });
+      expect(applicantButton.className).toMatch(/text-amber-700/);
+    });
+
+    it("stepper regression guard: a fine, not-yet-visited step must NOT be flagged", async () => {
+      setStore({ currentStep: 0, maxVisitedStep: 0 });
+      await renderForm();
+      const nav = screen.getByRole("navigation", { name: /form steps/i });
+      const applicantButton = within(nav).getByRole("button", { name: /applicant/i });
+      expect(applicantButton.className).not.toMatch(/text-amber-700/);
+    });
 });

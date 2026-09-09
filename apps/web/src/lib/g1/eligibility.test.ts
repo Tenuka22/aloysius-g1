@@ -7,6 +7,7 @@ import {
   G1_DOB_LATEST,
   applicantSectionComplete,
   educationMediumAllowed,
+  fieldNeedsAttention,
   getNextStepReason,
   guardianNicInvalid,
   isG1EligibleDob,
@@ -68,6 +69,31 @@ describe("locationIsReady", () => {
   it("accepts zero coordinates", () => expect(locationIsReady({ latitude: 0, longitude: 0 })).toBe(true));
   it("is not ready for null location", () => expect(locationIsReady(null)).toBe(false));
   it("is not ready for undefined location", () => expect(locationIsReady(undefined)).toBe(false));
+});
+
+describe("fieldNeedsAttention", () => {
+  it("is true when the field was explicitly skipped, even with no value and not yet visited past", () =>
+    expect(fieldNeedsAttention("skipped", false, false)).toBe(true));
+  it("is true when skipped and a value was later filled in - a skip is sticky", () =>
+    expect(fieldNeedsAttention("skipped", false, true)).toBe(true));
+  it("is true when skipped, visited past, and still no value", () =>
+    expect(fieldNeedsAttention("skipped", true, false)).toBe(true));
+  it("is true when skipped, visited past, and a value exists", () =>
+    expect(fieldNeedsAttention("skipped", true, true)).toBe(true));
+  it("is true when never skipped but its step was passed and the value is missing (silently cleared)", () =>
+    expect(fieldNeedsAttention("provided", true, false)).toBe(true));
+  it("is true for a pending field whose step was passed with no value", () =>
+    expect(fieldNeedsAttention("pending", true, false)).toBe(true));
+  it("is false for a pending field not yet visited past, with no value", () =>
+    expect(fieldNeedsAttention("pending", false, false)).toBe(false));
+  it("is false once a value is provided and the field was never skipped", () =>
+    expect(fieldNeedsAttention("provided", true, true)).toBe(false));
+  it("is false for an untouched field regardless of value", () =>
+    expect(fieldNeedsAttention("pending", false, true)).toBe(false));
+  it("treats an undefined status like an unskipped field", () =>
+    expect(fieldNeedsAttention(undefined, true, false)).toBe(true));
+  it("is false for an undefined status with a value present", () =>
+    expect(fieldNeedsAttention(undefined, true, true)).toBe(false));
 });
 
 describe("guardianNicInvalid", () => {

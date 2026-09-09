@@ -19,11 +19,6 @@ export type LocationDraft = {
 export const FIELD_STATUSES = ["pending", "skipped", "provided"] as const;
 export type FieldStatus = (typeof FIELD_STATUSES)[number];
 
-/** True when the applicant skipped this field and still owes a value. */
-export function isSkipOutstanding(status: FieldStatus, hasValue: boolean): boolean {
-  return status === "skipped" && !hasValue;
-}
-
 export const CATEGORY_TYPES = ["6.1", "6.2", "6.3", "6.4", "6.5", "6.6"] as const;
 export type CategoryType = (typeof CATEGORY_TYPES)[number];
 
@@ -316,13 +311,16 @@ export function normalizeCategories(input: unknown): CategoryApplication[] {
 /**
  * Resolves the stored status against the value actually present.
  *
- * The value wins whenever there is one, so a status can never claim a field
- * is outstanding after it has been filled in - including for drafts saved
- * before this was an enum, which carried only a `*Skipped` boolean.
+ * A skip is sticky: once recorded, it stays "skipped" even after the
+ * applicant later fills the value in, so the Declaration step keeps
+ * surfacing it for review instead of the field silently disappearing the
+ * moment a value is typed. Everything else falls back on the value actually
+ * present - including for drafts saved before this was an enum, which
+ * carried only a `*Skipped` boolean.
  */
 function toFieldStatus(stored: unknown, legacySkipped: boolean, hasValue: boolean): FieldStatus {
-  if (hasValue) return "provided";
   if (stored === "skipped" || legacySkipped) return "skipped";
+  if (hasValue) return "provided";
   return "pending";
 }
 
