@@ -21,7 +21,7 @@ const RESEND_COOLDOWN_SECONDS = 60
 
 /**
  * Render a card prompting the user to verify their email, with a resend button
- * that is rate-limited by a cooldown timer.
+ * that is gated by a cooldown timer.
  *
  * The target email is read from `sessionStorage` (set when sign-up or sign-in
  * redirects here); the OpenEmail/Resend controls are only shown when an email

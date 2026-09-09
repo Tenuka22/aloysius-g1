@@ -8,10 +8,10 @@ const IPV4_MAPPED = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i;
  * of the process trusts, overwriting anything the caller supplied.
  *
  * This runs at the edge, before Hono, so every downstream consumer -- the auth
- * handler, oRPC's context, the rate limiter -- reads the same non-spoofable
- * value. Forwarded headers are ignored on purpose: nothing sits in front of
- * this process, so `x-forwarded-for` is caller-controlled and honouring it
- * would let anyone rotate the header past the auth rate limit.
+ * handler, oRPC's context -- reads the same non-spoofable value. Forwarded
+ * headers are ignored on purpose: nothing sits in front of this process, so
+ * `x-forwarded-for` is caller-controlled and honouring it would let anyone
+ * forge the IP recorded against their session.
  *
  * If a reverse proxy is ever placed in front, this is the single place to
  * resolve the forwarded chain against the proxy's address.

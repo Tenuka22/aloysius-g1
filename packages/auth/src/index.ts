@@ -72,6 +72,12 @@ export function createAuth() {
         maxAge: 60, // seconds
       },
     },
+    // better-auth turns on its own per-IP limiter in production by default,
+    // with stricter buckets on the sign-in/sign-up paths. Kept off so the API
+    // never answers 429 to a legitimate caller.
+    rateLimit: {
+      enabled: false,
+    },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {

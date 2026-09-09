@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 
-/** Seconds a resend button stays disabled to keep users off the rate limit. */
+/** Seconds a resend button stays disabled so a code can arrive before a retry. */
 export const RESEND_COOLDOWN_SECONDS = 60
 
 /**

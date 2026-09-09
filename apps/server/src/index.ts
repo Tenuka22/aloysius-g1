@@ -13,7 +13,6 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { applyClientIp } from "./client-ip";
 import { logUnexpectedError } from "./error-logging";
-import { checkRateLimit } from "./rate-limit";
 
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
@@ -55,27 +54,7 @@ app.use(
 
 app.all("/api/auth/*", async (c) => {
   if (["POST", "GET"].includes(c.req.method)) {
-    const rateLimit = checkRateLimit(c.req.raw, "auth");
-    if (!rateLimit.allowed) {
-      return c.json(
-        { error: "Too many requests" },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)),
-            "X-RateLimit-Limit": "10",
-            "X-RateLimit-Remaining": "0",
-          },
-        },
-      );
-    }
-    const response = await auth.handler(c.req.raw);
-    const headers = new Headers(response.headers);
-    headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
-    return new Response(response.body, {
-      status: response.status,
-      headers,
-    });
+    return auth.handler(c.req.raw);
   }
   return c.text("Method Not Allowed", 405);
 });
