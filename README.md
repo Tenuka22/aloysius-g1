@@ -67,6 +67,7 @@ variable is missing, so fill these in before running anything.
 | `NODE_ENV` | no | `development` (default), `production` or `test`. |
 | `ADMIN_PASSWORD` | no | Site-admin password, min 8 chars. Change it before deploying. |
 | `SUB_ADMIN_PASSWORD` | no | Sub-admin password, min 8 chars. |
+| `SUB_ADMIN_EMAILS` | no | Comma-separated sub-admin logins seeded on boot. Defaults to `subadmin@aloysiuscollege.lk`. Each is created with `SUB_ADMIN_PASSWORD` if absent, and its `sub-admin` role is reasserted on every start. |
 
 Set `SKIP_ENV_VALIDATION=1` to bypass validation during builds that never read
 these values.

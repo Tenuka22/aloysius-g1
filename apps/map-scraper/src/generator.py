@@ -127,7 +127,7 @@ def write_records_json(records: list[SchoolRecord], path: Path) -> None:
 
 
 def render_web_catalog(records: list[SchoolRecord]) -> str:
-    """Render the catalog the web app imports (apps/web/src/lib/g1/schools.json).
+    """Render the shared school catalog (packages/db/src/schools-catalog.json).
 
     Formatted the way Biome formats JSON (2-space indent, one field per line)
     so a regenerated catalog is already lint-clean and a refresh shows up as a

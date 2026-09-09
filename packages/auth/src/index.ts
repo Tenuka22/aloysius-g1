@@ -1,17 +1,24 @@
-import { eq } from "drizzle-orm";
-import { CLIENT_IP_HEADER } from "./client-ip-header";
 import { createDb } from "@aloysius-admissions/db";
 import * as schema from "@aloysius-admissions/db/schema/auth";
-import { env } from "@aloysius-admissions/env/server";
+import { env, getSubAdminEmails } from "@aloysius-admissions/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { hashPassword } from "better-auth/crypto";
 import { admin, multiSession } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
+import { CLIENT_IP_HEADER } from "./client-ip-header";
 
 const SITE_ADMIN_EMAIL = "admin@aloysiuscollege.lk";
 
+/**
+ * Logins whose role the system owns. The `databaseHooks` below reassert these
+ * on every create and update, so a privileged account cannot drift to "user"
+ * through an ordinary profile edit. Sub-admins are included because they were
+ * previously absent: nothing seeded them and nothing pinned their role.
+ */
 const EMAIL_ROLES: Record<string, string> = {
   [SITE_ADMIN_EMAIL]: "admin",
+  ...Object.fromEntries(getSubAdminEmails().map((email) => [email, "sub-admin"])),
 };
 
 function getAdminPassword(): string {
@@ -94,9 +101,13 @@ export function createAuth() {
   });
 }
 
+/** The configured better-auth instance. Named here so callers depend on the
+ * contract this module owns rather than on `typeof createAuth`. */
+export type AuthInstance = ReturnType<typeof createAuth>;
+
 export const auth = createAuth();
 
-export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth> = auth) {
+export async function ensureSiteAdmin(authInstance: AuthInstance = auth) {
   const db = createDb();
   const existing = await db
     .select()
@@ -146,10 +157,7 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
     console.log(`[auth] Password set from ADMIN_PASSWORD env var`);
   }
 
-  await db
-    .update(schema.user)
-    .set({ role: "admin" })
-    .where(eq(schema.user.id, user.id));
+  await db.update(schema.user).set({ role: "admin" }).where(eq(schema.user.id, user.id));
 
   console.log(`[auth] Ensured site admin: ${SITE_ADMIN_EMAIL}`);
 }
@@ -157,14 +165,10 @@ export async function ensureSiteAdmin(authInstance: ReturnType<typeof createAuth
 export async function ensureSubAdmin(
   email: string,
   name: string,
-  authInstance: ReturnType<typeof createAuth> = auth,
+  authInstance: AuthInstance = auth,
 ) {
   const db = createDb();
-  const existing = await db
-    .select()
-    .from(schema.user)
-    .where(eq(schema.user.email, email))
-    .limit(1);
+  const existing = await db.select().from(schema.user).where(eq(schema.user.email, email)).limit(1);
   const user = existing[0];
 
   if (!user) {
@@ -176,9 +180,16 @@ export async function ensureSubAdmin(
         name,
       },
     });
-    const created = await db.select().from(schema.user).where(eq(schema.user.email, email)).limit(1);
+    const created = await db
+      .select()
+      .from(schema.user)
+      .where(eq(schema.user.email, email))
+      .limit(1);
     if (created[0]) {
-      await db.update(schema.user).set({ role: "sub-admin" }).where(eq(schema.user.id, created[0].id));
+      await db
+        .update(schema.user)
+        .set({ role: "sub-admin" })
+        .where(eq(schema.user.id, created[0].id));
     }
     console.log(`[auth] Created sub-admin: ${email}`);
     console.log(`[auth] Password set from SUB_ADMIN_PASSWORD env var`);
@@ -211,10 +222,32 @@ export async function ensureSubAdmin(
     console.log(`[auth] Password set from SUB_ADMIN_PASSWORD env var`);
   }
 
-  await db
-    .update(schema.user)
-    .set({ role: "sub-admin" })
-    .where(eq(schema.user.id, user.id));
+  await db.update(schema.user).set({ role: "sub-admin" }).where(eq(schema.user.id, user.id));
 
   console.log(`[auth] Ensured sub-admin: ${email}`);
+}
+
+/**
+ * Seeds every login listed in SUB_ADMIN_EMAILS.
+ *
+ * `ensureSubAdmin` has existed for a while but nothing ever called it, so a
+ * deployment started with an admin and no sub-admins at all. Failures are
+ * logged per account rather than thrown: one bad address must not stop the
+ * server from booting, the way a throw here previously would have.
+ */
+export async function ensureSubAdmins(authInstance: AuthInstance = auth) {
+  const emails = getSubAdminEmails();
+  if (emails.length === 0) {
+    console.log("[auth] No SUB_ADMIN_EMAILS configured; skipping sub-admin seed");
+    return;
+  }
+
+  for (const email of emails) {
+    const name = email.split("@")[0] ?? "Sub Admin";
+    try {
+      await ensureSubAdmin(email, name, authInstance);
+    } catch (error) {
+      console.error(`[auth] Could not ensure sub-admin ${email}:`, error);
+    }
+  }
 }

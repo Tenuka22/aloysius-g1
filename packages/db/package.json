@@ -5,6 +5,9 @@
     ".": {
       "default": "./src/index.ts"
     },
+    "./schools-catalog": {
+      "default": "./src/schools-catalog.json"
+    },
     "./*": {
       "default": "./src/*.ts"
     },

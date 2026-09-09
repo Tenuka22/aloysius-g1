@@ -1,9 +1,9 @@
 import { createContext } from "@aloysius-admissions/api/context";
 import { appRouter } from "@aloysius-admissions/api/routers/index";
-import { createAuth, ensureSiteAdmin } from "@aloysius-admissions/auth";
-import { getCorsOrigins } from "@aloysius-admissions/env/server";
-import { backup } from "@aloysius-admissions/db/scripts/backup";
+import { createAuth, ensureSiteAdmin, ensureSubAdmins } from "@aloysius-admissions/auth";
 import { db } from "@aloysius-admissions/db";
+import { backup } from "@aloysius-admissions/db/scripts/backup";
+import { getCorsOrigins } from "@aloysius-admissions/env/server";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
@@ -15,9 +15,7 @@ import { applyClientIp } from "./client-ip";
 import { logUnexpectedError } from "./error-logging";
 
 const rpcHandler = new RPCHandler(appRouter, {
-  interceptors: [
-    onError(logUnexpectedError),
-  ],
+  interceptors: [onError(logUnexpectedError)],
 });
 const apiHandler = new OpenAPIHandler(appRouter, {
   plugins: [
@@ -25,13 +23,12 @@ const apiHandler = new OpenAPIHandler(appRouter, {
       schemaConverters: [new ZodToJsonSchemaConverter()],
     }),
   ],
-  interceptors: [
-    onError(logUnexpectedError),
-  ],
+  interceptors: [onError(logUnexpectedError)],
 });
 
 const auth = createAuth();
 await ensureSiteAdmin(auth);
+await ensureSubAdmins(auth);
 
 const app = new Hono();
 

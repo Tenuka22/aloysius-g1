@@ -19,7 +19,9 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_SOURCE = HERE / "schools.txt"
 DEFAULT_JSON = HERE / "schools_data.json"
 DEFAULT_MAP_CACHE = HERE / "map_coordinates.json"
-DEFAULT_CATALOG = ROOT / "apps" / "web" / "src" / "lib" / "g1" / "schools.json"
+# Lives in packages/db so both the web app and the API can import it; the API
+# seeds coordinate overrides from the same file the web catalog is built from.
+DEFAULT_CATALOG = ROOT / "packages" / "db" / "src" / "schools-catalog.json"
 
 
 def parse_args() -> argparse.Namespace:

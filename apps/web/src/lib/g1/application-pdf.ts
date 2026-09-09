@@ -1,8 +1,11 @@
-import type { ApplicationDraft } from "./application-store";
-import type { CategoryType } from "./application-store";
+import type { ApplicationDraft, CategoryType } from "./application-store";
+import { scoreCategory } from "./scoring";
 
 /**
- * Applicant-facing PDF receipt of a submitted application.
+ * Applicant-facing PDF of a submitted application, laid out as the school's
+ * marking-scheme verification sheet: crest and name at the head, the applicant's
+ * particulars, then a ruled table whose right-hand columns are left blank for
+ * the first interview board and the objection/appeal board to complete by hand.
  *
  * jsPDF is imported dynamically: it is ~350 kB and only ever needed on the
  * submitted screen, so it must not sit in the initial bundle that every
@@ -11,19 +14,15 @@ import type { CategoryType } from "./application-store";
  * jsPDF's built-in fonts are Latin-1 only, so any Sinhala value would render as
  * blank boxes. Rather than embedding a Sinhala font (another ~500 kB), the few
  * fields that can hold Sinhala are painted to a canvas using the fonts the
- * browser already has and embedded as small images. See `drawUnicodeText`.
+ * browser already has and embedded as images. See `renderUnicodeToImage`.
  */
 
-const PAGE_MARGIN = 14;
-const LINE_HEIGHT = 5.4;
-const LABEL_WIDTH = 52;
+const PAGE_MARGIN = 12;
+const CREST_URL = "/logo.png";
+const CREST_HEIGHT_MM = 20;
 
-/**
- * English category names for the PDF. Deliberately not read from the i18n
- * catalogue: the receipt is always produced in English so a reviewer can read
- * it regardless of the language the applicant filled the form in, and this
- * module stays usable outside React.
- */
+/** English category names. The sheet is always produced in English so any
+ * reviewer can read it regardless of the language the form was filled in. */
 const CATEGORY_LABELS: Record<CategoryType, string> = {
   "6.1": "Residence Verification & Proximity",
   "6.2": "Alumni",
@@ -35,20 +34,24 @@ const CATEGORY_LABELS: Record<CategoryType, string> = {
 
 /** True when the string contains anything jsPDF's Latin-1 fonts cannot draw. */
 function needsUnicodeFallback(value: string): boolean {
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: Latin-1 range check is the point.
-  return /[^\u0000-\u00ff]/.test(value);
+  for (const character of value) {
+    if ((character.codePointAt(0) ?? 0) > 0xff) return true;
+  }
+  return false;
 }
 
 function slugForFilename(value: string): string {
-  const slug = value
-    .normalize("NFKD")
-    // NFKD splits accents into combining marks; drop the marks so "é" folds to
-    // "e" instead of being discarded wholesale by the ASCII filter below.
-    .replace(/\p{M}/gu, "")
-    .replace(/[^a-zA-Z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .toLowerCase();
-  return slug.slice(0, 60);
+  return (
+    value
+      .normalize("NFKD")
+      // NFKD splits accents into combining marks; drop the marks so "é" folds to
+      // "e" instead of being discarded wholesale by the ASCII filter below.
+      .replace(/\p{M}/gu, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .toLowerCase()
+      .slice(0, 60)
+  );
 }
 
 /**
@@ -73,7 +76,7 @@ function formatDateTime(value: string | null): string {
   if (!value) return "—";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "—";
-  return `${parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} ${parsed.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+  return `${formatDate(value)} ${parsed.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 function orDash(value: string | number | null | undefined): string {
@@ -83,7 +86,6 @@ function orDash(value: string | number | null | undefined): string {
 }
 
 type Row = { label: string; value: string };
-
 type Section = { heading: string; rows: Row[] };
 
 /** Flattens the draft into the printable sections, in the order the form asks for them. */
@@ -174,10 +176,41 @@ export function buildApplicationSections(draft: ApplicationDraft): Section[] {
   return sections;
 }
 
+/** A marking-sheet line: either a category banner or a scored criterion. */
+type MarkLine =
+  | { kind: "category"; label: string; max: number; declared: number }
+  | { kind: "criterion"; label: string; max: number; declared: number };
+
+/**
+ * Builds the marking table body.
+ *
+ * There is deliberately no cross-category total: every category is scored out
+ * of 100 on its own, exactly as the printed scheme does, so adding them would
+ * hand the board a number ("123 / 200") that means nothing.
+ */
+export function buildMarkLines(draft: ApplicationDraft): MarkLine[] {
+  const lines: MarkLine[] = [];
+
+  for (const category of draft.categories) {
+    const score = scoreCategory(category);
+    lines.push({
+      kind: "category",
+      label: `${category.categoryType} — ${CATEGORY_LABELS[category.categoryType] ?? ""}`.trim(),
+      max: score.breakdown.reduce((sum, row) => sum + row.max, 0),
+      declared: score.total,
+    });
+    for (const row of score.breakdown) {
+      lines.push({ kind: "criterion", label: row.label, max: row.max, declared: row.marks });
+    }
+  }
+
+  return lines;
+}
+
 /**
  * Paints a non-Latin string with the browser's own fonts and returns it as a
- * PNG data URL sized for the PDF. Returns null when there is no DOM (SSR) or
- * the canvas is unavailable, so callers can fall back to plain text.
+ * PNG data URL. Returns null when there is no DOM (SSR) or the canvas is
+ * unavailable, so callers can fall back to plain text.
  */
 function renderUnicodeToImage(
   text: string,
@@ -185,26 +218,23 @@ function renderUnicodeToImage(
 ): { dataUrl: string; widthMm: number; heightMm: number } | null {
   if (typeof document === "undefined") return null;
   const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-  if (!context) return null;
+  const measure = canvas.getContext("2d");
+  if (!measure) return null;
 
   // Render at 4x then scale down in the PDF so the glyphs stay crisp in print.
   const scale = 4;
   const fontPx = fontSizePt * 1.333 * scale;
   const fontStack = `${fontPx}px "Noto Sans Sinhala", "Iskoola Pota", system-ui, sans-serif`;
-  context.font = fontStack;
-  const metrics = context.measureText(text);
-  const widthPx = Math.ceil(metrics.width) + scale * 2;
-  const heightPx = Math.ceil(fontPx * 1.45);
-  canvas.width = Math.max(widthPx, 1);
-  canvas.height = heightPx;
+  measure.font = fontStack;
+  canvas.width = Math.max(Math.ceil(measure.measureText(text).width) + scale * 2, 1);
+  canvas.height = Math.ceil(fontPx * 1.45);
 
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
   ctx.font = fontStack;
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#111111";
-  ctx.fillText(text, 0, heightPx / 2);
+  ctx.fillText(text, 0, canvas.height / 2);
 
   const mmPerPx = 0.2646 / scale;
   return {
@@ -213,6 +243,37 @@ function renderUnicodeToImage(
     heightMm: canvas.height * mmPerPx,
   };
 }
+
+/** Loads the school crest as a data URL. Returns null so the sheet still
+ * prints (name only) if the asset is missing or blocked.
+ *
+ * The source art is 960x1330. Embedding it as-is makes jsPDF store several
+ * megabytes of bitmap for a 20 mm shield, so it is redrawn at print size
+ * (300 dpi) first — that alone is the difference between a ~5 MB and a ~200 kB
+ * sheet. */
+async function loadCrest(): Promise<string | null> {
+  if (typeof document === "undefined") return null;
+  try {
+    const response = await fetch(CREST_URL);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    const bitmap = await createImageBitmap(blob);
+    const targetHeight = Math.round((CREST_HEIGHT_MM / 25.4) * 300);
+    const targetWidth = Math.round(targetHeight * (bitmap.width / bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+    bitmap.close();
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+}
+
+type Column = { width: number; align?: "left" | "center" | "right" };
 
 /**
  * Builds the PDF and returns it as a Blob.
@@ -224,93 +285,247 @@ export async function buildApplicationPdf(draft: ApplicationDraft): Promise<Blob
   // Dynamic import is required, not stylistic: jsPDF is ~350 kB and is only
   // reachable from the submitted screen, so a static import would put it in
   // the bundle every applicant loads before the first step renders.
-  const { jsPDF } = await import("jspdf");
+  const [{ jsPDF }, crest] = await Promise.all([import("jspdf"), loadCrest()]);
+
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const contentWidth = pageWidth - PAGE_MARGIN * 2;
+  const bottomLimit = pageHeight - PAGE_MARGIN - 6;
   let y = PAGE_MARGIN;
 
-  const newPageIfNeeded = (needed: number) => {
-    if (y + needed <= pageHeight - PAGE_MARGIN) return;
-    doc.addPage();
-    y = PAGE_MARGIN;
+  const setBody = () => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(20);
   };
 
-  // Header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("St. Aloysius' College, Galle", PAGE_MARGIN, y + 4);
-  y += 8;
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
-  doc.text("Grade 1 Admission — 2026 Intake — Applicant copy", PAGE_MARGIN, y + 3);
-  y += 7;
-  doc.setDrawColor(190);
-  doc.line(PAGE_MARGIN, y, pageWidth - PAGE_MARGIN, y);
-  y += 6;
+  /** Draws one bordered table row, wrapping text and growing the row to fit. */
+  const drawRow = (
+    cells: string[],
+    columns: Column[],
+    options: { bold?: boolean; fill?: [number, number, number]; minHeight?: number } = {},
+  ) => {
+    doc.setFont("helvetica", options.bold ? "bold" : "normal");
+    const padding = 1.4;
 
-  for (const section of buildApplicationSections(draft)) {
-    newPageIfNeeded(14);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(section.heading, PAGE_MARGIN, y);
-    y += LINE_HEIGHT + 1;
+    const wrapped = cells.map((cell, index) => {
+      const width = (columns[index]?.width ?? 20) - padding * 2;
+      if (needsUnicodeFallback(cell)) return [cell];
+      return doc.splitTextToSize(cell, width) as string[];
+    });
+    const lineCount = Math.max(...wrapped.map((lines) => lines.length), 1);
+    const height = Math.max(lineCount * 3.6 + padding * 2, options.minHeight ?? 6);
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
+    if (y + height > bottomLimit) {
+      doc.addPage();
+      y = PAGE_MARGIN;
+    }
 
-    for (const row of section.rows) {
-      const valueX = PAGE_MARGIN + LABEL_WIDTH;
-      const valueWidth = contentWidth - LABEL_WIDTH;
+    let x = PAGE_MARGIN;
+    for (const [index, column] of columns.entries()) {
+      if (options.fill) {
+        doc.setFillColor(...options.fill);
+        doc.rect(x, y, column.width, height, "F");
+      }
+      doc.setDrawColor(70);
+      doc.setLineWidth(0.2);
+      doc.rect(x, y, column.width, height);
 
-      if (needsUnicodeFallback(row.value)) {
-        const image = renderUnicodeToImage(row.value, 9.5);
-        const height = image ? Math.max(image.heightMm, LINE_HEIGHT) : LINE_HEIGHT;
-        newPageIfNeeded(height + 1);
-        doc.setTextColor(110);
-        doc.text(row.label, PAGE_MARGIN, y);
-        doc.setTextColor(17);
+      const lines = wrapped[index] ?? [];
+      const raw = cells[index] ?? "";
+      const textY = y + padding + 2.6;
+
+      if (needsUnicodeFallback(raw)) {
+        const image = renderUnicodeToImage(raw, 8);
         if (image) {
+          const drawHeight = Math.min(image.heightMm, height - padding);
+          const drawWidth = Math.min(
+            image.widthMm * (drawHeight / image.heightMm),
+            column.width - padding * 2,
+          );
           doc.addImage(
             image.dataUrl,
             "PNG",
-            valueX,
-            y - height * 0.72,
-            Math.min(image.widthMm, valueWidth),
-            height,
+            x + padding,
+            y + (height - drawHeight) / 2,
+            drawWidth,
+            drawHeight,
+            undefined,
+            "FAST",
           );
-        } else {
-          doc.text(row.value, valueX, y, { maxWidth: valueWidth });
         }
-        y += height + 1;
-        continue;
+      } else {
+        const align = column.align ?? "left";
+        const textX =
+          align === "right"
+            ? x + column.width - padding
+            : align === "center"
+              ? x + column.width / 2
+              : x + padding;
+        doc.text(lines, textX, textY, { align });
       }
-
-      const lines = doc.splitTextToSize(row.value, valueWidth) as string[];
-      const blockHeight = Math.max(lines.length, 1) * LINE_HEIGHT;
-      newPageIfNeeded(blockHeight);
-      doc.setTextColor(110);
-      doc.text(row.label, PAGE_MARGIN, y);
-      doc.setTextColor(17);
-      doc.text(lines, valueX, y);
-      y += blockHeight;
+      x += column.width;
     }
 
-    y += 3;
+    y += height;
+  };
+
+  // ---------------------------------------------------------------- header
+  const crestHeight = CREST_HEIGHT_MM;
+  if (crest) {
+    // 960x1330 source: keep the aspect ratio so the shield is not squashed.
+    doc.addImage(
+      crest,
+      "PNG",
+      PAGE_MARGIN,
+      y,
+      crestHeight * (960 / 1330),
+      crestHeight,
+      "crest",
+      "FAST",
+    );
+  }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(17);
+  doc.setTextColor(15);
+  doc.text("Saint Aloysius' College", pageWidth / 2, y + 8, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(70);
+  doc.text("Galle, Sri Lanka", pageWidth / 2, y + 13, { align: "center" });
+  doc.setFontSize(9.5);
+  doc.setTextColor(20);
+  doc.text(
+    "Grade 1 Admission — 2026 Intake · Marking scheme verification sheet",
+    pageWidth / 2,
+    y + 19,
+    { align: "center" },
+  );
+  y += crestHeight + 6;
+
+  // -------------------------------------------------------- applicant block
+  setBody();
+  const halfColumns: Column[] = [
+    { width: 30 },
+    { width: contentWidth / 2 - 30 },
+    { width: 32 },
+    { width: contentWidth / 2 - 32 },
+  ];
+  drawRow(
+    ["Application no.", orDash(draft.sessionCode), "Date submitted", formatDate(draft.submittedAt)],
+    halfColumns,
+  );
+  drawRow(
+    [
+      "Child's name",
+      orDash(draft.applicant.fullName),
+      "Date of birth",
+      formatDate(draft.applicant.dateOfBirth),
+    ],
+    halfColumns,
+  );
+  drawRow(
+    [
+      "Name (Sinhala)",
+      orDash(draft.applicant.sinhalaName),
+      "Birth certificate",
+      orDash(draft.applicant.birthCertificateNumber),
+    ],
+    halfColumns,
+  );
+  drawRow(
+    ["Guardian", orDash(draft.guardian.fullName), "Telephone", orDash(draft.guardian.phone)],
+    halfColumns,
+  );
+  drawRow(
+    [
+      "Address",
+      orDash(draft.residence.permanentAddress),
+      "GN division",
+      orDash(draft.residence.gnDivision),
+    ],
+    halfColumns,
+  );
+  y += 5;
+
+  // ------------------------------------------------------------ marks table
+  const markColumns: Column[] = [
+    { width: contentWidth - 90 },
+    { width: 14, align: "center" },
+    { width: 19, align: "center" },
+    { width: 19, align: "center" },
+    { width: 19, align: "center" },
+    { width: 19 },
+  ];
+  const markHeader = [
+    "Description",
+    "Max",
+    "Marks declared by applicant",
+    "First interview board",
+    "Objection & appeal board",
+    "Remarks",
+  ];
+
+  doc.setFontSize(7.4);
+  drawRow(markHeader, markColumns, { bold: true, fill: [232, 232, 232], minHeight: 13 });
+  doc.setFontSize(8);
+
+  const lines = buildMarkLines(draft);
+  if (lines.length === 0) {
+    drawRow(["No marking categories were selected.", "—", "", "", "", ""], markColumns);
+  }
+  for (const line of lines) {
+    if (line.kind === "category") {
+      drawRow([line.label, String(line.max), line.declared.toFixed(2), "", "", ""], markColumns, {
+        bold: true,
+        fill: [244, 244, 244],
+      });
+    } else {
+      drawRow(
+        [`   ${line.label}`, String(line.max), line.declared.toFixed(2), "", "", ""],
+        markColumns,
+      );
+    }
   }
 
-  // Footer on every page
+  // ------------------------------------------------------- declaration text
+  y += 5;
+  if (y + 20 > bottomLimit) {
+    doc.addPage();
+    y = PAGE_MARGIN;
+  }
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.6);
+  doc.setTextColor(45);
+  const declaration =
+    "I certify that the particulars given above are true and correct. I understand that if any information is found to be false, or if any required document cannot be produced at the interview, the application may be rejected and any place already granted may be withdrawn.";
+  doc.text(doc.splitTextToSize(declaration, contentWidth) as string[], PAGE_MARGIN, y);
+  y += 12;
+
+  // ----------------------------------------------------------- signatures
+  const signatureWidth = contentWidth / 3 - 4;
+  const signatures = ["Applicant's signature", "First interview board", "Objection & appeal board"];
+  doc.setTextColor(20);
+  for (const [index, label] of signatures.entries()) {
+    const x = PAGE_MARGIN + index * (signatureWidth + 6);
+    doc.setDrawColor(90);
+    doc.line(x, y + 8, x + signatureWidth, y + 8);
+    doc.setFontSize(7.4);
+    doc.text(label, x, y + 12);
+  }
+
+  // ------------------------------------------------------ footer per page
   const pageCount = doc.getNumberOfPages();
   for (let page = 1; page <= pageCount; page++) {
     doc.setPage(page);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(130);
     doc.text(
-      `Generated ${formatDateTime(new Date().toISOString())} · Session ${draft.sessionCode || "—"} · Page ${page} of ${pageCount}`,
+      `Generated ${formatDateTime(new Date().toISOString())} · Application ${draft.sessionCode || "—"} · Page ${page} of ${pageCount}`,
       PAGE_MARGIN,
-      pageHeight - 8,
+      pageHeight - 6,
     );
   }
 
@@ -328,8 +543,8 @@ export async function downloadApplicationPdf(draft: ApplicationDraft): Promise<s
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  // Revoke on the next tick: revoking synchronously can cancel the download in
-  // some browsers before it has read the blob.
+  // Revoke on a delay: revoking synchronously can cancel the download in some
+  // browsers before they have finished reading the blob.
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
   return filename;
 }
