@@ -81,6 +81,10 @@ export default function SchoolMapPickerMap({
   readOnly,
 }: SchoolMapPickerMapProps) {
   const highlightSchool = highlightSchoolId ? findSchoolById(highlightSchoolId) : undefined;
+  // Guard against NaN or invalid coordinates that would crash Leaflet.
+  if (!Number.isFinite(centerLat) || !Number.isFinite(centerLng)) {
+    return null;
+  }
   // Only render markers for schools within the eligible radius (+ near-boundary
   // buffer) - rendering every school nationwide made the map unusable.
   const nearbySchools = schools.filter((s) => s.distanceKm <= displayRadius);

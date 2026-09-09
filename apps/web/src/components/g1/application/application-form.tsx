@@ -233,15 +233,17 @@ function StepIndicator({
   onStepClick: (index: number) => void;
 }) {
   const { t } = useTranslation();
-  const progress = Math.round((current / (stepLabels.length - 1)) * 100);
+  // Clamp step index to prevent NaN in progress calculation and invalid array access
+  const clampedCurrent = Math.max(0, Math.min(current, stepLabels.length - 1));
+  const progress = Math.round((clampedCurrent / (stepLabels.length - 1)) * 100);
   return (
     <>
       <CardHeader className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs text-muted-foreground">
-            {t("appForm.stepIndicator.stepOf", { current: current + 1, total: stepLabels.length })}
+            {t("appForm.stepIndicator.stepOf", { current: clampedCurrent + 1, total: stepLabels.length })}
           </p>
-          <h2 className="font-heading text-2xl">{stepLabels[current]}</h2>
+          <h2 className="font-heading text-2xl">{stepLabels[clampedCurrent]}</h2>
         </div>
         <span className="text-sm text-muted-foreground">
           {t("appForm.stepIndicator.percentComplete", { percent: progress })}
@@ -584,6 +586,9 @@ function DateOfBirthPicker({
   const parsedDate = value ? new Date(value + "T00:00:00") : undefined;
   const maxDate = new Date(G1_DOB_LATEST() + "T00:00:00");
   const minDate = new Date(G1_DOB_EARLIEST() + "T00:00:00");
+  // Guard against malformed persisted dateOfBirth that Date constructor accepts but is invalid
+  const isValidDate = parsedDate && !Number.isNaN(parsedDate.getTime());
+  const validParsedDate = isValidDate ? parsedDate : undefined;
 
   return (
     <Popover
@@ -604,8 +609,8 @@ function DateOfBirthPicker({
           type="button"
           className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1"
         >
-          <span className={parsedDate ? "" : "text-muted-foreground"}>
-            {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
+          <span className={validParsedDate ? "" : "text-muted-foreground"}>
+            {validParsedDate ? format(validParsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
           </span>
           <CalendarIcon className="size-4 opacity-50" />
         </button>
@@ -613,8 +618,8 @@ function DateOfBirthPicker({
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={parsedDate}
-          defaultMonth={parsedDate ?? maxDate}
+          selected={validParsedDate}
+          defaultMonth={validParsedDate ?? maxDate}
           captionLayout="dropdown"
           startMonth={minDate}
           endMonth={maxDate}

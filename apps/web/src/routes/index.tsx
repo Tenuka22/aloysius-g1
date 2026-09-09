@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { client } from "@/utils/orpc";
 import { HomeComponent } from "@/components/g1/home/home-page";
+import { ErrorState } from "@/components/error-state";
 
 function HomeRouteComponent() {
   const { isAdmin, isSubAdmin } = Route.useLoaderData();
@@ -18,5 +19,6 @@ export const Route = createFileRoute("/")({
     const [{ isAdmin }, { isSubAdmin }] = await Promise.all([client.session.isAdmin(), client.session.isSubAdmin()]);
     return { isAdmin, isSubAdmin };
   },
+  errorComponent: (props) => <ErrorState {...props} />,
   component: HomeRouteComponent,
 });

@@ -15,6 +15,7 @@ import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin";
 import { authClient } from "@/lib/auth-client";
 import { refreshSchoolCoordinateOverrides } from "@/lib/g1/school-coordinates";
 import { link, orpc } from "@/utils/orpc";
+import { ErrorState } from "@/components/error-state";
 
 import "../index.css";
 
@@ -25,6 +26,7 @@ export interface RouterAppContext {
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
+  errorComponent: (props) => <ErrorState {...props} />,
   head: () => ({
     meta: [
       {

@@ -1,10 +1,19 @@
-import * as React from "react"
+import { Skeleton } from "@aloysius-admissions/ui/components/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@aloysius-admissions/ui/components/table";
 import {
   type ColumnDef,
   type ColumnFiltersState,
   type OnChangeFn,
   type PaginationState,
   type SortingState,
+  type Table as TanStackTable,
   type VisibilityState,
   flexRender,
   getCoreRowModel,
@@ -14,31 +23,33 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-  type Table as TanStackTable,
-} from "@tanstack/react-table"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@aloysius-admissions/ui/components/table"
+} from "@tanstack/react-table";
+import * as React from "react";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  pageCount: number
-  loading?: boolean
-  onPaginationChange?: OnChangeFn<PaginationState>
-  onSortingChange?: OnChangeFn<SortingState>
-  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>
-  pagination?: PaginationState
-  sorting?: SortingState
-  columnFilters?: ColumnFiltersState
-  toolbar?: (table: TanStackTable<TData>) => React.ReactNode
-  paginationBar?: (table: TanStackTable<TData>) => React.ReactNode
-  rowClassName?: (row: TData) => string | undefined
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  pageCount: number;
+  loading?: boolean;
+  /**
+   * Set when the query backing `data` failed. Without this the table cannot
+   * tell "nothing exists" from "we could not find out", and a failed fetch is
+   * indistinguishable from an empty queue.
+   */
+  error?: unknown;
+  /** Shown when the query succeeded and returned no rows. */
+  emptyState?: React.ReactNode;
+  /** Shown when `error` is set. Falls back to a terse built-in message. */
+  errorState?: React.ReactNode;
+  onPaginationChange?: OnChangeFn<PaginationState>;
+  onSortingChange?: OnChangeFn<SortingState>;
+  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>;
+  pagination?: PaginationState;
+  sorting?: SortingState;
+  columnFilters?: ColumnFiltersState;
+  toolbar?: (table: TanStackTable<TData>) => React.ReactNode;
+  paginationBar?: (table: TanStackTable<TData>) => React.ReactNode;
+  rowClassName?: (row: TData) => string | undefined;
 }
 
 export function DataTable<TData, TValue>({
@@ -46,6 +57,9 @@ export function DataTable<TData, TValue>({
   data,
   pageCount,
   loading,
+  error,
+  emptyState,
+  errorState,
   onPaginationChange,
   onSortingChange,
   onColumnFiltersChange,
@@ -59,16 +73,28 @@ export function DataTable<TData, TValue>({
   const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
-  })
-  const [internalSorting, setInternalSorting] = React.useState<SortingState>([])
-  const [internalColumnFilters, setInternalColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [internalColumnVisibility, setInternalColumnVisibility] = React.useState<VisibilityState>({})
-  const [internalRowSelection, setInternalRowSelection] = React.useState({})
+  });
+  const [internalSorting, setInternalSorting] = React.useState<SortingState>([]);
+  const [internalColumnFilters, setInternalColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [internalColumnVisibility, setInternalColumnVisibility] = React.useState<VisibilityState>(
+    {},
+  );
+  const [internalRowSelection, setInternalRowSelection] = React.useState({});
 
-  const isControlled = !!externalPagination
-  const pagination = isControlled ? externalPagination : internalPagination
-  const sorting = externalSorting ?? internalSorting
-  const columnFilters = externalColumnFilters ?? internalColumnFilters
+  const isControlled = !!externalPagination;
+  const pagination = isControlled ? externalPagination : internalPagination;
+  // Match the skeleton row count to the page size so the table occupies the
+  // same height while loading as it will once the rows arrive.
+  const skeletonRowCount = Math.min(pagination.pageSize || 10, 10);
+  const skeletonRows = React.useMemo(
+    () =>
+      Array.from({ length: skeletonRowCount }, (_, rowIndex) =>
+        columns.map((column, columnIndex) => `skeleton-${rowIndex}-${column.id ?? columnIndex}`),
+      ),
+    [skeletonRowCount, columns],
+  );
+  const sorting = externalSorting ?? internalSorting;
+  const columnFilters = externalColumnFilters ?? internalColumnFilters;
 
   const table = useReactTable({
     data,
@@ -95,7 +121,7 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-  })
+  });
 
   return (
     <div className="space-y-4">
@@ -118,14 +144,30 @@ export function DataTable<TData, TValue>({
             </TableHeader>
             <TableBody>
               {loading ? (
+                // Skeleton rows rather than a single "Loading" cell: the table
+                // keeps its height, so landing rows do not shift the page.
+                skeletonRows.map((cellKeys) => (
+                  <TableRow key={cellKeys[0]}>
+                    {cellKeys.map((cellKey) => (
+                      <TableCell key={cellKey}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : error ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
-                    Loading...
+                    {errorState ?? "Could not load this list."}
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className={rowClassName?.(row.original)}>
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={rowClassName?.(row.original)}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -136,7 +178,7 @@ export function DataTable<TData, TValue>({
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
+                    {emptyState ?? "No results."}
                   </TableCell>
                 </TableRow>
               )}
@@ -146,5 +188,5 @@ export function DataTable<TData, TValue>({
       </div>
       {paginationBar?.(table)}
     </div>
-  )
+  );
 }

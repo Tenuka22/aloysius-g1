@@ -303,16 +303,70 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
       defaultLocations = [{ label: typeof loc.label === "string" ? loc.label : "", address: typeof loc.address === "string" ? loc.address : "", latitude: loc.latitude, longitude: loc.longitude, source: typeof loc.source === "string" && ["manual", "device", "map", "network"].includes(loc.source) ? (loc.source as LocationDraft["source"]) : "device" }];
     }
   }
+  // Coerce applicant fields to their declared types to prevent crashes from malformed server data
+  const applicantInput = input?.applicant as Record<string, unknown> | undefined;
+  const normalizedApplicant = {
+    ...emptyDraft.applicant,
+    ...input?.applicant,
+    fullName: typeof applicantInput?.fullName === "string" ? applicantInput.fullName : emptyDraft.applicant.fullName,
+    sinhalaName: typeof applicantInput?.sinhalaName === "string" ? applicantInput.sinhalaName : emptyDraft.applicant.sinhalaName,
+    gender: typeof applicantInput?.gender === "string" ? applicantInput.gender : emptyDraft.applicant.gender,
+    religion: typeof applicantInput?.religion === "string" ? applicantInput.religion : emptyDraft.applicant.religion,
+    educationMedium: typeof applicantInput?.educationMedium === "string" ? applicantInput.educationMedium : emptyDraft.applicant.educationMedium,
+    dateOfBirth: typeof applicantInput?.dateOfBirth === "string" ? applicantInput.dateOfBirth : emptyDraft.applicant.dateOfBirth,
+    birthCertificateNumber: typeof applicantInput?.birthCertificateNumber === "string" ? applicantInput.birthCertificateNumber : emptyDraft.applicant.birthCertificateNumber,
+  };
+  // Coerce guardian fields to their declared types
+  const guardianInput = input?.guardian as Record<string, unknown> | undefined;
+  const normalizedGuardian = {
+    ...emptyDraft.guardian,
+    ...input?.guardian,
+    relationship: typeof guardianInput?.relationship === "string" ? guardianInput.relationship : emptyDraft.guardian.relationship,
+    fullName: typeof guardianInput?.fullName === "string" ? guardianInput.fullName : emptyDraft.guardian.fullName,
+    sinhalaName: typeof guardianInput?.sinhalaName === "string" ? guardianInput.sinhalaName : emptyDraft.guardian.sinhalaName,
+    nic: typeof guardianInput?.nic === "string" ? guardianInput.nic : emptyDraft.guardian.nic,
+    phone: typeof guardianInput?.phone === "string" ? guardianInput.phone : emptyDraft.guardian.phone,
+    whatsappPhone: typeof guardianInput?.whatsappPhone === "string" ? guardianInput.whatsappPhone : emptyDraft.guardian.whatsappPhone,
+    email: typeof guardianInput?.email === "string" ? guardianInput.email : emptyDraft.guardian.email,
+  };
+  // Coerce residence fields to their declared types
+  const residenceInput = input?.residence as Record<string, unknown> | undefined;
+  const normalizedResidence = {
+    ...emptyDraft.residence,
+    ...input?.residence,
+    permanentAddress: typeof residenceInput?.permanentAddress === "string" ? residenceInput.permanentAddress : emptyDraft.residence.permanentAddress,
+    currentAddress: typeof residenceInput?.currentAddress === "string" ? residenceInput.currentAddress : emptyDraft.residence.currentAddress,
+    sameAsPermanent: residenceInput?.sameAsPermanent === true,
+    district: typeof residenceInput?.district === "string" ? residenceInput.district : emptyDraft.residence.district,
+    dsDivision: typeof residenceInput?.dsDivision === "string" ? residenceInput.dsDivision : emptyDraft.residence.dsDivision,
+    gnDivision: typeof residenceInput?.gnDivision === "string" ? residenceInput.gnDivision : emptyDraft.residence.gnDivision,
+    electoralDistrict: typeof residenceInput?.electoralDistrict === "string" ? residenceInput.electoralDistrict : emptyDraft.residence.electoralDistrict,
+    districtSearch: typeof residenceInput?.districtSearch === "string" ? residenceInput.districtSearch : emptyDraft.residence.districtSearch,
+    dsSearch: typeof residenceInput?.dsSearch === "string" ? residenceInput.dsSearch : emptyDraft.residence.dsSearch,
+    gnSearch: typeof residenceInput?.gnSearch === "string" ? residenceInput.gnSearch : emptyDraft.residence.gnSearch,
+    electoralSearch: typeof residenceInput?.electoralSearch === "string" ? residenceInput.electoralSearch : emptyDraft.residence.electoralSearch,
+  };
+  // Coerce declaration fields to their declared types
+  const declarationInput = input?.declaration as Record<string, unknown> | undefined;
+  const normalizedDeclaration = {
+    confirmed: declarationInput?.confirmed === true,
+    consent: declarationInput?.consent === true,
+  };
+  // Clamp currentStep to valid range to prevent NaN in UI calculations
+  const currentStep = input?.currentStep;
+  const clampedCurrentStep = typeof currentStep === "number" ? Math.max(0, Math.min(currentStep, 6)) : emptyDraft.currentStep;
+
   return {
     ...emptyDraft,
     ...input,
     location: { ...emptyDraft.location, ...input?.location },
     defaultLocations,
     selectedLocation: { ...emptyDraft.selectedLocation, ...input?.selectedLocation },
-    applicant: { ...emptyDraft.applicant, ...input?.applicant },
-    guardian: { ...emptyDraft.guardian, ...input?.guardian },
-    residence: { ...emptyDraft.residence, ...input?.residence },
-    declaration: { ...emptyDraft.declaration, ...input?.declaration },
+    applicant: normalizedApplicant,
+    guardian: normalizedGuardian,
+    residence: normalizedResidence,
+    declaration: normalizedDeclaration,
+    currentStep: clampedCurrentStep,
     categories: normalizeCategories(input?.categories),
     deviceLocationHistory: normalizeLocationHistory(input?.deviceLocationHistory),
     userLocationHistory: normalizeLocationHistory(input?.userLocationHistory),

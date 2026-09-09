@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Suspense } from "react";
 import { Checkbox } from "@aloysius-admissions/ui/components/checkbox";
 import { haversineDistanceKm, getAllSchoolsWithDistance, findSchoolById, isGenderCompatible } from "@/lib/g1/school-utils";
 import { HOME_SCHOOL_ID, MAP_MARKER_COLORS } from "@/lib/g1/school-config";
@@ -68,22 +69,30 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
   return (
     <div className="grid gap-4">
       <ClientOnly fallback={<div className="h-[500px] w-full rounded-lg border bg-muted max-md:h-[360px]" />}>
-        <SchoolMapPickerMapLazy
-          centerLat={centerLat}
-          centerLng={centerLng}
-          selectedIds={selectedIds}
-          highlightSchoolId={highlightSchoolId}
-          radiusKm={radiusKm}
-          displayRadius={displayRadius}
-          schools={schools}
-          appliedGenderType={appliedGenderType}
-          onToggle={onToggle}
-          readOnly={readOnly}
-        />
+        {Number.isFinite(centerLat) && Number.isFinite(centerLng) ? (
+          <Suspense fallback={<div className="h-[500px] w-full rounded-lg border bg-muted max-md:h-[360px]" />}>
+            <SchoolMapPickerMapLazy
+              centerLat={centerLat}
+              centerLng={centerLng}
+              selectedIds={selectedIds}
+              highlightSchoolId={highlightSchoolId}
+              radiusKm={radiusKm}
+              displayRadius={displayRadius}
+              schools={schools}
+              appliedGenderType={appliedGenderType}
+              onToggle={onToggle}
+              readOnly={readOnly}
+            />
+          </Suspense>
+        ) : (
+          <div className="h-[500px] w-full rounded-lg border bg-muted/50 flex items-center justify-center max-md:h-[360px]" role="status">
+            <span className="text-sm text-muted-foreground">Home location unavailable</span>
+          </div>
+        )}
       </ClientOnly>
 
       <p className="text-sm text-muted-foreground" role="status">
-        Radius: {radiusKm.toFixed(1)} km (home to {highlightSchool?.en ?? "applied school"}) · {withinRadius.length} within · {justOutside.length} near boundary
+        Radius: {Number.isFinite(radiusKm) ? radiusKm.toFixed(1) : "—"} km (home to {highlightSchool?.en ?? "applied school"}) · {withinRadius.length} within · {justOutside.length} near boundary
         {readOnly && <> · automatically calculated, cannot be edited</>}
       </p>
 
@@ -94,14 +103,18 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
             : `${ineligibleSelected.length} selected schools are gender-ineligible for the applied school and won't count toward marks.`}
         </p>
       )}
-      <a
-        href={`https://earth.google.com/web/search/${centerLat},${centerLng}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-xs text-blue-600 hover:underline"
-      >
-        Open home location on Google Earth ({centerLat.toFixed(5)}, {centerLng.toFixed(5)})
-      </a>
+      {Number.isFinite(centerLat) && Number.isFinite(centerLng) ? (
+        <a
+          href={`https://earth.google.com/web/search/${centerLat},${centerLng}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:underline"
+        >
+          Open home location on Google Earth ({centerLat.toFixed(5)}, {centerLng.toFixed(5)})
+        </a>
+      ) : (
+        <span className="text-xs text-muted-foreground">Google Earth link unavailable (invalid location)</span>
+      )}
 
       <ul className="grid gap-1.5 max-h-[400px] overflow-y-auto md:grid-cols-2 md:content-start">
         {visibleWithinRadius.map((school) => {
@@ -191,6 +204,11 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
             </li>
           );
         })}
+        {visibleWithinRadius.length === 0 && justOutside.length === 0 && (
+          <li className="md:col-span-2 text-center py-6 text-sm text-muted-foreground">
+            No schools found within the search radius
+          </li>
+        )}
       </ul>
     </div>
   );

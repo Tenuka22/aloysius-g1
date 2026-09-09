@@ -1,5 +1,6 @@
 import { useEffect, lazy, useMemo, useRef, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
+import { Suspense } from "react";
 import { LocateFixed, MapPin, TriangleAlert } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Field, FieldLabel, FieldDescription } from "@aloysius-admissions/ui/components/field";
@@ -299,7 +300,9 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
 
       <div className="min-h-[360px] border rounded-xl overflow-hidden relative max-md:min-h-[300px]" aria-label="OpenStreetMap location picker">
         <ClientOnly fallback={<div className="h-full min-h-[360px] max-md:min-h-[300px] bg-muted/50" />}>
-          <LocationStepMap point={point} readOnly={readOnly} onSelect={(lat, lng) => { void reverseGeocode(lat, lng, "map"); }} />
+          <Suspense fallback={<div className="h-full min-h-[360px] max-md:min-h-[300px] bg-muted/50" />}>
+            <LocationStepMap point={point} readOnly={readOnly} onSelect={(lat, lng) => { void reverseGeocode(lat, lng, "map"); }} />
+          </Suspense>
         </ClientOnly>
         <div className="absolute z-500 left-4 bottom-4 bg-card border rounded-lg p-2 text-xs shadow-[0_4px_12px_#0002]">
           {t("location.mapHint")}
