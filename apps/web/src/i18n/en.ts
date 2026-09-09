@@ -39,7 +39,8 @@ const en = {
   "home.qrDialog.scanWithCamera": "Scan directly with your device camera",
   "home.qrDialog.cancel": "Cancel",
   "home.saved.title": "Your saved applications",
-  "home.saved.description": "Every application available with a saved access key is refreshed from the database.",
+  "home.saved.description":
+    "Every application available with a saved access key is refreshed from the database.",
   "home.saved.count": "{count} {plural}",
   "home.saved.loading": "Loading application…",
   "home.saved.submitted": "Submitted",
@@ -53,22 +54,26 @@ const en = {
   "home.saved.unavailable": "Unavailable",
   "home.saved.updatedAt": "Updated {date}",
   "home.removeDialog.title": "Forget this application key?",
-  "home.removeDialog.description": "This removes the key from this device only. The application remains safely stored in the database and can be loaded again with its session code and access key.",
+  "home.removeDialog.description":
+    "This removes the key from this device only. The application remains safely stored in the database and can be loaded again with its session code and access key.",
   "home.removeDialog.cancel": "Cancel",
   "home.removeDialog.forget": "Forget key",
   "home.manageKeys.title": "Saved application keys",
-  "home.manageKeys.description": "These keys are stored on this device only. Remove any you no longer need.",
+  "home.manageKeys.description":
+    "These keys are stored on this device only. Remove any you no longer need.",
   "home.manageKeys.noKeys": "No saved keys on this device.",
   "home.manageKeys.loading": "Loading…",
   "home.loadKey.title": "Load application with a key",
-  "home.loadKey.description": "Enter the access key you received from the school to open this application.",
+  "home.loadKey.description":
+    "Enter the access key you received from the school to open this application.",
   "home.loadKey.placeholder": "Paste access key here…",
   "home.loadKey.submit": "Open application",
   "home.loadKey.error.empty": "Enter an access key",
 
   // ─── routes/application.access.tsx ────────────────────────────
   "access.title": "Load an application",
-  "access.description": "Use a session code to identify the child, then verify it with the private access key or QR code. A saved key can also be verified directly.",
+  "access.description":
+    "Use a session code to identify the child, then verify it with the private access key or QR code. A saved key can also be verified directly.",
   "access.sessionPlaceholder": "26ABC123 (optional)",
   "access.findApplication": "Find application",
   "access.foundDescription": "{applicantName} · {status}. Enter the matching access key below.",
@@ -90,23 +95,31 @@ const en = {
 
   // ─── components/application/location-step.tsx ─────────────────
   "location.label": "Where does the applicant live?",
-  "location.description": "Choose the applicant's home location. This is used to help determine the nearest school.",
+  "location.description":
+    "Choose the applicant's home location. This is used to help determine the nearest school.",
   "location.placeholder": "Enter an address or landmark",
   "location.useDeviceLocation": "Use my current device location",
   "location.error.permissionBlocked.title": "Location permission is blocked",
-  "location.error.permissionBlocked.message": "Allow location access for this site in your browser settings, then try again. You can also enter an address or use the map.",
+  "location.error.permissionBlocked.message":
+    "Allow location access for this site in your browser settings, then try again. You can also enter an address or use the map.",
   "location.error.noFix.title": "Could not find a location fix",
-  "location.error.noFix.message": "Your device location is enabled, but the browser could not get a fix yet. Try again, or use the map.",
+  "location.error.noFix.message":
+    "Your device location is enabled, but the browser could not get a fix yet. Try again, or use the map.",
   "location.error.timeout.title": "Location request timed out",
-  "location.error.timeout.message": "The browser took too long to find your location. Try again, or use the map.",
+  "location.error.timeout.message":
+    "The browser took too long to find your location. Try again, or use the map.",
   "location.error.unavailable.title": "Device location unavailable",
-  "location.error.unavailable.message": "Location access is optional. Enter an address or click the map to choose a location.",
+  "location.error.unavailable.message":
+    "Location access is optional. Enter an address or click the map to choose a location.",
   "location.error.networkUnavailable.title": "Approximate location unavailable",
-  "location.error.networkUnavailable.message": "We could not find your location from your internet connection. Try GPS again or choose a point on the map.",
+  "location.error.networkUnavailable.message":
+    "We could not find your location from your internet connection. Try GPS again or choose a point on the map.",
   "location.error.noGeolocation.title": "Device location unavailable",
-  "location.error.noGeolocation.message": "This browser does not support GPS location. You can use an approximate network location or choose a point on the map.",
+  "location.error.noGeolocation.message":
+    "This browser does not support GPS location. You can use an approximate network location or choose a point on the map.",
   "location.error.secureRequired.title": "Secure connection required",
-  "location.error.secureRequired.message": "Browser location only works on HTTPS or localhost. Open the secure site, or use the map to choose a location.",
+  "location.error.secureRequired.message":
+    "Browser location only works on HTTPS or localhost. Open the secure site, or use the map to choose a location.",
   "location.tryAgain": "Try again",
   "location.useNetworkLocation": "Use approximate network location",
   "location.status.networkApproximate": "Finding an approximate location from your network…",
@@ -115,7 +128,8 @@ const en = {
   "location.status.findingCurrent": "Finding your current location…",
   "location.status.tryingAnother": "Trying another location method…",
   "location.status.findingAddressEllipsis": "Finding the address…",
-  "location.status.mapPointSaved": "The map point is saved. Address lookup is unavailable right now.",
+  "location.status.mapPointSaved":
+    "The map point is saved. Address lookup is unavailable right now.",
   "location.resolved.networkTitle": "Approximate location found",
   "location.resolved.capturedTitle": "Location captured",
   "location.resolved.accuracy": "Accuracy ~{accuracy} m",
@@ -123,7 +137,8 @@ const en = {
   "location.resolved.address": "Address",
   "location.resolved.resolvingAddress": "Resolving address…",
   "location.resolved.addressNotResolved": "Address not resolved yet",
-  "location.resolved.networkHint": "This is an approximate city-level estimate from your internet connection, not a device location. Adjust the pin if needed.",
+  "location.resolved.networkHint":
+    "This is an approximate city-level estimate from your internet connection, not a device location. Adjust the pin if needed.",
   "location.noPointHint": "Select a point on the map or use your device location to continue.",
   "location.latestSaved.title": "Latest saved location",
   "location.latestSaved.deviceLocation": "Device location",
@@ -136,7 +151,8 @@ const en = {
 
   // ─── components/application/access-recovery-dialog.tsx ─────────
   "recovery.title": "Forget this application key?",
-  "recovery.description": "Choose one way to identify the submitted application. Draft applications cannot be recovered through this request.",
+  "recovery.description":
+    "Choose one way to identify the submitted application. Draft applications cannot be recovered through this request.",
   "recovery.methodLabel": "Recovery method",
   "recovery.methodSession": "Session code",
   "recovery.methodBirth": "Birth certificate number",
@@ -169,7 +185,8 @@ const en = {
 
   // ─── routes/_auth/admin.tsx ───────────────────────────────────
   "admin.noAccess.title": "Admin access required",
-  "admin.noAccess.description": "Your account is signed in, but it does not have permission to view the operations dashboard.",
+  "admin.noAccess.description":
+    "Your account is signed in, but it does not have permission to view the operations dashboard.",
   "admin.noAccess.backToDashboard": "Back to dashboard",
   "admin.sidebar.brand": "G1 Intake",
   "admin.sidebar.console": "Admin console",
@@ -193,7 +210,8 @@ const en = {
   "admin.sidebar.mobileHeader": "Admin console",
   "admin.overview.badge": "Operations",
   "admin.overview.title": "G1 application control room",
-  "admin.overview.description": "Monitor saved applications, data quality, and submission progress.",
+  "admin.overview.description":
+    "Monitor saved applications, data quality, and submission progress.",
   "admin.overview.liveIndicator": "Live via SSE",
   "admin.overview.metricsError": "Could not load admin metrics: {message}",
   "admin.overview.metricApplications": "Applications",
@@ -202,7 +220,8 @@ const en = {
   "admin.overview.metricIncomplete": "Incomplete",
   "admin.overview.metricInvalidEmails": "Invalid emails",
   "admin.overview.formAvailability.title": "Form availability",
-  "admin.overview.formAvailability.description": "Choose when applicants can submit the form for a specific intake year.",
+  "admin.overview.formAvailability.description":
+    "Choose when applicants can submit the form for a specific intake year.",
   "admin.overview.formAvailability.intakeYearLabel": "Intake year",
   "admin.overview.formAvailability.notConfigured": "Not configured - set dates to enable",
   "admin.overview.formAvailability.opens": "Opens",
@@ -216,19 +235,23 @@ const en = {
   "admin.overview.formAvailability.statusWindowClosed": "Configured - window closed",
   "admin.overview.formAvailability.statusOpenNow": "Configured - open now",
   "admin.overview.appRequests.title": "Application requests",
-  "admin.overview.appRequests.description": "Review and act on access, removal, and late submission requests from applicants.",
+  "admin.overview.appRequests.description":
+    "Review and act on access, removal, and late submission requests from applicants.",
   "admin.overview.appRequests.submissionRequests": "Submission requests",
   "admin.overview.appRequests.removalRequests": "Removal requests",
   "admin.overview.appRequests.forgotKeyRequests": "Forgot key requests",
   "admin.overview.admissions.title": "Admissions",
-  "admin.overview.admissions.description": "Open one submitted application at a time for interview review, corrections, and admissions decisions.",
+  "admin.overview.admissions.description":
+    "Open one submitted application at a time for interview review, corrections, and admissions decisions.",
   "admin.overview.admissions.openAdmissions": "Open admissions",
   "admin.overview.schoolCoords.title": "School coordinates",
-  "admin.overview.schoolCoords.description": "Schools missing coordinates from the Google Maps scrape can be pinned manually using Google Maps / Earth lookups. Stored in the database and shared across deployments.",
+  "admin.overview.schoolCoords.description":
+    "Schools missing coordinates from the Google Maps scrape can be pinned manually using Google Maps / Earth lookups. Stored in the database and shared across deployments.",
   "admin.overview.schoolCoords.openHub": "Open schools hub",
   "admin.overview.recentActivity.title": "Recent activity",
   "admin.overview.requestQueue.title": "Application requests",
-  "admin.overview.requestQueue.description": "Access requests generate keys. Removal requests require school review before deletion.",
+  "admin.overview.requestQueue.description":
+    "Access requests generate keys. Removal requests require school review before deletion.",
   "admin.overview.requestQueue.openCount": "{count} open",
   "admin.overview.requestQueue.oneTimeDisplay": "One-time display",
   "admin.overview.requestQueue.copyHint": "Copy this key now; it will not be shown again.",
@@ -244,9 +267,11 @@ const en = {
   "admin.overview.requestQueue.generateKey": "Generate key",
   "admin.overview.requestQueue.generating": "Generating…",
   "admin.overview.requestQueue.dismissRequest": "Dismiss request",
-  "admin.overview.requestQueue.toast.keyGenerated": "New key generated. Share it securely with the verified applicant.",
+  "admin.overview.requestQueue.toast.keyGenerated":
+    "New key generated. Share it securely with the verified applicant.",
   "admin.overview.requestQueue.toast.generateKeyError": "Could not generate key",
-  "admin.overview.requestQueue.toast.applicationDeleted": "The application was deleted after review.",
+  "admin.overview.requestQueue.toast.applicationDeleted":
+    "The application was deleted after review.",
   "admin.overview.requestQueue.toast.deleteError": "Could not delete the application",
   "admin.overview.requestQueue.toast.dismissError": "Could not dismiss request",
 
@@ -267,21 +292,26 @@ const en = {
   // ─── routes/_auth/sub-admin/index.tsx ─────────────────────────
   "subAdminOverview.badge": "Sub-admin workspace",
   "subAdminOverview.title": "Request handler",
-  "subAdminOverview.description": "Review and process access and removal requests. You can only see verification numbers – full application data is restricted to administrators.",
+  "subAdminOverview.description":
+    "Review and process access and removal requests. You can only see verification numbers – full application data is restricted to administrators.",
   "subAdminOverview.forgotKey.title": "Forgot key requests",
-  "subAdminOverview.forgotKey.description": "Parents who lost their access key. Generate a new key or QR code after verification.",
+  "subAdminOverview.forgotKey.description":
+    "Parents who lost their access key. Generate a new key or QR code after verification.",
   "subAdminOverview.forgotKey.viewButton": "View forgot key requests",
   "subAdminOverview.removal.title": "Removal requests",
-  "subAdminOverview.removal.description": "Parents requesting record deletion. Only available during the application open period.",
+  "subAdminOverview.removal.description":
+    "Parents requesting record deletion. Only available during the application open period.",
   "subAdminOverview.removal.viewButton": "View removal requests",
 
   // ─── routes/_auth/sub-admin/forgot-requests.tsx ───────────────
   "subAdminForgot.breadcrumb": "Sub-admin / Requests",
   "subAdminForgot.title": "Forgot key requests",
-  "subAdminForgot.description": "Verify the parent's identity, then generate a new access key or QR code.",
+  "subAdminForgot.description":
+    "Verify the parent's identity, then generate a new access key or QR code.",
   "subAdminForgot.backToOverview": "Back to overview",
   "subAdminForgot.pending.title": "Pending forgot key requests",
-  "subAdminForgot.pending.description": "Only verification numbers are shown. Generate a new key after verifying the parent.",
+  "subAdminForgot.pending.description":
+    "Only verification numbers are shown. Generate a new key after verifying the parent.",
   "subAdminForgot.column.birthCert": "Birth certificate #",
   "subAdminForgot.column.requested": "Requested",
   "subAdminForgot.column.actions": "Actions",
@@ -290,7 +320,8 @@ const en = {
   "subAdminForgot.actions.generateKey": "Generate new key",
   "subAdminForgot.actions.dismiss": "Dismiss",
   "subAdminForgot.confirm.title": "Generate new access key?",
-  "subAdminForgot.confirm.description": "A new access key will be generated for birth certificate {number}. Show the QR code to the parent so they can scan it and access the application.",
+  "subAdminForgot.confirm.description":
+    "A new access key will be generated for birth certificate {number}. Show the QR code to the parent so they can scan it and access the application.",
   "subAdminForgot.confirm.cancel": "Cancel",
   "subAdminForgot.confirm.generate": "Generate key",
   "subAdminForgot.generated.oneTimeDisplay": "One-time display – show QR to parent",
@@ -306,16 +337,19 @@ const en = {
   "subAdminRemoval.description": "Review and process application deletion requests.",
   "subAdminRemoval.backToOverview": "Back to overview",
   "subAdminRemoval.windowClosed.title": "⚠ Application window is closed",
-  "subAdminRemoval.windowClosed.description": "Removal requests can only be processed during the application open period. Deletion is disabled until the window reopens.",
+  "subAdminRemoval.windowClosed.description":
+    "Removal requests can only be processed during the application open period. Deletion is disabled until the window reopens.",
   "subAdminRemoval.pending.title": "Pending removal requests",
-  "subAdminRemoval.pending.description": "Only verification numbers are shown. Deletion is only available during the application open period.",
+  "subAdminRemoval.pending.description":
+    "Only verification numbers are shown. Deletion is only available during the application open period.",
   "subAdminRemoval.column.birthCert": "Birth certificate #",
   "subAdminRemoval.column.requested": "Requested",
   "subAdminRemoval.column.actions": "Actions",
   "subAdminRemoval.actions.deleteApplication": "Delete application",
   "subAdminRemoval.actions.dismiss": "Dismiss",
   "subAdminRemoval.confirm.title": "Are you sure you want to delete?",
-  "subAdminRemoval.confirm.description": "This will permanently delete the application for {name} (birth certificate: {number}). This action cannot be undone. Only proceed after verifying the parent's identity.",
+  "subAdminRemoval.confirm.description":
+    "This will permanently delete the application for {name} (birth certificate: {number}). This action cannot be undone. Only proceed after verifying the parent's identity.",
   "subAdminRemoval.confirm.cancel": "Cancel",
   "subAdminRemoval.confirm.delete": "Delete permanently",
   "subAdminRemoval.toast.deleted": "Application deleted",
@@ -329,7 +363,8 @@ const en = {
 
   // ─── lib/school-config.ts ─────────────────────────────────────
   "schoolConfig.fallbackName": "this school",
-  "schoolConfig.restrictions.gender": "This is a boys' school, so female applicants cannot continue with this application.",
+  "schoolConfig.restrictions.gender":
+    "This is a boys' school, so female applicants cannot continue with this application.",
   "schoolConfig.restrictions.religion": "This intake is not available to Christian applicants.",
 
   // ─── components/application/application-form.tsx ──────────────
@@ -353,30 +388,38 @@ const en = {
   "appForm.birthCert.placeholder": "Enter birth certificate number",
   "appForm.birthCert.refreshTitle": "Check this birth certificate number again",
   "appForm.birthCert.refresh": "Refresh",
-  "appForm.birthCert.skipHint": "Don't have the birth certificate number yet? You can skip it for now and add it before you submit.",
+  "appForm.birthCert.skipHint":
+    "Don't have the birth certificate number yet? You can skip it for now and add it before you submit.",
   "appForm.birthCert.skipButton": "Skip for now",
   "appForm.birthCert.skippedNotice": "Skipped \u2014 you'll need to add this before submitting.",
-  "appForm.birthCert.alreadySkippedNotice": "Already skipped \u2014 enter the number below or continue without it.",
+  "appForm.birthCert.alreadySkippedNotice":
+    "Already skipped \u2014 enter the number below or continue without it.",
   "appForm.birthCert.duplicateLink": "View existing application options",
   "appForm.birthCert.duplicateTitle": "Existing application found",
-  "appForm.birthCert.duplicateDescription": "An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.",
+  "appForm.birthCert.duplicateDescription":
+    "An application already exists for this birth certificate number. Open the existing student profile instead of creating another record.",
   "appForm.birthCert.askRemoval.heading": "Ask the school to remove this record",
-  "appForm.birthCert.askRemoval.description": "Only the school can approve removal after checking the record and contacting the family.",
+  "appForm.birthCert.askRemoval.description":
+    "Only the school can approve removal after checking the record and contacting the family.",
   "appForm.birthCert.applicantNamePlaceholder": "Applicant name",
   "appForm.birthCert.guardianNamePlaceholder": "Guardian name",
   "appForm.birthCert.contactPhonePlaceholder": "Contact phone number",
   "appForm.birthCert.requestRemoval": "Request record removal",
   "appForm.birthCert.requestState.sending": "Sending removal request…",
-  "appForm.birthCert.requestState.sent": "Removal request sent. The school will review it and contact you before taking action.",
+  "appForm.birthCert.requestState.sent":
+    "Removal request sent. The school will review it and contact you before taking action.",
   "appForm.birthCert.requestState.error": "Could not send the request",
   "appForm.locationStep.heading": "Start with the home location",
-  "appForm.locationStep.description": "Your true browser location is saved first. You may then replace the selected application location with another point.",
-  "appForm.locationStep.skipHint": "Don't know the location yet? You can skip it for now and add it before you submit.",
+  "appForm.locationStep.description":
+    "Your true browser location is saved first. You may then replace the selected application location with another point.",
+  "appForm.locationStep.skipHint":
+    "Don't know the location yet? You can skip it for now and add it before you submit.",
   "appForm.locationStep.skipButton": "Skip for now",
   "appForm.locationStep.skippedNotice": "Skipped \u2014 you'll need to add this before submitting.",
-  "appForm.locationStep.alreadySkippedNotice": "Already skipped \u2014 select a location below or continue without it.",
-  "appForm.applicantStep.heading": "Tell us about the applicant",
-  "appForm.applicantStep.description": "Use the name shown on the applicant's birth certificate.",
+  "appForm.locationStep.alreadySkippedNotice":
+    "Already skipped \u2014 select a location below or continue without it.",
+  "appForm.applicantStep.heading": "Tell us about the child",
+  "appForm.applicantStep.description": "Use the name shown on the child's birth certificate.",
   "appForm.applicantStep.fullNameEn": "Full name in English",
   "appForm.applicantStep.fullNameEnPlaceholder": "Enter full name",
   "appForm.applicantStep.fullNameSi": "Full name in Sinhala",
@@ -385,26 +428,33 @@ const en = {
   "appForm.applicantStep.genderPlaceholder": "Select gender",
   "appForm.applicantStep.gender.female": "Female",
   "appForm.applicantStep.gender.male": "Male",
-  "appForm.applicantStep.genderRestriction": "This school does not accept applicants of this gender.",
+  "appForm.applicantStep.genderRestriction":
+    "This school does not accept applicants of this gender.",
   "appForm.applicantStep.religion": "Religion",
   "appForm.applicantStep.religionPlaceholder": "Select religion",
   "appForm.applicantStep.religion.catholic": "Catholic",
   "appForm.applicantStep.religion.christian": "Christian",
   "appForm.applicantStep.religion.buddhist": "Buddhist",
   "appForm.applicantStep.religion.islam": "Islam",
-  "appForm.applicantStep.religionRestriction": "This intake is not available to applicants of this religion.",
+  "appForm.applicantStep.religionRestriction":
+    "This intake is not available to applicants of this religion.",
   "appForm.applicantStep.educationMedium": "Education medium",
   "appForm.applicantStep.educationMediumPlaceholder": "Select medium",
   "appForm.applicantStep.educationMedium.sinhala": "Sinhala",
   "appForm.applicantStep.educationMedium.tamil": "Tamil",
-  "appForm.applicantStep.mediumRestriction": "This school does not accept applicants in this education medium.",
+  "appForm.applicantStep.mediumRestriction":
+    "This school does not accept applicants in this education medium.",
   "appForm.applicantStep.dateOfBirth": "Date of birth",
-  "appForm.applicantStep.dateOfBirthDescription": "The child must be exactly five years old on 31 January 2027 \u2014 born between {earliest} and {latest}.",
+  "appForm.applicantStep.dateOfBirthDescription":
+    "The child must be exactly five years old on 31 January 2027 \u2014 born between {earliest} and {latest}.",
   "appForm.applicantStep.dateOfBirthCurrentAge": "Current age: {years} years, {months} months.",
-  "appForm.applicantStep.dateOfBirthCutoffAge": "Age on {date} (admission cutoff): {years} years, {months} months.",
-  "appForm.applicantStep.dateOfBirthRestriction": "This date of birth does not meet the eligibility age requirement for this intake.",
+  "appForm.applicantStep.dateOfBirthCutoffAge":
+    "Age on {date} (admission cutoff): {years} years, {months} months.",
+  "appForm.applicantStep.dateOfBirthRestriction":
+    "This date of birth does not meet the eligibility age requirement for this intake.",
   "appForm.guardianStep.heading": "Parent or guardian details",
-  "appForm.guardianStep.description": "We'll use these details only to contact the family about this intake.",
+  "appForm.guardianStep.description":
+    "We'll use these details only to contact the family about this intake.",
   "appForm.guardianStep.relationship": "Relationship to applicant",
   "appForm.guardianStep.relationshipPlaceholder": "Select relationship",
   "appForm.guardianStep.relationship.mother": "Mother",
@@ -415,11 +465,13 @@ const en = {
   "appForm.guardianStep.sinhalaKeyboardLink": "Need a Sinhala phonetic keyboard? Open Helakuru",
   "appForm.guardianStep.nic": "NIC number",
   "appForm.guardianStep.nicPlaceholder": "e.g. 123456789V or 200012345678",
-  "appForm.guardianStep.nicError": "Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12 digits.",
+  "appForm.guardianStep.nicError":
+    "Enter a valid Sri Lankan NIC: 9 digits followed by V/X, or 12 digits.",
   "appForm.guardianStep.phone": "Phone number",
   "appForm.guardianStep.email": "Email address",
   "appForm.residenceStep.heading": "Where does the family live?",
-  "appForm.residenceStep.description": "Provide the permanent residence first, then add current details if different. The circular requires residence to be supported by official documents and, where applicable, GN certification.",
+  "appForm.residenceStep.description":
+    "Provide the permanent residence first, then add current details if different. The circular requires residence to be supported by official documents and, where applicable, GN certification.",
   "appForm.residenceStep.permanentAddress": "Permanent address",
   "appForm.residenceStep.permanentAddressPlaceholder": "House number, street, town",
   "appForm.residenceStep.currentAddress": "Current address",
@@ -437,12 +489,17 @@ const en = {
   "appForm.residenceStep.electoralDistrict": "Electoral district",
   "appForm.residenceStep.electoralDistrictPlaceholder": "Search electoral district",
   "appForm.declarationStep.heading": "Confirm before review",
-  "appForm.declarationStep.description": "This is a collection draft. Nothing will be submitted while collection mode is active.",
-  "appForm.declarationStep.completeSkippedHeading": "You skipped some details earlier \u2014 complete them before submitting.",
-  "appForm.declarationStep.confirmAccuracy": "I confirm that the information I provide is accurate to the best of my knowledge.",
-  "appForm.declarationStep.consentProcessing": "I consent to this information being used to prepare the Grade 1 2026 intake application.",
+  "appForm.declarationStep.description":
+    "This is a collection draft. Nothing will be submitted while collection mode is active.",
+  "appForm.declarationStep.completeSkippedHeading":
+    "You skipped some details earlier \u2014 complete them before submitting.",
+  "appForm.declarationStep.confirmAccuracy":
+    "I confirm that the information I provide is accurate to the best of my knowledge.",
+  "appForm.declarationStep.consentProcessing":
+    "I consent to this information being used to prepare the Grade 1 2026 intake application.",
   "appForm.reviewStep.heading": "Review your draft",
-  "appForm.reviewStep.description": "Check all collected information before the application submission step becomes available.",
+  "appForm.reviewStep.description":
+    "Check all collected information before the application submission step becomes available.",
   "appForm.reviewStep.edit": "Edit",
   "appForm.reviewStep.location": "Location",
   "appForm.reviewStep.applicantDetails": "Applicant details",
@@ -495,7 +552,8 @@ const en = {
   "appForm.reviewStep.emptyValue": "(empty)",
   "appForm.statusBar.applicationStatus": "Application status",
   "appForm.statusBar.stepOf": "Step {current} of {total}",
-  "appForm.statusBar.keepGoing": "Keep going one section at a time. You can leave and return with the access key above.",
+  "appForm.statusBar.keepGoing":
+    "Keep going one section at a time. You can leave and return with the access key above.",
   "appForm.statusBar.saved": "Saved",
   "appForm.statusBar.connected": "Connected to secure draft",
   "appForm.statusBar.connecting": "Connecting to secure draft",
@@ -509,37 +567,46 @@ const en = {
   "appForm.sessionCode.copyAriaLabel": "Copy session code",
   "appForm.sessionCode.copy": "Copy",
   "appForm.sessionCode.copied": "Copied",
-  "appForm.sessionCode.hint": "Memorise this code to find this child's application on another device.",
+  "appForm.sessionCode.hint":
+    "Memorise this code to find this child's application on another device.",
   "appForm.accessKey.label": "Access key",
   "appForm.accessKey.copyAriaLabel": "Copy access key",
-  "appForm.accessKey.hint": "This key authorizes you to view, change, and edit this application again. Store it safely.",
+  "appForm.accessKey.hint":
+    "This key authorizes you to view, change, and edit this application again. Store it safely.",
   "appForm.submitted.statusBadge": "Submission complete",
   "appForm.submitted.title": "Application submitted successfully.",
-  "appForm.submitted.description": "Your application is safely recorded. Keep the access key below so you can return to this child's application later.",
+  "appForm.submitted.description":
+    "Your application is safely recorded. Keep the access key below so you can return to this child's application later.",
   "appForm.submitted.bannedStatusBadge": "Application blocked",
   "appForm.submitted.bannedTitle": "This application has been banned.",
-  "appForm.submitted.bannedDescription": "This application has been blocked by an administrator. Please contact the school office for more information.",
+  "appForm.submitted.bannedDescription":
+    "This application has been blocked by an administrator. Please contact the school office for more information.",
   "appForm.submitted.verifiedStatusBadge": "Application verified",
   "appForm.submitted.verifiedTitle": "Your application has been reviewed and verified.",
-  "appForm.submitted.verifiedDescription": "An administrator has reviewed this application and confirmed the information is accurate.",
+  "appForm.submitted.verifiedDescription":
+    "An administrator has reviewed this application and confirmed the information is accurate.",
   "appForm.submitted.categoryMarks": "Category marks",
   "appForm.submitted.observations": "Observations ({count})",
   "appForm.submitted.adminNote": "Admin note",
   "appForm.submitted.flaggedStatusBadge": "Application flagged",
   "appForm.submitted.flaggedTitle": "This application requires attention.",
-  "appForm.submitted.flaggedDescription": "An administrator has flagged concerns with this application. Please review the details below and contact the school office if needed.",
+  "appForm.submitted.flaggedDescription":
+    "An administrator has flagged concerns with this application. Please review the details below and contact the school office if needed.",
   "appForm.submitted.flaggedItems": "Flagged items ({count})",
   "appForm.submitted.awaitingReviewBadge": "Awaiting review",
   "appForm.submitted.awaitingReviewTitle": "Your application is pending admin review.",
-  "appForm.submitted.awaitingReviewDescription": "Your submission is complete. An administrator will review the details shortly. You can check back later using your access key.",
+  "appForm.submitted.awaitingReviewDescription":
+    "Your submission is complete. An administrator will review the details shortly. You can check back later using your access key.",
   "appForm.submitted.yourAccessKey": "Your access key",
-  "appForm.submitted.accessKeyDescription": "This key lets you view or update this child's application.",
+  "appForm.submitted.accessKeyDescription":
+    "This key lets you view or update this child's application.",
   "appForm.submitted.copyKey": "Copy key",
   "appForm.submitted.copied": "Copied",
   "appForm.submitted.nextSteps.badge": "Next steps",
   "appForm.submitted.nextSteps.title": "Keep your application within reach",
   "appForm.submitted.nextSteps.step1": "Copy or store the access key somewhere safe.",
-  "appForm.submitted.nextSteps.step2": "Use it with your session code to return to this application.",
+  "appForm.submitted.nextSteps.step2":
+    "Use it with your session code to return to this application.",
   "appForm.submitted.backToHome": "Back to home",
   "appForm.submitted.applyForAnother": "Apply for another child",
   "appForm.submitted.changesByAdmin": "Changes made by admin ({count})",
@@ -553,14 +620,17 @@ const en = {
   "appForm.buttons.giveConsent": "Give consent to process the data",
   "appForm.buttons.clearDraft": "Clear draft",
   "appForm.buttons.clearDraftDialog.title": "Clear this draft?",
-  "appForm.buttons.clearDraftDialog.description": "This will remove all saved data for this application from this device. You can reload it later using the access key.",
+  "appForm.buttons.clearDraftDialog.description":
+    "This will remove all saved data for this application from this device. You can reload it later using the access key.",
   "appForm.buttons.clearDraftDialog.cancel": "Cancel",
   "appForm.buttons.clearDraftDialog.confirm": "Clear draft",
   "appForm.buttons.formWindowClosed.title": "Form submission is outside the open window",
-  "appForm.buttons.formWindowClosed.description": "Your draft is saved locally and synchronized with the server. The form window is {opensAt} to {closesAt}.",
+  "appForm.buttons.formWindowClosed.description":
+    "Your draft is saved locally and synchronized with the server. The form window is {opensAt} to {closesAt}.",
   "appForm.buttons.formWindowClosed.notConfigured": "not yet configured",
   "appForm.buttons.submissionRequest.title": "Request approval to submit",
-  "appForm.buttons.submissionRequest.description": "The submission window is closed. Submit this request for admin approval.",
+  "appForm.buttons.submissionRequest.description":
+    "The submission window is closed. Submit this request for admin approval.",
   "appForm.buttons.submissionRequest.namePlaceholder": "Your full name",
   "appForm.buttons.submissionRequest.phonePlaceholder": "Contact phone number",
   "appForm.buttons.submissionRequest.sending": "Sending…",
@@ -573,11 +643,14 @@ const en = {
   "appForm.buttons.copyWithFeedback.keycard": "keycard",
   "appForm.buttons.submitError.couldNotSave": "Could not save this step. Please try again.",
   "appForm.buttons.submitError.couldNotCreateDraft": "Could not create a secure application draft",
-  "appForm.buttons.submitError.couldNotSubmit": "Could not submit the application. Please try again.",
-  "appForm.buttons.submitError.networkError": "Could not reach the server. Check your internet connection and try again.",
+  "appForm.buttons.submitError.couldNotSubmit":
+    "Could not submit the application. Please try again.",
+  "appForm.buttons.submitError.networkError":
+    "Could not reach the server. Check your internet connection and try again.",
   "appForm.buttons.restoring": "Restoring your draft 2026",
   "appForm.buttons.applicantInfo": "Applicant information",
-  "appForm.buttons.applicantInfoDescription": "G1 2026 intake · Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.",
+  "appForm.buttons.applicantInfoDescription":
+    "G1 2026 intake · Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.",
 
   // ─── components/application/category-step.tsx ─────────────────
   "category.tabLabels.6_1": "Residence & Proximity",
@@ -586,17 +659,24 @@ const en = {
   "category.tabLabels.6_4": "Service & Distance",
   "category.tabLabels.6_5": "Transfer",
   "category.tabLabels.6_6": "Foreign Employment",
-  "category.meta.6_1.description": "Residence documents, electoral registration, and home-to-school proximity.",
-  "category.meta.6_2.description": "The parent's education, achievements, association service, and school contributions.",
-  "category.meta.6_3.description": "Sibling study history, achievements, residence evidence, and proximity.",
-  "category.meta.6_4.description": "Government service period, difficult service, leave, and service distances.",
-  "category.meta.6_5.description": "Transfer distance, service history, recency, leave, and school proximity.",
-  "category.meta.6_6.description": "Continuous foreign employment, purpose, and home-to-school proximity.",
+  "category.meta.6_1.description":
+    "Residence documents, electoral registration, and home-to-school proximity.",
+  "category.meta.6_2.description":
+    "The parent's education, achievements, association service, and school contributions.",
+  "category.meta.6_3.description":
+    "Sibling study history, achievements, residence evidence, and proximity.",
+  "category.meta.6_4.description":
+    "Government service period, difficult service, leave, and service distances.",
+  "category.meta.6_5.description":
+    "Transfer distance, service history, recency, leave, and school proximity.",
+  "category.meta.6_6.description":
+    "Continuous foreign employment, purpose, and home-to-school proximity.",
   "category.mainDocument.title": "Main residence document",
   "category.mainDocument.placeholder": "Select document type",
   "category.additionalDocs.title": "Supporting documents held",
   "category.sectionHeading.markingScheme": "Marking scheme categories",
-  "category.sectionHeading.description": "Choose only the circular categories that describe your application. Each category is scored separately out of 100, and you can add a category more than once when the scheme asks for separate records.",
+  "category.sectionHeading.description":
+    "Choose only the circular categories that describe your application. Each category is scored separately out of 100, and you can add a category more than once when the scheme asks for separate records.",
   "category.sectionHeading.categoriesSelected": "{count} {plural} selected",
   "category.sectionHeading.addRemoveHint": "Add or remove entries as you gather documents.",
   "category.sectionHeading.draftSaves": "Your draft saves after every change",
@@ -609,24 +689,31 @@ const en = {
   "category.buttons.remove": "Remove",
   "category.buttons.addCategory": "+ Add {category}",
   "category.noEntries": "No entries added yet. Click the button above to add one.",
-  "category.mapRequired.notice": "This category needs your home location for proximity scoring. Set it in the Location step before adding this category.",
+  "category.mapRequired.notice":
+    "This category needs your home location for proximity scoring. Set it in the Location step before adding this category.",
   "category.mapRequired.configureLink": "Go to Location step",
   "category.exampleMarks.heading": "Marks summary – {category}",
   "category.exampleMarks.indicativeTotal": "Indicative total",
-  "category.exampleMarks.disclaimer": "This is a baseline estimate calculated from your answers. The interview panel checks your original documents and may adjust these marks at the interview.",
+  "category.exampleMarks.disclaimer":
+    "This is a baseline estimate calculated from your answers. The interview panel checks your original documents and may adjust these marks at the interview.",
   "category.nearbySchools.title": "Nearby schools",
-  "category.nearbySchools.calculated": "Calculated automatically from the distance between your home and the applied school.",
+  "category.nearbySchools.calculated":
+    "Calculated automatically from the distance between your home and the applied school.",
   "category.nearbySchools.selectedCount": "{count} selected · {marksPerSchool} marks each",
-  "category.nearbySchools.explanation": "Every other school within that radius that admits the same gender as the applied school counts as a competing alternative and reduces the {maxMarks}-mark proximity section by {marksPerSchool} marks each. This cannot be edited manually; an admin can correct it during the interview if needed.",
+  "category.nearbySchools.explanation":
+    "Every other school within that radius that admits the same gender as the applied school counts as a competing alternative and reduces the {maxMarks}-mark proximity section by {marksPerSchool} marks each. This cannot be edited manually; an admin can correct it during the interview if needed.",
   "category.nearbySchools.lockedSchools": "{count} school(s) selected",
   "category.nearbySchools.lockedNoSchools": "No schools selected",
-  "category.nearbySchools.noLocationHint": "Complete the location step to choose nearby schools for this category.",
+  "category.nearbySchools.noLocationHint":
+    "Complete the location step to choose nearby schools for this category.",
   "category.noHomeLocation": "No home location available for map display.",
   "category.mainDocumentOptions.titleDeedApplicant": "Title deed – applicant",
   "category.mainDocumentOptions.titleDeedParents": "Title deed – parents",
-  "category.mainDocumentOptions.feederElectoral5yrs": "Feeder-area electoral register / birth certificate (min 5 years)",
+  "category.mainDocumentOptions.feederElectoral5yrs":
+    "Feeder-area electoral register / birth certificate (min 5 years)",
   "category.mainDocumentOptions.leaseDeed": "Lease deed",
-  "category.mainDocumentOptions.municipalDsCertificate": "Municipal council / Divisional Secretariat certificate",
+  "category.mainDocumentOptions.municipalDsCertificate":
+    "Municipal council / Divisional Secretariat certificate",
   "category.mainDocumentOptions.otherDocuments": "Other documents",
   "category.additionalDocOptions.nic": "NIC",
   "category.additionalDocOptions.drivingLicense": "Driving licence",
@@ -656,7 +743,8 @@ const en = {
   "category.leadershipRoleOptions.firstTeamViceCaptain": "First Team Sports Vice-Captain",
   "category.leadershipRoleOptions.firstTeamCaptain": "First Team Sports Captain",
   "category.studentSocietiesRoleOptions.committeeMember": "Committee Member",
-  "category.studentSocietiesRoleOptions.vicePresident": "Vice President / Vice Secretary / Vice Treasurer",
+  "category.studentSocietiesRoleOptions.vicePresident":
+    "Vice President / Vice Secretary / Vice Treasurer",
   "category.studentSocietiesRoleOptions.president": "President / Secretary / Treasurer",
   "category.otherActivityOptions.juniorBandLeader": "Junior Band Leader",
   "category.otherActivityOptions.juniorBandMember": "Junior Band Member",
@@ -681,9 +769,11 @@ const en = {
   "category.siblingExamOptions.al": "G.C.E. (A/L) qualified (1.5)",
   "category.siblingDocumentOptions.titleDeedApplicantSpouse": "Title deed – applicant / spouse",
   "category.siblingDocumentOptions.titleDeedParents": "Title deed – parents",
-  "category.siblingDocumentOptions.feederElectoral5yrs": "Feeder-area electoral register / birth certificate (min 5 years)",
+  "category.siblingDocumentOptions.feederElectoral5yrs":
+    "Feeder-area electoral register / birth certificate (min 5 years)",
   "category.siblingDocumentOptions.leaseDeed": "Lease deed",
-  "category.siblingDocumentOptions.municipalDsRentactCert": "Municipal / DS certificate or Rent Act registration",
+  "category.siblingDocumentOptions.municipalDsRentactCert":
+    "Municipal / DS certificate or Rent Act registration",
   "category.siblingDocumentOptions.otherDocuments": "Other acceptable documents",
   "category.common.notAttempted": "Not attempted",
   "category.common.none": "None",
@@ -701,25 +791,33 @@ const en = {
   "category.common.marksSuffix": "{marks} marks",
   // Category 6.1 fields
   "category.61.mainDocument.label": "Main residence document",
-  "category.61.mainDocument.hint": "Document marks (max 20):\n• Title deed – applicant: 20\n• Title deed – parents: 16\n• Feeder electoral 5yr: 15\n• Lease deed: 10\n• Municipal/DS certificate: 5\n• Other documents: 4\n\nDeed age multiplier:\n• 5+ years = 100%\n• 4 years = 80%\n• 3 years = 60%\n• 2 years = 40%\n• 1 year = 20%\n• 6 months = 10%\n• <6 months = 5%",
+  "category.61.mainDocument.hint":
+    "Document marks (max 20):\n• Title deed – applicant: 20\n• Title deed – parents: 16\n• Feeder electoral 5yr: 15\n• Lease deed: 10\n• Municipal/DS certificate: 5\n• Other documents: 4\n\nDeed age multiplier:\n• 5+ years = 100%\n• 4 years = 80%\n• 3 years = 60%\n• 2 years = 40%\n• 1 year = 20%\n• 6 months = 10%\n• <6 months = 5%",
   "category.61.documentRegistrationDate": "Document registration date",
   "category.61.deedTransferDate.label": "Date of deed transfer / document registration",
-  "category.61.deedTransferDate.hint": "When was the residence document transferred to the applicant's name? The earlier the date, the higher the marks.",
+  "category.61.deedTransferDate.hint":
+    "When was the residence document transferred to the applicant's name? The earlier the date, the higher the marks.",
   "category.61.supportingDocs.label": "Supporting documents",
-  "category.61.supportingDocs.hint": "1 mark per document, max 5.\n\nAccepted documents:\n• NIC\n• Driving licence\n• Landline bill\n• Marriage certificate\n• Life insurance policy\n• School leaving certificate\n• Child birth certificate\n• Vehicle registration\n• Bank passbook",
+  "category.61.supportingDocs.hint":
+    "1 mark per document, max 5.\n\nAccepted documents:\n• NIC\n• Driving licence\n• Landline bill\n• Marriage certificate\n• Life insurance policy\n• School leaving certificate\n• Child birth certificate\n• Vehicle registration\n• Bank passbook",
   "category.61.electoralMother.label": "Electoral register – mother",
   "category.61.electoralMother.yearLabel": "Year mother first registered",
-  "category.61.electoralMother.hint": "2.5 marks per year registered (2020–2024). Combined with father, max 25 marks.",
+  "category.61.electoralMother.hint":
+    "2.5 marks per year registered (2020–2024). Combined with father, max 25 marks.",
   "category.61.electoralFather.label": "Electoral register – father",
   "category.61.electoralFather.yearLabel": "Year father first registered",
-  "category.61.electoralFather.hint": "2.5 marks per year registered (2020–2024). Combined with mother, max 25 marks.",
+  "category.61.electoralFather.hint":
+    "2.5 marks per year registered (2020–2024). Combined with mother, max 25 marks.",
   "category.61.electoralTotal": "Electoral register total",
-  "category.61.electoralTotal.hint": "2.5 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 25 marks.\n\nExample: Both 5 years = 25",
+  "category.61.electoralTotal.hint":
+    "2.5 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 25 marks.\n\nExample: Both 5 years = 25",
   "category.61.nearbySchools.label": "Nearby schools",
-  "category.61.nearbySchools.hint": "Max 50 marks.\nDeduct 5 per school within radius\n(excluding {school}).\n\nNo other schools = 50 marks\n10 schools = 0 marks",
+  "category.61.nearbySchools.hint":
+    "Max 50 marks.\nDeduct 5 per school within radius\n(excluding {school}).\n\nNo other schools = 50 marks\n10 schools = 0 marks",
   // Category 6.2 fields
   "category.62.yearsEducated.label": "Years educated at this school",
-  "category.62.yearsEducated.hint": "2 marks per year, max 13 years.\n\nCurrent: {years} years = {marks} marks",
+  "category.62.yearsEducated.hint":
+    "2 marks per year, max 13 years.\n\nCurrent: {years} years = {marks} marks",
   "category.62.startDate.label": "Date started at this school",
   "category.62.startDate.hint": "When did the parent start attending {school}?",
   "category.62.endDate.label": "Date left this school",
@@ -728,90 +826,114 @@ const en = {
   "category.62.grade5Scholarship.hint": "Passed = 3 marks\nNot passed = 0 marks",
   "category.62.grade5Scholarship.checkbox": "Passed Grade 5 Scholarship Examination",
   "category.62.olResult.label": "G.C.E. (O/L) result",
-  "category.62.olResult.hint": "Marks per subject by grade:\n• S: varies by subject count\n• C: varies by subject count\n• B/D: varies by subject count\n• A: 9 subjects only\n\nMax 10 marks",
+  "category.62.olResult.hint":
+    "Marks per subject by grade:\n• S: varies by subject count\n• C: varies by subject count\n• B/D: varies by subject count\n• A: 9 subjects only\n\nMax 10 marks",
   "category.62.olResult.subjectCount": "Number of subjects",
   "category.62.olResult.subjectCountPlaceholder": "Select O/L subject count",
   "category.62.alResult.label": "G.C.E. (A/L) result",
-  "category.62.alResult.hint": "Marks per subject by grade:\n• S: 2.00 (3 subj) / 1.50 (4 subj)\n• C: 2.66 (3 subj) / 2.00 (4 subj)\n• B: 3.33 (3 subj) / 2.50 (4 subj)\n• A: 4.00 (3 subj) / 3.00 (4 subj)\n\nMax 12 marks",
+  "category.62.alResult.hint":
+    "Marks per subject by grade:\n• S: 2.00 (3 subj) / 1.50 (4 subj)\n• C: 2.66 (3 subj) / 2.00 (4 subj)\n• B: 3.33 (3 subj) / 2.50 (4 subj)\n• A: 4.00 (3 subj) / 3.00 (4 subj)\n\nMax 12 marks",
   "category.62.alResult.subjectCount": "Number of subjects",
   "category.62.alResult.subjectCountPlaceholder": "Select A/L subject count",
   "category.62.sports.label": "Sports / co-curricular",
-  "category.62.sports.hint": "Marks per achievement by level:\n• Inter-House: 0.5\n• Zonal: 1\n• District: 2\n• Provincial: 3\n• National: 4.75\n• International: 5\n\nMultiply by count, max 10",
+  "category.62.sports.hint":
+    "Marks per achievement by level:\n• Inter-House: 0.5\n• Zonal: 1\n• District: 2\n• Provincial: 3\n• National: 4.75\n• International: 5\n\nMultiply by count, max 10",
   "category.62.sports.highestLevel": "Highest level",
   "category.62.sports.highestLevelPlaceholder": "Select highest level",
   "category.62.sports.achievements": "Achievements at that level",
   "category.62.leadership.label": "Leadership role",
-  "category.62.leadership.hint": "Marks by role:\n• Primary Student Prefect: 1\n• Junior Student Prefect: 1.5\n• Senior Student Prefect: 3\n• Deputy Head Prefect: 4\n• Head Prefect: 5\n• First Team Vice-Captain: 1.5\n• First Team Captain: 2\n\nMax 5 marks",
+  "category.62.leadership.hint":
+    "Marks by role:\n• Primary Student Prefect: 1\n• Junior Student Prefect: 1.5\n• Senior Student Prefect: 3\n• Deputy Head Prefect: 4\n• Head Prefect: 5\n• First Team Vice-Captain: 1.5\n• First Team Captain: 2\n\nMax 5 marks",
   "category.62.leadership.highestRole": "Highest role held",
   "category.62.leadership.highestRolePlaceholder": "Select leadership role",
   "category.62.studentSocieties.label": "Student Societies",
-  "category.62.studentSocieties.hint": "Marks by role:\n• Committee Member: 0.5\n• Vice President / Vice Secretary / Vice Treasurer: 0.75\n• President / Secretary / Treasurer: 1\n\nMax 5 marks",
+  "category.62.studentSocieties.hint":
+    "Marks by role:\n• Committee Member: 0.5\n• Vice President / Vice Secretary / Vice Treasurer: 0.75\n• President / Secretary / Treasurer: 1\n\nMax 5 marks",
   "category.62.studentSocieties.highestRole": "Highest role held",
   "category.62.studentSocieties.highestRolePlaceholder": "Select society role",
   "category.62.otherActivities.label": "Other Activities",
-  "category.62.otherActivities.hint": "Marks by activity:\n• Junior Band Leader: 2\n• Junior Band Member: 1\n• Senior Band Leader: 2\n• Senior Band Member: 1\n• Scout Leader: 2\n• Scout Member: 1\n• Cub Scout: 1\n• Cadet Team Leader: 2\n• Cadet Team Member: 1\n• Debating Team Leader: 2\n• Debating Team Member: 1\n• St. John Ambulance Leader: 2\n• St. John Ambulance Member: 1\n• Other: 1\n\nMax 5 marks",
+  "category.62.otherActivities.hint":
+    "Marks by activity:\n• Junior Band Leader: 2\n• Junior Band Member: 1\n• Senior Band Leader: 2\n• Senior Band Member: 1\n• Scout Leader: 2\n• Scout Member: 1\n• Cub Scout: 1\n• Cadet Team Leader: 2\n• Cadet Team Member: 1\n• Debating Team Leader: 2\n• Debating Team Member: 1\n• St. John Ambulance Leader: 2\n• St. John Ambulance Member: 1\n• Other: 1\n\nMax 5 marks",
   "category.62.otherActivities.activityLabel": "Activity",
   "category.62.otherActivities.activityPlaceholder": "Select activity",
   "category.62.otherActivities.specifyLabel": "Specify activity",
   "category.62.otherActivities.specifyPlaceholder": "Enter activity name",
   "category.62.pastPupils.label": "Past Pupils' Association",
-  "category.62.pastPupils.hint": "Life Membership: +10 marks\nOR Membership period: 0.5 × {years} yrs = {yearMarks} marks (max 10)\n\nCommittee Membership: +1 mark (0.25 × 4 yrs, max 3)\nExecutive Office Post: +3 marks (1.5 × 2, max 3)\n\nMax total: 10 marks",
+  "category.62.pastPupils.hint":
+    "Life Membership: +10 marks\nOR Membership period: 0.5 × {years} yrs = {yearMarks} marks (max 10)\n\nCommittee Membership: +1 mark (0.25 × 4 yrs, max 3)\nExecutive Office Post: +3 marks (1.5 × 2, max 3)\n\nMax total: 10 marks",
   "category.62.pastPupils.lifeMembership": "Life Membership",
   "category.62.pastPupils.startDate.label": "Membership start date",
   "category.62.pastPupils.startDate.hint": "When did the parent join the Past Pupils' Association?",
   "category.62.pastPupils.endDate.label": "Membership end date",
-  "category.62.pastPupils.endDate.hint": "When did the parent's membership end (or current date if still a member)?",
+  "category.62.pastPupils.endDate.hint":
+    "When did the parent's membership end (or current date if still a member)?",
   "category.62.pastPupils.committeeMembership": "Committee Membership",
   "category.62.pastPupils.executiveOffice": "Executive Office Post",
   "category.62.degrees.label": "University Degrees (UGC)",
-  "category.62.degrees.hint": "Marks by qualification:\n• First degree (UGC approved): 3\n• Postgraduate Degree: 4\n• Doctorate (Ph.D.): 5\n• Chartered Professional / NVQ 7: 3\n\nMax 5 marks",
+  "category.62.degrees.hint":
+    "Marks by qualification:\n• First degree (UGC approved): 3\n• Postgraduate Degree: 4\n• Doctorate (Ph.D.): 5\n• Chartered Professional / NVQ 7: 3\n\nMax 5 marks",
   "category.62.degrees.highestQualification": "Highest qualification",
   "category.62.degrees.highestQualificationPlaceholder": "Select highest degree",
   "category.62.diploma.label": "Diploma / Higher Diploma",
-  "category.62.diploma.hint": "Diploma / Higher Diploma / NVQ 5, 6\n(More than 2 years): 2 marks\n\nOtherwise: 0 marks",
+  "category.62.diploma.hint":
+    "Diploma / Higher Diploma / NVQ 5, 6\n(More than 2 years): 2 marks\n\nOtherwise: 0 marks",
   "category.62.diploma.checkbox": "Diploma / Higher Diploma / NVQ 5, 6 (more than 2 years)",
   "category.62.contribution.label": "Contribution to School Activities",
-  "category.62.contribution.hint": "Sports Meet: 0.5 marks\nShramadana (Community Service): 0.5 marks\n\nMax 2 marks",
+  "category.62.contribution.hint":
+    "Sports Meet: 0.5 marks\nShramadana (Community Service): 0.5 marks\n\nMax 2 marks",
   "category.62.contribution.sportsMeet": "Sports Meet",
   "category.62.contribution.shramadana": "Shramadana (Community Service)",
   "category.62.schoolProjects.label": "Contribution to School Projects",
-  "category.62.schoolProjects.hint": "Contributed to school projects:\n5 marks\n\nOtherwise: 0 marks",
+  "category.62.schoolProjects.hint":
+    "Contributed to school projects:\n5 marks\n\nOtherwise: 0 marks",
   "category.62.schoolProjects.checkbox": "Contributed to school projects",
   // Category 6.3 fields
   "category.63.siblingsStudying.label": "Siblings currently studying",
-  "category.63.siblingsStudying.hint": "2 marks per sibling, max 10.\n\nCurrent: {count} sibling(s) = {marks} marks",
+  "category.63.siblingsStudying.hint":
+    "2 marks per sibling, max 10.\n\nCurrent: {count} sibling(s) = {marks} marks",
   "category.63.siblingsStudying.countLabel": "Number of siblings",
   "category.63.studiedHere.label": "Sibling studied at applied school",
   "category.63.studiedHere.hint": "If sibling studied at {school}:\n5 marks\n\nOtherwise: 0 marks",
   "category.63.studiedHere.checkbox": "Applying to the school where the sibling studied",
   "category.63.multipleSiblings.label": "Two or more siblings applying",
-  "category.63.multipleSiblings.hint": "If 2+ siblings applying to same school:\n5 marks\n\nOtherwise: 0 marks",
-  "category.63.multipleSiblings.checkbox": "Two or more siblings applying to other grades of the same school",
+  "category.63.multipleSiblings.hint":
+    "If 2+ siblings applying to same school:\n5 marks\n\nOtherwise: 0 marks",
+  "category.63.multipleSiblings.checkbox":
+    "Two or more siblings applying to other grades of the same school",
   "category.63.cocurricular.label": "Sibling co-curricular & prefect",
-  "category.63.cocurricular.hint": "Prefect skill: 0.25–2 per achievement\nExam: 0.5 (scholarship) / 1 (O/L) / 1.5 (A/L)\nPraiseworthy: 2\nParent support: 4\n\nMax 10 marks",
+  "category.63.cocurricular.hint":
+    "Prefect skill: 0.25–2 per achievement\nExam: 0.5 (scholarship) / 1 (O/L) / 1.5 (A/L)\nPraiseworthy: 2\nParent support: 4\n\nMax 10 marks",
   "category.63.cocurricular.prefectLevel": "Sibling prefect skill level",
   "category.63.cocurricular.prefectLevelPlaceholder": "Select highest level",
   "category.63.cocurricular.achievements": "Achievements at that level",
   "category.63.cocurricular.examAchievement": "Sibling examination achievement",
   "category.63.cocurricular.examAchievementPlaceholder": "Select achievement",
-  "category.63.cocurricular.praiseworthy": "Praiseworthy achievement (Prefect / Student Leader / Band Leader)",
+  "category.63.cocurricular.praiseworthy":
+    "Praiseworthy achievement (Prefect / Student Leader / Band Leader)",
   "category.63.cocurricular.parentSupport": "Support rendered by parents",
   "category.63.residenceDocument.label": "Residence document",
-  "category.63.residenceDocument.hint": "Document marks (max 10):\n• Title deed – applicant/spouse: 10\n• Title deed – parents: 6\n• Feeder electoral 5yr: 6\n• Lease deed: 4\n• Municipal/DS/Rent Act: 4\n• Other documents: 2",
+  "category.63.residenceDocument.hint":
+    "Document marks (max 10):\n• Title deed – applicant/spouse: 10\n• Title deed – parents: 6\n• Feeder electoral 5yr: 6\n• Lease deed: 4\n• Municipal/DS/Rent Act: 4\n• Other documents: 2",
   "category.63.electoralMother.yearLabel": "Year mother first registered",
-  "category.63.electoralMother.hint": "2 marks per year registered (2020–2024). Combined with father, max 20 marks.",
+  "category.63.electoralMother.hint":
+    "2 marks per year registered (2020–2024). Combined with father, max 20 marks.",
   "category.63.electoralFather.yearLabel": "Year father first registered",
-  "category.63.electoralFather.hint": "2 marks per year registered (2020–2024). Combined with mother, max 20 marks.",
+  "category.63.electoralFather.hint":
+    "2 marks per year registered (2020–2024). Combined with mother, max 20 marks.",
   "category.63.electoralTotal": "Electoral register total",
-  "category.63.electoralTotal.hint": "2 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 20 marks.\n\nExample: Both 5 years = 20",
-  "category.63.nearbySchools.hint": "Max 30 marks.\nDeduct 3 per school within radius\n(excluding {school}).\n\nNo other schools = 30 marks\n10 schools = 0 marks",
+  "category.63.electoralTotal.hint":
+    "2 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 20 marks.\n\nExample: Both 5 years = 20",
+  "category.63.nearbySchools.hint":
+    "Max 30 marks.\nDeduct 3 per school within radius\n(excluding {school}).\n\nNo other schools = 30 marks\n10 schools = 0 marks",
   // Category 6.4 fields
   "category.64.servicePeriod.label": "Period of service",
-  "category.64.servicePeriod.hint": "1 mark per year of service, max 20.\n\nCurrent: {years} years = {marks} marks",
+  "category.64.servicePeriod.hint":
+    "1 mark per year of service, max 20.\n\nCurrent: {years} years = {marks} marks",
   "category.64.servicePeriod.dateLabel": "Date of first appointment",
   "category.64.servicePeriod.dateHint": "When did the parent start their teaching service?",
   "category.64.difficultService.label": "Difficult service",
-  "category.64.difficultService.hint": "Current school: 25 marks\nPrevious school: max(15, distance bonus) + extra periods\n\nDistance bonus:\n• 150+ km: 15\n• 100–150 km: 10\n• 75–100 km: 5\n\n+0.5 per extra period of 6 months",
+  "category.64.difficultService.hint":
+    "Current school: 25 marks\nPrevious school: max(15, distance bonus) + extra periods\n\nDistance bonus:\n• 150+ km: 15\n• 100–150 km: 10\n• 75–100 km: 5\n\n+0.5 per extra period of 6 months",
   "category.64.difficultService.typeLabel": "Type of difficult service",
   "category.64.difficultService.currentSchool": "Current school",
   "category.64.difficultService.previousSchool": "Previous school",
@@ -819,10 +941,12 @@ const en = {
   "category.64.difficultService.distanceKm": "Distance to previous difficult service school (km)",
   "category.64.difficultService.extraPeriods": "Extra periods served (count)",
   "category.64.unutilizedLeave.label": "Unutilized leave",
-  "category.64.unutilizedLeave.hint": "2 marks per year of unutilized leave, max 5 years.\n\nCurrent: {years} years = {marks} marks",
+  "category.64.unutilizedLeave.hint":
+    "2 marks per year of unutilized leave, max 5 years.\n\nCurrent: {years} years = {marks} marks",
   "category.64.unutilizedLeave.yearsLabel": "Years",
   "category.64.serviceLocation.label": "Service location",
-  "category.64.serviceLocation.hint": "Same school: 10\nZone: 7.5\nProvince: 5\nEducation institution: 2.5",
+  "category.64.serviceLocation.hint":
+    "Same school: 10\nZone: 7.5\nProvince: 5\nEducation institution: 2.5",
   "category.64.serviceLocation.levelLabel": "Service location level",
   "category.64.serviceLocation.sameSchool": "Same school",
   "category.64.serviceLocation.zone": "Zone",
@@ -832,43 +956,53 @@ const en = {
   "category.64.residenceToSchool.hint": "Within 1 km: 10\n1–3 km: 8\n3–5 km: 6\n>5 km: 4",
   "category.64.residenceToSchool.distanceLabel": "Distance (km)",
   "category.64.workplaceToSchool.label": "Workplace to school",
-  "category.64.workplaceToSchool.hint": "100+ km: 25\n70–100 km: 20\n40–70 km: 15\n20–40 km: 10\n<20 km: 5",
+  "category.64.workplaceToSchool.hint":
+    "100+ km: 25\n70–100 km: 20\n40–70 km: 15\n20–40 km: 10\n<20 km: 5",
   "category.64.workplaceToSchool.distanceLabel": "Distance (km)",
   // Category 6.5 fields
   "category.65.prevWorkplaceDistance.label": "Previous workplace distance",
-  "category.65.prevWorkplaceDistance.hint": ">150 km: 35\n100–150 km: 28\n50–100 km: 21\n<50 km: 0\n\nMust be ≥50 km",
+  "category.65.prevWorkplaceDistance.hint":
+    ">150 km: 35\n100–150 km: 28\n50–100 km: 21\n<50 km: 0\n\nMust be ≥50 km",
   "category.65.prevWorkplaceDistance.distanceLabel": "Distance (km)",
   "category.65.servicePeriod.label": "Period of service",
-  "category.65.servicePeriod.hint": "1 mark per year, max 10.\n\nCurrent: {years} years = {marks} marks",
+  "category.65.servicePeriod.hint":
+    "1 mark per year, max 10.\n\nCurrent: {years} years = {marks} marks",
   "category.65.servicePeriod.dateLabel": "Date of first appointment",
   "category.65.servicePeriod.dateHint": "When did the parent start their teaching service?",
   "category.65.prevWorkplacePeriod.label": "Period at previous workplace",
   "category.65.prevWorkplacePeriod.hint": "3+ years: 10\n2–3 years: 8\n1–2 years: 5\n<1 year: 0",
   "category.65.prevWorkplacePeriod.dateLabel": "Date started at previous workplace",
-  "category.65.prevWorkplacePeriod.dateHint": "When did the parent start working at the previous school?",
+  "category.65.prevWorkplacePeriod.dateHint":
+    "When did the parent start working at the previous school?",
   "category.65.timeSinceTransfer.label": "Time since transfer",
-  "category.65.timeSinceTransfer.hint": "Within 1 year: 5\n1–2 years: 4\n2–3 years: 3\n3–4 years: 2\n4–5 years: 1\n>5 years: 0",
+  "category.65.timeSinceTransfer.hint":
+    "Within 1 year: 5\n1–2 years: 4\n2–3 years: 3\n3–4 years: 2\n4–5 years: 1\n>5 years: 0",
   "category.65.timeSinceTransfer.dateLabel": "Date of transfer",
   "category.65.timeSinceTransfer.dateHint": "When was the transfer received?",
   "category.65.unutilizedLeave.label": "Unutilized leave",
-  "category.65.unutilizedLeave.hint": "2 marks per year, max 5 years.\n\nCurrent: {years} years = {marks} marks",
+  "category.65.unutilizedLeave.hint":
+    "2 marks per year, max 5 years.\n\nCurrent: {years} years = {marks} marks",
   "category.65.unutilizedLeave.yearsLabel": "Years",
-  "category.65.nearbySchools.hint": "Max 30 marks.\nDeduct 3 per school within radius\n(excluding {school}).\n\nNo other schools = 30 marks\n10 schools = 0 marks",
+  "category.65.nearbySchools.hint":
+    "Max 30 marks.\nDeduct 3 per school within radius\n(excluding {school}).\n\nNo other schools = 30 marks\n10 schools = 0 marks",
   // Category 6.6 fields
   "category.66.periodAbroad.label": "Period abroad with child",
-  "category.66.periodAbroad.hint": "Continuous 3+ years: 25\n2–3 years: 15\n1–2 years: 10\n<1 year: 0\n\nMust be 2024.07–2025.06",
+  "category.66.periodAbroad.hint":
+    "Continuous 3+ years: 25\n2–3 years: 15\n1–2 years: 10\n<1 year: 0\n\nMust be 2024.07–2025.06",
   "category.66.periodAbroad.dateLeft": "Date left Sri Lanka",
   "category.66.periodAbroad.dateLeftHint": "When did the parent leave for foreign employment?",
   "category.66.periodAbroad.dateReturned": "Date returned to Sri Lanka",
   "category.66.periodAbroad.dateReturnedHint": "When did the parent return?",
   "category.66.employmentPurpose.label": "Employment purpose",
-  "category.66.employmentPurpose.hint": "Board duties: 40\nPersonal: 30\nGovernment: 25\nEducation: 20\n\nMin 2 years abroad",
+  "category.66.employmentPurpose.hint":
+    "Board duties: 40\nPersonal: 30\nGovernment: 25\nEducation: 20\n\nMin 2 years abroad",
   "category.66.employmentPurpose.purposeLabel": "Purpose of foreign employment",
   "category.66.employmentPurpose.board": "Board",
   "category.66.employmentPurpose.personal": "Personal",
   "category.66.employmentPurpose.government": "Government",
   "category.66.employmentPurpose.education": "Education",
-  "category.66.nearbySchools.hint": "Max 35 marks.\nDeduct 3.5 per school within radius\n(excluding {school}).\n\nNo other schools = 35 marks\n10 schools = 0 marks",
+  "category.66.nearbySchools.hint":
+    "Max 35 marks.\nDeduct 3.5 per school within radius\n(excluding {school}).\n\nNo other schools = 35 marks\n10 schools = 0 marks",
 } as const;
 
 export default en;

@@ -182,7 +182,7 @@ describe("Full user journey – fresh application", () => {
     // Step 1: Applicant
     setStore({ currentStep: 1 });
     await act(async () => {});
-    expect(screen.getByText("Tell us about the applicant")).toBeInTheDocument();
+    expect(screen.getByText("Tell us about the child")).toBeInTheDocument();
 
     // Step 2: Guardian
     setStore({ currentStep: 2 });
@@ -232,7 +232,7 @@ describe("User stuck midway – back and forth", () => {
     // go forward again
     setStore({ currentStep: 1 });
     await act(async () => {});
-    expect(screen.getByText("Tell us about the applicant")).toBeInTheDocument();
+    expect(screen.getByText("Tell us about the child")).toBeInTheDocument();
   });
 
   it("step 4 blocked when no categories, then adding one unblocks", async () => {
