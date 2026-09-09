@@ -1,9 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import type { DropdownProps } from "react-day-picker";
-import { Calendar } from "@aloysius-admissions/ui/components/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-admissions/ui/components/popover";
+import { CATEGORY_COLORS, MARK_TOOLTIP, STATUS_ERROR, STATUS_WARNING } from "@/lib/color-classes";
 import {
   CATEGORY_TYPES,
   type CategoryApplication,
@@ -11,115 +6,142 @@ import {
   type ScoringInputs,
   useApplicationStore,
 } from "@/lib/g1/application-store";
-import { STATUS_ERROR, STATUS_WARNING, MARK_TOOLTIP, CATEGORY_COLORS } from "@/lib/color-classes";
-import { compatibleSchoolsWithinRadius } from "@/lib/g1/school-utils";
-import { HOME_SCHOOL_ID, getHomeSchoolDisplayName } from "@/lib/g1/school-config";
 import {
-  CATEGORY_MAX_MARKS,
-  MAIN_DOCUMENT_MAX_61,
-  ADDITIONAL_DOC_MAX_61,
-  ELECTORAL_MAX_61,
-  PROXIMITY_PER_SCHOOL_61,
-  PROXIMITY_MAX_61,
-  YEARS_EDUCATED_MARKS_PER_YEAR,
-  YEARS_EDUCATED_MAX,
-  GRADE5_SCHOLARSHIP_MARKS,
-  SPORTS_MAX,
-  LEADERSHIP_MAX,
-  STUDENT_SOCIETIES_MAX,
-  OTHER_ACTIVITIES_MAX,
-  PAST_PUPILS_LIFE_MEMBER_MARKS,
-  PAST_PUPILS_YEARLY_MARKS,
-  PAST_PUPILS_MEMBERSHIP_MAX,
-  PAST_PUPILS_TOTAL_MAX,
-  DEGREE_MAX,
-  DIPLOMA_MARKS,
-  SPORTS_MEET_CONTRIBUTION,
-  SHRAMADANA_CONTRIBUTION,
-  CONTRIBUTION_MAX,
-  SCHOOL_PROJECTS_MARKS,
-  SIBLING_MARKS_PER_SIBLING,
-  SIBLING_STUDYING_MAX,
-  SIBLING_STUDIED_HERE_MARKS,
-  SIBLING_MULTIPLE_APPLYING_MARKS,
-  SIBLING_PREFECT_MAX,
-  SIBLING_EXAM_MAX,
-  SIBLING_PRAISEWORTHY_MARKS,
-  SIBLING_SUPPORT_MARKS,
-  SIBLING_COCURRICULAR_TOTAL_MAX,
-  MAIN_DOCUMENT_MAX_63,
-  ELECTORAL_MARKS_PER_PERSON_YEAR_63,
-  ELECTORAL_MAX_63,
-  PROXIMITY_PER_SCHOOL_63,
-  PROXIMITY_MAX_63,
-  SERVICE_PERIOD_MAX,
-  DIFFICULT_SERVICE_CURRENT_MARKS,
-  DIFFICULT_SERVICE_PREVIOUS_BASE,
-  DIFFICULT_SERVICE_MAX,
-  DIFFICULT_EXTRA_PERIOD_MARKS,
-  UNUTILIZED_LEAVE_MARKS_PER_YEAR,
-  UNUTILIZED_LEAVE_MAX,
-  SERVICE_LOCATION_MARKS,
-  SERVICE_LOCATION_MAX,
-  RESIDENCE_DISTANCE_TIERS_64,
-  RESIDENCE_DISTANCE_FALLBACK_64,
-  RESIDENCE_DISTANCE_MAX_64,
-  WORKPLACE_DISTANCE_MAX,
-  TRANSFER_DISTANCE_MAX,
-  TRANSFER_SERVICE_PERIOD_MAX,
-  TRANSFER_PREVIOUS_PERIOD_MAX,
-  TRANSFER_ELAPSED_MAX,
-  PROXIMITY_PER_SCHOOL_65,
-  PROXIMITY_MAX_65,
   ABROAD_PERIOD_MAX,
+  ADDITIONAL_DOC_MAX_61,
+  CATEGORY_MAX_MARKS,
+  CONTRIBUTION_MAX,
+  DEGREE_MAX,
+  DIFFICULT_EXTRA_PERIOD_MARKS,
+  DIFFICULT_SERVICE_CURRENT_MARKS,
+  DIFFICULT_SERVICE_MAX,
+  DIFFICULT_SERVICE_PREVIOUS_BASE,
+  DIPLOMA_MARKS,
+  ELECTORAL_MARKS_PER_PERSON_YEAR_63,
+  ELECTORAL_MAX_61,
+  ELECTORAL_MAX_63,
   EMPLOYMENT_PURPOSE_MARKS,
   EMPLOYMENT_PURPOSE_MAX,
-  PROXIMITY_PER_SCHOOL_66,
+  GRADE5_SCHOLARSHIP_MARKS,
+  LEADERSHIP_MAX,
+  MAIN_DOCUMENT_MAX_61,
+  MAIN_DOCUMENT_MAX_63,
+  OTHER_ACTIVITIES_MAX,
+  PAST_PUPILS_LIFE_MEMBER_MARKS,
+  PAST_PUPILS_MEMBERSHIP_MAX,
+  PAST_PUPILS_TOTAL_MAX,
+  PAST_PUPILS_YEARLY_MARKS,
+  PROXIMITY_MAX_61,
+  PROXIMITY_MAX_63,
+  PROXIMITY_MAX_65,
   PROXIMITY_MAX_66,
+  PROXIMITY_PER_SCHOOL_61,
+  PROXIMITY_PER_SCHOOL_63,
+  PROXIMITY_PER_SCHOOL_65,
+  PROXIMITY_PER_SCHOOL_66,
+  RESIDENCE_DISTANCE_FALLBACK_64,
+  RESIDENCE_DISTANCE_MAX_64,
+  RESIDENCE_DISTANCE_TIERS_64,
+  SCHOOL_PROJECTS_MARKS,
+  SERVICE_LOCATION_MARKS,
+  SERVICE_LOCATION_MAX,
+  SERVICE_PERIOD_MAX,
+  SHRAMADANA_CONTRIBUTION,
+  SIBLING_COCURRICULAR_TOTAL_MAX,
+  SIBLING_EXAM_MAX,
+  SIBLING_MARKS_PER_SIBLING,
+  SIBLING_MULTIPLE_APPLYING_MARKS,
+  SIBLING_PRAISEWORTHY_MARKS,
+  SIBLING_PREFECT_MAX,
+  SIBLING_STUDIED_HERE_MARKS,
+  SIBLING_STUDYING_MAX,
+  SIBLING_SUPPORT_MARKS,
+  SPORTS_MAX,
+  SPORTS_MEET_CONTRIBUTION,
+  STUDENT_SOCIETIES_MAX,
+  TRANSFER_DISTANCE_MAX,
+  TRANSFER_ELAPSED_MAX,
+  TRANSFER_PREVIOUS_PERIOD_MAX,
+  TRANSFER_SERVICE_PERIOD_MAX,
+  UNUTILIZED_LEAVE_MARKS_PER_YEAR,
+  UNUTILIZED_LEAVE_MAX,
+  WORKPLACE_DISTANCE_MAX,
+  YEARS_EDUCATED_MARKS_PER_YEAR,
+  YEARS_EDUCATED_MAX,
 } from "@/lib/g1/marking-scheme";
+import { HOME_SCHOOL_ID, getHomeSchoolDisplayName } from "@/lib/g1/school-config";
+import { compatibleSchoolsWithinRadius } from "@/lib/g1/school-utils";
+import {
+  AL_CEILINGS,
+  DEGREE_MARKS,
+  LEADERSHIP_ROLE_MARKS,
+  MAIN_DOCUMENT_MARKS_61,
+  MAIN_DOCUMENT_MARKS_63,
+  OL_CEILINGS,
+  OTHER_ACTIVITY_MARKS,
+  SIBLING_EXAM_MARKS,
+  SIBLING_PREFECT_LEVEL_MARKS,
+  SPORTS_LEVEL_MARKS,
+  STUDENT_SOCIETIES_ROLE_MARKS,
+  abroadPeriodMarks,
+  additionalDocsMarks61,
+  deedAgeWeight,
+  difficultDistanceMarks,
+  documentMarks61,
+  electoralMarks61,
+  electoralYearsRegistered,
+  gradeRate,
+  previousPeriodMarks as previousPeriodMarksFn,
+  proximityMarks,
+  proximityMarks61,
+  scoreCategory,
+  tieredDistanceMarks,
+  transferDistanceMarks,
+  transferElapsedMarks as transferElapsedMarksFn,
+  workplaceDistanceMarks,
+  yearsBetween,
+  yearsFromDate,
+} from "@/lib/g1/scoring";
+import { useTranslation } from "@/lib/i18n";
 import { Button } from "@aloysius-admissions/ui/components/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
+import { Calendar } from "@aloysius-admissions/ui/components/calendar";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@aloysius-admissions/ui/components/card";
 import { Checkbox } from "@aloysius-admissions/ui/components/checkbox";
 import { Field, FieldLabel } from "@aloysius-admissions/ui/components/field";
 import { Input } from "@aloysius-admissions/ui/components/input";
-import { RadioGroup, RadioGroupItem } from "@aloysius-admissions/ui/components/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-admissions/ui/components/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@aloysius-admissions/ui/components/tooltip";
-import { SchoolMapPicker } from "./school-map-picker";
 import {
-  scoreCategory,
-  documentMarks61,
-  additionalDocsMarks61,
-  electoralMarks61,
-  proximityMarks61,
-  proximityMarks,
-  yearsFromDate,
-  yearsBetween,
-  deedAgeWeight,
-  MAIN_DOCUMENT_MARKS_61,
-  OL_CEILINGS,
-  AL_CEILINGS,
-  gradeRate,
-  SPORTS_LEVEL_MARKS,
-  LEADERSHIP_ROLE_MARKS,
-  SIBLING_PREFECT_LEVEL_MARKS,
-  SIBLING_EXAM_MARKS,
-  MAIN_DOCUMENT_MARKS_63,
-  STUDENT_SOCIETIES_ROLE_MARKS,
-  OTHER_ACTIVITY_MARKS,
-  DEGREE_MARKS,
-  electoralYearsRegistered,
-  difficultDistanceMarks,
-  workplaceDistanceMarks,
-  tieredDistanceMarks,
-  transferDistanceMarks,
-  previousPeriodMarks as previousPeriodMarksFn,
-  transferElapsedMarks as transferElapsedMarksFn,
-  abroadPeriodMarks,
-} from "@/lib/g1/scoring";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@aloysius-admissions/ui/components/popover";
+import { RadioGroup, RadioGroupItem } from "@aloysius-admissions/ui/components/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@aloysius-admissions/ui/components/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@aloysius-admissions/ui/components/tooltip";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Flag, MapPin } from "lucide-react";
-import { useTranslation } from "@/lib/i18n";
+import { useEffect, useRef, useState } from "react";
+import type { DropdownProps } from "react-day-picker";
+import { SchoolMapPicker } from "./school-map-picker";
 
 export type FlagProps = {
   flaggedInputs?: Set<string>;
@@ -165,21 +187,33 @@ function getCategoryMeta(t: TFn) {
 // is worth, so applicants can see how marks are allocated before choosing --
 // not just after, in a hover-only tooltip.
 function markSuffix(t: TFn, marks: number) {
-  return t("category.common.marksSuffix", { marks: marks.toLocaleString(undefined, { maximumFractionDigits: 2 }) });
+  return t("category.common.marksSuffix", {
+    marks: marks.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+  });
 }
-function withMarks(options: readonly (readonly [string, string])[], marksMap: Record<string, number>, t: TFn) {
-  return options.map(([value, label]) => [value, `${label} \u2014 ${markSuffix(t, marksMap[value] ?? 0)}`] as const);
+function withMarks(
+  options: readonly (readonly [string, string])[],
+  marksMap: Record<string, number>,
+  t: TFn,
+) {
+  return options.map(
+    ([value, label]) => [value, `${label} \u2014 ${markSuffix(t, marksMap[value] ?? 0)}`] as const,
+  );
 }
 
 function getMainDocumentOptions(t: TFn) {
-  return withMarks([
-    ["title-deed-applicant", t("category.mainDocumentOptions.titleDeedApplicant")],
-    ["title-deed-parents", t("category.mainDocumentOptions.titleDeedParents")],
-    ["feeder-electoral-5yrs", t("category.mainDocumentOptions.feederElectoral5yrs")],
-    ["lease-deed", t("category.mainDocumentOptions.leaseDeed")],
-    ["municipal-ds-certificate", t("category.mainDocumentOptions.municipalDsCertificate")],
-    ["other-documents", t("category.mainDocumentOptions.otherDocuments")],
-  ] as const, MAIN_DOCUMENT_MARKS_61, t);
+  return withMarks(
+    [
+      ["title-deed-applicant", t("category.mainDocumentOptions.titleDeedApplicant")],
+      ["title-deed-parents", t("category.mainDocumentOptions.titleDeedParents")],
+      ["feeder-electoral-5yrs", t("category.mainDocumentOptions.feederElectoral5yrs")],
+      ["lease-deed", t("category.mainDocumentOptions.leaseDeed")],
+      ["municipal-ds-certificate", t("category.mainDocumentOptions.municipalDsCertificate")],
+      ["other-documents", t("category.mainDocumentOptions.otherDocuments")],
+    ] as const,
+    MAIN_DOCUMENT_MARKS_61,
+    t,
+  );
 }
 
 function getAdditionalDocOptions(t: TFn) {
@@ -212,88 +246,121 @@ function getAlSubjectOptions(t: TFn) {
 }
 
 function getSportsLevelOptions(t: TFn, marksMap: Record<string, number> = SPORTS_LEVEL_MARKS) {
-  return withMarks([
-    ["inter-house", t("category.sportsLevelOptions.interHouse")],
-    ["zonal", t("category.sportsLevelOptions.zonal")],
-    ["district", t("category.sportsLevelOptions.district")],
-    ["provincial", t("category.sportsLevelOptions.provincial")],
-    ["national", t("category.sportsLevelOptions.national")],
-    ["international", t("category.sportsLevelOptions.international")],
-  ] as const, marksMap, t);
+  return withMarks(
+    [
+      ["inter-house", t("category.sportsLevelOptions.interHouse")],
+      ["zonal", t("category.sportsLevelOptions.zonal")],
+      ["district", t("category.sportsLevelOptions.district")],
+      ["provincial", t("category.sportsLevelOptions.provincial")],
+      ["national", t("category.sportsLevelOptions.national")],
+      ["international", t("category.sportsLevelOptions.international")],
+    ] as const,
+    marksMap,
+    t,
+  );
 }
 
 function getLeadershipRoleOptions(t: TFn) {
-  return withMarks([
-    ["prefect-primary", t("category.leadershipRoleOptions.prefectPrimary")],
-    ["prefect-junior", t("category.leadershipRoleOptions.prefectJunior")],
-    ["prefect-senior", t("category.leadershipRoleOptions.prefectSenior")],
-    ["deputy-head-prefect", t("category.leadershipRoleOptions.deputyHeadPrefect")],
-    ["head-prefect", t("category.leadershipRoleOptions.headPrefect")],
-    ["first-team-vice-captain", t("category.leadershipRoleOptions.firstTeamViceCaptain")],
-    ["first-team-captain", t("category.leadershipRoleOptions.firstTeamCaptain")],
-  ] as const, LEADERSHIP_ROLE_MARKS, t);
+  return withMarks(
+    [
+      ["prefect-primary", t("category.leadershipRoleOptions.prefectPrimary")],
+      ["prefect-junior", t("category.leadershipRoleOptions.prefectJunior")],
+      ["prefect-senior", t("category.leadershipRoleOptions.prefectSenior")],
+      ["deputy-head-prefect", t("category.leadershipRoleOptions.deputyHeadPrefect")],
+      ["head-prefect", t("category.leadershipRoleOptions.headPrefect")],
+      ["first-team-vice-captain", t("category.leadershipRoleOptions.firstTeamViceCaptain")],
+      ["first-team-captain", t("category.leadershipRoleOptions.firstTeamCaptain")],
+    ] as const,
+    LEADERSHIP_ROLE_MARKS,
+    t,
+  );
 }
 
 function getStudentSocietiesRoleOptions(t: TFn) {
-  return withMarks([
-    ["committee-member", t("category.studentSocietiesRoleOptions.committeeMember")],
-    ["vice-president", t("category.studentSocietiesRoleOptions.vicePresident")],
-    ["president", t("category.studentSocietiesRoleOptions.president")],
-  ] as const, STUDENT_SOCIETIES_ROLE_MARKS, t);
+  return withMarks(
+    [
+      ["committee-member", t("category.studentSocietiesRoleOptions.committeeMember")],
+      ["vice-president", t("category.studentSocietiesRoleOptions.vicePresident")],
+      ["president", t("category.studentSocietiesRoleOptions.president")],
+    ] as const,
+    STUDENT_SOCIETIES_ROLE_MARKS,
+    t,
+  );
 }
 
 function getOtherActivityOptions(t: TFn) {
-  return withMarks([
-    ["junior-band-leader", t("category.otherActivityOptions.juniorBandLeader")],
-    ["junior-band-member", t("category.otherActivityOptions.juniorBandMember")],
-    ["senior-band-leader", t("category.otherActivityOptions.seniorBandLeader")],
-    ["senior-band-member", t("category.otherActivityOptions.seniorBandMember")],
-    ["scout-leader", t("category.otherActivityOptions.scoutLeader")],
-    ["scout-member", t("category.otherActivityOptions.scoutMember")],
-    ["cub-scout", t("category.otherActivityOptions.cubScout")],
-    ["cadet-team-leader", t("category.otherActivityOptions.cadetTeamLeader")],
-    ["cadet-team-member", t("category.otherActivityOptions.cadetTeamMember")],
-    ["debating-team-leader", t("category.otherActivityOptions.debatingTeamLeader")],
-    ["debating-team-member", t("category.otherActivityOptions.debatingTeamMember")],
-    ["st-john-ambulance-leader", t("category.otherActivityOptions.stJohnAmbulanceLeader")],
-    ["st-john-ambulance-member", t("category.otherActivityOptions.stJohnAmbulanceMember")],
-    ["other", t("category.otherActivityOptions.other")],
-  ] as const, OTHER_ACTIVITY_MARKS, t);
+  return withMarks(
+    [
+      ["junior-band-leader", t("category.otherActivityOptions.juniorBandLeader")],
+      ["junior-band-member", t("category.otherActivityOptions.juniorBandMember")],
+      ["senior-band-leader", t("category.otherActivityOptions.seniorBandLeader")],
+      ["senior-band-member", t("category.otherActivityOptions.seniorBandMember")],
+      ["scout-leader", t("category.otherActivityOptions.scoutLeader")],
+      ["scout-member", t("category.otherActivityOptions.scoutMember")],
+      ["cub-scout", t("category.otherActivityOptions.cubScout")],
+      ["cadet-team-leader", t("category.otherActivityOptions.cadetTeamLeader")],
+      ["cadet-team-member", t("category.otherActivityOptions.cadetTeamMember")],
+      ["debating-team-leader", t("category.otherActivityOptions.debatingTeamLeader")],
+      ["debating-team-member", t("category.otherActivityOptions.debatingTeamMember")],
+      ["st-john-ambulance-leader", t("category.otherActivityOptions.stJohnAmbulanceLeader")],
+      ["st-john-ambulance-member", t("category.otherActivityOptions.stJohnAmbulanceMember")],
+      ["other", t("category.otherActivityOptions.other")],
+    ] as const,
+    OTHER_ACTIVITY_MARKS,
+    t,
+  );
 }
 
 function getDegreeOptions(t: TFn) {
-  return withMarks([
-    ["first-degree", t("category.degreeOptions.firstDegree")],
-    ["postgraduate", t("category.degreeOptions.postgraduate")],
-    ["doctorate", t("category.degreeOptions.doctorate")],
-    ["chartered-professional", t("category.degreeOptions.charteredProfessional")],
-  ] as const, DEGREE_MARKS, t);
+  return withMarks(
+    [
+      ["first-degree", t("category.degreeOptions.firstDegree")],
+      ["postgraduate", t("category.degreeOptions.postgraduate")],
+      ["doctorate", t("category.degreeOptions.doctorate")],
+      ["chartered-professional", t("category.degreeOptions.charteredProfessional")],
+    ] as const,
+    DEGREE_MARKS,
+    t,
+  );
 }
 
 function getSiblingExamOptions(t: TFn) {
-  return withMarks([
-    ["scholarship", t("category.siblingExamOptions.scholarship")],
-    ["ol", t("category.siblingExamOptions.ol")],
-    ["al", t("category.siblingExamOptions.al")],
-  ] as const, SIBLING_EXAM_MARKS, t);
+  return withMarks(
+    [
+      ["scholarship", t("category.siblingExamOptions.scholarship")],
+      ["ol", t("category.siblingExamOptions.ol")],
+      ["al", t("category.siblingExamOptions.al")],
+    ] as const,
+    SIBLING_EXAM_MARKS,
+    t,
+  );
 }
 
 function getSiblingDocumentOptions(t: TFn) {
-  return withMarks([
-    ["title-deed-applicant-spouse", t("category.siblingDocumentOptions.titleDeedApplicantSpouse")],
-    ["title-deed-parents", t("category.siblingDocumentOptions.titleDeedParents")],
-    ["feeder-electoral-5yrs", t("category.siblingDocumentOptions.feederElectoral5yrs")],
-    ["lease-deed", t("category.siblingDocumentOptions.leaseDeed")],
-    ["municipal-ds-rentact-cert", t("category.siblingDocumentOptions.municipalDsRentactCert")],
-    ["other-documents", t("category.siblingDocumentOptions.otherDocuments")],
-  ] as const, MAIN_DOCUMENT_MARKS_63, t);
+  return withMarks(
+    [
+      [
+        "title-deed-applicant-spouse",
+        t("category.siblingDocumentOptions.titleDeedApplicantSpouse"),
+      ],
+      ["title-deed-parents", t("category.siblingDocumentOptions.titleDeedParents")],
+      ["feeder-electoral-5yrs", t("category.siblingDocumentOptions.feederElectoral5yrs")],
+      ["lease-deed", t("category.siblingDocumentOptions.leaseDeed")],
+      ["municipal-ds-rentact-cert", t("category.siblingDocumentOptions.municipalDsRentactCert")],
+      ["other-documents", t("category.siblingDocumentOptions.otherDocuments")],
+    ] as const,
+    MAIN_DOCUMENT_MARKS_63,
+    t,
+  );
 }
 
 const YEAR_OPTIONS = [0, 1, 2, 3, 4, 5];
 
 const ELECTORAL_YEAR_OPTIONS = [2020, 2021, 2022, 2023, 2024] as const;
 
-const PROXIMITY_CATEGORY_CONFIG: Partial<Record<CategoryType, { marksPerSchool: number; maxMarks: number }>> = {
+const PROXIMITY_CATEGORY_CONFIG: Partial<
+  Record<CategoryType, { marksPerSchool: number; maxMarks: number }>
+> = {
   "6.1": { marksPerSchool: PROXIMITY_PER_SCHOOL_61, maxMarks: PROXIMITY_MAX_61 },
   "6.3": { marksPerSchool: PROXIMITY_PER_SCHOOL_63, maxMarks: PROXIMITY_MAX_63 },
   "6.5": { marksPerSchool: PROXIMITY_PER_SCHOOL_65, maxMarks: PROXIMITY_MAX_65 },
@@ -389,7 +456,9 @@ function DateField({
         {hint && (
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger className="text-muted-foreground text-xs cursor-help">ⓘ</TooltipTrigger>
+              <TooltipTrigger className="text-muted-foreground text-xs cursor-help">
+                ⓘ
+              </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs whitespace-normal">
                 {hint}
               </TooltipContent>
@@ -459,7 +528,9 @@ function CalendarDatePicker({
           captionLayout="dropdown"
           startMonth={effectiveMinDate}
           endMonth={effectiveMaxDate}
-          disabled={(date) => (maxDate != null && date > maxDate) || (minDate != null && date < minDate)}
+          disabled={(date) =>
+            (maxDate != null && date > maxDate) || (minDate != null && date < minDate)
+          }
           components={{ Dropdown: NativeCalendarDropdown }}
           onSelect={(date) => {
             if (date) {
@@ -483,7 +554,13 @@ function CalendarDatePicker({
 // floating popover inside this component's own Popover breaks floating-ui's
 // position calculation (it renders detached at the top of the viewport). A
 // native select has no popover of its own, so there's nothing to conflict.
-function NativeCalendarDropdown({ options, value, onChange, disabled, "aria-label": ariaLabel }: DropdownProps) {
+function NativeCalendarDropdown({
+  options,
+  value,
+  onChange,
+  disabled,
+  "aria-label": ariaLabel,
+}: DropdownProps) {
   return (
     <select
       value={value != null ? String(value) : ""}
@@ -537,7 +614,9 @@ function ElectoralYearSelect({
         {hint && (
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger className="text-muted-foreground text-xs cursor-help">ⓘ</TooltipTrigger>
+              <TooltipTrigger className="text-muted-foreground text-xs cursor-help">
+                ⓘ
+              </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs whitespace-normal">
                 {hint}
               </TooltipContent>
@@ -565,13 +644,20 @@ function ElectoralYearSelect({
   );
 }
 
-function RadioOption({ id, value, label, marks }: { id: string; value: string; label: string; marks?: number }) {
+function RadioOption({
+  id,
+  value,
+  label,
+  marks,
+}: { id: string; value: string; label: string; marks?: number }) {
   const { t } = useTranslation();
   return (
     <FieldLabel htmlFor={id} className="flex w-fit cursor-pointer items-center gap-2 font-normal">
       <RadioGroupItem id={id} value={value} />
       {label}
-      {marks != null && <span className="text-xs text-muted-foreground">({markSuffix(t, marks)})</span>}
+      {marks != null && (
+        <span className="text-xs text-muted-foreground">({markSuffix(t, marks)})</span>
+      )}
     </FieldLabel>
   );
 }
@@ -589,11 +675,10 @@ function DocumentTypeSelect({
   const value = category.scoringInputs.mainDocumentType ?? null;
   return (
     <Field>
-      <FieldLabel htmlFor={`main-document-type-${category.id}`} className="sr-only">{t("category.mainDocument.title")}</FieldLabel>
-      <Select
-        value={value}
-        onValueChange={(next) => onChange({ mainDocumentType: String(next) })}
-      >
+      <FieldLabel htmlFor={`main-document-type-${category.id}`} className="sr-only">
+        {t("category.mainDocument.title")}
+      </FieldLabel>
+      <Select value={value} onValueChange={(next) => onChange({ mainDocumentType: String(next) })}>
         <SelectTrigger id={`main-document-type-${category.id}`} className="w-full">
           <SelectValue placeholder={t("category.mainDocument.placeholder")} />
         </SelectTrigger>
@@ -622,7 +707,9 @@ function AdditionalDocsCheckboxGroup({
   const docs = category.scoringInputs.additionalDocs ?? [];
   const toggleDoc = (doc: string) => {
     onChange({
-      additionalDocs: docs.includes(doc) ? docs.filter((existing) => existing !== doc) : [...docs, doc],
+      additionalDocs: docs.includes(doc)
+        ? docs.filter((existing) => existing !== doc)
+        : [...docs, doc],
     });
   };
   return (
@@ -644,16 +731,28 @@ function AdditionalDocsCheckboxGroup({
   );
 }
 
-function FlagButton({ fieldKey, flaggedInputs, onToggleInputFlag }: { fieldKey: string } & FlagProps) {
+function FlagButton({
+  fieldKey,
+  flaggedInputs,
+  onToggleInputFlag,
+}: { fieldKey: string } & FlagProps) {
   const { t } = useTranslation();
   if (!onToggleInputFlag || !flaggedInputs) return null;
   const isFlagged = flaggedInputs.has(fieldKey);
   return (
     <button
       type="button"
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleInputFlag(fieldKey); }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggleInputFlag(fieldKey);
+      }}
       className={`rounded-md p-1 transition-colors ${isFlagged ? `${STATUS_ERROR.bgSolid} ${STATUS_ERROR.text} ${STATUS_ERROR.hoverBg}` : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-      title={isFlagged ? t("category.common.flagTitle.flagged") : t("category.common.flagTitle.unflagged")}
+      title={
+        isFlagged
+          ? t("category.common.flagTitle.flagged")
+          : t("category.common.flagTitle.unflagged")
+      }
     >
       <Flag size={12} />
     </button>
@@ -691,16 +790,32 @@ export function Category61Fields({
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.61.mainDocument.label")}</span>
-          <MarkBadge marks={docMarks} max={MAIN_DOCUMENT_MAX_61} hint={t("category.61.mainDocument.hint")} />
-          <FlagButton fieldKey="mainDocumentType" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+            <span className="text-sm font-medium">{t("category.61.mainDocument.label")}</span>
+            <MarkBadge
+              marks={docMarks}
+              max={MAIN_DOCUMENT_MAX_61}
+              hint={t("category.61.mainDocument.hint")}
+            />
+            <FlagButton
+              fieldKey="mainDocumentType"
+              flaggedInputs={flaggedInputs}
+              onToggleInputFlag={onToggleInputFlag}
+            />
           </div>
-          <DocumentTypeSelect category={category} onChange={onChange} options={mainDocumentOptions} />
+          <DocumentTypeSelect
+            category={category}
+            onChange={onChange}
+            options={mainDocumentOptions}
+          />
         </div>
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{t("category.61.documentRegistrationDate")}</span>
-            <FlagButton fieldKey="deedTransferDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+            <FlagButton
+              fieldKey="deedTransferDate"
+              flaggedInputs={flaggedInputs}
+              onToggleInputFlag={onToggleInputFlag}
+            />
             {inputs.deedTransferDate && (
               <span className="text-xs text-muted-foreground tabular-nums">
                 {Math.floor(deedYears)} yr{Math.floor(deedYears) !== 1 ? "s" : ""} old · {deedPct}%
@@ -719,16 +834,32 @@ export function Category61Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.61.supportingDocs.label")}</span>
-          <MarkBadge marks={addlMarks} max={ADDITIONAL_DOC_MAX_61} hint={t("category.61.supportingDocs.hint")} />
-          <FlagButton fieldKey="additionalDocs" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={addlMarks}
+            max={ADDITIONAL_DOC_MAX_61}
+            hint={t("category.61.supportingDocs.hint")}
+          />
+          <FlagButton
+            fieldKey="additionalDocs"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
-        <AdditionalDocsCheckboxGroup category={category} onChange={onChange} options={additionalDocOptions} />
+        <AdditionalDocsCheckboxGroup
+          category={category}
+          onChange={onChange}
+          options={additionalDocOptions}
+        />
       </div>
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{t("category.61.electoralMother.label")}</span>
-            <FlagButton fieldKey="electoralMotherSince" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+            <FlagButton
+              fieldKey="electoralMotherSince"
+              flaggedInputs={flaggedInputs}
+              onToggleInputFlag={onToggleInputFlag}
+            />
           </div>
           <ElectoralYearSelect
             id={`electoral-mother-year-${category.id}`}
@@ -741,7 +872,11 @@ export function Category61Fields({
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{t("category.61.electoralFather.label")}</span>
-            <FlagButton fieldKey="electoralFatherSince" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+            <FlagButton
+              fieldKey="electoralFatherSince"
+              flaggedInputs={flaggedInputs}
+              onToggleInputFlag={onToggleInputFlag}
+            />
           </div>
           <ElectoralYearSelect
             id={`electoral-father-year-${category.id}`}
@@ -754,15 +889,29 @@ export function Category61Fields({
       </div>
       <div className="flex items-center gap-2 border-t pt-3">
         <span className="text-sm font-medium">{t("category.61.electoralTotal")}</span>
-        <MarkBadge marks={electoral} max={ELECTORAL_MAX_61} hint={t("category.61.electoralTotal.hint")} />
+        <MarkBadge
+          marks={electoral}
+          max={ELECTORAL_MAX_61}
+          hint={t("category.61.electoralTotal.hint")}
+        />
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.61.nearbySchools.label")}</span>
-          <MarkBadge marks={prox} max={PROXIMITY_MAX_61} hint={t("category.61.nearbySchools.hint", { school: getHomeSchoolDisplayName() })} />
-          <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={prox}
+            max={PROXIMITY_MAX_61}
+            hint={t("category.61.nearbySchools.hint", { school: getHomeSchoolDisplayName() })}
+          />
+          <FlagButton
+            fieldKey="schoolsWithinRadius"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
           {selectedSchoolIds.length > 0 && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{t("category.common.selected", { count: selectedSchoolIds.length })}</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {t("category.common.selected", { count: selectedSchoolIds.length })}
+            </span>
           )}
         </div>
         {hasCenter ? (
@@ -960,9 +1109,13 @@ export function Category62Fields({
 
   // Sports / co-curricular marks
   const sportsBase = SPORTS_LEVEL_MARKS[inputs.sportsLevel ?? ""] ?? 0;
-  const sportsMarks = Math.min(sportsBase * (inputs.sportsCount ?? (sportsBase > 0 ? 1 : 0)), SPORTS_MAX);
+  const sportsMarks = Math.min(
+    sportsBase * (inputs.sportsCount ?? (sportsBase > 0 ? 1 : 0)),
+    SPORTS_MAX,
+  );
   const leadershipMarks = LEADERSHIP_ROLE_MARKS[inputs.leadershipRole ?? ""] ?? 0;
-  const studentSocietiesMarks = STUDENT_SOCIETIES_ROLE_MARKS[inputs.studentSocietiesRole ?? ""] ?? 0;
+  const studentSocietiesMarks =
+    STUDENT_SOCIETIES_ROLE_MARKS[inputs.studentSocietiesRole ?? ""] ?? 0;
   const otherActivityMarks = OTHER_ACTIVITY_MARKS[inputs.otherActivity ?? ""] ?? 0;
 
   // Past Pupils' Association marks
@@ -1001,8 +1154,19 @@ export function Category62Fields({
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.yearsEducated.label")}</span>
-          <MarkBadge marks={yearsMarks} max={YEARS_EDUCATED_MAX} hint={t("category.62.yearsEducated.hint", { years: Math.floor(years), marks: yearsMarks })} />
-          <FlagButton fieldKey="alumniStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={yearsMarks}
+            max={YEARS_EDUCATED_MAX}
+            hint={t("category.62.yearsEducated.hint", {
+              years: Math.floor(years),
+              marks: yearsMarks,
+            })}
+          />
+          <FlagButton
+            fieldKey="alumniStartDate"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
           <DateField
@@ -1026,8 +1190,16 @@ export function Category62Fields({
       <div className="col-span-2 grid content-start gap-2 rounded-xl border border-border/70 bg-muted/10 p-3 sm:flex sm:items-center sm:justify-between sm:gap-4 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.grade5Scholarship.label")}</span>
-          <MarkBadge marks={scholarshipMarks} max={GRADE5_SCHOLARSHIP_MARKS} hint={t("category.62.grade5Scholarship.hint")} />
-          <FlagButton fieldKey="grade5ScholarshipPassed" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={scholarshipMarks}
+            max={GRADE5_SCHOLARSHIP_MARKS}
+            hint={t("category.62.grade5Scholarship.hint")}
+          />
+          <FlagButton
+            fieldKey="grade5ScholarshipPassed"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
@@ -1043,7 +1215,21 @@ export function Category62Fields({
       <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.olResult.label")}</span>
-          <MarkBadge marks={(() => { let m = 0; const c = inputs.olSubjectCount; const t2 = c != null ? OL_CEILINGS[c] : undefined; if (t2 && c != null) { for (const g of ["S","C","B","A"]) { m += (inputs[`olGrade${g}` as "olGradeS"] ?? 0) * gradeRate(t2, c, g); } } return Math.min(m, 10); })()} max={10} hint={t("category.62.olResult.hint")} />
+          <MarkBadge
+            marks={(() => {
+              let m = 0;
+              const c = inputs.olSubjectCount;
+              const t2 = c != null ? OL_CEILINGS[c] : undefined;
+              if (t2 && c != null) {
+                for (const g of ["S", "C", "B", "A"]) {
+                  m += (inputs[`olGrade${g}` as "olGradeS"] ?? 0) * gradeRate(t2, c, g);
+                }
+              }
+              return Math.min(m, 10);
+            })()}
+            max={10}
+            hint={t("category.62.olResult.hint")}
+          />
         </div>
         <CountSelect
           id={`ol-subject-count-${id}`}
@@ -1068,7 +1254,21 @@ export function Category62Fields({
       <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.alResult.label")}</span>
-          <MarkBadge marks={(() => { let m = 0; const c = inputs.alSubjectCount; const t2 = c != null ? AL_CEILINGS[c] : undefined; if (t2 && c != null) { for (const g of ["S","C","B","A"]) { m += (inputs[`alGrade${g}` as "alGradeS"] ?? 0) * gradeRate(t2, c, g); } } return Math.min(m, 12); })()} max={12} hint={t("category.62.alResult.hint")} />
+          <MarkBadge
+            marks={(() => {
+              let m = 0;
+              const c = inputs.alSubjectCount;
+              const t2 = c != null ? AL_CEILINGS[c] : undefined;
+              if (t2 && c != null) {
+                for (const g of ["S", "C", "B", "A"]) {
+                  m += (inputs[`alGrade${g}` as "alGradeS"] ?? 0) * gradeRate(t2, c, g);
+                }
+              }
+              return Math.min(m, 12);
+            })()}
+            max={12}
+            hint={t("category.62.alResult.hint")}
+          />
         </div>
         <CountSelect
           id={`al-subject-count-${id}`}
@@ -1079,7 +1279,13 @@ export function Category62Fields({
           onChange={(alSubjectCount) => onChange({ alSubjectCount })}
         />
         {inputs.alSubjectCount != null && (
-          <GradeCounts category={category} prefix="al" grades={["S", "C", "B", "A"]} totalCount={inputs.alSubjectCount} onChange={onChange} />
+          <GradeCounts
+            category={category}
+            prefix="al"
+            grades={["S", "C", "B", "A"]}
+            totalCount={inputs.alSubjectCount}
+            onChange={onChange}
+          />
         )}
       </div>
 
@@ -1088,7 +1294,11 @@ export function Category62Fields({
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.sports.label")}</span>
           <MarkBadge marks={sportsMarks} max={SPORTS_MAX} hint={t("category.62.sports.hint")} />
-          <FlagButton fieldKey="sportsLevel" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <FlagButton
+            fieldKey="sportsLevel"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <StringSelect
           id={`sports-level-${id}`}
@@ -1110,8 +1320,16 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.leadership.label")}</span>
-          <MarkBadge marks={leadershipMarks} max={LEADERSHIP_MAX} hint={t("category.62.leadership.hint")} />
-          <FlagButton fieldKey="leadershipRole" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={leadershipMarks}
+            max={LEADERSHIP_MAX}
+            hint={t("category.62.leadership.hint")}
+          />
+          <FlagButton
+            fieldKey="leadershipRole"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <StringSelect
           id={`leadership-role-${id}`}
@@ -1127,8 +1345,16 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.studentSocieties.label")}</span>
-          <MarkBadge marks={studentSocietiesMarks} max={STUDENT_SOCIETIES_MAX} hint={t("category.62.studentSocieties.hint")} />
-          <FlagButton fieldKey="studentSocietiesRole" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={studentSocietiesMarks}
+            max={STUDENT_SOCIETIES_MAX}
+            hint={t("category.62.studentSocieties.hint")}
+          />
+          <FlagButton
+            fieldKey="studentSocietiesRole"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <StringSelect
           id={`student-societies-role-${id}`}
@@ -1144,8 +1370,16 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.otherActivities.label")}</span>
-          <MarkBadge marks={otherActivityMarks} max={OTHER_ACTIVITIES_MAX} hint={t("category.62.otherActivities.hint")} />
-          <FlagButton fieldKey="otherActivity" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={otherActivityMarks}
+            max={OTHER_ACTIVITIES_MAX}
+            hint={t("category.62.otherActivities.hint")}
+          />
+          <FlagButton
+            fieldKey="otherActivity"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <StringSelect
           id={`other-activity-${id}`}
@@ -1157,7 +1391,9 @@ export function Category62Fields({
         />
         {inputs.otherActivity === "other" && (
           <Field>
-            <FieldLabel htmlFor={`other-activity-name-${id}`}>{t("category.62.otherActivities.specifyLabel")}</FieldLabel>
+            <FieldLabel htmlFor={`other-activity-name-${id}`}>
+              {t("category.62.otherActivities.specifyLabel")}
+            </FieldLabel>
             <Input
               id={`other-activity-name-${id}`}
               type="text"
@@ -1173,14 +1409,22 @@ export function Category62Fields({
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.pastPupils.label")}</span>
-          <MarkBadge marks={pastPupilsMarks} max={PAST_PUPILS_TOTAL_MAX} hint={(() => {
-            const start = inputs.pastPupilsMembershipStart;
-            const end = inputs.pastPupilsMembershipEnd;
-            const yrs = (start && end) ? yearsBetween(start, end).toFixed(1) : "0";
-            const yearMarks = (parseFloat(yrs) * 0.5).toFixed(1);
-            return t("category.62.pastPupils.hint", { years: yrs, yearMarks });
-          })()} />
-          <FlagButton fieldKey="pastPupilsLifeMember" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={pastPupilsMarks}
+            max={PAST_PUPILS_TOTAL_MAX}
+            hint={(() => {
+              const start = inputs.pastPupilsMembershipStart;
+              const end = inputs.pastPupilsMembershipEnd;
+              const yrs = start && end ? yearsBetween(start, end).toFixed(1) : "0";
+              const yearMarks = (Number.parseFloat(yrs) * 0.5).toFixed(1);
+              return t("category.62.pastPupils.hint", { years: yrs, yearMarks });
+            })()}
+          />
+          <FlagButton
+            fieldKey="pastPupilsLifeMember"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
           <label className="flex items-center gap-2 text-sm">
@@ -1209,7 +1453,9 @@ export function Category62Fields({
             <Checkbox
               className="size-4"
               checked={inputs.pastPupilsCommitteeMember === true}
-              onCheckedChange={(checked) => onChange({ pastPupilsCommitteeMember: checked === true })}
+              onCheckedChange={(checked) =>
+                onChange({ pastPupilsCommitteeMember: checked === true })
+              }
             />
             {t("category.62.pastPupils.committeeMembership")}
           </label>
@@ -1217,7 +1463,9 @@ export function Category62Fields({
             <Checkbox
               className="size-4"
               checked={inputs.pastPupilsExecutiveOffice === true}
-              onCheckedChange={(checked) => onChange({ pastPupilsExecutiveOffice: checked === true })}
+              onCheckedChange={(checked) =>
+                onChange({ pastPupilsExecutiveOffice: checked === true })
+              }
             />
             {t("category.62.pastPupils.executiveOffice")}
           </label>
@@ -1229,7 +1477,11 @@ export function Category62Fields({
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.degrees.label")}</span>
           <MarkBadge marks={degreeMarks} max={DEGREE_MAX} hint={t("category.62.degrees.hint")} />
-          <FlagButton fieldKey="highestDegree" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <FlagButton
+            fieldKey="highestDegree"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <StringSelect
           id={`highest-degree-${id}`}
@@ -1245,8 +1497,16 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.diploma.label")}</span>
-          <MarkBadge marks={diplomaMarks} max={DIPLOMA_MARKS} hint={t("category.62.diploma.hint")} />
-          <FlagButton fieldKey="hasDiploma" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={diplomaMarks}
+            max={DIPLOMA_MARKS}
+            hint={t("category.62.diploma.hint")}
+          />
+          <FlagButton
+            fieldKey="hasDiploma"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
@@ -1262,8 +1522,16 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.contribution.label")}</span>
-          <MarkBadge marks={contributionMarks} max={CONTRIBUTION_MAX} hint={t("category.62.contribution.hint")} />
-          <FlagButton fieldKey="sportsMeetContribution" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={contributionMarks}
+            max={CONTRIBUTION_MAX}
+            hint={t("category.62.contribution.hint")}
+          />
+          <FlagButton
+            fieldKey="sportsMeetContribution"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <div className="grid gap-2">
           <label className="flex items-center gap-2 text-sm">
@@ -1289,14 +1557,24 @@ export function Category62Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.schoolProjects.label")}</span>
-          <MarkBadge marks={projectMarks} max={SCHOOL_PROJECTS_MARKS} hint={t("category.62.schoolProjects.hint")} />
-          <FlagButton fieldKey="schoolProjectsContribution" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={projectMarks}
+            max={SCHOOL_PROJECTS_MARKS}
+            hint={t("category.62.schoolProjects.hint")}
+          />
+          <FlagButton
+            fieldKey="schoolProjectsContribution"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
             className="size-4"
             checked={inputs.schoolProjectsContribution === true}
-            onCheckedChange={(checked) => onChange({ schoolProjectsContribution: checked === true })}
+            onCheckedChange={(checked) =>
+              onChange({ schoolProjectsContribution: checked === true })
+            }
           />
           {t("category.62.schoolProjects.checkbox")}
         </label>
@@ -1323,18 +1601,39 @@ export function Category63Fields({
   const id = category.id;
   const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
   const hasCenter = centerLat != null && centerLng != null;
-  const siblingsMarks = Math.min((inputs.siblingsCurrentlyStudyingCount ?? 0) * SIBLING_MARKS_PER_SIBLING, SIBLING_STUDYING_MAX);
+  const siblingsMarks = Math.min(
+    (inputs.siblingsCurrentlyStudyingCount ?? 0) * SIBLING_MARKS_PER_SIBLING,
+    SIBLING_STUDYING_MAX,
+  );
   const studiedHereMarks = inputs.siblingStudiedAtAppliedSchool ? SIBLING_STUDIED_HERE_MARKS : 0;
-  const multipleApplyingMarks = inputs.twoOrMoreSiblingsApplying ? SIBLING_MULTIPLE_APPLYING_MARKS : 0;
-  const prefectMarks = Math.min((SIBLING_PREFECT_LEVEL_MARKS[inputs.siblingPrefectLevel ?? ""] ?? 0) * (inputs.siblingPrefectCount ?? 0), SIBLING_PREFECT_MAX);
-  const examMarks = Math.min(SIBLING_EXAM_MARKS[inputs.siblingExamAchievement ?? ""] ?? 0, SIBLING_EXAM_MAX);
+  const multipleApplyingMarks = inputs.twoOrMoreSiblingsApplying
+    ? SIBLING_MULTIPLE_APPLYING_MARKS
+    : 0;
+  const prefectMarks = Math.min(
+    (SIBLING_PREFECT_LEVEL_MARKS[inputs.siblingPrefectLevel ?? ""] ?? 0) *
+      (inputs.siblingPrefectCount ?? 0),
+    SIBLING_PREFECT_MAX,
+  );
+  const examMarks = Math.min(
+    SIBLING_EXAM_MARKS[inputs.siblingExamAchievement ?? ""] ?? 0,
+    SIBLING_EXAM_MAX,
+  );
   const praiseworthyMarks = inputs.siblingPraiseworthyAchievement ? SIBLING_PRAISEWORTHY_MARKS : 0;
   const supportMarks = inputs.parentsSupportRendered ? SIBLING_SUPPORT_MARKS : 0;
-  const cocurricularTotal = Math.min(prefectMarks + examMarks + praiseworthyMarks + supportMarks, SIBLING_COCURRICULAR_TOTAL_MAX);
-  const documentMarks = Math.min(MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0, MAIN_DOCUMENT_MAX_63);
+  const cocurricularTotal = Math.min(
+    prefectMarks + examMarks + praiseworthyMarks + supportMarks,
+    SIBLING_COCURRICULAR_TOTAL_MAX,
+  );
+  const documentMarks = Math.min(
+    MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0,
+    MAIN_DOCUMENT_MAX_63,
+  );
   const mother = electoralYearsRegistered(inputs.electoralMotherSince);
   const father = electoralYearsRegistered(inputs.electoralFatherSince);
-  const electoralMarks = Math.min((mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_63, ELECTORAL_MAX_63);
+  const electoralMarks = Math.min(
+    (mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_63,
+    ELECTORAL_MAX_63,
+  );
   const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_63, PROXIMITY_MAX_63);
 
   const siblingDocumentOptions = getSiblingDocumentOptions(t);
@@ -1346,27 +1645,50 @@ export function Category63Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.63.siblingsStudying.label")}</span>
-          <MarkBadge marks={siblingsMarks} max={SIBLING_STUDYING_MAX} hint={t("category.63.siblingsStudying.hint", { count: inputs.siblingsCurrentlyStudyingCount ?? 0, marks: siblingsMarks })} />
-          <FlagButton fieldKey="siblingsCurrentlyStudyingCount" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={siblingsMarks}
+            max={SIBLING_STUDYING_MAX}
+            hint={t("category.63.siblingsStudying.hint", {
+              count: inputs.siblingsCurrentlyStudyingCount ?? 0,
+              marks: siblingsMarks,
+            })}
+          />
+          <FlagButton
+            fieldKey="siblingsCurrentlyStudyingCount"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <NumberField
           id={`siblings-count-${id}`}
           label={t("category.63.siblingsStudying.countLabel")}
           value={inputs.siblingsCurrentlyStudyingCount}
-          onChange={(siblingsCurrentlyStudyingCount) => onChange({ siblingsCurrentlyStudyingCount })}
+          onChange={(siblingsCurrentlyStudyingCount) =>
+            onChange({ siblingsCurrentlyStudyingCount })
+          }
         />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.63.studiedHere.label")}</span>
-          <MarkBadge marks={studiedHereMarks} max={SIBLING_STUDIED_HERE_MARKS} hint={t("category.63.studiedHere.hint", { school: getHomeSchoolDisplayName() })} />
-          <FlagButton fieldKey="siblingStudiedAtAppliedSchool" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={studiedHereMarks}
+            max={SIBLING_STUDIED_HERE_MARKS}
+            hint={t("category.63.studiedHere.hint", { school: getHomeSchoolDisplayName() })}
+          />
+          <FlagButton
+            fieldKey="siblingStudiedAtAppliedSchool"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
           <Checkbox
             className="size-4"
             checked={inputs.siblingStudiedAtAppliedSchool === true}
-            onCheckedChange={(checked) => onChange({ siblingStudiedAtAppliedSchool: checked === true })}
+            onCheckedChange={(checked) =>
+              onChange({ siblingStudiedAtAppliedSchool: checked === true })
+            }
           />
           {t("category.63.studiedHere.checkbox")}
         </label>
@@ -1374,8 +1696,16 @@ export function Category63Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.63.multipleSiblings.label")}</span>
-          <MarkBadge marks={multipleApplyingMarks} max={SIBLING_MULTIPLE_APPLYING_MARKS} hint={t("category.63.multipleSiblings.hint")} />
-          <FlagButton fieldKey="twoOrMoreSiblingsApplying" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={multipleApplyingMarks}
+            max={SIBLING_MULTIPLE_APPLYING_MARKS}
+            hint={t("category.63.multipleSiblings.hint")}
+          />
+          <FlagButton
+            fieldKey="twoOrMoreSiblingsApplying"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
@@ -1389,8 +1719,16 @@ export function Category63Fields({
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.63.cocurricular.label")}</span>
-          <MarkBadge marks={cocurricularTotal} max={SIBLING_COCURRICULAR_TOTAL_MAX} hint={t("category.63.cocurricular.hint")} />
-          <FlagButton fieldKey="siblingPrefectLevel" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={cocurricularTotal}
+            max={SIBLING_COCURRICULAR_TOTAL_MAX}
+            hint={t("category.63.cocurricular.hint")}
+          />
+          <FlagButton
+            fieldKey="siblingPrefectLevel"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
           <StringSelect
@@ -1419,7 +1757,9 @@ export function Category63Fields({
             <Checkbox
               className="size-4"
               checked={inputs.siblingPraiseworthyAchievement === true}
-              onCheckedChange={(checked) => onChange({ siblingPraiseworthyAchievement: checked === true })}
+              onCheckedChange={(checked) =>
+                onChange({ siblingPraiseworthyAchievement: checked === true })
+              }
             />
             {t("category.63.cocurricular.praiseworthy")}
           </label>
@@ -1436,10 +1776,22 @@ export function Category63Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.63.residenceDocument.label")}</span>
-          <MarkBadge marks={documentMarks} max={MAIN_DOCUMENT_MAX_63} hint={t("category.63.residenceDocument.hint")} />
-          <FlagButton fieldKey="mainDocumentType" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={documentMarks}
+            max={MAIN_DOCUMENT_MAX_63}
+            hint={t("category.63.residenceDocument.hint")}
+          />
+          <FlagButton
+            fieldKey="mainDocumentType"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
-        <DocumentTypeSelect category={category} onChange={onChange} options={siblingDocumentOptions} />
+        <DocumentTypeSelect
+          category={category}
+          onChange={onChange}
+          options={siblingDocumentOptions}
+        />
       </div>
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
@@ -1463,14 +1815,30 @@ export function Category63Fields({
       </div>
       <div className="flex items-center gap-2 border-t pt-3">
         <span className="text-sm font-medium">{t("category.63.electoralTotal")}</span>
-          <MarkBadge marks={electoralMarks} max={ELECTORAL_MAX_63} hint={t("category.63.electoralTotal.hint")} />
-          <FlagButton fieldKey="electoralMotherSince" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
-        </div>
+        <MarkBadge
+          marks={electoralMarks}
+          max={ELECTORAL_MAX_63}
+          hint={t("category.63.electoralTotal.hint")}
+        />
+        <FlagButton
+          fieldKey="electoralMotherSince"
+          flaggedInputs={flaggedInputs}
+          onToggleInputFlag={onToggleInputFlag}
+        />
+      </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.61.nearbySchools.label")}</span>
-          <MarkBadge marks={prox} max={PROXIMITY_MAX_63} hint={t("category.63.nearbySchools.hint", { school: getHomeSchoolDisplayName() })} />
-          <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={prox}
+            max={PROXIMITY_MAX_63}
+            hint={t("category.63.nearbySchools.hint", { school: getHomeSchoolDisplayName() })}
+          />
+          <FlagButton
+            fieldKey="schoolsWithinRadius"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
       </div>
     </div>
@@ -1495,14 +1863,26 @@ export function Category64Fields({
   } else if (inputs.difficultServiceType === "previous") {
     const km = inputs.difficultServiceDistanceKm;
     const distance = difficultDistanceMarks(km);
-    difficultMarks = Math.max(DIFFICULT_SERVICE_PREVIOUS_BASE, distance) + (inputs.difficultServiceExtraPeriods ?? 0) * DIFFICULT_EXTRA_PERIOD_MARKS;
+    difficultMarks =
+      Math.max(DIFFICULT_SERVICE_PREVIOUS_BASE, distance) +
+      (inputs.difficultServiceExtraPeriods ?? 0) * DIFFICULT_EXTRA_PERIOD_MARKS;
   }
   difficultMarks = Math.min(difficultMarks, DIFFICULT_SERVICE_MAX);
-  const leaveMarks = Math.min((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX);
+  const leaveMarks = Math.min(
+    (inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR,
+    UNUTILIZED_LEAVE_MAX,
+  );
   const locationMap: Record<string, number> = SERVICE_LOCATION_MARKS;
-  const locationMarks = Math.min(locationMap[inputs.serviceLocationLevel ?? ""] ?? 0, SERVICE_LOCATION_MAX);
+  const locationMarks = Math.min(
+    locationMap[inputs.serviceLocationLevel ?? ""] ?? 0,
+    SERVICE_LOCATION_MAX,
+  );
   const resKm = inputs.residenceToSchoolKm;
-  const residenceDistance = tieredDistanceMarks(resKm, RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64);
+  const residenceDistance = tieredDistanceMarks(
+    resKm,
+    RESIDENCE_DISTANCE_TIERS_64,
+    RESIDENCE_DISTANCE_FALLBACK_64,
+  );
   const workKm = inputs.workplaceToSchoolKm;
   const workplaceDistance = workplaceDistanceMarks(workKm);
   return (
@@ -1510,8 +1890,19 @@ export function Category64Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.64.servicePeriod.label")}</span>
-          <MarkBadge marks={serviceMarks} max={SERVICE_PERIOD_MAX} hint={t("category.64.servicePeriod.hint", { years: Math.floor(yearsFromDate(inputs.serviceStartDate)), marks: serviceMarks })} />
-          <FlagButton fieldKey="serviceStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={serviceMarks}
+            max={SERVICE_PERIOD_MAX}
+            hint={t("category.64.servicePeriod.hint", {
+              years: Math.floor(yearsFromDate(inputs.serviceStartDate)),
+              marks: serviceMarks,
+            })}
+          />
+          <FlagButton
+            fieldKey="serviceStartDate"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <DateField
           id={`service-start-${category.id}`}
@@ -1524,19 +1915,43 @@ export function Category64Fields({
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.64.difficultService.label")}</span>
-          <MarkBadge marks={difficultMarks} max={DIFFICULT_SERVICE_MAX} hint={t("category.64.difficultService.hint")} />
-          <FlagButton fieldKey="difficultServiceType" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={difficultMarks}
+            max={DIFFICULT_SERVICE_MAX}
+            hint={t("category.64.difficultService.hint")}
+          />
+          <FlagButton
+            fieldKey="difficultServiceType"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <Field>
           <FieldLabel>{t("category.64.difficultService.typeLabel")}</FieldLabel>
           <RadioGroup
             value={inputs.difficultServiceType ?? ""}
-            onValueChange={(next) => onChange({ difficultServiceType: next as ScoringInputs["difficultServiceType"] })}
+            onValueChange={(next) =>
+              onChange({ difficultServiceType: next as ScoringInputs["difficultServiceType"] })
+            }
             className="flex flex-wrap gap-x-6 gap-y-2"
           >
-            <RadioOption id={`dst-current-${category.id}`} value="current" label={t("category.64.difficultService.currentSchool")} marks={DIFFICULT_SERVICE_CURRENT_MARKS} />
-            <RadioOption id={`dst-previous-${category.id}`} value="previous" label={t("category.64.difficultService.previousSchool")} />
-            <RadioOption id={`dst-none-${category.id}`} value="none" label={t("category.64.difficultService.none")} marks={0} />
+            <RadioOption
+              id={`dst-current-${category.id}`}
+              value="current"
+              label={t("category.64.difficultService.currentSchool")}
+              marks={DIFFICULT_SERVICE_CURRENT_MARKS}
+            />
+            <RadioOption
+              id={`dst-previous-${category.id}`}
+              value="previous"
+              label={t("category.64.difficultService.previousSchool")}
+            />
+            <RadioOption
+              id={`dst-none-${category.id}`}
+              value="none"
+              label={t("category.64.difficultService.none")}
+              marks={0}
+            />
           </RadioGroup>
         </Field>
         {inputs.difficultServiceType === "previous" && (
@@ -1551,7 +1966,9 @@ export function Category64Fields({
               id={`difficult-periods-${category.id}`}
               label={t("category.64.difficultService.extraPeriods")}
               value={inputs.difficultServiceExtraPeriods}
-              onChange={(difficultServiceExtraPeriods) => onChange({ difficultServiceExtraPeriods })}
+              onChange={(difficultServiceExtraPeriods) =>
+                onChange({ difficultServiceExtraPeriods })
+              }
             />
           </div>
         )}
@@ -1559,8 +1976,19 @@ export function Category64Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.64.unutilizedLeave.label")}</span>
-          <MarkBadge marks={leaveMarks} max={UNUTILIZED_LEAVE_MAX} hint={t("category.64.unutilizedLeave.hint", { years: inputs.unutilizedLeaveYears ?? 0, marks: leaveMarks })} />
-          <FlagButton fieldKey="unutilizedLeaveYears" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={leaveMarks}
+            max={UNUTILIZED_LEAVE_MAX}
+            hint={t("category.64.unutilizedLeave.hint", {
+              years: inputs.unutilizedLeaveYears ?? 0,
+              marks: leaveMarks,
+            })}
+          />
+          <FlagButton
+            fieldKey="unutilizedLeaveYears"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <YearsSelect
           id={`unutilized-leave-${category.id}`}
@@ -1572,8 +2000,16 @@ export function Category64Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.64.serviceLocation.label")}</span>
-          <MarkBadge marks={locationMarks} max={SERVICE_LOCATION_MAX} hint={t("category.64.serviceLocation.hint")} />
-          <FlagButton fieldKey="serviceLocationLevel" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={locationMarks}
+            max={SERVICE_LOCATION_MAX}
+            hint={t("category.64.serviceLocation.hint")}
+          />
+          <FlagButton
+            fieldKey="serviceLocationLevel"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <Field>
           <FieldLabel>{t("category.64.serviceLocation.levelLabel")}</FieldLabel>
@@ -1582,18 +2018,46 @@ export function Category64Fields({
             onValueChange={(next) => onChange({ serviceLocationLevel: String(next) })}
             className="flex flex-wrap gap-x-6 gap-y-2"
           >
-            <RadioOption id={`sll-same-school-${category.id}`} value="same-school" label={t("category.64.serviceLocation.sameSchool")} marks={SERVICE_LOCATION_MARKS["same-school"]} />
-            <RadioOption id={`sll-zone-${category.id}`} value="zone" label={t("category.64.serviceLocation.zone")} marks={SERVICE_LOCATION_MARKS.zone} />
-            <RadioOption id={`sll-province-${category.id}`} value="province" label={t("category.64.serviceLocation.province")} marks={SERVICE_LOCATION_MARKS.province} />
-            <RadioOption id={`sll-education-institution-${category.id}`} value="education-institution" label={t("category.64.serviceLocation.educationInstitution")} marks={SERVICE_LOCATION_MARKS["education-institution"]} />
+            <RadioOption
+              id={`sll-same-school-${category.id}`}
+              value="same-school"
+              label={t("category.64.serviceLocation.sameSchool")}
+              marks={SERVICE_LOCATION_MARKS["same-school"]}
+            />
+            <RadioOption
+              id={`sll-zone-${category.id}`}
+              value="zone"
+              label={t("category.64.serviceLocation.zone")}
+              marks={SERVICE_LOCATION_MARKS.zone}
+            />
+            <RadioOption
+              id={`sll-province-${category.id}`}
+              value="province"
+              label={t("category.64.serviceLocation.province")}
+              marks={SERVICE_LOCATION_MARKS.province}
+            />
+            <RadioOption
+              id={`sll-education-institution-${category.id}`}
+              value="education-institution"
+              label={t("category.64.serviceLocation.educationInstitution")}
+              marks={SERVICE_LOCATION_MARKS["education-institution"]}
+            />
           </RadioGroup>
         </Field>
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.64.residenceToSchool.label")}</span>
-          <MarkBadge marks={residenceDistance} max={RESIDENCE_DISTANCE_MAX_64} hint={t("category.64.residenceToSchool.hint")} />
-          <FlagButton fieldKey="residenceToSchoolKm" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={residenceDistance}
+            max={RESIDENCE_DISTANCE_MAX_64}
+            hint={t("category.64.residenceToSchool.hint")}
+          />
+          <FlagButton
+            fieldKey="residenceToSchoolKm"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <NumberField
           id={`residence-to-school-${category.id}`}
@@ -1605,8 +2069,16 @@ export function Category64Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.64.workplaceToSchool.label")}</span>
-          <MarkBadge marks={workplaceDistance} max={WORKPLACE_DISTANCE_MAX} hint={t("category.64.workplaceToSchool.hint")} />
-          <FlagButton fieldKey="workplaceToSchoolKm" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={workplaceDistance}
+            max={WORKPLACE_DISTANCE_MAX}
+            hint={t("category.64.workplaceToSchool.hint")}
+          />
+          <FlagButton
+            fieldKey="workplaceToSchoolKm"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <NumberField
           id={`workplace-to-school-${category.id}`}
@@ -1643,15 +2115,28 @@ export function Category65Fields({
   const previousPeriodMarks = previousPeriodMarksFn(prevYears);
   const elapsed = yearsFromDate(inputs.transferDate);
   const elapsedMarks = inputs.transferDate ? transferElapsedMarksFn(elapsed) : 0;
-  const leaveMarks = Math.min((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX);
+  const leaveMarks = Math.min(
+    (inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR,
+    UNUTILIZED_LEAVE_MAX,
+  );
   const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_65, PROXIMITY_MAX_65);
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.65.prevWorkplaceDistance.label")}</span>
-          <MarkBadge marks={distanceMarks} max={TRANSFER_DISTANCE_MAX} hint={t("category.65.prevWorkplaceDistance.hint")} />
-          <FlagButton fieldKey="previousWorkplaceDistanceKm" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <span className="text-sm font-medium">
+            {t("category.65.prevWorkplaceDistance.label")}
+          </span>
+          <MarkBadge
+            marks={distanceMarks}
+            max={TRANSFER_DISTANCE_MAX}
+            hint={t("category.65.prevWorkplaceDistance.hint")}
+          />
+          <FlagButton
+            fieldKey="previousWorkplaceDistanceKm"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <NumberField
           id={`prev-workplace-distance-${category.id}`}
@@ -1663,8 +2148,19 @@ export function Category65Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.65.servicePeriod.label")}</span>
-          <MarkBadge marks={periodMarks} max={TRANSFER_SERVICE_PERIOD_MAX} hint={t("category.65.servicePeriod.hint", { years: Math.floor(yearsFromDate(inputs.serviceStartDate)), marks: periodMarks })} />
-          <FlagButton fieldKey="serviceStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={periodMarks}
+            max={TRANSFER_SERVICE_PERIOD_MAX}
+            hint={t("category.65.servicePeriod.hint", {
+              years: Math.floor(yearsFromDate(inputs.serviceStartDate)),
+              marks: periodMarks,
+            })}
+          />
+          <FlagButton
+            fieldKey="serviceStartDate"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <DateField
           id={`transfer-service-start-${category.id}`}
@@ -1677,8 +2173,16 @@ export function Category65Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.65.prevWorkplacePeriod.label")}</span>
-          <MarkBadge marks={previousPeriodMarks} max={TRANSFER_PREVIOUS_PERIOD_MAX} hint={t("category.65.prevWorkplacePeriod.hint")} />
-          <FlagButton fieldKey="previousWorkplaceStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={previousPeriodMarks}
+            max={TRANSFER_PREVIOUS_PERIOD_MAX}
+            hint={t("category.65.prevWorkplacePeriod.hint")}
+          />
+          <FlagButton
+            fieldKey="previousWorkplaceStartDate"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <DateField
           id={`prev-workplace-start-${category.id}`}
@@ -1691,8 +2195,16 @@ export function Category65Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.65.timeSinceTransfer.label")}</span>
-          <MarkBadge marks={elapsedMarks} max={TRANSFER_ELAPSED_MAX} hint={t("category.65.timeSinceTransfer.hint")} />
-          <FlagButton fieldKey="transferDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={elapsedMarks}
+            max={TRANSFER_ELAPSED_MAX}
+            hint={t("category.65.timeSinceTransfer.hint")}
+          />
+          <FlagButton
+            fieldKey="transferDate"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <DateField
           id={`transfer-date-${category.id}`}
@@ -1705,8 +2217,19 @@ export function Category65Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.65.unutilizedLeave.label")}</span>
-          <MarkBadge marks={leaveMarks} max={UNUTILIZED_LEAVE_MAX} hint={t("category.65.unutilizedLeave.hint", { years: inputs.unutilizedLeaveYears ?? 0, marks: leaveMarks })} />
-          <FlagButton fieldKey="unutilizedLeaveYears" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={leaveMarks}
+            max={UNUTILIZED_LEAVE_MAX}
+            hint={t("category.65.unutilizedLeave.hint", {
+              years: inputs.unutilizedLeaveYears ?? 0,
+              marks: leaveMarks,
+            })}
+          />
+          <FlagButton
+            fieldKey="unutilizedLeaveYears"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <YearsSelect
           id={`transfer-unutilized-leave-${category.id}`}
@@ -1718,10 +2241,20 @@ export function Category65Fields({
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.61.nearbySchools.label")}</span>
-          <MarkBadge marks={prox} max={PROXIMITY_MAX_63} hint={t("category.65.nearbySchools.hint", { school: getHomeSchoolDisplayName() })} />
-          <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={prox}
+            max={PROXIMITY_MAX_63}
+            hint={t("category.65.nearbySchools.hint", { school: getHomeSchoolDisplayName() })}
+          />
+          <FlagButton
+            fieldKey="schoolsWithinRadius"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
           {selectedSchoolIds.length > 0 && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{t("category.common.selected", { count: selectedSchoolIds.length })}</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {t("category.common.selected", { count: selectedSchoolIds.length })}
+            </span>
           )}
         </div>
         {hasCenter ? (
@@ -1767,15 +2300,26 @@ export function Category66Fields({
   const abroad = yearsBetween(inputs.abroadStartDate, inputs.abroadEndDate);
   const abroadMarks = abroadPeriodMarks(abroad);
   const purposeMap: Record<string, number> = EMPLOYMENT_PURPOSE_MARKS;
-  const purposeMarks = Math.min(purposeMap[inputs.employmentPurpose ?? ""] ?? 0, EMPLOYMENT_PURPOSE_MAX);
+  const purposeMarks = Math.min(
+    purposeMap[inputs.employmentPurpose ?? ""] ?? 0,
+    EMPLOYMENT_PURPOSE_MAX,
+  );
   const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_66, PROXIMITY_MAX_66);
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.66.periodAbroad.label")}</span>
-          <MarkBadge marks={abroadMarks} max={ABROAD_PERIOD_MAX} hint={t("category.66.periodAbroad.hint")} />
-          <FlagButton fieldKey="abroadStartDate" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={abroadMarks}
+            max={ABROAD_PERIOD_MAX}
+            hint={t("category.66.periodAbroad.hint")}
+          />
+          <FlagButton
+            fieldKey="abroadStartDate"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <DateField
           id={`abroad-start-${category.id}`}
@@ -1795,30 +2339,70 @@ export function Category66Fields({
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.66.employmentPurpose.label")}</span>
-          <MarkBadge marks={purposeMarks} max={EMPLOYMENT_PURPOSE_MAX} hint={t("category.66.employmentPurpose.hint")} />
-          <FlagButton fieldKey="employmentPurpose" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={purposeMarks}
+            max={EMPLOYMENT_PURPOSE_MAX}
+            hint={t("category.66.employmentPurpose.hint")}
+          />
+          <FlagButton
+            fieldKey="employmentPurpose"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
         </div>
         <Field>
           <FieldLabel>{t("category.66.employmentPurpose.purposeLabel")}</FieldLabel>
           <RadioGroup
             value={inputs.employmentPurpose ?? ""}
-            onValueChange={(next) => onChange({ employmentPurpose: next as ScoringInputs["employmentPurpose"] })}
+            onValueChange={(next) =>
+              onChange({ employmentPurpose: next as ScoringInputs["employmentPurpose"] })
+            }
             className="flex flex-wrap gap-x-6 gap-y-2"
           >
-            <RadioOption id={`ep-board-${category.id}`} value="board" label={t("category.66.employmentPurpose.board")} marks={EMPLOYMENT_PURPOSE_MARKS.board} />
-            <RadioOption id={`ep-personal-${category.id}`} value="personal" label={t("category.66.employmentPurpose.personal")} marks={EMPLOYMENT_PURPOSE_MARKS.personal} />
-            <RadioOption id={`ep-government-${category.id}`} value="government" label={t("category.66.employmentPurpose.government")} marks={EMPLOYMENT_PURPOSE_MARKS.government} />
-            <RadioOption id={`ep-education-${category.id}`} value="education" label={t("category.66.employmentPurpose.education")} marks={EMPLOYMENT_PURPOSE_MARKS.education} />
+            <RadioOption
+              id={`ep-board-${category.id}`}
+              value="board"
+              label={t("category.66.employmentPurpose.board")}
+              marks={EMPLOYMENT_PURPOSE_MARKS.board}
+            />
+            <RadioOption
+              id={`ep-personal-${category.id}`}
+              value="personal"
+              label={t("category.66.employmentPurpose.personal")}
+              marks={EMPLOYMENT_PURPOSE_MARKS.personal}
+            />
+            <RadioOption
+              id={`ep-government-${category.id}`}
+              value="government"
+              label={t("category.66.employmentPurpose.government")}
+              marks={EMPLOYMENT_PURPOSE_MARKS.government}
+            />
+            <RadioOption
+              id={`ep-education-${category.id}`}
+              value="education"
+              label={t("category.66.employmentPurpose.education")}
+              marks={EMPLOYMENT_PURPOSE_MARKS.education}
+            />
           </RadioGroup>
         </Field>
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.61.nearbySchools.label")}</span>
-          <MarkBadge marks={prox} max={PROXIMITY_MAX_66} hint={t("category.66.nearbySchools.hint", { school: getHomeSchoolDisplayName() })} />
-          <FlagButton fieldKey="schoolsWithinRadius" flaggedInputs={flaggedInputs} onToggleInputFlag={onToggleInputFlag} />
+          <MarkBadge
+            marks={prox}
+            max={PROXIMITY_MAX_66}
+            hint={t("category.66.nearbySchools.hint", { school: getHomeSchoolDisplayName() })}
+          />
+          <FlagButton
+            fieldKey="schoolsWithinRadius"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
           {selectedSchoolIds.length > 0 && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{t("category.common.selected", { count: selectedSchoolIds.length })}</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {t("category.common.selected", { count: selectedSchoolIds.length })}
+            </span>
           )}
         </div>
         {hasCenter ? (
@@ -1904,43 +2488,86 @@ function CategoryCard({
     seededSchoolsRef.current = true;
     const { schoolIds } = compatibleSchoolsWithinRadius(centerLat!, centerLng!, HOME_SCHOOL_ID);
     onUpdate({ schoolsWithinRadius: schoolIds });
-  }, [proximityConfig, hasCenter, locked, centerLat, centerLng, category.scoringInputs.schoolsWithinRadius, onUpdate]);
+  }, [
+    proximityConfig,
+    hasCenter,
+    locked,
+    centerLat,
+    centerLng,
+    category.scoringInputs.schoolsWithinRadius,
+    onUpdate,
+  ]);
 
   return (
-    <Card className={locked ? "border-2 border-muted bg-muted/30" : `border-2 ${CATEGORY_COLORS[category.categoryType].border}`}>
+    <Card
+      className={
+        locked
+          ? "border-2 border-muted bg-muted/30"
+          : `border-2 ${CATEGORY_COLORS[category.categoryType].border}`
+      }
+    >
       <CardHeader className="border-b bg-muted/20">
         <div className="grid min-w-0 gap-1">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{t("category.sectionHeading.markingCategoryBadge")}</span>
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+            {t("category.sectionHeading.markingCategoryBadge")}
+          </span>
           <CardTitle className="flex flex-wrap items-center gap-2">
             {categoryLabels[category.categoryType]}
             {occurrence != null && (
-              <span className="text-muted-foreground font-normal">{t("category.sectionHeading.entryNumber", { number: occurrence })}</span>
+              <span className="text-muted-foreground font-normal">
+                {t("category.sectionHeading.entryNumber", { number: occurrence })}
+              </span>
             )}
-            {locked && <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">{t("category.sectionHeading.locked")}</span>}
+            {locked && (
+              <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                {t("category.sectionHeading.locked")}
+              </span>
+            )}
           </CardTitle>
           <CardDescription>{categoryMeta[category.categoryType].description}</CardDescription>
         </div>
         <CardAction className="grid gap-2 justify-items-end">
           <div className="grid gap-0.5 rounded-lg border bg-background px-3 py-2 text-right">
-            <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">{t("category.sectionHeading.indicativeScore")}</span>
+            <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              {t("category.sectionHeading.indicativeScore")}
+            </span>
             <strong className="font-mono text-lg tabular-nums">
-              {score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}<span className="text-sm font-normal text-muted-foreground"> / {categoryMeta[category.categoryType].maxMarks}</span>
+              {score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              <span className="text-sm font-normal text-muted-foreground">
+                {" "}
+                / {categoryMeta[category.categoryType].maxMarks}
+              </span>
             </strong>
           </div>
           <div className="flex gap-1">
-          <Button
-            type="button"
-            variant={locked ? "default" : "ghost"}
-            size="sm"
-            onClick={() => draft.updateCategoryInputs(category.id, { locked: !locked } as Partial<ScoringInputs>)}
-          >
-            {locked ? t("category.buttons.edit") : t("category.buttons.lock")}
-          </Button>
-          {!locked && (
-            <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={onRemove}>
-              {t("category.buttons.remove")}
-            </Button>
-          )}
+            {/* Locking was removed as an applicant action. The unlock affordance
+              stays so drafts that were locked before that change are not
+              stranded read-only with no way back. */}
+            {locked && (
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={() =>
+                  draft.updateCategoryInputs(category.id, {
+                    locked: false,
+                  } as Partial<ScoringInputs>)
+                }
+              >
+                {t("category.buttons.edit")}
+              </Button>
+            )}
+            {!locked && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={onRemove}
+              >
+                {t("category.buttons.remove")}
+              </Button>
+            )}
           </div>
         </CardAction>
       </CardHeader>
@@ -1949,12 +2576,24 @@ function CategoryCard({
           <CategoryLockedSummary category={category} />
         ) : (
           <>
-            {category.categoryType === "6.1" && <Category61Fields category={category} onChange={onUpdate} />}
-            {category.categoryType === "6.2" && <Category62Fields category={category} onChange={onUpdate} />}
-            {category.categoryType === "6.3" && <Category63Fields category={category} onChange={onUpdate} />}
-            {category.categoryType === "6.4" && <Category64Fields category={category} onChange={onUpdate} />}
-            {category.categoryType === "6.5" && <Category65Fields category={category} onChange={onUpdate} />}
-            {category.categoryType === "6.6" && <Category66Fields category={category} onChange={onUpdate} />}
+            {category.categoryType === "6.1" && (
+              <Category61Fields category={category} onChange={onUpdate} />
+            )}
+            {category.categoryType === "6.2" && (
+              <Category62Fields category={category} onChange={onUpdate} />
+            )}
+            {category.categoryType === "6.3" && (
+              <Category63Fields category={category} onChange={onUpdate} />
+            )}
+            {category.categoryType === "6.4" && (
+              <Category64Fields category={category} onChange={onUpdate} />
+            )}
+            {category.categoryType === "6.5" && (
+              <Category65Fields category={category} onChange={onUpdate} />
+            )}
+            {category.categoryType === "6.6" && (
+              <Category66Fields category={category} onChange={onUpdate} />
+            )}
           </>
         )}
         {proximityConfig && hasCenter ? (
@@ -1962,14 +2601,22 @@ function CategoryCard({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="grid gap-1">
                 <p className="text-sm font-medium sr-only">{t("category.nearbySchools.title")}</p>
-                <p className="text-xs text-muted-foreground">{t("category.nearbySchools.calculated")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("category.nearbySchools.calculated")}
+                </p>
               </div>
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                {t("category.nearbySchools.selectedCount", { count: selectedSchoolIds.length, marksPerSchool: proximityConfig.marksPerSchool })}
+                {t("category.nearbySchools.selectedCount", {
+                  count: selectedSchoolIds.length,
+                  marksPerSchool: proximityConfig.marksPerSchool,
+                })}
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              {t("category.nearbySchools.explanation", { maxMarks: proximityConfig.maxMarks, marksPerSchool: proximityConfig.marksPerSchool })}
+              {t("category.nearbySchools.explanation", {
+                maxMarks: proximityConfig.maxMarks,
+                marksPerSchool: proximityConfig.marksPerSchool,
+              })}
             </p>
             {locked ? (
               <p className="text-sm text-muted-foreground">
@@ -1982,7 +2629,7 @@ function CategoryCard({
                 centerLat={centerLat}
                 centerLng={centerLng}
                 selectedIds={selectedSchoolIds}
-            highlightSchoolId={HOME_SCHOOL_ID}
+                highlightSchoolId={HOME_SCHOOL_ID}
                 marksPerSchool={proximityConfig.marksPerSchool}
                 onToggle={(schoolId) =>
                   onUpdate({
@@ -2000,7 +2647,11 @@ function CategoryCard({
           </p>
         ) : null}
         <div className="grid gap-2 border-t pt-5">
-          <p className="text-sm font-medium">{t("category.exampleMarks.heading", { category: categoryLabels[category.categoryType] })}</p>
+          <p className="text-sm font-medium">
+            {t("category.exampleMarks.heading", {
+              category: categoryLabels[category.categoryType],
+            })}
+          </p>
           <div className="grid gap-1">
             {score.breakdown.map((row) => (
               <div key={row.label} className="flex items-baseline justify-between gap-3 text-sm">
@@ -2013,11 +2664,11 @@ function CategoryCard({
           </div>
           <div className="flex items-baseline justify-between gap-3 border-t pt-2 text-base font-semibold">
             <span>{t("category.exampleMarks.indicativeTotal")}</span>
-            <span className="font-mono tabular-nums">{score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100</span>
+            <span className="font-mono tabular-nums">
+              {score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {t("category.exampleMarks.disclaimer")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("category.exampleMarks.disclaimer")}</p>
         </div>
       </CardContent>
     </Card>
@@ -2041,7 +2692,9 @@ export function CategoryStep() {
     categoriesByType.set(cat.categoryType, list);
   }
 
-  const firstTypeWithEntries = CATEGORY_TYPES.find((categoryType) => (categoriesByType.get(categoryType)?.length ?? 0) > 0) ?? CATEGORY_TYPES[0];
+  const firstTypeWithEntries =
+    CATEGORY_TYPES.find((categoryType) => (categoriesByType.get(categoryType)?.length ?? 0) > 0) ??
+    CATEGORY_TYPES[0];
   const categoryCount = draft.categories.length;
 
   return (
@@ -2055,13 +2708,24 @@ export function CategoryStep() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
           <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{categoryCount}</span>
+            <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              {categoryCount}
+            </span>
             <div className="grid gap-0.5">
-              <strong className="text-sm">{t("category.sectionHeading.categoriesSelected", { count: categoryCount, plural: categoryCount === 1 ? "category" : "categories" })}</strong>
-              <span className="text-xs text-muted-foreground">{t("category.sectionHeading.addRemoveHint")}</span>
+              <strong className="text-sm">
+                {t("category.sectionHeading.categoriesSelected", {
+                  count: categoryCount,
+                  plural: categoryCount === 1 ? "category" : "categories",
+                })}
+              </strong>
+              <span className="text-xs text-muted-foreground">
+                {t("category.sectionHeading.addRemoveHint")}
+              </span>
             </div>
           </div>
-          <span className="text-xs font-semibold text-primary">{t("category.sectionHeading.draftSaves")}</span>
+          <span className="text-xs font-semibold text-primary">
+            {t("category.sectionHeading.draftSaves")}
+          </span>
         </div>
       </div>
 
@@ -2072,13 +2736,18 @@ export function CategoryStep() {
             const colors = CATEGORY_COLORS[categoryType];
             const mapRequired = Boolean(PROXIMITY_CATEGORY_CONFIG[categoryType]) && !hasLocation;
             return (
-              <TabsTrigger key={categoryType} value={categoryType} className={`shrink-0 flex items-center gap-1.5 text-xs ${colors.activeBg}${mapRequired ? ` ${STATUS_WARNING.text} border border-dashed ${STATUS_WARNING.borderStrong}` : ""}`}>
+              <TabsTrigger
+                key={categoryType}
+                value={categoryType}
+                className={`shrink-0 flex items-center gap-1.5 text-xs ${colors.activeBg}${mapRequired ? ` ${STATUS_WARNING.text} border border-dashed ${STATUS_WARNING.borderStrong}` : ""}`}
+              >
                 {mapRequired ? (
                   <MapPin className={`size-3 shrink-0 ${STATUS_WARNING.text}`} />
                 ) : (
                   <span className={`size-1.5 shrink-0 rounded-full ${colors.dot}`} />
                 )}
-                {tabLabels[categoryType]}{count > 0 ? ` (${count})` : ""}
+                {tabLabels[categoryType]}
+                {count > 0 ? ` (${count})` : ""}
               </TabsTrigger>
             );
           })}
@@ -2088,10 +2757,18 @@ export function CategoryStep() {
           const entries = categoriesByType.get(categoryType) ?? [];
           const mapRequired = Boolean(PROXIMITY_CATEGORY_CONFIG[categoryType]) && !hasLocation;
           return (
-            <TabsContent key={categoryType} value={categoryType} className="grid grid-cols-1 gap-4 mt-4">
+            <TabsContent
+              key={categoryType}
+              value={categoryType}
+              className="grid grid-cols-1 gap-4 mt-4"
+            >
               {mapRequired ? (
-                <div className={`grid gap-2 rounded-lg border border-dashed ${STATUS_WARNING.borderStrong} ${STATUS_WARNING.bgSoft} p-3`}>
-                  <p className={`flex items-center gap-1.5 text-sm ${STATUS_WARNING.textStrong}`}><MapPin size={15} /> {t("category.mapRequired.notice")}</p>
+                <div
+                  className={`grid gap-2 rounded-lg border border-dashed ${STATUS_WARNING.borderStrong} ${STATUS_WARNING.bgSoft} p-3`}
+                >
+                  <p className={`flex items-center gap-1.5 text-sm ${STATUS_WARNING.textStrong}`}>
+                    <MapPin size={15} /> {t("category.mapRequired.notice")}
+                  </p>
                   <Button
                     type="button"
                     variant="outline"
@@ -2121,9 +2798,7 @@ export function CategoryStep() {
                 <div className="grid gap-5">
                   {entries.map((category, idx) => {
                     const occurrence =
-                      entries.length > 1
-                        ? entries.slice(0, idx + 1).length
-                        : undefined;
+                      entries.length > 1 ? entries.slice(0, idx + 1).length : undefined;
                     return (
                       <CategoryCard
                         key={category.id}

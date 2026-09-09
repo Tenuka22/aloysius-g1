@@ -1,5 +1,12 @@
 import { PhoneInput } from "@/components/g1/application/phone-input";
-import { SECTION_COLORS, STATUS_INFO, STATUS_SUCCESS, STATUS_WARNING } from "@/lib/color-classes";
+import {
+  SECTION_COLORS,
+  STATUS_ERROR,
+  STATUS_INFO,
+  STATUS_SUCCESS,
+  STATUS_WARNING,
+} from "@/lib/color-classes";
+import { applicationPdfFilename, downloadApplicationPdf } from "@/lib/g1/application-pdf";
 import {
   type ApplicationDraft,
   type CategoryApplication,
@@ -79,6 +86,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@aloysius-admissions/ui/components/select";
+import { Spinner } from "@aloysius-admissions/ui/components/spinner";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
@@ -89,7 +97,9 @@ import {
   Check,
   Clock3,
   Copy,
+  Download,
   FileSearch,
+  FileText,
   House,
   KeyRound,
   RotateCcw,
@@ -241,7 +251,10 @@ function StepIndicator({
       <CardHeader className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs text-muted-foreground">
-            {t("appForm.stepIndicator.stepOf", { current: clampedCurrent + 1, total: stepLabels.length })}
+            {t("appForm.stepIndicator.stepOf", {
+              current: clampedCurrent + 1,
+              total: stepLabels.length,
+            })}
           </p>
           <h2 className="font-heading text-2xl">{stepLabels[clampedCurrent]}</h2>
         </div>
@@ -1692,6 +1705,13 @@ export function ApplicationForm({
   // the server, so the step transition genuinely waits for the save.
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [pendingSkipAdvance, setPendingSkipAdvance] = useState(false);
+  /**
+   * PDF receipt download. Explicit states rather than a bare boolean so the
+   * button can say what is actually happening: a failed generation must not
+   * look like an idle button the applicant simply forgot to press.
+   */
+  const [pdfState, setPdfState] = useState<"idle" | "generating" | "downloaded" | "error">("idle");
+  const [pdfError, setPdfError] = useState("");
 
   const marksQuery = useQuery({
     queryKey: ["application-marks", draft.accessKey],
@@ -1988,6 +2008,18 @@ export function ApplicationForm({
   };
 
   const back = () => draft.setStep(Math.max(current - 1, 0));
+
+  const runPdfDownload = async () => {
+    setPdfState("generating");
+    setPdfError("");
+    try {
+      await downloadApplicationPdf(useApplicationStore.getState());
+      setPdfState("downloaded");
+    } catch (error) {
+      setPdfState("error");
+      setPdfError(friendlyErrorMessage(error, t("appForm.submitted.pdf.errorTitle")));
+    }
+  };
 
   const copyWithFeedback = (label: string, value: string) => {
     void navigator.clipboard?.writeText(value).then(
@@ -2515,6 +2547,63 @@ export function ApplicationForm({
                     ) : (
                       <>
                         <Copy size={16} /> {t("appForm.submitted.copyKey")}
+                      </>
+                    )}
+                  </Button>
+                </section>
+
+                <section
+                  className="grid content-start gap-3 rounded-2xl border border-border bg-background p-5 sm:p-6"
+                  aria-labelledby="submitted-pdf-heading"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="grid gap-1">
+                      <div className="flex items-center gap-2 text-primary">
+                        <FileText size={18} />
+                        <h2
+                          id="submitted-pdf-heading"
+                          className="text-base font-semibold text-foreground"
+                        >
+                          {t("appForm.submitted.pdf.title")}
+                        </h2>
+                      </div>
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {t("appForm.submitted.pdf.description", {
+                          filename: applicationPdfFilename(draft),
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {pdfState === "error" && (
+                    <p className={`text-sm ${STATUS_ERROR.text}`} role="alert">
+                      {pdfError || t("appForm.submitted.pdf.errorTitle")}
+                    </p>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant={pdfState === "downloaded" ? "outline" : "default"}
+                    className="w-full"
+                    disabled={pdfState === "generating"}
+                    aria-busy={pdfState === "generating"}
+                    onClick={() => void runPdfDownload()}
+                  >
+                    {pdfState === "generating" ? (
+                      <>
+                        <Spinner /> {t("appForm.submitted.pdf.generating")}
+                      </>
+                    ) : pdfState === "downloaded" ? (
+                      <>
+                        <Check size={16} /> {t("appForm.submitted.pdf.downloadAgain")}
+                      </>
+                    ) : pdfState === "error" ? (
+                      <>
+                        <RotateCcw size={16} /> {t("appForm.submitted.pdf.retry")}
+                      </>
+                    ) : (
+                      <>
+                        <Download size={16} /> {t("appForm.submitted.pdf.download")}
                       </>
                     )}
                   </Button>

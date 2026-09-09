@@ -49,7 +49,8 @@ const en = {
   "home.saved.notFound": "No longer exists on the server",
   "home.saved.loadError": "Could not refresh from the database",
   "error.boundary.title": "Something went wrong",
-  "error.boundary.description": "This page could not be displayed. Your saved progress is safe \u2014 try again, or return to the dashboard.",
+  "error.boundary.description":
+    "This page could not be displayed. Your saved progress is safe \u2014 try again, or return to the dashboard.",
   "error.boundary.retry": "Try again",
   "error.boundary.home": "Back to dashboard",
   "error.boundary.details": "Technical details",
@@ -606,6 +607,15 @@ const en = {
   "appForm.submitted.accessKeyDescription":
     "This key lets you view or update this child's application.",
   "appForm.submitted.copyKey": "Copy key",
+  "appForm.submitted.pdf.title": "Your application record",
+  "appForm.submitted.pdf.description":
+    "A PDF copy of everything you entered, saved as {filename}. Keep it for the interview.",
+  "appForm.submitted.pdf.download": "Download PDF",
+  "appForm.submitted.pdf.generating": "Preparing your PDF\u2026",
+  "appForm.submitted.pdf.downloaded": "Downloaded",
+  "appForm.submitted.pdf.downloadAgain": "Download again",
+  "appForm.submitted.pdf.errorTitle": "Could not create the PDF",
+  "appForm.submitted.pdf.retry": "Try again",
   "appForm.submitted.copied": "Copied",
   "appForm.submitted.nextSteps.badge": "Next steps",
   "appForm.submitted.nextSteps.title": "Keep your application within reach",

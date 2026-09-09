@@ -48,7 +48,8 @@ const si = {
   "home.saved.notFound": "සර්වරයේ (Server) තවදුරටත් නොපවතී",
   "home.saved.loadError": "දත්ත සමුදායෙන් යාවත්කාලීන කිරීමට නොහැකි විය",
   "error.boundary.title": "දෝෂයක් සිදු විය",
-  "error.boundary.description": "මෙම පිටුව පෙන්වීමට නොහැකි විය. ඔබගේ සුරැකූ ප්‍රගතිය ආරක්ෂිතයි — නැවත උත්සාහ කරන්න, නැතහොත් පැනලයට ආපසු යන්න.",
+  "error.boundary.description":
+    "මෙම පිටුව පෙන්වීමට නොහැකි විය. ඔබගේ සුරැකූ ප්‍රගතිය ආරක්ෂිතයි — නැවත උත්සාහ කරන්න, නැතහොත් පැනලයට ආපසු යන්න.",
   "error.boundary.retry": "නැවත උත්සාහ කරන්න",
   "error.boundary.home": "පැනලයට ආපසු යන්න",
   "error.boundary.details": "තාක්ෂණික විස්තර",
@@ -587,6 +588,15 @@ const si = {
   "appForm.submitted.accessKeyDescription":
     "මෙම සංකේතය මඟින් ඔබට මෙම අයදුම්පත නැරඹීමට හෝ යාවත්කාලීන කිරීමට හැක.",
   "appForm.submitted.copyKey": "සංකේතය පිටපත් කරන්න",
+  "appForm.submitted.pdf.title": "ඔබගේ අයදුම්පත් සටහන",
+  "appForm.submitted.pdf.description":
+    "ඔබ ඇතුලත් කරන ලද සියලු තොරතුරු {filename} ලෙස PDF ගොනුවක සුරැකේ. සම්මුඛ පරීක්ෂණය සඳහා එය තබා ගන්න.",
+  "appForm.submitted.pdf.download": "PDF බාගන්න",
+  "appForm.submitted.pdf.generating": "PDF සකසමින් පවතී…",
+  "appForm.submitted.pdf.downloaded": "බාගත කර ගත්තා",
+  "appForm.submitted.pdf.downloadAgain": "නැවත බාගන්න",
+  "appForm.submitted.pdf.errorTitle": "PDF සාදන්න නොහැකි විය",
+  "appForm.submitted.pdf.retry": "නැවත උත්සාහ කරන්න",
   "appForm.submitted.copied": "පිටපත් කරගන්නා ලදී",
   "appForm.submitted.nextSteps.badge": "ඊළඟ පියවර",
   "appForm.submitted.nextSteps.title": "ඔබගේ අයදුම්පත් සංකේත සුරක්ෂිතව තබා ගන්න",
