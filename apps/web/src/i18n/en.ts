@@ -76,20 +76,11 @@ const en = {
   "home.loadKey.submit": "Open application",
   "home.loadKey.error.empty": "Enter an access key",
 
-  // ─── routes/application.access.tsx ────────────────────────────
-  "access.title": "Load an application",
-  "access.description":
-    "Use a session code to identify the child, then verify it with the private access key or QR code. A saved key can also be verified directly.",
-  "access.sessionPlaceholder": "26ABC123 (optional)",
-  "access.findApplication": "Find application",
-  "access.foundDescription": "{applicantName} · {status}. Enter the matching access key below.",
-  "access.privateKeyPlaceholder": "Private access key",
-  "access.cancel": "Cancel",
-  "access.verifyAndLoad": "Verify and load",
-  "access.error.sessionNotFound": "That session code was not found.",
-  "access.error.invalidSessionCode": "Enter a valid session code",
-  "access.error.keyMismatch": "That access key does not match this session code",
-  "access.error.keyNotFound": "That application key was not found. Check it and try again.",
+  // \u2500\u2500\u2500 routes/application.index.tsx (key not found) \u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  "application.keyNotFound.title": "Application not found",
+  "application.keyNotFound.description":
+    "That access key was not found. Check the link or QR code and try again.",
+  "application.keyNotFound.backToDashboard": "Back to dashboard",
 
   // ─── components/sign-in-form.tsx ──────────────────────────────
   "signIn.title": "Welcome Back",
@@ -146,6 +137,7 @@ const en = {
   "location.resolved.networkHint":
     "This is an approximate city-level estimate from your internet connection, not a device location. Adjust the pin if needed.",
   "location.noPointHint": "Select a point on the map or use your device location to continue.",
+  "location.clearSelection": "Clear selection",
   "location.latestSaved.title": "Latest saved location",
   "location.latestSaved.deviceLocation": "Device location",
   "location.latestSaved.mapSelection": "Map selection",
@@ -400,6 +392,8 @@ const en = {
   "appForm.birthCert.skippedNotice": "Skipped \u2014 you'll need to add this before submitting.",
   "appForm.birthCert.alreadySkippedNotice":
     "Already skipped \u2014 enter the number below or continue without it.",
+  "appForm.birthCert.skippedPreviouslyNotice":
+    "Previously skipped \u2014 you can update or remove this field.",
   "appForm.birthCert.duplicateLink": "View existing application options",
   "appForm.birthCert.duplicateTitle": "Existing application found",
   "appForm.birthCert.duplicateDescription":
@@ -451,6 +445,7 @@ const en = {
   "appForm.applicantStep.mediumRestriction":
     "This school does not accept applicants in this education medium.",
   "appForm.applicantStep.dateOfBirth": "Date of birth",
+  "appForm.applicantStep.dateOfBirthRuleAria": "Age requirement for this intake",
   "appForm.applicantStep.dateOfBirthDescription":
     "The child must be exactly five years old on 31 January 2027 \u2014 born between {earliest} and {latest}.",
   "appForm.applicantStep.dateOfBirthCurrentAge": "Current age: {years} years, {months} months.",
@@ -478,19 +473,26 @@ const en = {
   "appForm.residenceStep.heading": "Where does the family live?",
   "appForm.residenceStep.description":
     "Provide the permanent residence first, then add current details if different. The circular requires residence to be supported by official documents and, where applicable, GN certification.",
-  "appForm.residenceStep.permanentAddress": "Permanent address",
-  "appForm.residenceStep.permanentAddressPlaceholder": "House number, street, town",
-  "appForm.residenceStep.currentAddress": "Current address",
-  "appForm.residenceStep.currentAddressPlaceholder": "Current address",
-  "appForm.residenceStep.sameAsPermanent": "Current address is the same as permanent address",
+  "appForm.residenceStep.permanentAddressEn": "Permanent address (English)",
+  "appForm.residenceStep.permanentAddressEnPlaceholder": "House number, street, town",
+  "appForm.residenceStep.permanentAddressSi": "Permanent address (Sinhala)",
+  "appForm.residenceStep.sinhalaKeyboardLink": "Need a Sinhala phonetic keyboard? Open Helakuru",
+  "appForm.residenceStep.addressDiffers": "Current address is different from the permanent address",
+  "appForm.residenceStep.currentAddressEn": "Current address (English)",
+  "appForm.residenceStep.currentAddressEnPlaceholder": "House number, street, town",
+  "appForm.residenceStep.currentAddressSi": "Current address (Sinhala)",
   "appForm.residenceStep.district": "District",
   "appForm.residenceStep.districtPlaceholder": "Search district",
   "appForm.residenceStep.districtEmpty": "No district found.",
   "appForm.residenceStep.dsDivision": "Divisional Secretariat division",
   "appForm.residenceStep.dsDivisionPlaceholder": "Search DS division",
+  "appForm.residenceStep.dsDivisionLocked": "Select a district first",
+  "appForm.residenceStep.dsDivisionLockedHint": "Choose a district above to search its DS divisions.",
   "appForm.residenceStep.dsDivisionEmpty": "No division found.",
   "appForm.residenceStep.gnDivision": "Grama Niladhari division",
   "appForm.residenceStep.gnDivisionPlaceholder": "Search GN division",
+  "appForm.residenceStep.gnDivisionLocked": "Select a DS division first",
+  "appForm.residenceStep.gnDivisionLockedHint": "Choose a DS division above to search its GN divisions.",
   "appForm.residenceStep.gnDivisionEmpty": "No division found.",
   "appForm.residenceStep.electoralDistrict": "Electoral district",
   "appForm.residenceStep.electoralDistrictPlaceholder": "Search electoral district",
@@ -525,13 +527,18 @@ const en = {
   "appForm.reviewStep.fields.guardianNic": "Guardian NIC",
   "appForm.reviewStep.fields.phone": "Phone number",
   "appForm.reviewStep.fields.guardianEmail": "Guardian email",
-  "appForm.reviewStep.fields.permanentAddress": "Permanent address",
-  "appForm.reviewStep.fields.currentAddress": "Current address",
+  "appForm.reviewStep.fields.locationAddress": "Home location address",
+  "appForm.reviewStep.fields.permanentAddressEn": "Permanent address (English)",
+  "appForm.reviewStep.fields.permanentAddressSi": "Permanent address (Sinhala)",
+  "appForm.reviewStep.fields.currentAddressEn": "Current address (English)",
+  "appForm.reviewStep.fields.currentAddressSi": "Current address (Sinhala)",
   "appForm.reviewStep.fields.district": "District",
   "appForm.reviewStep.fields.dsDivision": "Divisional Secretariat division",
   "appForm.reviewStep.fields.gnDivision": "Grama Niladhari division",
   "appForm.reviewStep.fields.electoralDistrict": "Electoral district",
   "appForm.reviewStep.status.notCompleted": "Not completed",
+  "appForm.reviewStep.status.notProvided": "Not provided",
+  "appForm.reviewStep.status.sameAsPermanent": "Same as permanent address",
   "appForm.reviewStep.status.notSelected": "Not selected",
   "appForm.reviewStep.status.noneSelected": "None selected",
   "appForm.reviewStep.none": "-",
@@ -579,6 +586,8 @@ const en = {
   "appForm.accessKey.copyAriaLabel": "Copy access key",
   "appForm.accessKey.hint":
     "This key authorizes you to view, change, and edit this application again. Store it safely.",
+  "appForm.accessKey.copy": "Copy",
+  "appForm.accessKey.copied": "Copied",
   "appForm.submitted.statusBadge": "Submission complete",
   "appForm.submitted.title": "Application submitted successfully.",
   "appForm.submitted.description":
@@ -627,6 +636,7 @@ const en = {
   "appForm.submitted.changesByAdmin": "Changes made by admin ({count})",
   "appForm.buttons.back": "Back",
   "appForm.buttons.continue": "Continue",
+  "appForm.buttons.continueSkipped": "Continue without it",
   "appForm.buttons.collectionOnly": "Submission opens 9 Sep 2026",
   "appForm.buttons.collectionOnlyAriaLabel": "Update application - submission opens 9 Sep 2026",
   "appForm.buttons.updateApplication": "Update application",
@@ -666,6 +676,7 @@ const en = {
   "appForm.buttons.applicantInfo": "Applicant information",
   "appForm.buttons.applicantInfoDescription":
     "G1 2026 intake · Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.",
+  "appForm.buttons.applicantInfoToggle": "Your session code and access key",
 
   // ─── components/application/category-step.tsx ─────────────────
   "category.tabLabels.6_1": "Residence & Proximity",
@@ -693,8 +704,6 @@ const en = {
   "category.sectionHeading.description":
     "Choose only the circular categories that describe your application. Each category is scored separately out of 100, and you can add a category more than once when the scheme asks for separate records.",
   "category.sectionHeading.categoriesSelected": "{count} {plural} selected",
-  "category.sectionHeading.addRemoveHint": "Add or remove entries as you gather documents.",
-  "category.sectionHeading.draftSaves": "Your draft saves after every change",
   "category.sectionHeading.markingCategoryBadge": "Marking category",
   "category.sectionHeading.entryNumber": " – entry {number}",
   "category.sectionHeading.locked": "Locked",
@@ -702,8 +711,13 @@ const en = {
   "category.buttons.lock": "Lock",
   "category.buttons.edit": "Edit",
   "category.buttons.remove": "Remove",
+  "category.removeConfirm.title": "Remove this category?",
+  "category.removeConfirm.description": "This removes {category} and everything entered for it from your draft. This cannot be undone.",
+  "category.removeConfirm.cancel": "Keep it",
+  "category.removeConfirm.confirm": "Remove category",
   "category.buttons.addCategory": "+ Add {category}",
-  "category.noEntries": "No entries added yet. Click the button above to add one.",
+  "category.noEntries.title": "No entries yet",
+  "category.noEntries.description": "Add an entry once you have the supporting documents for this category.",
   "category.mapRequired.notice":
     "This category needs your home location for proximity scoring. Set it in the Location step before adding this category.",
   "category.mapRequired.configureLink": "Go to Location step",

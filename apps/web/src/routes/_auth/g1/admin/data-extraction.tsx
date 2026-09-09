@@ -53,8 +53,10 @@ const residenceFields: FieldGroup = {
   title: "Residence Information",
   description: "Address and administrative division details",
   fields: [
-    { field: "residence.permanentAddress", type: "string", source: "form", description: "Permanent residential address", required: true },
-    { field: "residence.currentAddress", type: "string", source: "form", description: "Current living address" },
+    { field: "residence.permanentAddressEn", type: "string", source: "form", description: "Permanent residential address (English)", required: true },
+    { field: "residence.permanentAddressSi", type: "string", source: "form", description: "Permanent residential address (Sinhala)" },
+    { field: "residence.currentAddressEn", type: "string", source: "form", description: "Current living address (English)" },
+    { field: "residence.currentAddressSi", type: "string", source: "form", description: "Current living address (Sinhala)" },
     { field: "residence.sameAsPermanent", type: "boolean", source: "form", description: "Whether current address equals permanent" },
     { field: "residence.district", type: "string", source: "form", description: "District (e.g., Galle)" },
     { field: "residence.dsDivision", type: "string", source: "form", description: "Divisional Secretariat division" },

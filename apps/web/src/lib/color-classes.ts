@@ -53,6 +53,9 @@ export const STATUS_WARNING = {
   bgSolid: "bg-amber-500",
   border: "border-amber-500/20",
   borderStrong: "border-amber-500/30",
+  // Solid counterpart to borderDash, for outlining a whole section that is
+  // in a skipped/outstanding state.
+  borderSolid: "border-amber-400",
   borderDash: "border-dashed border-amber-400",
   hoverBg: "hover:bg-amber-200",
   // Button variants such as `outline` set `hover:text-foreground`, which wins
@@ -213,6 +216,7 @@ export const CATEGORY_COLORS = {
     text: "text-sky-700",
     border: "border-sky-500",
     bg: "bg-sky-500/10",
+    headerBg: "bg-sky-500/5",
     activeBg: "data-[state=active]:bg-sky-600 data-[state=active]:text-white",
   },
   "6.2": {
@@ -220,6 +224,7 @@ export const CATEGORY_COLORS = {
     text: "text-violet-700",
     border: "border-violet-500",
     bg: "bg-violet-500/10",
+    headerBg: "bg-violet-500/5",
     activeBg: "data-[state=active]:bg-violet-600 data-[state=active]:text-white",
   },
   "6.3": {
@@ -227,6 +232,7 @@ export const CATEGORY_COLORS = {
     text: "text-emerald-700",
     border: "border-emerald-500",
     bg: "bg-emerald-500/10",
+    headerBg: "bg-emerald-500/5",
     activeBg: "data-[state=active]:bg-emerald-600 data-[state=active]:text-white",
   },
   "6.4": {
@@ -234,6 +240,7 @@ export const CATEGORY_COLORS = {
     text: "text-amber-700",
     border: "border-amber-500",
     bg: "bg-amber-500/10",
+    headerBg: "bg-amber-500/5",
     activeBg: "data-[state=active]:bg-amber-500 data-[state=active]:text-white",
   },
   "6.5": {
@@ -241,6 +248,7 @@ export const CATEGORY_COLORS = {
     text: "text-rose-700",
     border: "border-rose-500",
     bg: "bg-rose-500/10",
+    headerBg: "bg-rose-500/5",
     activeBg: "data-[state=active]:bg-rose-600 data-[state=active]:text-white",
   },
   "6.6": {
@@ -248,6 +256,7 @@ export const CATEGORY_COLORS = {
     text: "text-orange-700",
     border: "border-orange-500",
     bg: "bg-orange-500/10",
+    headerBg: "bg-orange-500/5",
     activeBg: "data-[state=active]:bg-orange-600 data-[state=active]:text-white",
   },
 } as const;

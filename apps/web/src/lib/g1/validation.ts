@@ -27,8 +27,10 @@ export const guardianStepSchema = z.object({
 });
 
 export const residenceStepSchema = z.object({
-  permanentAddress: z.string().min(1, "Permanent address is required"),
-  currentAddress: z.string().min(1, "Current address is required"),
+  permanentAddressEn: z.string().min(1, "Permanent address (English) is required"),
+  permanentAddressSi: z.string().optional(),
+  currentAddressEn: z.string().min(1, "Current address (English) is required"),
+  currentAddressSi: z.string().optional(),
   sameAsPermanent: z.boolean().optional(),
   district: z.string().min(1, "District is required"),
   dsDivision: z.string().min(1, "Divisional Secretariat division is required"),

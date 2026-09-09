@@ -105,13 +105,15 @@ describe("guardianStepSchema", () => {
 });
 
 describe("residenceStepSchema", () => {
-  const base = { permanentAddress: "12 Temple Rd", currentAddress: "12 Temple Rd", district: "Gampaha", dsDivision: "Gampaha", gnDivision: "Wewaldeniya", electoralDistrict: "Gampaha" };
+  const base = { permanentAddressEn: "12 Temple Rd", currentAddressEn: "12 Temple Rd", district: "Gampaha", dsDivision: "Gampaha", gnDivision: "Wewaldeniya", electoralDistrict: "Gampaha" };
   it("accepts a complete residence", () => expect(residenceStepSchema.safeParse(base).success).toBe(true));
-  it("accepts currentAddress and sameAsPermanent", () =>
-    expect(residenceStepSchema.safeParse({ ...base, currentAddress: "12 Temple Rd", sameAsPermanent: true }).success).toBe(true));
+  it("accepts currentAddressEn and sameAsPermanent", () =>
+    expect(residenceStepSchema.safeParse({ ...base, currentAddressEn: "12 Temple Rd", sameAsPermanent: true }).success).toBe(true));
+  it("accepts an omitted Sinhala address", () =>
+    expect(residenceStepSchema.safeParse(base).success).toBe(true));
   it.each([
-    ["permanentAddress", "permanentAddress", ""],
-    ["currentAddress", "currentAddress", ""],
+    ["permanentAddressEn", "permanentAddressEn", ""],
+    ["currentAddressEn", "currentAddressEn", ""],
     ["district", "district", ""],
     ["dsDivision", "dsDivision", ""],
     ["gnDivision", "gnDivision", ""],

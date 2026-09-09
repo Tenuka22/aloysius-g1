@@ -118,8 +118,10 @@ const guardian = {
 };
 
 const residence = {
-  permanentAddress: "123 Temple St, Galle",
-  currentAddress: "456 Park Rd, Galle",
+  permanentAddressEn: "123 Temple St, Galle",
+  permanentAddressSi: "",
+  currentAddressEn: "456 Park Rd, Galle",
+  currentAddressSi: "",
   sameAsPermanent: false,
   district: "Galle",
   dsDivision: "Galle",

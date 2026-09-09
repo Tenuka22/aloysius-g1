@@ -11,8 +11,16 @@ from urllib.parse import quote
 
 from scrapling.fetchers import StealthyFetcher
 
-from .match_logic import accept, review_needed, school_aware_score
+from .match_logic import (
+    accept,
+    is_galle_coordinate,
+    location_corroborated,
+    location_hints,
+    review_needed,
+    school_aware_score,
+)
 from .models import MapSchool, SourceSchool
+from .pdf import is_primary_school
 
 MAPS_URL = "https://www.google.com/maps"
 GOVERNMENT_SCHOOL_SEARCH_URL = "https://www.google.com/maps/search/Government+school/@6.0359809,80.2093232,17z?entry=ttu&g_ep=EgoyMDI2MDgyNi4wIKXMDSoASAFQAw%3D%3D"
@@ -68,8 +76,7 @@ def _name_match_score(source: str, result: str) -> float:
     return SequenceMatcher(None, source_name, result_name).ratio()
 
 
-def _is_galle_coordinate(latitude: float | None, longitude: float | None) -> bool:
-    return latitude is not None and longitude is not None and 5.6 <= latitude <= 6.6 and 79.7 <= longitude <= 80.7
+_is_galle_coordinate = is_galle_coordinate  # historical name
 
 
 def record_attempt(
@@ -295,7 +302,7 @@ class GoogleMapsScraper:
         )
         return results
 
-    def search_school(self, school: SourceSchool) -> MapSchool | None:
+    def search_school(self, school: SourceSchool, *, used_place_ids: set[str] | None = None) -> MapSchool | None:
         query = f"{school.name}, {school.address}, Galle, Sri Lanka"
         results = self.search_and_extract(query, limit=3)
         if not results:
@@ -304,7 +311,31 @@ class GoogleMapsScraper:
         # Rank candidates with the school-aware matcher rather than picking the
         # one that merely shares a name token, so a result Google spells
         # differently (abbreviations, "K.V." vs "Vidyalaya", ...) still surfaces.
-        return max(results, key=lambda result: school_aware_score(school.name, result.name))
+        # Cards whose place_id was already claimed by another listing row are
+        # skipped: sibling schools with near-identical names ("X M.V." /
+        # "X K.V.", "Harumalgoda East/West") share almost every query token,
+        # and without this the second school inherited the first one's pin.
+        hints = location_hints(school.address, school.division, school.name)
+        source_is_primary = is_primary_school(school)
+        candidates = [
+            result
+            for result in results
+            if not (used_place_ids and result.place_id and result.place_id in used_place_ids)
+        ]
+        if not candidates:
+            return None
+
+        def rank(result: MapSchool) -> tuple[float, bool]:
+            ok, score = accept(
+                school.name,
+                result.name,
+                source_is_primary=source_is_primary,
+                result_address=result.address,
+                location_hints=hints,
+            )
+            return (score if ok else 0.0, location_corroborated(result.address, hints))
+
+        return max(candidates, key=rank)
 
     def scrape_coordinates(
         self,
@@ -362,14 +393,21 @@ class GoogleMapsScraper:
             if school_id in source_by_id
             and result.latitude is not None
             and result.longitude is not None
+            and _is_galle_coordinate(result.latitude, result.longitude)
             and (result.url or "").startswith("https://www.google.com/maps")
         }
         used_school_ids = set(cache)
+        # A place_id is one real Google place, so it may be assigned to at most
+        # one listing row.  Village-only rows ("Yatagala K.V.") used to grab
+        # whatever card ranked first, including a sibling school's card.
+        used_place_ids = {result.place_id for result in cache.values() if result.place_id}
         matches = 0
 
         attempts_path = cache_path.with_name("map_attempts.json")
         attempts = load_attempts(attempts_path)
         for result in results:
+            if result.place_id and result.place_id in used_place_ids:
+                continue
             candidates = sorted(
                 (
                     (_name_match_score(school.name, result.name), school)
@@ -386,6 +424,8 @@ class GoogleMapsScraper:
                 continue
             cache[school.school_id] = result
             used_school_ids.add(school.school_id)
+            if result.place_id:
+                used_place_ids.add(result.place_id)
             attempts.pop(school.school_id, None)
             matches += 1
             print(f"  -> {school.school_id}: {school.name} <= {result.name} ({score:.2f})")
@@ -416,7 +456,7 @@ class GoogleMapsScraper:
         for index, school in enumerate(pending, 1):
             school_id = school.school_id
             try:
-                result = self.search_school(school)
+                result = self.search_school(school, used_place_ids=used_place_ids)
             except Exception as exc:  # noqa: BLE001
                 attempts[school_id] = record_attempt("error", note=f"{type(exc).__name__}: {exc}"[:200])
                 print(f"  [{index}/{len(pending)}] {school_id}: {school.name} -- ERROR {exc}")
@@ -425,10 +465,18 @@ class GoogleMapsScraper:
                     attempts[school_id] = record_attempt("no-result")
                     print(f"  [{index}/{len(pending)}] {school_id}: {school.name} -- NO RESULT")
                 else:
-                    ok, score = accept(school.name, result.name)
+                    ok, score = accept(
+                        school.name,
+                        result.name,
+                        source_is_primary=is_primary_school(school),
+                        result_address=result.address,
+                        location_hints=location_hints(school.address, school.division, school.name),
+                    )
                     if ok:
                         cache[school_id] = result
                         used_school_ids.add(school_id)
+                        if result.place_id:
+                            used_place_ids.add(result.place_id)
                         attempts.pop(school_id, None)
                         accepted_new += 1
                         note = "" if score >= 0.94 else " (school-aware match)"

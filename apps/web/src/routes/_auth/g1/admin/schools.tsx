@@ -203,7 +203,10 @@ function AdminSchoolsPage() {
       })
       .filter(({ school, status }) => {
         if (filter === "missing" && status !== "missing") return false;
-        if (filter === "located" && status !== "located") return false;
+        // "Located" means "has a pin", scraped or manual alike. Filtering out
+        // manual rows here emptied the tab (and contradicted its badge) whenever
+        // every coordinate came from seeded overrides.
+        if (filter === "located" && status === "missing") return false;
         if (filter === "manual" && status !== "manual") return false;
         if (q && !`${school.en} ${school.id} ${school.dsId}`.toLowerCase().includes(q)) return false;
         return true;
@@ -213,7 +216,12 @@ function AdminSchoolsPage() {
   useEffect(() => { setPage(0); }, [filter, query]);
 
   const totalPages = Math.ceil(rows.length / pageSize);
-  const paginatedRows = rows.slice(page * pageSize, (page + 1) * pageSize);
+  // Switching tabs or typing a query can leave `page` past the last page of the
+  // new result set ("Located" has fewer rows than "Missing"), which rendered
+  // an empty list under a selected tab. Clamp instead of only resetting on the
+  // next effect pass.
+  const safePage = Math.min(page, Math.max(0, totalPages - 1));
+  const paginatedRows = rows.slice(safePage * pageSize, (safePage + 1) * pageSize);
 
   const openEditor = (school: School) => {
     const override = schoolCoordinateOverride(school.id);
@@ -230,6 +238,7 @@ function AdminSchoolsPage() {
   const countBadge = (f: Filter) => {
     if (f === "missing") return schools.filter((s) => s.lat === null && !schoolCoordinateOverride(s.id)).length;
     if (f === "manual") return schools.filter((s) => schoolCoordinateOverride(s.id) !== undefined).length;
+    // Same rule as the tab filter: any pin counts as located, manual included.
     if (f === "located") return located;
     return schools.length;
   };
@@ -251,7 +260,7 @@ function AdminSchoolsPage() {
             Every Galle government school needs coordinates for distance scoring and map views. Schools the scraper could not pin down are listed first - find them via Google Maps / Earth and set the pin manually. Manual coordinates are stored in the database and shared everywhere.
           </p>
         </div>
-        <Button variant="secondary" render={<Link to="/g1/admin/admin_map" />}><MapPin size={17} /> Open map view</Button>
+        <Button variant="secondary" render={<Link to="/g1/admin/admin_map" search={true} />}><MapPin size={17} /> Open map view</Button>
       </div>
 
       <Card className="mb-6">
@@ -358,27 +367,27 @@ function AdminSchoolsPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between border-t pt-3">
               <span className="text-xs text-muted-foreground">
-                Page {page + 1} of {totalPages} · {rows.length} school{rows.length !== 1 ? "s" : ""}
+                Page {safePage + 1} of {totalPages} · {rows.length} school{rows.length !== 1 ? "s" : ""}
               </span>
               <div className="flex items-center gap-1">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={page === 0}
+                  disabled={safePage === 0}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                 >
                   <ChevronLeft size={14} /> Prev
                 </Button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const start = Math.max(0, Math.min(page - 2, totalPages - 5));
+                  const start = Math.max(0, Math.min(safePage - 2, totalPages - 5));
                   const pageNum = start + i;
                   if (pageNum >= totalPages) return null;
                   return (
                     <Button
                       key={pageNum}
                       type="button"
-                      variant={pageNum === page ? "default" : "outline"}
+                      variant={pageNum === safePage ? "default" : "outline"}
                       size="sm"
                       className="min-w-[2rem] px-1"
                       onClick={() => setPage(pageNum)}
@@ -391,7 +400,7 @@ function AdminSchoolsPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={page >= totalPages - 1}
+                  disabled={safePage >= totalPages - 1}
                   onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 >
                   Next <ChevronRight size={14} />

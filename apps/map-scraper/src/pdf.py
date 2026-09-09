@@ -1,102 +1,107 @@
 from __future__ import annotations
 
+import csv
 import re
 from pathlib import Path
 
 from .models import SourceSchool
 
-# schools.txt is the layout-preserving text extraction of the 2018
-# "List of Government Schools" PDF, which laid its rows out in fixed-width
-# columns. Those column offsets survive the extraction, so rows can be sliced
-# positionally when the whitespace-splitting heuristics below fall short.
-NAME_START = 40
-ADDRESS_START = 145
-CONTACT_START = 248
+# schools.csv is the formatted conversion of the 2018 "List of Government
+# Schools" PDF (island-wide, one row per school).  The raw fixed-width text
+# extraction (schools.txt) it was made from is deleted; the one-time converter
+# lives in apps/map-scraper/convert_schools_csv.py.
+DEFAULT_CSV_NAME = "schools.csv"
 
-TAIL_COLUMNS = 11
+# The listing writes these two sex values out in full; downstream code only
+# understands Male/Female/Mixed (both variants are mixed-sex schools).
+_SEX_ALIASES = {
+    "Girls Schools with boys in Primary or A/L": "Mixed",
+    "Boys School with Girls in Primary or A/L": "Mixed",
+}
 
 
 def _clean(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
-def _parse_row(line: str) -> SourceSchool | None:
-    parts = line.split()
-    if len(parts) < 4 or not parts[0].isdigit() or not parts[1].isdigit() or not parts[2].isdigit():
-        return None
-
-    province_index = line.find("Southern")
-    if province_index < 0:
-        return None
-
-    columns = re.split(r"\s{2,}", line[province_index:].strip())
-    if len(columns) < TAIL_COLUMNS:
-        return None
-
-    province, district, zone, division, medium, sex, government_type, school_category, grade_span, difficulty, total = columns[:TAIL_COLUMNS]
-    if district.casefold() != "galle":
-        return None
-    if province.casefold() != "southern":
-        return None
-    if sex == "Boys School with Girls in Primary or A/L":
-        sex = "Mixed"
-    if sex not in {"Male", "Female", "Mixed"}:
-        return None
-    if government_type not in {"National", "Provincial"}:
-        return None
-    if not total.isdigit():
-        return None
-
-    prefix = line[:province_index].strip()
-    fields = re.split(r"\s{3,}", prefix)
-    if len(fields) >= 4:
-        name = _clean(fields[3])
-        address = _clean(fields[4]) if len(fields) >= 5 else ""
-        contact = _clean(" ".join(fields[5:])) if len(fields) >= 6 else ""
-    else:
-        name = _clean(line[NAME_START:ADDRESS_START])
-        address = _clean(line[ADDRESS_START:CONTACT_START])
-        contact = _clean(line[CONTACT_START:province_index])
-    if not name:
-        return None
-
-    return SourceSchool(
-        sequence=int(parts[0]),
-        school_id=parts[1],
-        census_no=int(parts[2]),
-        name=name,
-        address=address,
-        contact=contact,
-        province=province,
-        district=district,
-        zone=zone,
-        division=division,
-        medium=medium,
-        sex=sex,
-        government_type=government_type,
-        school_category=school_category,
-        grade_span=grade_span,
-        difficulty=difficulty,
-        total_students=int(total),
-    )
+def _parse_row(row: dict[str, str], line_no: int) -> SourceSchool:
+    try:
+        school = SourceSchool(
+            sequence=int(row["seq_no"]),
+            school_id=row["school_id"],
+            census_no=int(row["census_no"]),
+            name=_clean(row["name"]),
+            address=_clean(row["address"]),
+            contact=_clean(row["tel"]),
+            province=row["province"],
+            district=row["district"],
+            zone=row["zone"],
+            division=row["division"],
+            medium=row["medium"],
+            sex=_SEX_ALIASES.get(row["sex"], row["sex"]),
+            government_type=row["government_type"],
+            school_category=row["school_category"],
+            grade_span=row["grade_span"],
+            difficulty=row["difficulty"],
+            total_students=int(row["total_students"]),
+        )
+    except (KeyError, ValueError) as exc:
+        raise ValueError(f"schools.csv line {line_no}: bad row ({exc})") from exc
+    if not school.name:
+        raise ValueError(f"schools.csv line {line_no}: empty name")
+    if not school.school_id:
+        raise ValueError(f"schools.csv line {line_no}: empty school_id")
+    return school
 
 
-def parse_galle_schools(source_path: Path) -> list[SourceSchool]:
-    """Extract every Southern/Galle row from the 2018 government-school listing."""
+def load_schools(
+    source_path: Path,
+    *,
+    district: str | None = "Galle",
+) -> list[SourceSchool]:
+    """Read the formatted school listing.
+
+    ``district=None`` returns the whole island; the default keeps the historic
+    Galle-only behaviour of the pipeline.
+    """
+    if not source_path.exists():
+        raise FileNotFoundError(
+            f"{source_path} not found - it is generated from the ministry listing "
+            f"by convert_schools_csv.py (see apps/map-scraper/README.md)"
+        )
     schools: list[SourceSchool] = []
     seen_ids: set[str] = set()
-
-    for line in source_path.read_text(encoding="utf-8").splitlines():
-        school = _parse_row(line)
-        if school is None or school.school_id in seen_ids:
-            continue
-        seen_ids.add(school.school_id)
-        schools.append(school)
+    with source_path.open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for line_no, row in enumerate(reader, 2):
+            if district is not None and row.get("district") != district:
+                continue
+            school = _parse_row(row, line_no)
+            if school.school_id in seen_ids:
+                continue
+            seen_ids.add(school.school_id)
+            schools.append(school)
 
     schools.sort(key=lambda school: school.sequence)
     if not schools:
-        raise ValueError(f"No Galle schools found in {source_path}")
+        raise ValueError(f"No {district or 'any'} schools found in {source_path}")
     return schools
+
+
+def parse_galle_schools(source_path: Path) -> list[SourceSchool]:
+    """Backward-compatible alias for load_schools(..., district='Galle')."""
+    return load_schools(source_path, district="Galle")
+
+
+def is_primary_school(school: SourceSchool) -> bool:
+    """Whether the listing's grade span marks this as a primary-only school.
+
+    Some rows carry no primary marker in their name ("YATAGALA MALCOM
+    VIDYALAYA", Type 3, Grade 1-5) yet Google correctly lists them as
+    "... Primary School".  The grade span is authoritative metadata.
+    """
+    span = school.grade_span.casefold().replace(" ", "")
+    return span in {"grade1-5", "grade1-4", "grade1", "grade01-05"}
 
 
 def display_name(source_name: str) -> str:

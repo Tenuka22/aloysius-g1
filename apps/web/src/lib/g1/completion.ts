@@ -23,7 +23,7 @@ export function completionPercent(data: CompletionData | null | undefined): numb
         data.guardian?.email,
     ),
     Boolean(
-      data.residence?.permanentAddress &&
+      data.residence?.permanentAddressEn &&
         data.residence?.district &&
         data.residence?.dsDivision &&
         data.residence?.gnDivision &&

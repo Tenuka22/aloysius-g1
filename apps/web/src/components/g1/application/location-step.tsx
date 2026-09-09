@@ -1,7 +1,7 @@
 import { useEffect, lazy, useMemo, useRef, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { LocateFixed, MapPin, TriangleAlert } from "lucide-react";
+import { LocateFixed, MapPin, TriangleAlert, X } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Field, FieldLabel, FieldDescription } from "@aloysius-admissions/ui/components/field";
 import { Input } from "@aloysius-admissions/ui/components/input";
@@ -29,7 +29,7 @@ const LocationStepMap = lazy(() => import("./location-step-map"));
 
 
 
-export function LocationStep({ value, defaultValue, onChange, onAvailabilityChange, readOnly = false, autoRequestLocation = true, deviceLocationHistory = [], userLocationHistory = [] }: { value: LocationValue; defaultValue: LocationValue; onChange: (value: LocationValue, defaultValue?: LocationValue) => void; onAvailabilityChange?: (canProceed: boolean) => void; readOnly?: boolean; autoRequestLocation?: boolean; deviceLocationHistory?: LocationValue[]; userLocationHistory?: LocationValue[] }) {
+export function LocationStep({ value, defaultValue, onChange, onAvailabilityChange, readOnly = false, autoRequestLocation = true, deviceLocationHistory = [], userLocationHistory = [], skipped = false, onClear }: { value: LocationValue; defaultValue: LocationValue; onChange: (value: LocationValue, defaultValue?: LocationValue) => void; onAvailabilityChange?: (canProceed: boolean) => void; readOnly?: boolean; autoRequestLocation?: boolean; deviceLocationHistory?: LocationValue[]; userLocationHistory?: LocationValue[]; skipped?: boolean; onClear?: () => void }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState(value.address || value.label);
   const [status, setStatus] = useState<StatusKey>("");
@@ -223,7 +223,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         )}
 
         {locationError && !readOnly && (
-          <div className={`grid gap-3 rounded-lg border ${STATUS_WARNING.borderStrong} ${STATUS_WARNING.bgIcon} p-3`} role="alert">
+          <div className={`grid gap-3 rounded-lg border ${STATUS_WARNING.borderStrong} bg-transparent p-3`} role="alert">
             <div className="flex items-start gap-2 text-sm">
               <TriangleAlert size={17} className={`mt-0.5 shrink-0 ${STATUS_WARNING.text}`} />
               <div>
@@ -261,11 +261,31 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
                 </p>
               )}
             </div>
+            {!readOnly && onClear && (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setQuery("");
+                    setStatus("");
+                    setDeviceAccuracy(null);
+                    setLocationError(null);
+                    onClear();
+                  }}
+                >
+                  <X size={14} /> {t("location.clearSelection")}
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
-        {value.latitude === null && !locationError && (
-          <p className="text-sm text-muted-foreground"><TriangleAlert size={16} /> {t("location.noPointHint")}</p>
+        {/* Once skipped, the step is passable, so telling the applicant a
+            point is needed "to continue" would contradict the skip notice. */}
+        {value.latitude === null && !locationError && !skipped && (
+          <p className="text-sm text-muted-foreground flex flex-row gap-2 items-center"><TriangleAlert size={16} /> {t("location.noPointHint")}</p>
         )}
 
         {previousLocations.length > 0 && (

@@ -17,7 +17,7 @@ function withSection(draft: Draft, section: keyof Draft, completed: boolean): Dr
       if (completed) next.guardian = { relationship: "Mother", fullName: "Mala", nic: "901234567V", phone: "+94712345678", whatsappPhone: "", email: "mala@x.com" };
       break;
     case "residence":
-      if (completed) next.residence = { permanentAddress: "12 Rd", currentAddress: "", sameAsPermanent: false, district: "Gampaha", dsDivision: "Gampaha", gnDivision: "Wewaldeniya", electoralDistrict: "Gampaha", districtSearch: "", dsSearch: "", gnSearch: "", electoralSearch: "" };
+      if (completed) next.residence = { permanentAddressEn: "12 Rd", permanentAddressSi: "", currentAddressEn: "", currentAddressSi: "", sameAsPermanent: false, district: "Gampaha", dsDivision: "Gampaha", gnDivision: "Wewaldeniya", electoralDistrict: "Gampaha", districtSearch: "", dsSearch: "", gnSearch: "", electoralSearch: "" };
       break;
     case "declaration":
       if (completed) next.declaration = { confirmed: true, consent: true };

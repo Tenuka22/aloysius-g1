@@ -48,8 +48,10 @@ const SECTION_FIELD_LABELS: Record<string, Record<string, string>> = {
     email: "Email address",
   },
   residence: {
-    permanentAddress: "Permanent address",
-    currentAddress: "Current address",
+    permanentAddressEn: "Permanent address (English)",
+    permanentAddressSi: "Permanent address (Sinhala)",
+    currentAddressEn: "Current address (English)",
+    currentAddressSi: "Current address (Sinhala)",
     district: "District",
     dsDivision: "DS division",
     gnDivision: "GN division",
@@ -94,8 +96,10 @@ const SECTION_FIELD_TYPES: Record<string, Record<string, FieldType>> = {
     email: "email",
   },
   residence: {
-    permanentAddress: "address",
-    currentAddress: "address",
+    permanentAddressEn: "address",
+    permanentAddressSi: "address",
+    currentAddressEn: "address",
+    currentAddressSi: "address",
     district: "select",
     dsDivision: "select",
     gnDivision: "select",
@@ -512,8 +516,10 @@ export function AdminApplicationView({ id }: { id: string }) {
               <div>
                 <h3 className="font-semibold mb-3">Residence</h3>
                 <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
-                  <Value label="Permanent address" value={data.residence.permanentAddress} type="address" />
-                  <Value label="Current address" value={data.residence.currentAddress} type="address" />
+                  <Value label="Permanent address (English)" value={data.residence.permanentAddressEn} type="address" />
+                  <Value label="Permanent address (Sinhala)" value={data.residence.permanentAddressSi} type="address" />
+                  <Value label="Current address (English)" value={data.residence.currentAddressEn} type="address" />
+                  <Value label="Current address (Sinhala)" value={data.residence.currentAddressSi} type="address" />
                   <Value label="District" value={data.residence.district} type="select" />
                   <Value label="DS division" value={data.residence.dsDivision} type="select" />
                   <Value label="GN division" value={data.residence.gnDivision} type="select" />

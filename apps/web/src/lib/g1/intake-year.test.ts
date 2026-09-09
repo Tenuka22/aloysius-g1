@@ -24,6 +24,18 @@ describe("intakeYearSearchSchema", () => {
     expect(intakeYearSearchSchema.parse({ intakeYear: undefined })).toEqual({ intakeYear: INTAKE_YEAR_DEFAULT });
   });
 
+  it("strips JSON quotes from a hand-written URL value", () => {
+    // A URL like `?intakeYear=%222027%22` (JSON-quoted by an older serializer or
+    // pasted by hand) used to coerce to `"2027"` WITH literal quotes, which then
+    // matched no data on any admin query.
+    expect(intakeYearSearchSchema.parse({ intakeYear: '"2027"' })).toEqual({ intakeYear: "2027" });
+  });
+
+  it("falls back to the default for empty or quote-only values", () => {
+    expect(intakeYearSearchSchema.parse({ intakeYear: "" })).toEqual({ intakeYear: INTAKE_YEAR_DEFAULT });
+    expect(intakeYearSearchSchema.parse({ intakeYear: '""' })).toEqual({ intakeYear: INTAKE_YEAR_DEFAULT });
+  });
+
   it("strips unknown keys rather than passing them through", () => {
     const result = intakeYearSearchSchema.parse({ intakeYear: "2027", mode: "edit" });
     expect(result).toEqual({ intakeYear: "2027" });

@@ -143,14 +143,6 @@
     "place_id": "0x3ae16db1fd7292e7:0x361bd8ad2aedb2",
     "url": "https://www.google.com/maps/place/Angulugaha+Maha+Vidyalaya/data=!4m7!3m6!1s0x3ae16db1fd7292e7:0x361bd8ad2aedb2!8m2!3d6.0342215!4d80.315198!16s%2Fg%2F1tl7m43h!19sChIJ55Jy_bFt4ToRsu0qrdgbNgA?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
-  "0706001": {
-    "name": "G/Deerananda Maha Vidyalaya",
-    "latitude": 6.0889494,
-    "longitude": 80.1560648,
-    "address": "35Q4+HCG, Boossa",
-    "place_id": "0x3ae176ee77e49db1:0xd48cc59295efe0b8",
-    "url": "https://www.google.com/maps/place/G%2FDeerananda+Maha+Vidyalaya/data=!4m7!3m6!1s0x3ae176ee77e49db1:0xd48cc59295efe0b8!8m2!3d6.0889494!4d80.1560648!16s%2Fg%2F11hbmdnmpb!19sChIJsZ3kd-524ToRuODvlZLFjNQ?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0715010": {
     "name": "Christ Church Girls' College - Baddegama ක්‍රිස්තුදේව බාලිකා විද්‍යාලය - බද්දේගම",
     "latitude": 6.1761206,
@@ -215,14 +207,6 @@
     "place_id": "0x3ae181a7a396f325:0x90815c38a11c9bdd",
     "url": "https://www.google.com/maps/place/Sripathi+Maha+Vidyalaya/@6.2576929,80.0551681,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae181a7a396f325:0x90815c38a11c9bdd!8m2!3d6.2576929!4d80.0551681!16s%2Fg%2F11r8_jb3x?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0710009": {
-    "name": "Heenatiya",
-    "latitude": 6.2735429,
-    "longitude": 80.0541909,
-    "address": null,
-    "place_id": "0x3ae1805597baf51b:0x429cf98a3c1e54a9",
-    "url": "https://www.google.com/maps/place/Heenatiya/data=!4m7!3m6!1s0x3ae1805597baf51b:0x429cf98a3c1e54a9!8m2!3d6.2735429!4d80.0541909!16s%2Fg%2F11b6_cghlr!19sChIJG_W6l1WA4ToRqVQePIr5nEI?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0710014": {
     "name": "Siri Abhayathissa Maha Vidyalaya",
     "latitude": 6.2717307,
@@ -238,14 +222,6 @@
     "address": "827V+M5M, Ahungalla - Uragaha Road, Ahungalla",
     "place_id": "0x3ae22a782e687e69:0xeafa86d95f88d1dd",
     "url": "https://www.google.com/maps/place/Ahungalla+New+Model+School/@6.3142178,80.0429264,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae22a782e687e69:0xeafa86d95f88d1dd!8m2!3d6.3142178!4d80.0429264!16s%2Fg%2F1ptxtd4dv?entry=ttu&g_ep=EgoyMDI2MDkwMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0707002": {
-    "name": "Batapola",
-    "latitude": 6.2241821,
-    "longitude": 80.1138369,
-    "address": null,
-    "place_id": "0x3ae178b0f15203d7:0x582dd6969438203c",
-    "url": "https://www.google.com/maps/place/Batapola/@6.2216622,80.1134722,14z/data=!3m1!4b1!4m6!3m5!1s0x3ae178b0f15203d7:0x582dd6969438203c!8m2!3d6.2241821!4d80.1138369!16s%2Fm%2F0463m7x?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
   "0707003": {
     "name": "Sri Devananda College",
@@ -263,14 +239,6 @@
     "place_id": "0x3ae1819d7b53c0af:0xf98afbec6263b0a4",
     "url": "https://www.google.com/maps/place/Dharmasoka+College/@6.2406941,80.0537641,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae1819d7b53c0af:0xf98afbec6263b0a4!8m2!3d6.2406941!4d80.0537641!16s%2Fm%2F03cbsqj?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0707006": {
-    "name": "Nindana",
-    "latitude": 6.20709,
-    "longitude": 80.1079608,
-    "address": null,
-    "place_id": "0x3ae17898094a2eeb:0x8eea16231ebae1b8",
-    "url": "https://www.google.com/maps/place/Nindana/@6.208099,80.1083879,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae17898094a2eeb:0x8eea16231ebae1b8!8m2!3d6.20709!4d80.1079608!16s%2Fg%2F11rfrnz1mm?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
   "0707008": {
     "name": "Saralankara Maha Vidyalaya",
     "latitude": 6.1467971,
@@ -279,46 +247,6 @@
     "place_id": "0x3ae1782a8741753f:0x80db333916249766",
     "url": "https://www.google.com/maps/place/Saralankara+Maha+Vidyalaya/@6.1467971,80.1399452,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae1782a8741753f:0x80db333916249766!8m2!3d6.1467971!4d80.1399452!16s%2Fg%2F11cmsmngyb?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0715001": {
-    "name": "Ginimellagaha",
-    "latitude": 6.136193,
-    "longitude": 80.1774231,
-    "address": null,
-    "place_id": "0x3ae17b48d9f0773f:0xc58f22aeb45dfea6",
-    "url": "https://www.google.com/maps/place/Ginimellagaha/data=!4m7!3m6!1s0x3ae17b48d9f0773f:0xc58f22aeb45dfea6!8m2!3d6.136193!4d80.1774231!16s%2Fg%2F11jbdxn3_z!19sChIJP3fw2Uh74ToRpv5dtK4ij8U?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0715003": {
-    "name": "Majuwana",
-    "latitude": 6.1531357,
-    "longitude": 80.170217,
-    "address": "553C+73, Baddegama",
-    "place_id": "0x3ae179e6c2ba8f73:0x48e765ae3a5b455f",
-    "url": "https://www.google.com/maps/place/Majuwana/data=!4m7!3m6!1s0x3ae179e6c2ba8f73:0x48e765ae3a5b455f!8m2!3d6.1531357!4d80.170217!16s%2Fg%2F11k530vyf8!19sChIJc4-6wuZ54ToRX0VbOq5l50g?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0707017": {
-    "name": "Dorala",
-    "latitude": 6.2286216,
-    "longitude": 80.1386714,
-    "address": null,
-    "place_id": "0x3ae178d4e10211e3:0x56f1c28ccf1d794e",
-    "url": "https://www.google.com/maps/place/Dorala,+Batapola/@6.226958,80.1400689,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae178d4e10211e3:0x56f1c28ccf1d794e!8m2!3d6.2286216!4d80.1386714!16s%2Fg%2F12hnlv9kv?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0715004": {
-    "name": "Halpathota",
-    "latitude": 6.1741432,
-    "longitude": 80.1665806,
-    "address": null,
-    "place_id": "0x3ae179966bcccfa7:0x7cfba6d0f1e00632",
-    "url": "https://www.google.com/maps/place/Halpathota/data=!4m7!3m6!1s0x3ae179966bcccfa7:0x7cfba6d0f1e00632!8m2!3d6.1741432!4d80.1665806!16s%2Fg%2F1hc1_j_8f!19sChIJp8_Ma5Z54ToRMgbg8dCm-3w?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0707023": {
-    "name": "Meetiyagoda",
-    "latitude": 6.1898343,
-    "longitude": 80.0953942,
-    "address": null,
-    "place_id": "0x3ae18278b66c18c7:0xff2b1b135b34079",
-    "url": "https://www.google.com/maps/place/Meetiyagoda/data=!4m7!3m6!1s0x3ae18278b66c18c7:0xff2b1b135b34079!8m2!3d6.1898343!4d80.0953942!16s%2Fg%2F1w3w1h4b!19sChIJxxhstniC4ToReUCzNbGx8g8?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0709001": {
     "name": "Karandeniya Central College",
     "latitude": 6.2729055,
@@ -326,14 +254,6 @@
     "address": "73FW+5C7, Karandeniya",
     "place_id": "0x3ae1802ae80ccdbb:0x468a9a6c0c423da5",
     "url": "https://www.google.com/maps/place/Karandeniya+Central+College/@6.2729055,80.0960525,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae1802ae80ccdbb:0x468a9a6c0c423da5!8m2!3d6.2729055!4d80.0960525!16s%2Fm%2F0crcyl2?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0709002": {
-    "name": "Yatagala",
-    "latitude": 6.3365163,
-    "longitude": 80.0898085,
-    "address": null,
-    "place_id": "0x3ae22ace99f5771f:0x4751a68ea6fd129a",
-    "url": "https://www.google.com/maps/place/Yatagala/data=!4m7!3m6!1s0x3ae22ace99f5771f:0x4751a68ea6fd129a!8m2!3d6.3365163!4d80.0898085!16s%2Fg%2F11rfrp4njz!19sChIJH3f1mc4q4joRmhL9po6mUUc?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0709003": {
     "name": "Bandula Senadheera Maha Vidyalaya",
@@ -359,22 +279,6 @@
     "place_id": "0x3ae22aaded2f2ecd:0x223c39438206a348",
     "url": "https://www.google.com/maps/place/Sri+Vipulasara+Maha+Vidyalaya/@6.3226778,80.0939637,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae22aaded2f2ecd:0x223c39438206a348!8m2!3d6.3226778!4d80.0939637!16s%2Fg%2F1tfl_x00?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0717002": {
-    "name": "Agaliya",
-    "latitude": 6.19972,
-    "longitude": 80.19354,
-    "address": null,
-    "place_id": "0x3ae17bda06e613cf:0xc537835db6c55845",
-    "url": "https://www.google.com/maps/place/Agaliya/data=!4m7!3m6!1s0x3ae17bda06e613cf:0xc537835db6c55845!8m2!3d6.19972!4d80.19354!16s%2Fg%2F11ldhdtj_m!19sChIJzxPmBtp74ToRRVjFtl2DN8U?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0709016": {
-    "name": "Kiripedda",
-    "latitude": 6.2676932,
-    "longitude": 80.1214096,
-    "address": null,
-    "place_id": "0x3ae17f0b38f4d7a1:0xc5d514e90dd6b30d",
-    "url": "https://www.google.com/maps/place/Kiripedda/data=!4m7!3m6!1s0x3ae17f0b38f4d7a1:0xc5d514e90dd6b30d!8m2!3d6.2676932!4d80.1214096!16s%2Fg%2F11ptv9yxb4!19sChIJodf0OAt_4ToRDbPWDekU1cU?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0709011": {
     "name": "Mahagoda",
     "latitude": 6.2587503,
@@ -382,22 +286,6 @@
     "address": null,
     "place_id": "0x3ae181ba33747c77:0xb33a65102b55113a",
     "url": "https://www.google.com/maps/place/Mahagoda/data=!4m7!3m6!1s0x3ae181ba33747c77:0xb33a65102b55113a!8m2!3d6.2587503!4d80.0688587!16s%2Fg%2F11fn1s8lbh!19sChIJd3x0M7qB4ToROhFVKxBlOrM?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0709015": {
-    "name": "G/ Thalgahawaththa K.V",
-    "latitude": 6.2876119,
-    "longitude": 80.1117708,
-    "address": "74Q6+2PR, Thalgahawaththa, Mahaedanda - Atakohota Road, Karandeniya 80360",
-    "place_id": "0x3ae17f5987779847:0xb545640870c6b5b",
-    "url": "https://www.google.com/maps/place/G%2F+Thalgahawaththa+K.V/@6.2876119,80.1117708,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae17f5987779847:0xb545640870c6b5b!8m2!3d6.2876119!4d80.1117708!16s%2Fg%2F11flqszkmg?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0709017": {
-    "name": "Yatagala",
-    "latitude": 6.3365163,
-    "longitude": 80.0898085,
-    "address": null,
-    "place_id": "0x3ae22ace99f5771f:0x4751a68ea6fd129a",
-    "url": "https://www.google.com/maps/place/Yatagala/data=!4m7!3m6!1s0x3ae22ace99f5771f:0x4751a68ea6fd129a!8m2!3d6.3365163!4d80.0898085!16s%2Fg%2F11rfrp4njz!19sChIJH3f1mc4q4joRmhL9po6mUUc?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0709018": {
     "name": "Beligaswella K.V.",
@@ -407,46 +295,6 @@
     "place_id": "0x3ae3d5467af7c273:0x100c4d63f5708010",
     "url": "https://www.google.com/maps/place/Beligaswella+K.V./@6.3251082,80.1107531,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae3d5467af7c273:0x100c4d63f5708010!8m2!3d6.3251082!4d80.1107531!16s%2Fg%2F11sb9dyqrt?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0709021": {
-    "name": "Kaluwalagoda",
-    "latitude": 6.3158451,
-    "longitude": 80.1065646,
-    "address": null,
-    "place_id": "0x3ae3d5570bb2d2f7:0x2b6bd95b9897b800",
-    "url": "https://www.google.com/maps/place/Kaluwalagoda/data=!4m7!3m6!1s0x3ae3d5570bb2d2f7:0x2b6bd95b9897b800!8m2!3d6.3158451!4d80.1065646!16s%2Fg%2F11q260sl7v!19sChIJ99KyC1fV4zoRALiXmFvZays?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0709022": {
-    "name": "Karandeniya",
-    "latitude": 6.2705454,
-    "longitude": 80.0911693,
-    "address": null,
-    "place_id": "0x3ae181d2d5030051:0x4ca48deb1176537",
-    "url": "https://www.google.com/maps/place/Karandeniya/data=!4m7!3m6!1s0x3ae181d2d5030051:0x4ca48deb1176537!8m2!3d6.2705454!4d80.0911693!16s%2Fg%2F1td08c2h!19sChIJUQAD1dKB4ToRN2UXsd5IygQ?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0717013": {
-    "name": "Pathawelivitiya",
-    "latitude": 6.1868807,
-    "longitude": 80.2181886,
-    "address": null,
-    "place_id": "0x3ae17a4d05d83ff7:0xb6167b8db151ea3b",
-    "url": "https://www.google.com/maps/place/Pathawelivitiya/@6.1872241,80.2187606,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae17a4d05d83ff7:0xb6167b8db151ea3b!8m2!3d6.1868807!4d80.2181886!16s%2Fg%2F11q2606ysz?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0709025": {
-    "name": "Batukanaththa",
-    "latitude": 6.3578805,
-    "longitude": 80.0664906,
-    "address": "9358+5H5",
-    "place_id": "0x3ae22b1c09e89c55:0xaa38b8d5dcbe363d",
-    "url": "https://www.google.com/maps/place/Batukanaththa/data=!4m7!3m6!1s0x3ae22b1c09e89c55:0xaa38b8d5dcbe363d!8m2!3d6.3578805!4d80.0664906!16s%2Fg%2F11fk3s99yh!19sChIJVZzoCRwr4joRPTa-3NW4OKo?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0709128": {
-    "name": "Randenigama",
-    "latitude": 6.2760985,
-    "longitude": 80.0715975,
-    "address": "Randenigama",
-    "place_id": "0x3ae181006d611b13:0x779f8219a9f4742e",
-    "url": "https://www.google.com/maps/place/Randenigama/data=!4m7!3m6!1s0x3ae181006d611b13:0x779f8219a9f4742e!8m2!3d6.2760985!4d80.0715975!16s%2Fg%2F11x72qjpcv!19sChIJExthbQCB4ToRLnT0qRmCn3c?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0708117": {
     "name": "G/Elakaka M V",
     "latitude": 6.4366413,
@@ -454,22 +302,6 @@
     "address": "CXPW+M92, Colombo - Galle - Hambantota - Wellawaya Hwy, Aluthgama",
     "place_id": "0x3ae22e8823bd538f:0x9fdaa5be3cf804d4",
     "url": "https://www.google.com/maps/place/G%2FElakaka+M+V/data=!4m7!3m6!1s0x3ae22e8823bd538f:0x9fdaa5be3cf804d4!8m2!3d6.4366413!4d79.9958898!16s%2Fg%2F11c30ppzbk!19sChIJj1O9I4gu4joR1AT4PL6l2p8?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0708119": {
-    "name": "Induruwa",
-    "latitude": 6.3771134,
-    "longitude": 80.0171609,
-    "address": null,
-    "place_id": "0x3ae22be7abbe1427:0xd31b88cea3c3131d",
-    "url": "https://www.google.com/maps/place/Induruwa/data=!4m7!3m6!1s0x3ae22be7abbe1427:0xd31b88cea3c3131d!8m2!3d6.3771134!4d80.0171609!16s%2Fg%2F1tfh3249!19sChIJJxS-q-cr4joRHRPDo86IG9M?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0708120": {
-    "name": "Miriswaththa",
-    "latitude": 6.38112,
-    "longitude": 80.05684,
-    "address": null,
-    "place_id": "0x3ae22b768570926b:0x93bf4dbb68cab89d",
-    "url": "https://www.google.com/maps/place/Miriswaththa/data=!4m7!3m6!1s0x3ae22b768570926b:0x93bf4dbb68cab89d!8m2!3d6.38112!4d80.05684!16s%2Fg%2F11sbpz15q9!19sChIJa5JwhXYr4joRnbjKaLtNv5M?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0708121": {
     "name": "Galbada Athuruwella Maha Vidyalaya",
@@ -479,22 +311,6 @@
     "place_id": "0x3ae22bfdf3f69229:0x36263903b4adba92",
     "url": "https://www.google.com/maps/place/Galbada+Athuruwella+Maha+Vidyalaya/@6.3889736,80.0091257,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae22bfdf3f69229:0x36263903b4adba92!8m2!3d6.3889736!4d80.0091257!16s%2Fg%2F11b77pb3sm?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0708125": {
-    "name": "Dedduwa",
-    "latitude": 6.4035924,
-    "longitude": 80.0283415,
-    "address": null,
-    "place_id": "0x3ae22c0d3c3d955f:0x81379316a4a9e00",
-    "url": "https://www.google.com/maps/place/Dedduwa/data=!4m7!3m6!1s0x3ae22c0d3c3d955f:0x81379316a4a9e00!8m2!3d6.4035924!4d80.0283415!16s%2Fg%2F11h55nwc4w!19sChIJX5U9PA0s4joRAJ5KajF5Ewg?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0708127": {
-    "name": "Horawala",
-    "latitude": 6.3967806,
-    "longitude": 80.0664142,
-    "address": null,
-    "place_id": "0x3ae22c9d67a1bd0d:0x9fd000f5656146f8",
-    "url": "https://www.google.com/maps/place/Horawala/data=!4m7!3m6!1s0x3ae22c9d67a1bd0d:0x9fd000f5656146f8!8m2!3d6.3967806!4d80.0664142!16s%2Fg%2F1vbl5_v8!19sChIJDb2hZ50s4joR-EZhZfUA0J8?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0708128": {
     "name": "Gurukanda Maha Vidyalaya",
     "latitude": 6.3678433,
@@ -503,62 +319,6 @@
     "place_id": "0x3ae22bd91f7a995b:0xa44af3c332097ba9",
     "url": "https://www.google.com/maps/place/Gurukanda+Maha+Vidyalaya/@6.3678433,80.0117578,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae22bd91f7a995b:0xa44af3c332097ba9!8m2!3d6.3678433!4d80.0117578!16s%2Fg%2F11bzr_c40k?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0708129": {
-    "name": "Kaikawala",
-    "latitude": 6.3730938,
-    "longitude": 80.0129679,
-    "address": null,
-    "place_id": "0x3ae22bde21015d99:0x64f17c4e955c15e4",
-    "url": "https://www.google.com/maps/place/Kaikawala/data=!4m7!3m6!1s0x3ae22bde21015d99:0x64f17c4e955c15e4!8m2!3d6.3730938!4d80.0129679!16s%2Fg%2F12xp_8sm5!19sChIJmV0BId4r4joR5BVclU588WQ?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0708135": {
-    "name": "Haburugala",
-    "latitude": 6.4037013,
-    "longitude": 80.0339312,
-    "address": null,
-    "place_id": "0x3ae22c7484f4bfdd:0xf5683982de527dbd",
-    "url": "https://www.google.com/maps/place/Haburugala/data=!4m7!3m6!1s0x3ae22c7484f4bfdd:0xf5683982de527dbd!8m2!3d6.4037013!4d80.0339312!16s%2Fm%2F0b6p768!19sChIJ3b_0hHQs4joRvX1S3oI5aPU?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0706003": {
-    "name": "Amugoda",
-    "latitude": 6.3212557,
-    "longitude": 80.2188858,
-    "address": null,
-    "place_id": "0x3ae3d625d3265631:0xe6f539dc155c9706",
-    "url": "https://www.google.com/maps/place/Amugoda/@6.3211422,80.2183377,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae3d625d3265631:0xe6f539dc155c9706!8m2!3d6.3212557!4d80.2188858!16s%2Fg%2F1hf30nj5m?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0706005": {
-    "name": "Kahaduwa",
-    "latitude": 6.2234515,
-    "longitude": 80.2126109,
-    "address": null,
-    "place_id": "0x3ae17b8e74f461f9:0x2da3389a44ee2bfb",
-    "url": "https://www.google.com/maps/place/Kahaduwa/@6.222345,80.2156501,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae17b8e74f461f9:0x2da3389a44ee2bfb!8m2!3d6.2234515!4d80.2126109!16s%2Fg%2F1tj1_zn7?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0706007": {
-    "name": "Nawadagala",
-    "latitude": 6.3112355,
-    "longitude": 80.1400671,
-    "address": null,
-    "place_id": "0x3ae17fd39831cb19:0x835be692828e039d",
-    "url": "https://www.google.com/maps/place/Nawadagala/@6.3074214,80.1394176,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae17fd39831cb19:0x835be692828e039d!8m2!3d6.3112355!4d80.1400671!16s%2Fg%2F11fmypzcg7?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0706010": {
-    "name": "Ganegoda",
-    "latitude": 6.0840063,
-    "longitude": 80.2446779,
-    "address": null,
-    "place_id": "0x3ae17197e715b20d:0x5d30f690a1babdf3",
-    "url": "https://www.google.com/maps/place/Ganegoda/data=!4m7!3m6!1s0x3ae17197e715b20d:0x5d30f690a1babdf3!8m2!3d6.0840063!4d80.2446779!16s%2Fg%2F11fm_h_zr4!19sChIJDbIV55dx4ToR8726oZD2MF0?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0706017": {
-    "name": "Thalagaspe",
-    "latitude": 6.3042834,
-    "longitude": 80.2059868,
-    "address": null,
-    "place_id": "0x3ae17ded8dd3209b:0x12480e6f7d7a8ffc",
-    "url": "https://www.google.com/maps/place/Thalagaspe/data=!4m7!3m6!1s0x3ae17ded8dd3209b:0x12480e6f7d7a8ffc!8m2!3d6.3042834!4d80.2059868!16s%2Fm%2F0b6n5pr!19sChIJmyDTje194ToR_I96fW8OSBI?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0706021": {
     "name": "Rathanasiri Royal College",
     "latitude": 6.2992525,
@@ -566,14 +326,6 @@
     "address": "75X4+PM2, Elpitiya 80400",
     "place_id": "0x3ae17e3a31869fc7:0xa27402b52c78413c",
     "url": "https://www.google.com/maps/place/Rathanasiri+Royal+College/@6.2992525,80.156639,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae17e3a31869fc7:0xa27402b52c78413c!8m2!3d6.2992525!4d80.156639!16s%2Fg%2F1wbfyv8r?entry=ttu&g_ep=EgoyMDI2MDkwMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0706029": {
-    "name": "Katandola",
-    "latitude": 6.3017971,
-    "longitude": 80.1958755,
-    "address": null,
-    "place_id": "0x3ae17de5e369dcb9:0x6154d6a5b67e4d44",
-    "url": "https://www.google.com/maps/place/Katandola/data=!4m7!3m6!1s0x3ae17de5e369dcb9:0x6154d6a5b67e4d44!8m2!3d6.3017971!4d80.1958755!16s%2Fg%2F1tzgh1ks!19sChIJudxp4-V94ToRRE1-tqXWVGE?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0714022": {
     "name": "Halvitigala Sri Shariputhra Maha Vidyalaya",
@@ -599,14 +351,6 @@
     "place_id": "0x3ae3d936c21d6eab:0x29b5955d0b11f308",
     "url": "https://www.google.com/maps/place/Neluwa+National+School/@6.3767803,80.3587035,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae3d936c21d6eab:0x29b5955d0b11f308!8m2!3d6.3767803!4d80.3587035!16s%2Fg%2F1tnpjfjq?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0714002": {
-    "name": "Opatha",
-    "latitude": 6.2677693,
-    "longitude": 80.4117869,
-    "address": null,
-    "place_id": "0x3ae160fd045d8a21:0x7b89e493553e266e",
-    "url": "https://www.google.com/maps/place/Opatha/@6.2686532,80.4126478,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae160fd045d8a21:0x7b89e493553e266e!8m2!3d6.2677693!4d80.4117869!16s%2Fg%2F1ptws0nh6?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
   "0714003": {
     "name": "Thawalama Vidyaraja National School",
     "latitude": 6.3401578,
@@ -614,46 +358,6 @@
     "address": "88RM+3M8, Udugama - Hiniduma Rd, Thawalama",
     "place_id": "0x3ae3d8ed0f965957:0x8e2e89e9b2034f52",
     "url": "https://www.google.com/maps/place/Thawalama+Vidyaraja+National+School/@6.3401578,80.3341921,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae3d8ed0f965957:0x8e2e89e9b2034f52!8m2!3d6.3401578!4d80.3341921!16s%2Fg%2F1tjkd704?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0714004": {
-    "name": "Batuwangala",
-    "latitude": 6.3801159,
-    "longitude": 80.3811751,
-    "address": null,
-    "place_id": "0x3ae3dec78ac6b62f:0x739eb140dac82ac",
-    "url": "https://www.google.com/maps/place/Batuwangala/@6.3812814,80.3784549,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae3dec78ac6b62f:0x739eb140dac82ac!8m2!3d6.3801159!4d80.3811751!16s%2Fg%2F1tqtw9mq?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0714006": {
-    "name": "Happitiya",
-    "latitude": 6.3635279,
-    "longitude": 80.4076132,
-    "address": null,
-    "place_id": "0x3ae3de558a2858c9:0xc4df78434f96fedc",
-    "url": "https://www.google.com/maps/place/Happitiya/@6.3645775,80.410533,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae3de558a2858c9:0xc4df78434f96fedc!8m2!3d6.3635279!4d80.4076132!16s%2Fg%2F11rfrnjc5c?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0714007": {
-    "name": "Kadihingala",
-    "latitude": 6.3513041,
-    "longitude": 80.4177884,
-    "address": null,
-    "place_id": "0x3ae3dfaf6f6a7259:0xb3f4c2e42c3db516",
-    "url": "https://www.google.com/maps/place/Kadihingala/data=!4m7!3m6!1s0x3ae3dfaf6f6a7259:0xb3f4c2e42c3db516!8m2!3d6.3513041!4d80.4177884!16s%2Fm%2F0b6ggwb!19sChIJWXJqb6_f4zoRFrU9LOTC9LM?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0714008": {
-    "name": "Lankagama",
-    "latitude": 6.3671372,
-    "longitude": 80.4604643,
-    "address": null,
-    "place_id": "0x3ae3e083bacfc911:0x55ca31b18cf3687b",
-    "url": "https://www.google.com/maps/place/Lankagama/@6.3690395,80.4585044,14z/data=!3m1!4b1!4m6!3m5!1s0x3ae3e083bacfc911:0x55ca31b18cf3687b!8m2!3d6.3671372!4d80.4604643!16s%2Fg%2F11js307gfc?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0714009": {
-    "name": "Lelwala",
-    "latitude": 6.3334807,
-    "longitude": 80.3839246,
-    "address": null,
-    "place_id": "0x3ae3df43e81a5219:0x23a420a12c4a2550",
-    "url": "https://www.google.com/maps/place/Lelwala/data=!4m7!3m6!1s0x3ae3df43e81a5219:0x23a420a12c4a2550!8m2!3d6.3334807!4d80.3839246!16s%2Fm%2F0b6lj4k!19sChIJGVIa6EPf4zoRUCVKLKEgpCM?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0714010": {
     "name": "Mawanana K.V.",
@@ -671,29 +375,13 @@
     "place_id": "0x3ae163a8b06a0309:0x699b6862ed8ab25c",
     "url": "https://www.google.com/maps/place/Panangala+Maha+Bodhi+Maha+Vidyalaya/data=!4m7!3m6!1s0x3ae163a8b06a0309:0x699b6862ed8ab25c!8m2!3d6.2655145!4d80.3259725!16s%2Fg%2F11bbrgk7sk!19sChIJCQNqsKhj4ToRXLKK7WJom2k?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
-  "0714012": {
-    "name": "Thalangalla",
-    "latitude": 6.3079897,
-    "longitude": 80.3587456,
-    "address": null,
-    "place_id": "0x3ae1620284af5e81:0xf4c0eaec8be6664b",
-    "url": "https://www.google.com/maps/place/Thalangalla/@6.3094673,80.3637241,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae1620284af5e81:0xf4c0eaec8be6664b!8m2!3d6.3079897!4d80.3587456!16s%2Fm%2F0b6djgf?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
   "0714013": {
     "name": "Weerapana k v",
-    "latitude": 6.2469412,
-    "longitude": 80.4224759,
-    "address": "6CWC+QXH weerapana, Opatha",
+    "latitude": 6.2722496,
+    "longitude": 80.3019643,
+    "address": "7GX7+F5, Opatha",
     "place_id": "0x3ae161d5dd338c8f:0xcf7729de7d2e0d23",
-    "url": "https://www.google.com/maps/place/Weerapana+k+v/@6.2469412,80.4224759,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae161d5dd338c8f:0xcf7729de7d2e0d23!8m2!3d6.2469412!4d80.4224759!16s%2Fg%2F11fs7_4tr8?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0714035": {
-    "name": "Ihala Lelwala",
-    "latitude": 6.336947,
-    "longitude": 80.3909164,
-    "address": null,
-    "place_id": "0x3ae3df6b3cd996e5:0xfa415c4e85ae7998",
-    "url": "https://www.google.com/maps/place/Ihala+Lelwala/data=!4m7!3m6!1s0x3ae3df6b3cd996e5:0xfa415c4e85ae7998!8m2!3d6.336947!4d80.3909164!16s%2Fg%2F11rfrnqbwn!19sChIJ5ZbZPGvf4zoRmHmuhU5cQfo?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "url": "https://www.google.com/maps/place/Weerapana+k+v/@6.2722496,80.3019643,17z"
   },
   "0714025": {
     "name": "Mawita Model School",
@@ -711,14 +399,6 @@
     "place_id": "0x3ae3ded4e97f8a71:0x5819f556545df0b5",
     "url": "https://www.google.com/maps/place/Medagama+model+school/@6.3636831,80.3675179,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae3ded4e97f8a71:0x5819f556545df0b5!8m2!3d6.3636831!4d80.3675179!16s%2Fg%2F11b6dtcmtk?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0714029": {
-    "name": "Panangala West",
-    "latitude": 6.2738947,
-    "longitude": 80.3171325,
-    "address": null,
-    "place_id": "0x3ae162fdc26b1af1:0x3752591b717c7744",
-    "url": "https://www.google.com/maps/place/Panangala+West/@6.273932,80.3158737,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae162fdc26b1af1:0x3752591b717c7744!8m2!3d6.2738947!4d80.3171325!16s%2Fg%2F1jkxryf9b?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
   "0712002": {
     "name": "Haththaka Maha Vidyalaya",
     "latitude": 6.3586591,
@@ -735,14 +415,6 @@
     "place_id": "0x3ae164a2196ff483:0xe982aef88275aee9",
     "url": "https://www.google.com/maps/place/G%2F+Mapalagama+Central+College/data=!4m7!3m6!1s0x3ae164a2196ff483:0xe982aef88275aee9!8m2!3d6.2271229!4d80.2978796!16s%2Fg%2F1v8kz0vb!19sChIJg_RvGaJk4ToR6a51gviuguk?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
-  "0712003": {
-    "name": "Naranovita",
-    "latitude": 6.2865815,
-    "longitude": 80.223766,
-    "address": null,
-    "place_id": "0x3ae17da4e0315f85:0xc863e3f82eef5bdc",
-    "url": "https://www.google.com/maps/place/Naranovita/data=!4m7!3m6!1s0x3ae17da4e0315f85:0xc863e3f82eef5bdc!8m2!3d6.2865815!4d80.223766!16s%2Fg%2F11rfrp4nk3!19sChIJhV8x4KR94ToR3FvvLvjjY8g?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0711003": {
     "name": "Unanvitiya Sri Rewatha Maha Vidyalaya",
     "latitude": 6.1621941,
@@ -750,14 +422,6 @@
     "address": "Nayapamulla - Unanwitiya - Nagoda Rd, Galle 80110",
     "place_id": "0x3ae17a96f6669fe1:0x8e81d7499ef81435",
     "url": "https://www.google.com/maps/place/Unanvitiya+Sri+Rewatha+Maha+Vidyalaya/@6.1621941,80.251502,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae17a96f6669fe1:0x8e81d7499ef81435!8m2!3d6.1621941!4d80.251502!16s%2Fg%2F11b6zt7jrv?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0711004": {
-    "name": "Yatalamatta",
-    "latitude": 6.1737333,
-    "longitude": 80.2864862,
-    "address": null,
-    "place_id": "0x3ae1653705b268a7:0x993a780eb4e4a9a4",
-    "url": "https://www.google.com/maps/place/Yatalamatta/@6.1728543,80.285629,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae1653705b268a7:0x993a780eb4e4a9a4!8m2!3d6.1737333!4d80.2864862!16s%2Fg%2F1tfvfmyh?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
   "0712006": {
     "name": "Rathanasara Maha Vidyalaya",
@@ -774,22 +438,6 @@
     "address": "865X+89G, Maththaka",
     "place_id": "0x3ae17d001bb199ff:0x7dec984287e3e188",
     "url": "https://www.google.com/maps/place/G%2FWeihena+Siri+Gunarathana+M.V./@6.3083221,80.2484375,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae17d001bb199ff:0x7dec984287e3e188!8m2!3d6.3083221!4d80.2484375!16s%2Fg%2F11ln9by8cm?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0712009": {
-    "name": "Bambarawana",
-    "latitude": 6.3047056,
-    "longitude": 80.2809129,
-    "address": null,
-    "place_id": "0x3ae162b21487dbe9:0xa577d4adfefcbb12",
-    "url": "https://www.google.com/maps/place/Bambarawana/@6.3049972,80.28108,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae162b21487dbe9:0xa577d4adfefcbb12!8m2!3d6.3047056!4d80.2809129!16s%2Fg%2F1hc1l__cs?authuser=0&hl=en&entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0712018": {
-    "name": "Niyagama",
-    "latitude": 6.3083211,
-    "longitude": 80.2485299,
-    "address": null,
-    "place_id": "0x3ae17d1608969ef7:0xfe5b53c69538639d",
-    "url": "https://www.google.com/maps/place/Niyagama/data=!4m7!3m6!1s0x3ae17d1608969ef7:0xfe5b53c69538639d!8m2!3d6.3083211!4d80.2485299!16s%2Fm%2F0g9y4hr!19sChIJ956WCBZ94ToRnWM4lcZTW_4?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0715006": {
     "name": "Wanduramba Central College",
@@ -815,22 +463,6 @@
     "place_id": "0x3ae179ef02ef3837:0xbae9e9accb7a3d02",
     "url": "https://www.google.com/maps/place/G%2FGanegama+North+primary+school/@6.1597359,80.1732012,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae179ef02ef3837:0xbae9e9accb7a3d02!8m2!3d6.1597359!4d80.1732012!16s%2Fg%2F11b7q7qxnc?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0715015": {
-    "name": "Hemmeliya",
-    "latitude": 6.1827724,
-    "longitude": 80.2084273,
-    "address": null,
-    "place_id": "0x3ae17a3630150651:0xad8fbb3e57d06bf6",
-    "url": "https://www.google.com/maps/place/Hemmeliya/data=!4m7!3m6!1s0x3ae17a3630150651:0xad8fbb3e57d06bf6!8m2!3d6.1827724!4d80.2084273!16s%2Fg%2F11hzzyjphb!19sChIJUQYVMDZ64ToR9mvQVz67j60?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0715021": {
-    "name": "Thalawa",
-    "latitude": 6.1424183,
-    "longitude": 80.292059,
-    "address": null,
-    "place_id": "0x3ae16ff165e340c9:0x2dffb86512690eb8",
-    "url": "https://www.google.com/maps/place/Thalawa/data=!4m7!3m6!1s0x3ae16ff165e340c9:0x2dffb86512690eb8!8m2!3d6.1424183!4d80.292059!16s%2Fg%2F11rfrnz9yy!19sChIJyUDjZfFv4ToRuA5pEmW4_y0?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0715027": {
     "name": "Weihena Kanishta Vidyalaya",
     "latitude": 6.1621836,
@@ -846,14 +478,6 @@
     "address": "46X4+W52, Galle",
     "place_id": "0x3ae17a0a3440d635:0xa9b51c209d217da5",
     "url": "https://www.google.com/maps/place/Pilagoda+kanishta+Vidyalaya/data=!4m7!3m6!1s0x3ae17a0a3440d635:0xa9b51c209d217da5!8m2!3d6.1497579!4d80.2053965!16s%2Fg%2F11dxpd05pk!19sChIJNdZANAp64ToRpX0hnSActak?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0711019": {
-    "name": "Gonadeniya",
-    "latitude": 6.2042399,
-    "longitude": 80.3073826,
-    "address": null,
-    "place_id": "0x3ae164e5f7b451c9:0xd943bd85f8024c67",
-    "url": "https://www.google.com/maps/place/Gonadeniya/data=!4m7!3m6!1s0x3ae164e5f7b451c9:0xd943bd85f8024c67!8m2!3d6.2042399!4d80.3073826!16s%2Fg%2F11hzxk5kb5!19sChIJyVG09-Vk4ToRZ0wC-IW9Q9k?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0713005": {
     "name": "Kottawa Kanishta Vidyalaya",
@@ -918,22 +542,6 @@
     "address": "44Q4+PX4, Baddegama Rd, Hikkaduwa",
     "place_id": "0x3ae177fa3912a88d:0x9335d44f970e6cc3",
     "url": "https://www.google.com/maps/place/Mahamaya+Balika+Vidyalaya/@6.1392718,80.1074662,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae177fa3912a88d:0x9335d44f970e6cc3!8m2!3d6.1392718!4d80.1074662!16s%2Fg%2F11dfbcy_6f?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0704016": {
-    "name": "Patuwatha",
-    "latitude": 6.1151652,
-    "longitude": 80.1254113,
-    "address": null,
-    "place_id": "0x3ae177b9bf38781f:0x51a6f0fd8aca276c",
-    "url": "https://www.google.com/maps/place/Patuwatha/data=!4m7!3m6!1s0x3ae177b9bf38781f:0x51a6f0fd8aca276c!8m2!3d6.1151652!4d80.1254113!16s%2Fg%2F1ydnytsh4!19sChIJH3g4v7l34ToRbCfKiv3wplE?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0704017": {
-    "name": "Ranapanadeniya",
-    "latitude": 6.1020144,
-    "longitude": 80.1568134,
-    "address": null,
-    "place_id": "0x3ae176e3ab526577:0xa7bdd5f064ef6187",
-    "url": "https://www.google.com/maps/place/Ranapanadeniya/@6.1020075,80.1571219,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae176e3ab526577:0xa7bdd5f064ef6187!8m2!3d6.1020144!4d80.1568134!16s%2Fg%2F11q260y6wt?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
   "0704018": {
     "name": "Thiranagama Vidyathilaka Vidyalaya",
@@ -1095,30 +703,6 @@
     "place_id": "0x3ae16e0b407a0b4d:0x96b76964fce8df86",
     "url": "https://www.google.com/maps/place/Hiyare+Maha+Vidyalaya/@6.0693033,80.2977633,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae16e0b407a0b4d:0x96b76964fce8df86!8m2!3d6.0693033!4d80.2977633!16s%2Fg%2F1tg5y1gc?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0703015": {
-    "name": "Akmeemana",
-    "latitude": 6.0836306,
-    "longitude": 80.2962385,
-    "address": null,
-    "place_id": "0x3ae16e14119d94c5:0x3af77f9242d33be1",
-    "url": "https://www.google.com/maps/place/Akmeemana/data=!4m7!3m6!1s0x3ae16e14119d94c5:0x3af77f9242d33be1!8m2!3d6.0836306!4d80.2962385!16s%2Fg%2F11cs604ccf!19sChIJxZSdERRu4ToR4TvTQpJ_9zo?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0703017": {
-    "name": "PINNADUWA",
-    "latitude": 6.0515951,
-    "longitude": 80.2572441,
-    "address": "3724+JVQ, Walahanduwa",
-    "place_id": "0x3ae1738073ba94b5:0x3adb1d707b0e0f23",
-    "url": "https://www.google.com/maps/place/PINNADUWA/data=!4m7!3m6!1s0x3ae1738073ba94b5:0x3adb1d707b0e0f23!8m2!3d6.0515951!4d80.2572441!16s%2Fg%2F11y1nctns1!19sChIJtZS6c4Bz4ToRIw8Oe3Ad2zo?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0703018": {
-    "name": "Ankokkawala",
-    "latitude": 6.0532918,
-    "longitude": 80.2809129,
-    "address": null,
-    "place_id": "0x3ae16df7bdf8a557:0x5ce60dd47d255cb2",
-    "url": "https://www.google.com/maps/place/Ankokkawala/data=!4m7!3m6!1s0x3ae16df7bdf8a557:0x5ce60dd47d255cb2!8m2!3d6.0532918!4d80.2809129!16s%2Fg%2F11h54mgncx!19sChIJV6X4vfdt4ToRslwlfdQN5lw?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0703025": {
     "name": "Ihalagoda Sumangala Model School - Galle | ඉහළගොඩ සුමංගල ආදර්ශ විද්‍යාලය - ගාල්ල",
     "latitude": 6.0780841,
@@ -1159,14 +743,6 @@
     "place_id": "0x3ae16d6b6cb43b35:0x99a37495d392dd31",
     "url": "https://www.google.com/maps/place/Lanumodara+Vijaya+Maha+Vidyalaya+(%E0%B6%BD%E0%B6%AB%E0%B7%94%E0%B6%B8%E0%B7%9D%E0%B6%AF%E0%B6%BB+%E0%B7%80%E0%B7%92%E0%B6%A2%E0%B6%BA+%E0%B6%B8%E0%B7%84%E0%B7%8F+%E0%B7%80%E0%B7%92%E0%B6%AF%E0%B7%8A%E2%80%8D%E0%B6%BA%E0%B7%8F%E0%B6%BD%E0%B6%BA)/@6.0065907,80.2972145,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae16d6b6cb43b35:0x99a37495d392dd31!8m2!3d6.0065907!4d80.2972145!16s%2Fg%2F12hmmk0kf?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0702011": {
-    "name": "Wellethota",
-    "latitude": 6.0009954,
-    "longitude": 80.2781262,
-    "address": null,
-    "place_id": "0x3ae16d5ffe12dae1:0xef10701c71c3cd59",
-    "url": "https://www.google.com/maps/place/Wellethota/data=!4m7!3m6!1s0x3ae16d5ffe12dae1:0xef10701c71c3cd59!8m2!3d6.0009954!4d80.2781262!16s%2Fg%2F11nn3hfy8k!19sChIJ4doS_l9t4ToRWc3DcRxwEO8?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0702012": {
     "name": "Badipita Primary School",
     "latitude": 6.0463493,
@@ -1201,11 +777,11 @@
   },
   "0702020": {
     "name": "Harumalgoda East Primary School හරුමල්ගොඩ නැගෙනහිර කණිෂ්ඨ විද්‍යාලය",
-    "latitude": 6.0094046,
-    "longitude": 80.3115358,
-    "address": "2856+QJ7, Habaraduwa",
+    "latitude": 6.0296574,
+    "longitude": 80.2663133,
+    "address": "X969+JX Habaraduwa",
     "place_id": "0x3ae16d77b71efb83:0x99473c07ce5185e7",
-    "url": "https://www.google.com/maps/place/Harumalgoda+East+Primary+School+%E0%B7%84%E0%B6%BB%E0%B7%94%E0%B6%B8%E0%B6%BD%E0%B7%8A%E0%B6%9C%E0%B7%9C%E0%B6%A9+%E0%B6%B1%E0%B7%90%E0%B6%9C%E0%B7%99%E0%B6%B1%E0%B7%84%E0%B7%92%E0%B6%BB+%E0%B6%9A%E0%B6%AB%E0%B7%92%E0%B7%82%E0%B7%8A%E0%B6%A8+%E0%B7%80%E0%B7%92%E0%B6%AF%E0%B7%8A%E2%80%8D%E0%B6%BA%E0%B7%8F%E0%B6%BD%E0%B6%BA/@6.0094046,80.3115358,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae16d77b71efb83:0x99473c07ce5185e7!8m2!3d6.0094046!4d80.3115358!16s%2Fg%2F11hrfwysn9?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "url": "https://www.google.com/maps/place/Harumalgoda+East+Primary+School/@6.0296574,80.2663133,17z"
   },
   "0702022": {
     "name": "Paragoda Sri Gunarathana Primary School.",
@@ -1287,14 +863,6 @@
     "place_id": "0x3ae22c62363a9917:0xf5665e54e761e33d",
     "url": "https://www.google.com/maps/place/G%2FThunduwa+Muslim+Maha+Vidyalaya/data=!4m7!3m6!1s0x3ae22c62363a9917:0xf5665e54e761e33d!8m2!3d6.4105962!4d80.0512731!16s%2Fg%2F11cs6k38dr!19sChIJF5k6NmIs4joRPeNh51ReZvU?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
-  "0711026": {
-    "name": "Thalgaswala",
-    "latitude": 6.2454053,
-    "longitude": 80.2722718,
-    "address": null,
-    "place_id": "0x3ae17cdddaa3ceef:0xda921a36ab61fa6a",
-    "url": "https://www.google.com/maps/place/Thalgaswala/@6.2434999,80.2755037,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae17cdddaa3ceef:0xda921a36ab61fa6a!8m2!3d6.2454053!4d80.2722718!16s%2Fg%2F1tnpjfhl?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
   "0701024": {
     "name": "Uswathun Hasana Maha Vidyalaya",
     "latitude": 6.0323136,
@@ -1359,14 +927,6 @@
     "place_id": "0x3ae16be29441499b:0x23a0334a53b36564",
     "url": "https://www.google.com/maps/place/Nalanda+Primary+School/@6.0358898,80.3815187,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae16be29441499b:0x23a0334a53b36564!8m2!3d6.0358898!4d80.3815187!16s%2Fg%2F11fnvy_v_7?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0706034": {
-    "name": "Elpitiya",
-    "latitude": 6.2903899,
-    "longitude": 80.1624857,
-    "address": null,
-    "place_id": "0x3ae17f01f1a23aa7:0xf86272ea65da996",
-    "url": "https://www.google.com/maps/place/Elpitiya/data=!4m7!3m6!1s0x3ae17f01f1a23aa7:0xf86272ea65da996!8m2!3d6.2903899!4d80.1624857!16s%2Fm%2F0g9ycg3!19sChIJpzqi8QF_4ToRlqldpi4nhg8?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0706033": {
     "name": "Sudaraka Primary School",
     "latitude": 6.3211209,
@@ -1374,14 +934,6 @@
     "address": "86C8+CPX, Amugoda",
     "place_id": "0x3ae3d62422945cfd:0x492270a0797a1f73",
     "url": "https://www.google.com/maps/place/Sudaraka+Primary+School/@6.3211209,80.2168683,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae3d62422945cfd:0x492270a0797a1f73!8m2!3d6.3211209!4d80.2168683!16s%2Fg%2F11cs5ttncx?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0714037": {
-    "name": "Thawalama",
-    "latitude": 6.3351046,
-    "longitude": 80.3413392,
-    "address": null,
-    "place_id": "0x3ae3d895a2e8f533:0x8cb603980e74d90",
-    "url": "https://www.google.com/maps/place/Thawalama/@6.3354738,80.3420734,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae3d895a2e8f533:0x8cb603980e74d90!8m2!3d6.3351046!4d80.3413392!16s%2Fm%2F0g9y358?authuser=0&hl=en&entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
   "0713023": {
     "name": "Magedara Primary School",
@@ -1687,14 +1239,6 @@
     "place_id": "0x3ae17fac8817a8b9:0x691b388775987015",
     "url": "https://www.google.com/maps/place/St.+Mary's+College/@6.2779785,80.1402386,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae17fac8817a8b9:0x691b388775987015!8m2!3d6.2779785!4d80.1402386!16s%2Fg%2F1pp2tjf7v?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0706011": {
-    "name": "St. Theresa Primary School",
-    "latitude": 6.2774136,
-    "longitude": 80.1424905,
-    "address": "74GR+XX9, Ambalangoda - Elpitiya - Pitigala Rd",
-    "place_id": "0x3ae17facaa3b6c03:0xf89209dfc2ebc8c0",
-    "url": "https://www.google.com/maps/place/St.+Theresa+Primary+School/data=!4m7!3m6!1s0x3ae17facaa3b6c03:0xf89209dfc2ebc8c0!8m2!3d6.2774136!4d80.1424905!16s%2Fg%2F1tdkq6rl!19sChIJA2w7qqx_4ToRwMjrwt8Jkvg?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0706012": {
     "name": "Delpona Siri Girimananda Kanishta Vidyalaya",
     "latitude": 6.3382227,
@@ -1745,11 +1289,11 @@
   },
   "0706028": {
     "name": "St. Theresa Primary School",
-    "latitude": 6.2774136,
-    "longitude": 80.1424905,
-    "address": "74GR+XX9, Ambalangoda - Elpitiya - Pitigala Rd",
+    "latitude": 6.2853937,
+    "longitude": 80.1571694,
+    "address": "Elpitiya",
     "place_id": "0x3ae17facaa3b6c03:0xf89209dfc2ebc8c0",
-    "url": "https://www.google.com/maps/place/St.+Theresa+Primary+School/data=!4m7!3m6!1s0x3ae17facaa3b6c03:0xf89209dfc2ebc8c0!8m2!3d6.2774136!4d80.1424905!16s%2Fg%2F1tdkq6rl!19sChIJA2w7qqx_4ToRwMjrwt8Jkvg?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "url": "https://www.google.com/maps/place/St.+Theresa+Primary+School/@6.2853937,80.1571694,17z"
   },
   "0706130": {
     "name": "Awittawa Nalanda Primary School",
@@ -1782,22 +1326,6 @@
     "address": "68QJ+8J4, Gallandala, Udugama",
     "place_id": "0x3ae163860e55241f:0x35c5cfc079b5c3bd",
     "url": "https://www.google.com/maps/place/Gallandala+Kanishta+Vidyalaya/@6.238257,80.3315773,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae163860e55241f:0x35c5cfc079b5c3bd!8m2!3d6.238257!4d80.3315773!16s%2Fg%2F11dxbm7w57?entry=ttu&g_ep=EgoyMDI2MDkwMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0714027": {
-    "name": "Millawa",
-    "latitude": 6.2937958,
-    "longitude": 80.4715866,
-    "address": "7FVC+GJ8",
-    "place_id": "0x3ae15f001a2133b3:0xe6836aea8a07d258",
-    "url": "https://www.google.com/maps/place/Millawa/data=!4m7!3m6!1s0x3ae15f001a2133b3:0xe6836aea8a07d258!8m2!3d6.2937958!4d80.4715866!16s%2Fg%2F11yw_8vfvf!19sChIJszMhGgBf4ToRWNIHiupqg-Y?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0714031": {
-    "name": "Weerapana k v",
-    "latitude": 6.2469412,
-    "longitude": 80.4224759,
-    "address": "6CWC+QXH weerapana, Opatha",
-    "place_id": "0x3ae161d5dd338c8f:0xcf7729de7d2e0d23",
-    "url": "https://www.google.com/maps/place/Weerapana+k+v/data=!4m7!3m6!1s0x3ae161d5dd338c8f:0xcf7729de7d2e0d23!8m2!3d6.2469412!4d80.4224759!16s%2Fg%2F11fs7_4tr8!19sChIJj4wz3dVh4ToRIw0ufd4pd88?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0714032": {
     "name": "Habarakada Dharmapala Junior School",
@@ -1838,14 +1366,6 @@
     "address": "677C+FR6, Mulana",
     "place_id": "0x3ae17b4a31949c37:0xa1c63ea45bd5241a",
     "url": "https://www.google.com/maps/place/Gonalagoda+Vijayabahu+Primary+School/data=!4m7!3m6!1s0x3ae17b4a31949c37:0xa1c63ea45bd5241a!8m2!3d6.2136598!4d80.2720013!16s%2Fg%2F1th5y6rs!19sChIJN5yUMUp74ToRGiTVW6Q-xqE?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0711008": {
-    "name": "Udawelivitithalawa",
-    "latitude": 6.1873951,
-    "longitude": 80.2460718,
-    "address": null,
-    "place_id": "0x3ae17b1e0fd8e00d:0x764b180e84b6ddf7",
-    "url": "https://www.google.com/maps/place/Udawelivitithalawa/data=!4m7!3m6!1s0x3ae17b1e0fd8e00d:0x764b180e84b6ddf7!8m2!3d6.1873951!4d80.2460718!16s%2Fg%2F11hzyf3g7l!19sChIJDeDYDx574ToR9922hA4YS3Y?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0712011": {
     "name": "Waththahena Siri Sucharitha Kanishta Vidyalaya.",
@@ -1926,14 +1446,6 @@
     "address": "Seethagangula, Ganegama, Baddegama B128, 80200 B128, 80200",
     "place_id": "0x3ae17a005cfafe77:0x74e603d8022df413",
     "url": "https://www.google.com/maps/place/St.+Anthony's+(National)+College/@6.1475673,80.1916013,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae17a005cfafe77:0x74e603d8022df413!8m2!3d6.1475673!4d80.1916013!16s%2Fg%2F11c71cm0ng?entry=ttu&g_ep=EgoyMDI2MDkwMS4wIKXMDSoASAFQAw%3D%3D"
-  },
-  "0715016": {
-    "name": "Lelwala",
-    "latitude": 6.3334807,
-    "longitude": 80.3839246,
-    "address": null,
-    "place_id": "0x3ae3df43e81a5219:0x23a420a12c4a2550",
-    "url": "https://www.google.com/maps/place/Lelwala/data=!4m7!3m6!1s0x3ae3df43e81a5219:0x23a420a12c4a2550!8m2!3d6.3334807!4d80.3839246!16s%2Fm%2F0b6lj4k!19sChIJGVIa6EPf4zoRUCVKLKEgpCM?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0715023": {
     "name": "Dolahena Kanishta Vidyalaya",
@@ -2077,7 +1589,7 @@
     "longitude": 80.1560648,
     "address": "35Q4+HCG, Boossa",
     "place_id": "0x3ae176ee77e49db1:0xd48cc59295efe0b8",
-    "url": "https://www.google.com/maps/place/G%2FDeerananda+Maha+Vidyalaya/@6.0889494,80.1560648,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae176ee77e49db1:0xd48cc59295efe0b8!8m2!3d6.0889494!4d80.1560648!16s%2Fg%2F11hbmdnmpb?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "url": "https://www.google.com/maps/place/G%2FDeerananda+Maha+Vidyalaya/@6.0889494,80.1560648,17z"
   },
   "0704020": {
     "name": "Yashodara Sangamiththa Primary",
@@ -2303,14 +1815,6 @@
     "place_id": "0x3ae17259da1d5ea7:0xd4f72b8013f67b5d",
     "url": "https://www.google.com/maps/place/Buonavista+College/data=!4m7!3m6!1s0x3ae17259da1d5ea7:0xd4f72b8013f67b5d!8m2!3d6.0259673!4d80.2435874!16s%2Fg%2F11dxk8xqbl!19sChIJp14d2lly4ToRXXv2E4Ar99Q?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
-  "0702021": {
-    "name": "Harumalgoda East Primary School හරුමල්ගොඩ නැගෙනහිර කණිෂ්ඨ විද්‍යාලය",
-    "latitude": 6.0094046,
-    "longitude": 80.3115358,
-    "address": "2856+QJ7, Habaraduwa",
-    "place_id": "0x3ae16d77b71efb83:0x99473c07ce5185e7",
-    "url": "https://www.google.com/maps/place/Harumalgoda+East+Primary+School+%E0%B7%84%E0%B6%BB%E0%B7%94%E0%B6%B8%E0%B6%BD%E0%B7%8A%E0%B6%9C%E0%B7%9C%E0%B6%A9+%E0%B6%B1%E0%B7%90%E0%B6%9C%E0%B7%99%E0%B6%B1%E0%B7%84%E0%B7%92%E0%B6%BB+%E0%B6%9A%E0%B6%AB%E0%B7%92%E0%B7%82%E0%B7%8A%E0%B6%A8+%E0%B7%80%E0%B7%92%E0%B6%AF%E0%B7%8A%E2%80%8D%E0%B6%BA%E0%B7%8F%E0%B6%BD%E0%B6%BA/data=!4m7!3m6!1s0x3ae16d77b71efb83:0x99473c07ce5185e7!8m2!3d6.0094046!4d80.3115358!16s%2Fg%2F11hrfwysn9!19sChIJg_set3dt4ToR54VRzgc8R5k?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0702023": {
     "name": "G/Prince Gunasekara primary school",
     "latitude": 6.0102958,
@@ -2390,14 +1894,6 @@
     "address": "2975+56G, Ahangama Ampawila Road, Ahangama",
     "place_id": "0x3ae16c98e99e6eb7:0x6f35d717e7ccbce5",
     "url": "https://www.google.com/maps/place/Thiththagalla+Atanikitha+College/data=!4m7!3m6!1s0x3ae16c98e99e6eb7:0x6f35d717e7ccbce5!8m2!3d6.0129382!4d80.3580876!16s%2Fg%2F12hk95wsh!19sChIJt26e6Zhs4ToR5bzM5xfXNW8?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
-  "0702042": {
-    "name": "Dikkumbura",
-    "latitude": 6.0173202,
-    "longitude": 80.3782564,
-    "address": "Ahangama Imaduwa Rd",
-    "place_id": "0x3ae16b708b035ef7:0xd46348ea4063d710",
-    "url": "https://www.google.com/maps/place/Dikkumbura/data=!4m7!3m6!1s0x3ae16b708b035ef7:0xd46348ea4063d710!8m2!3d6.0173202!4d80.3782564!16s%2Fg%2F1thw54q2!19sChIJ914Di3Br4ToRENdjQOpIY9Q?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
   },
   "0702043": {
     "name": "Sri Dharmarama Kanishta Vidyalaya",
@@ -2511,14 +2007,6 @@
     "place_id": "0x3ae181d65d3f3999:0xf849e0a1f638631b",
     "url": "https://www.google.com/maps/place/737W%2BP9W+Mahinda+Rajapaksha+Vidyalaya,+Karandeniya/@6.26447,80.0959915,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae181d65d3f3999:0xf849e0a1f638631b!8m2!3d6.2644251!4d80.0960051!16s%2Fg%2F11b824yqdt?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
-  "0704046": {
-    "name": "Weragoda Vijayaba Secondary School",
-    "latitude": 6.1895953,
-    "longitude": 80.0894349,
-    "address": "Weragoda Dewol Devalaya, B10, Meetiyagoda",
-    "place_id": "0x3ae1827d022f4875:0xc983197c9c357451",
-    "url": "https://www.google.com/maps/place/Weragoda+Vijayaba+Secondary+School/data=!4m7!3m6!1s0x3ae1827d022f4875:0xc983197c9c357451!8m2!3d6.1895953!4d80.0894349!16s%2Fg%2F11cs3zxd16!19sChIJdUgvAn2C4ToRUXQ1nHwZg8k?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
-  },
   "0710030": {
     "name": "Sri Gunananda College",
     "latitude": 6.2700293,
@@ -2542,5 +2030,13 @@
     "address": "44VM+9QQ, Sri Nagitha Nahimi Rd, Gonapinuwala, Sri Lanaka, Gonapinuwala",
     "place_id": "0x3ae177984f163fa3:0xe93b9cbc86e5171e",
     "url": "https://www.google.com/maps/place/Gonapinuwala+Primary+School./data=!4m7!3m6!1s0x3ae177984f163fa3:0xe93b9cbc86e5171e!8m2!3d6.1434518!4d80.1344842!16s%2Fg%2F11h8cb_rcs!19sChIJoz8WT5h34ToRHhflhrycO-k?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+  },
+  "0715017": {
+    "name": "Lelwala",
+    "latitude": 6.1392014,
+    "longitude": 80.2418188,
+    "address": "46QR+MPP, Pahala Lelwala, Wanduramba",
+    "place_id": "0x3ae3df43e81a5219:0x23a420a12c4a2550",
+    "url": "https://www.google.com/maps/place/G%2FWickramasinghe+K.V/@6.1392014,80.2418188,17z"
   }
 }

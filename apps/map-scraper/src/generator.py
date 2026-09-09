@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
+from .match_logic import is_galle_coordinate
 from .models import MapSchool, SchoolRecord, SourceSchool
 from .pdf import display_name, division_id, district_id, slugify
 
@@ -56,6 +57,18 @@ def _load_map_cache(path: Path) -> dict[str, MapSchool]:
     return {key: MapSchool(**value) for key, value in raw.items()}
 
 
+def load_scrubbed_ids(path: Path) -> set[str]:
+    """School ids whose legacy catalog pins repair_duplicates.py has judged bad.
+
+    The file lives next to the coordinate cache so both the repair script and
+    the generator agree on which legacy pins must stay deleted.
+    """
+    if not path.exists():
+        return set()
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return set(raw) if isinstance(raw, list) else set(raw)
+
+
 def _unique_id(base: str, source: SourceSchool, used: set[str]) -> str:
     candidate = base
     if candidate in used:
@@ -69,6 +82,7 @@ def build_school_records(
     *,
     map_cache_path: Path | None = None,
     legacy_catalog_path: Path | None = None,
+    scrubbed_ids: set[str] | None = None,
 ) -> list[SchoolRecord]:
     map_cache = _load_map_cache(map_cache_path) if map_cache_path else {}
     legacy = load_legacy_schools(legacy_catalog_path) if legacy_catalog_path else []
@@ -82,13 +96,29 @@ def build_school_records(
         english_name = stable[1] if stable else (old["en"] if old else display_name(source.name))
         base_id = stable[0] if stable else (old["id"] if old else f"{slugify(english_name)}-{district_id(source.district)}")
         record_id = _unique_id(base_id, source, used_ids)
-        if map_school and map_school.latitude is not None and map_school.longitude is not None:
+        if (
+            map_school
+            and map_school.latitude is not None
+            and map_school.longitude is not None
+            and is_galle_coordinate(map_school.latitude, map_school.longitude)
+        ):
             latitude, longitude = map_school.latitude, map_school.longitude
-        elif old and old.get("lat") is not None and old.get("lng") is not None:
-            # Fall back to whatever the catalog already knew. Some coordinates
-            # only ever existed in the generated file (an admin correction, or
-            # an older scrape whose cache entry is gone), and discarding them
-            # here silently deleted real data on every regeneration.
+        elif (
+            old
+            and old.get("lat") is not None
+            and old.get("lng") is not None
+            # Fall back to whatever the catalog already knew ONLY when the pin
+            # is inside Galle district.  Some legacy rows carried a sibling
+            # school's pin or a Matara-district place that the tightened
+            # scraper gate now rejects; regenerating used to resurrect them on
+            # every run, silently undoing cache scrubs.
+            and is_galle_coordinate(old["lat"], old["lng"])
+            # ... and never for a row whose pin was explicitly scrubbed by
+            # repair_duplicates.py: those pins were judged wrong or
+            # unverifiable, so resurrecting them would silently undo the
+            # repair on every regeneration.
+            and source.school_id not in (scrubbed_ids or set())
+        ):
             latitude, longitude = old["lat"], old["lng"]
         else:
             latitude, longitude = None, None

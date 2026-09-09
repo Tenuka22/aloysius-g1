@@ -103,7 +103,18 @@ import {
   yearsFromDate,
 } from "@/lib/g1/scoring";
 import { useTranslation } from "@/lib/i18n";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@aloysius-admissions/ui/components/alert-dialog";
 import { Button } from "@aloysius-admissions/ui/components/button";
+import { buttonVariants } from "@aloysius-admissions/ui/components/button";
 import { Calendar } from "@aloysius-admissions/ui/components/calendar";
 import {
   Card,
@@ -113,7 +124,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@aloysius-admissions/ui/components/card";
+import { CardFooter } from "@aloysius-admissions/ui/components/card";
 import { Checkbox } from "@aloysius-admissions/ui/components/checkbox";
+import { Separator } from "@aloysius-admissions/ui/components/separator";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@aloysius-admissions/ui/components/empty";
 import { Field, FieldLabel } from "@aloysius-admissions/ui/components/field";
 import { Input } from "@aloysius-admissions/ui/components/input";
 import {
@@ -129,6 +150,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@aloysius-admissions/ui/components/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableRow,
+} from "@aloysius-admissions/ui/components/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs";
 import {
   Tooltip,
@@ -136,9 +164,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@aloysius-admissions/ui/components/tooltip";
+import { cn } from "@aloysius-admissions/ui/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { Flag, MapPin } from "lucide-react";
+import { Flag, MapPin, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { DropdownProps } from "react-day-picker";
 import { SchoolMapPicker } from "./school-map-picker";
@@ -436,18 +465,27 @@ function YearsSelect({
   );
 }
 
+/** Parses a stored `YYYY-MM-DD` value for use as a Calendar min/maxDate. */
+function parseDateOrUndefined(value: string | undefined): Date | undefined {
+  return value ? new Date(`${value}T00:00:00`) : undefined;
+}
+
 function DateField({
   id,
   label,
   hint,
   value,
   onChange,
+  minDate,
+  maxDate,
 }: {
   id: string;
   label: string;
   hint?: string;
   value: string | undefined;
   onChange: (value: string | undefined) => void;
+  minDate?: Date;
+  maxDate?: Date;
 }) {
   return (
     <Field>
@@ -466,7 +504,13 @@ function DateField({
           </TooltipProvider>
         )}
       </FieldLabel>
-      <CalendarDatePicker id={id} value={value} onChange={onChange} />
+      <CalendarDatePicker
+        id={id}
+        value={value}
+        onChange={onChange}
+        minDate={minDate}
+        maxDate={maxDate}
+      />
     </Field>
   );
 }
@@ -485,7 +529,7 @@ function CalendarDatePicker({
   maxDate?: Date;
 }) {
   const [open, setOpen] = useState(false);
-  const parsedDate = value ? new Date(value + "T00:00:00") : undefined;
+  const parsedDate = value ? new Date(`${value}T00:00:00`) : undefined;
   // Bound the year dropdown by default - without min/max, react-day-picker
   // renders an effectively unbounded year list, which breaks the nested
   // Select popover's floating-ui positioning (it renders detached at the top
@@ -1149,7 +1193,7 @@ export function Category62Fields({
   const degreeOptions = getDegreeOptions(t);
 
   return (
-    <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+    <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1 max-md:rounded-xl max-md:border max-md:border-border/70 max-md:bg-muted/10 max-md:p-3 max-md:gap-3">
       {/* Years educated */}
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
@@ -1175,6 +1219,7 @@ export function Category62Fields({
             hint={t("category.62.startDate.hint", { school: getHomeSchoolDisplayName() })}
             value={inputs.alumniStartDate}
             onChange={(alumniStartDate) => onChange({ alumniStartDate })}
+            maxDate={parseDateOrUndefined(inputs.alumniEndDate)}
           />
           <DateField
             id={`alumni-end-${id}`}
@@ -1182,12 +1227,15 @@ export function Category62Fields({
             hint={t("category.62.endDate.hint", { school: getHomeSchoolDisplayName() })}
             value={inputs.alumniEndDate}
             onChange={(alumniEndDate) => onChange({ alumniEndDate })}
+            minDate={parseDateOrUndefined(inputs.alumniStartDate)}
           />
         </div>
       </div>
 
+      <Separator className="hidden col-span-2 max-md:block" />
+
       {/* Grade 5 Scholarship */}
-      <div className="col-span-2 grid content-start gap-2 rounded-xl border border-border/70 bg-muted/10 p-3 sm:flex sm:items-center sm:justify-between sm:gap-4 max-md:col-span-1">
+      <div className="col-span-2 grid content-start gap-2 sm:flex sm:items-center sm:justify-between sm:gap-4 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.grade5Scholarship.label")}</span>
           <MarkBadge
@@ -1211,8 +1259,10 @@ export function Category62Fields({
         </label>
       </div>
 
+      <Separator className="hidden col-span-2 max-md:block" />
+
       {/* G.C.E. (O/L) */}
-      <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3">
+      <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3 max-md:col-span-1 max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:rounded-none">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.olResult.label")}</span>
           <MarkBadge
@@ -1250,8 +1300,10 @@ export function Category62Fields({
         )}
       </div>
 
+      <Separator className="hidden col-span-2 max-md:block" />
+
       {/* G.C.E. (A/L) */}
-      <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3">
+      <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3 max-md:col-span-1 max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:rounded-none">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{t("category.62.alResult.label")}</span>
           <MarkBadge
@@ -1289,121 +1341,131 @@ export function Category62Fields({
         )}
       </div>
 
-      {/* Sports / co-curricular */}
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.sports.label")}</span>
-          <MarkBadge marks={sportsMarks} max={SPORTS_MAX} hint={t("category.62.sports.hint")} />
-          <FlagButton
-            fieldKey="sportsLevel"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
-        </div>
-        <StringSelect
-          id={`sports-level-${id}`}
-          label={t("category.62.sports.highestLevel")}
-          value={inputs.sportsLevel}
-          options={sportsLevelOptions}
-          placeholder={t("category.62.sports.highestLevelPlaceholder")}
-          onChange={(sportsLevel) => onChange({ sportsLevel })}
-        />
-        <NumberField
-          id={`sports-count-${id}`}
-          label={t("category.62.sports.achievements")}
-          value={inputs.sportsCount}
-          onChange={(sportsCount) => onChange({ sportsCount })}
-        />
-      </div>
+      <Separator className="hidden col-span-2 max-md:block" />
 
-      {/* Leadership role */}
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.leadership.label")}</span>
-          <MarkBadge
-            marks={leadershipMarks}
-            max={LEADERSHIP_MAX}
-            hint={t("category.62.leadership.hint")}
-          />
-          <FlagButton
-            fieldKey="leadershipRole"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
-        </div>
-        <StringSelect
-          id={`leadership-role-${id}`}
-          label={t("category.62.leadership.highestRole")}
-          value={inputs.leadershipRole}
-          options={leadershipRoleOptions}
-          placeholder={t("category.62.leadership.highestRolePlaceholder")}
-          onChange={(leadershipRole) => onChange({ leadershipRole })}
-        />
-      </div>
-
-      {/* Student Societies */}
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.studentSocieties.label")}</span>
-          <MarkBadge
-            marks={studentSocietiesMarks}
-            max={STUDENT_SOCIETIES_MAX}
-            hint={t("category.62.studentSocieties.hint")}
-          />
-          <FlagButton
-            fieldKey="studentSocietiesRole"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
-        </div>
-        <StringSelect
-          id={`student-societies-role-${id}`}
-          label={t("category.62.studentSocieties.highestRole")}
-          value={inputs.studentSocietiesRole}
-          options={studentSocietiesRoleOptions}
-          placeholder={t("category.62.studentSocieties.highestRolePlaceholder")}
-          onChange={(studentSocietiesRole) => onChange({ studentSocietiesRole })}
-        />
-      </div>
-
-      {/* Other Activities */}
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.otherActivities.label")}</span>
-          <MarkBadge
-            marks={otherActivityMarks}
-            max={OTHER_ACTIVITIES_MAX}
-            hint={t("category.62.otherActivities.hint")}
-          />
-          <FlagButton
-            fieldKey="otherActivity"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
-        </div>
-        <StringSelect
-          id={`other-activity-${id}`}
-          label={t("category.62.otherActivities.activityLabel")}
-          value={inputs.otherActivity}
-          options={otherActivityOptions}
-          placeholder={t("category.62.otherActivities.activityPlaceholder")}
-          onChange={(otherActivity) => onChange({ otherActivity })}
-        />
-        {inputs.otherActivity === "other" && (
-          <Field>
-            <FieldLabel htmlFor={`other-activity-name-${id}`}>
-              {t("category.62.otherActivities.specifyLabel")}
-            </FieldLabel>
-            <Input
-              id={`other-activity-name-${id}`}
-              type="text"
-              value={inputs.otherActivityName ?? ""}
-              placeholder={t("category.62.otherActivities.specifyPlaceholder")}
-              onChange={(event) => onChange({ otherActivityName: event.target.value || undefined })}
+      {/* Co-curricular Activities Group */}
+      <div className="col-span-2 grid gap-3 rounded-xl border border-border/70 bg-muted/10 p-3 max-md:col-span-1 max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:rounded-none max-md:gap-0">
+        <span className="hidden md:block text-xs font-medium text-muted-foreground uppercase tracking-wide">Co-curricular Activities</span>
+        <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+          {/* Sports / co-curricular */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t("category.62.sports.label")}</span>
+              <MarkBadge marks={sportsMarks} max={SPORTS_MAX} hint={t("category.62.sports.hint")} />
+              <FlagButton
+                fieldKey="sportsLevel"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <StringSelect
+              id={`sports-level-${id}`}
+              label={t("category.62.sports.highestLevel")}
+              value={inputs.sportsLevel}
+              options={sportsLevelOptions}
+              placeholder={t("category.62.sports.highestLevelPlaceholder")}
+              onChange={(sportsLevel) => onChange({ sportsLevel })}
             />
-          </Field>
-        )}
+            <NumberField
+              id={`sports-count-${id}`}
+              label={t("category.62.sports.achievements")}
+              value={inputs.sportsCount}
+              onChange={(sportsCount) => onChange({ sportsCount })}
+            />
+          </div>
+
+          {/* Leadership role */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t("category.62.leadership.label")}</span>
+              <MarkBadge
+                marks={leadershipMarks}
+                max={LEADERSHIP_MAX}
+                hint={t("category.62.leadership.hint")}
+              />
+              <FlagButton
+                fieldKey="leadershipRole"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <StringSelect
+              id={`leadership-role-${id}`}
+              label={t("category.62.leadership.highestRole")}
+              value={inputs.leadershipRole}
+              options={leadershipRoleOptions}
+              placeholder={t("category.62.leadership.highestRolePlaceholder")}
+              onChange={(leadershipRole) => onChange({ leadershipRole })}
+            />
+          </div>
+
+          {/* Student Societies */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t("category.62.studentSocieties.label")}</span>
+              <MarkBadge
+                marks={studentSocietiesMarks}
+                max={STUDENT_SOCIETIES_MAX}
+                hint={t("category.62.studentSocieties.hint")}
+              />
+              <FlagButton
+                fieldKey="studentSocietiesRole"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <StringSelect
+              id={`student-societies-role-${id}`}
+              label={t("category.62.studentSocieties.highestRole")}
+              value={inputs.studentSocietiesRole}
+              options={studentSocietiesRoleOptions}
+              placeholder={t("category.62.studentSocieties.highestRolePlaceholder")}
+              onChange={(studentSocietiesRole) => onChange({ studentSocietiesRole })}
+            />
+          </div>
+
+          {/* Other Activities */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t("category.62.otherActivities.label")}</span>
+              <MarkBadge
+                marks={otherActivityMarks}
+                max={OTHER_ACTIVITIES_MAX}
+                hint={t("category.62.otherActivities.hint")}
+              />
+              <FlagButton
+                fieldKey="otherActivity"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <StringSelect
+              id={`other-activity-${id}`}
+              label={t("category.62.otherActivities.activityLabel")}
+              value={inputs.otherActivity}
+              options={otherActivityOptions}
+              placeholder={t("category.62.otherActivities.activityPlaceholder")}
+              onChange={(otherActivity) => onChange({ otherActivity })}
+            />
+            {inputs.otherActivity === "other" && (
+              <Field>
+                <FieldLabel htmlFor={`other-activity-name-${id}`}>
+                  {t("category.62.otherActivities.specifyLabel")}
+                </FieldLabel>
+                <Input
+                  id={`other-activity-name-${id}`}
+                  type="text"
+                  value={inputs.otherActivityName ?? ""}
+                  placeholder={t("category.62.otherActivities.specifyPlaceholder")}
+                  onChange={(event) => onChange({ otherActivityName: event.target.value || undefined })}
+                />
+              </Field>
+            )}
+          </div>
+        </div>
       </div>
+
+      <Separator className="hidden col-span-2 max-md:block" />
 
       {/* Past Pupils' Association */}
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
@@ -1435,20 +1497,24 @@ export function Category62Fields({
             />
             {t("category.62.pastPupils.lifeMembership")}
           </label>
-          <DateField
-            id={`past-pupils-start-${id}`}
-            label={t("category.62.pastPupils.startDate.label")}
-            hint={t("category.62.pastPupils.startDate.hint")}
-            value={inputs.pastPupilsMembershipStart}
-            onChange={(pastPupilsMembershipStart) => onChange({ pastPupilsMembershipStart })}
-          />
-          <DateField
-            id={`past-pupils-end-${id}`}
-            label={t("category.62.pastPupils.endDate.label")}
-            hint={t("category.62.pastPupils.endDate.hint")}
-            value={inputs.pastPupilsMembershipEnd}
-            onChange={(pastPupilsMembershipEnd) => onChange({ pastPupilsMembershipEnd })}
-          />
+          <div className="col-span-2 grid grid-cols-2 gap-5 max-md:col-span-1 max-md:grid-cols-1">
+            <DateField
+              id={`past-pupils-start-${id}`}
+              label={t("category.62.pastPupils.startDate.label")}
+              hint={t("category.62.pastPupils.startDate.hint")}
+              value={inputs.pastPupilsMembershipStart}
+              onChange={(pastPupilsMembershipStart) => onChange({ pastPupilsMembershipStart })}
+              maxDate={parseDateOrUndefined(inputs.pastPupilsMembershipEnd)}
+            />
+            <DateField
+              id={`past-pupils-end-${id}`}
+              label={t("category.62.pastPupils.endDate.label")}
+              hint={t("category.62.pastPupils.endDate.hint")}
+              value={inputs.pastPupilsMembershipEnd}
+              onChange={(pastPupilsMembershipEnd) => onChange({ pastPupilsMembershipEnd })}
+              minDate={parseDateOrUndefined(inputs.pastPupilsMembershipStart)}
+            />
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox
               className="size-4"
@@ -1472,112 +1538,128 @@ export function Category62Fields({
         </div>
       </div>
 
-      {/* University Degrees */}
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.degrees.label")}</span>
-          <MarkBadge marks={degreeMarks} max={DEGREE_MAX} hint={t("category.62.degrees.hint")} />
-          <FlagButton
-            fieldKey="highestDegree"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
-        </div>
-        <StringSelect
-          id={`highest-degree-${id}`}
-          label={t("category.62.degrees.highestQualification")}
-          value={inputs.highestDegree}
-          options={degreeOptions}
-          placeholder={t("category.62.degrees.highestQualificationPlaceholder")}
-          onChange={(highestDegree) => onChange({ highestDegree })}
-        />
-      </div>
+      <Separator className="hidden col-span-2 max-md:block" />
 
-      {/* Diploma */}
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.diploma.label")}</span>
-          <MarkBadge
-            marks={diplomaMarks}
-            max={DIPLOMA_MARKS}
-            hint={t("category.62.diploma.hint")}
-          />
-          <FlagButton
-            fieldKey="hasDiploma"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
-        </div>
-        <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
-          <Checkbox
-            className="size-4"
-            checked={inputs.hasDiploma === true}
-            onCheckedChange={(checked) => onChange({ hasDiploma: checked === true })}
-          />
-          {t("category.62.diploma.checkbox")}
-        </label>
-      </div>
-
-      {/* Contribution to School Activities */}
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.contribution.label")}</span>
-          <MarkBadge
-            marks={contributionMarks}
-            max={CONTRIBUTION_MAX}
-            hint={t("category.62.contribution.hint")}
-          />
-          <FlagButton
-            fieldKey="sportsMeetContribution"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
-        </div>
-        <div className="grid gap-2">
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              className="size-4"
-              checked={inputs.sportsMeetContribution === true}
-              onCheckedChange={(checked) => onChange({ sportsMeetContribution: checked === true })}
+      {/* Academic Qualifications Group */}
+      <div className="col-span-2 grid gap-3 rounded-xl border border-border/70 bg-muted/10 p-3 max-md:col-span-1 max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:rounded-none max-md:gap-0">
+        <span className="hidden md:block text-xs font-medium text-muted-foreground uppercase tracking-wide">Academic Qualifications</span>
+        <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+          {/* University Degrees */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t("category.62.degrees.label")}</span>
+              <MarkBadge marks={degreeMarks} max={DEGREE_MAX} hint={t("category.62.degrees.hint")} />
+              <FlagButton
+                fieldKey="highestDegree"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <StringSelect
+              id={`highest-degree-${id}`}
+              label={t("category.62.degrees.highestQualification")}
+              value={inputs.highestDegree}
+              options={degreeOptions}
+              placeholder={t("category.62.degrees.highestQualificationPlaceholder")}
+              onChange={(highestDegree) => onChange({ highestDegree })}
             />
-            {t("category.62.contribution.sportsMeet")}
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              className="size-4"
-              checked={inputs.shramadanaContribution === true}
-              onCheckedChange={(checked) => onChange({ shramadanaContribution: checked === true })}
-            />
-            {t("category.62.contribution.shramadana")}
-          </label>
+          </div>
+
+          {/* Diploma */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t("category.62.diploma.label")}</span>
+              <MarkBadge
+                marks={diplomaMarks}
+                max={DIPLOMA_MARKS}
+                hint={t("category.62.diploma.hint")}
+              />
+              <FlagButton
+                fieldKey="hasDiploma"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
+              <Checkbox
+                className="size-4"
+                checked={inputs.hasDiploma === true}
+                onCheckedChange={(checked) => onChange({ hasDiploma: checked === true })}
+              />
+              {t("category.62.diploma.checkbox")}
+            </label>
+          </div>
         </div>
       </div>
 
-      {/* Contribution to School Projects */}
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.schoolProjects.label")}</span>
-          <MarkBadge
-            marks={projectMarks}
-            max={SCHOOL_PROJECTS_MARKS}
-            hint={t("category.62.schoolProjects.hint")}
-          />
-          <FlagButton
-            fieldKey="schoolProjectsContribution"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
+      <Separator className="hidden col-span-2 max-md:block" />
+
+      {/* School Contributions Group */}
+      <div className="col-span-2 grid gap-3 rounded-xl border border-border/70 bg-muted/10 p-3 max-md:col-span-1 max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:rounded-none max-md:gap-0">
+        <span className="hidden md:block text-xs font-medium text-muted-foreground uppercase tracking-wide">School Contributions</span>
+        <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+          {/* Contribution to School Activities */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t("category.62.contribution.label")}</span>
+              <MarkBadge
+                marks={contributionMarks}
+                max={CONTRIBUTION_MAX}
+                hint={t("category.62.contribution.hint")}
+              />
+              <FlagButton
+                fieldKey="sportsMeetContribution"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  className="size-4"
+                  checked={inputs.sportsMeetContribution === true}
+                  onCheckedChange={(checked) => onChange({ sportsMeetContribution: checked === true })}
+                />
+                {t("category.62.contribution.sportsMeet")}
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  className="size-4"
+                  checked={inputs.shramadanaContribution === true}
+                  onCheckedChange={(checked) => onChange({ shramadanaContribution: checked === true })}
+                />
+                {t("category.62.contribution.shramadana")}
+              </label>
+            </div>
+          </div>
+
+          {/* Contribution to School Projects */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t("category.62.schoolProjects.label")}</span>
+              <MarkBadge
+                marks={projectMarks}
+                max={SCHOOL_PROJECTS_MARKS}
+                hint={t("category.62.schoolProjects.hint")}
+              />
+              <FlagButton
+                fieldKey="schoolProjectsContribution"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
+              <Checkbox
+                className="size-4"
+                checked={inputs.schoolProjectsContribution === true}
+                onCheckedChange={(checked) =>
+                  onChange({ schoolProjectsContribution: checked === true })
+                }
+              />
+              {t("category.62.schoolProjects.checkbox")}
+            </label>
+          </div>
         </div>
-        <label className="mt-1 flex items-start gap-2 text-sm leading-relaxed">
-          <Checkbox
-            className="size-4"
-            checked={inputs.schoolProjectsContribution === true}
-            onCheckedChange={(checked) =>
-              onChange({ schoolProjectsContribution: checked === true })
-            }
-          />
-          {t("category.62.schoolProjects.checkbox")}
-        </label>
       </div>
     </div>
   );
@@ -1599,8 +1681,8 @@ export function Category63Fields({
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
   const id = category.id;
-  const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
-  const hasCenter = centerLat != null && centerLng != null;
+  const _selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
+  const _hasCenter = centerLat != null && centerLng != null;
   const siblingsMarks = Math.min(
     (inputs.siblingsCurrentlyStudyingCount ?? 0) * SIBLING_MARKS_PER_SIBLING,
     SIBLING_STUDYING_MAX,
@@ -2321,20 +2403,24 @@ export function Category66Fields({
             onToggleInputFlag={onToggleInputFlag}
           />
         </div>
-        <DateField
-          id={`abroad-start-${category.id}`}
-          label={t("category.66.periodAbroad.dateLeft")}
-          hint={t("category.66.periodAbroad.dateLeftHint")}
-          value={inputs.abroadStartDate}
-          onChange={(abroadStartDate) => onChange({ abroadStartDate })}
-        />
-        <DateField
-          id={`abroad-end-${category.id}`}
-          label={t("category.66.periodAbroad.dateReturned")}
-          hint={t("category.66.periodAbroad.dateReturnedHint")}
-          value={inputs.abroadEndDate}
-          onChange={(abroadEndDate) => onChange({ abroadEndDate })}
-        />
+        <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+          <DateField
+            id={`abroad-start-${category.id}`}
+            label={t("category.66.periodAbroad.dateLeft")}
+            hint={t("category.66.periodAbroad.dateLeftHint")}
+            value={inputs.abroadStartDate}
+            onChange={(abroadStartDate) => onChange({ abroadStartDate })}
+            maxDate={parseDateOrUndefined(inputs.abroadEndDate)}
+          />
+          <DateField
+            id={`abroad-end-${category.id}`}
+            label={t("category.66.periodAbroad.dateReturned")}
+            hint={t("category.66.periodAbroad.dateReturnedHint")}
+            value={inputs.abroadEndDate}
+            onChange={(abroadEndDate) => onChange({ abroadEndDate })}
+            minDate={parseDateOrUndefined(inputs.abroadStartDate)}
+          />
+        </div>
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2471,6 +2557,7 @@ function CategoryCard({
   const hasCenter = centerLat != null && centerLng != null;
   const locked = category.locked;
   const proximityConfig = PROXIMITY_CATEGORY_CONFIG[category.categoryType];
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
 
   // Nearby schools default to the objective geometry + gender-compatibility
   // computation (radius from home to the applied-to school, excluding
@@ -2499,14 +2586,12 @@ function CategoryCard({
   ]);
 
   return (
-    <Card
-      className={
-        locked
-          ? "border-2 border-muted bg-muted/30"
-          : `border-2 ${CATEGORY_COLORS[category.categoryType].border}`
-      }
-    >
-      <CardHeader className="border-b bg-muted/20">
+    <Card className={`pt-0 ${locked ? "bg-muted/30" : ""}`}>
+      {/* Very-low-opacity category tint, matching the tab bar and the Add
+          button so the whole category reads as one colour at a glance. */}
+      <CardHeader
+        className={`border-b pt-4 ${locked ? "bg-muted/20" : CATEGORY_COLORS[category.categoryType].headerBg}`}
+      >
         <div className="grid min-w-0 gap-1">
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
             {t("category.sectionHeading.markingCategoryBadge")}
@@ -2555,17 +2640,6 @@ function CategoryCard({
                 }
               >
                 {t("category.buttons.edit")}
-              </Button>
-            )}
-            {!locked && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive"
-                onClick={onRemove}
-              >
-                {t("category.buttons.remove")}
               </Button>
             )}
           </div>
@@ -2652,25 +2726,67 @@ function CategoryCard({
               category: categoryLabels[category.categoryType],
             })}
           </p>
-          <div className="grid gap-1">
-            {score.breakdown.map((row) => (
-              <div key={row.label} className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="text-muted-foreground">{row.label}</span>
-                <span className="font-mono tabular-nums">
-                  {row.marks.toLocaleString(undefined, { maximumFractionDigits: 2 })} / {row.max}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-baseline justify-between gap-3 border-t pt-2 text-base font-semibold">
-            <span>{t("category.exampleMarks.indicativeTotal")}</span>
-            <span className="font-mono tabular-nums">
-              {score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100
-            </span>
-          </div>
+          <Table>
+            <TableBody>
+              {score.breakdown.map((row) => (
+                <TableRow key={row.label}>
+                  <TableCell className="text-muted-foreground">{row.label}</TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">
+                    {row.marks.toLocaleString(undefined, { maximumFractionDigits: 2 })} / {row.max}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell className="font-semibold">
+                  {t("category.exampleMarks.indicativeTotal")}
+                </TableCell>
+                <TableCell className="text-right font-mono font-semibold tabular-nums">
+                  {score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
           <p className="text-xs text-muted-foreground">{t("category.exampleMarks.disclaimer")}</p>
         </div>
       </CardContent>
+      {!locked && (
+        <CardFooter className="justify-end">
+          <AlertDialog open={removeConfirmOpen} onOpenChange={setRemoveConfirmOpen}>
+            <AlertDialogTrigger
+              className={cn(
+                buttonVariants({ variant: "destructive", size: "sm" }),
+              )}
+            >
+              {t("category.buttons.remove")}
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("category.removeConfirm.title")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("category.removeConfirm.description", {
+                    category: categoryLabels[category.categoryType],
+                  })}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("category.removeConfirm.cancel")}</AlertDialogCancel>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    setRemoveConfirmOpen(false);
+                    onRemove();
+                  }}
+                >
+                  {t("category.removeConfirm.confirm")}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardFooter>
+      )}
     </Card>
   );
 }
@@ -2699,38 +2815,25 @@ export function CategoryStep() {
 
   return (
     <div className="grid w-full grid-cols-1 gap-6">
-      <div className="grid grid-cols-1 gap-4">
-        <div>
+      <div className="grid grid-cols-1 gap-1.5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h3 className="font-heading text-2xl">{t("category.sectionHeading.markingScheme")}</h3>
-          <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-            {t("category.sectionHeading.description")}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              {categoryCount}
-            </span>
-            <div className="grid gap-0.5">
-              <strong className="text-sm">
-                {t("category.sectionHeading.categoriesSelected", {
-                  count: categoryCount,
-                  plural: categoryCount === 1 ? "category" : "categories",
-                })}
-              </strong>
-              <span className="text-xs text-muted-foreground">
-                {t("category.sectionHeading.addRemoveHint")}
-              </span>
-            </div>
-          </div>
           <span className="text-xs font-semibold text-primary">
-            {t("category.sectionHeading.draftSaves")}
+            {t("category.sectionHeading.categoriesSelected", {
+              count: categoryCount,
+              plural: categoryCount === 1 ? "category" : "categories",
+            })}
           </span>
         </div>
+        <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+          {t("category.sectionHeading.description")}
+        </p>
       </div>
 
       <Tabs defaultValue={firstTypeWithEntries}>
-        <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-muted/60 p-1">
+        {/* `TabsList` already scrolls and pads itself; only override what an
+           app-specific wide, left-aligned, scrollable strip actually needs. */}
+        <TabsList className="h-auto w-full justify-start gap-1 scrollbar-none">
           {CATEGORY_TYPES.map((categoryType) => {
             const count = categoriesByType.get(categoryType)?.length ?? 0;
             const colors = CATEGORY_COLORS[categoryType];
@@ -2739,15 +2842,18 @@ export function CategoryStep() {
               <TabsTrigger
                 key={categoryType}
                 value={categoryType}
-                className={`shrink-0 flex items-center gap-1.5 text-xs ${colors.activeBg}${mapRequired ? ` ${STATUS_WARNING.text} border border-dashed ${STATUS_WARNING.borderStrong}` : ""}`}
+                aria-label={`${tabLabels[categoryType]}${count > 0 ? ` (${count})` : ""}`}
+                className={`group flex flex-none items-center gap-1.5 overflow-hidden min-w-0 text-xs ${colors.text} ${colors.activeBg}`}
               >
                 {mapRequired ? (
-                  <MapPin className={`size-3 shrink-0 ${STATUS_WARNING.text}`} />
+                  <MapPin className={`size-3 shrink-0 ${colors.text}`} />
                 ) : (
                   <span className={`size-1.5 shrink-0 rounded-full ${colors.dot}`} />
                 )}
-                {tabLabels[categoryType]}
-                {count > 0 ? ` (${count})` : ""}
+                <span className="truncate">
+                  {tabLabels[categoryType]}
+                  {count > 0 ? ` (${count})` : ""}
+                </span>
               </TabsTrigger>
             );
           })}
@@ -2756,6 +2862,7 @@ export function CategoryStep() {
         {CATEGORY_TYPES.map((categoryType) => {
           const entries = categoriesByType.get(categoryType) ?? [];
           const mapRequired = Boolean(PROXIMITY_CATEGORY_CONFIG[categoryType]) && !hasLocation;
+          const colors = CATEGORY_COLORS[categoryType];
           return (
             <TabsContent
               key={categoryType}
@@ -2763,58 +2870,78 @@ export function CategoryStep() {
               className="grid grid-cols-1 gap-4 mt-4"
             >
               {mapRequired ? (
-                <div
-                  className={`grid gap-2 rounded-lg border border-dashed ${STATUS_WARNING.borderStrong} ${STATUS_WARNING.bgSoft} p-3`}
+                <Empty
+                  className={`border ${STATUS_WARNING.borderStrong} ${STATUS_WARNING.bgSoft} p-8`}
                 >
-                  <p className={`flex items-center gap-1.5 text-sm ${STATUS_WARNING.textStrong}`}>
-                    <MapPin size={15} /> {t("category.mapRequired.notice")}
-                  </p>
+                  <EmptyHeader>
+                    <EmptyMedia
+                      variant="icon"
+                      className={`${STATUS_WARNING.bgIcon12} ${STATUS_WARNING.text}`}
+                    >
+                      <MapPin size={20} />
+                    </EmptyMedia>
+                    <EmptyTitle className={STATUS_WARNING.textStrong}>
+                      {t("category.mapRequired.notice")}
+                    </EmptyTitle>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={`${STATUS_WARNING.text} ${STATUS_WARNING.borderStrong}`}
+                      onClick={() => draft.setStep(0)}
+                    >
+                      {t("category.mapRequired.configureLink")}
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              ) : entries.length === 0 ? (
+                <Empty className="p-8">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <Plus size={20} />
+                    </EmptyMedia>
+                    <EmptyTitle>{t("category.noEntries.title")}</EmptyTitle>
+                    <EmptyDescription>{t("category.noEntries.description")}</EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <Button type="button" onClick={() => draft.addCategory(categoryType)}>
+                      {t("category.buttons.addCategory", { category: tabLabels[categoryType] })}
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              ) : (
+                <>
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
-                    className={`w-fit ${STATUS_WARNING.text} ${STATUS_WARNING.borderStrong}`}
-                    onClick={() => draft.setStep(0)}
+                    className={`h-auto w-full justify-start gap-2 border-2 py-2.5 text-left font-semibold whitespace-normal ${colors.border} ${colors.text} ${colors.bg} hover:${colors.bg}`}
+                    onClick={() => draft.addCategory(categoryType)}
                   >
-                    {t("category.mapRequired.configureLink")}
+                    <Plus size={16} className="shrink-0" />
+                    {t("category.buttons.addCategory", { category: tabLabels[categoryType] })}
                   </Button>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-auto w-full justify-start py-2 text-left whitespace-normal"
-                  onClick={() => draft.addCategory(categoryType)}
-                >
-                  {t("category.buttons.addCategory", { category: categoryLabels[categoryType] })}
-                </Button>
-              )}
-
-              {entries.length === 0 ? (
-                <p className="text-sm text-muted-foreground rounded-lg border p-4">
-                  {t("category.noEntries")}
-                </p>
-              ) : (
-                <div className="grid gap-5">
-                  {entries.map((category, idx) => {
-                    const occurrence =
-                      entries.length > 1 ? entries.slice(0, idx + 1).length : undefined;
-                    return (
-                      <CategoryCard
-                        key={category.id}
-                        category={category}
-                        occurrence={occurrence}
-                        centerLat={latitude ?? undefined}
-                        centerLng={longitude ?? undefined}
-                        onUpdate={(patch) => draft.updateCategoryInputs(category.id, patch)}
-                        onRemove={() => draft.removeCategory(category.id)}
-                        categoryLabels={categoryLabels}
-                        categoryMeta={categoryMeta}
-                        t={t}
-                      />
-                    );
-                  })}
-                </div>
+                  <div className="grid gap-5">
+                    {entries.map((category, idx) => {
+                      const occurrence =
+                        entries.length > 1 ? entries.slice(0, idx + 1).length : undefined;
+                      return (
+                        <CategoryCard
+                          key={category.id}
+                          category={category}
+                          occurrence={occurrence}
+                          centerLat={latitude ?? undefined}
+                          centerLng={longitude ?? undefined}
+                          onUpdate={(patch) => draft.updateCategoryInputs(category.id, patch)}
+                          onRemove={() => draft.removeCategory(category.id)}
+                          categoryLabels={categoryLabels}
+                          categoryMeta={categoryMeta}
+                          t={t}
+                        />
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </TabsContent>
           );

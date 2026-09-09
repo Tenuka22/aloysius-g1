@@ -1,3 +1,4 @@
+import type { FieldStatus } from "./application-store";
 import { ADMISSION_RESTRICTIONS, G1_AGE_ELIGIBILITY } from "./school-config";
 
 export const g1SchoolYear = () => new Date().getFullYear() + 1;
@@ -107,9 +108,9 @@ export type NextStepDeps = {
   step: number;
   locationCanProceed?: boolean;
   location?: { latitude?: number | null; longitude?: number | null } | null;
-  locationSkipped?: boolean;
+  locationStatus?: FieldStatus;
   duplicateBirthCertificate?: boolean;
-  birthCertificateSkipped?: boolean;
+  birthCertificateStatus?: FieldStatus;
   applicant?: ApplicantValues;
   guardian?: { relationship?: string; fullName?: string; nic?: string; phone?: string };
   categories?: { length?: number };
@@ -119,7 +120,7 @@ export type NextStepDeps = {
 export function getNextStepReason(deps: NextStepDeps): string {
   const { step } = deps;
   if (step === 0) {
-    if (!locationIsReady(deps.location) && !deps.locationSkipped)
+    if (!locationIsReady(deps.location) && deps.locationStatus !== "skipped")
       return "Select a location on the map to continue.";
     return "";
   }
@@ -132,7 +133,7 @@ export function getNextStepReason(deps: NextStepDeps): string {
       isRestrictedReligion(applicant.religion) ||
       !educationMediumAllowed(applicant.educationMedium) ||
       !isG1EligibleDob(applicant.dateOfBirth) ||
-      (!applicant.birthCertificateNumber && !deps.birthCertificateSkipped) ||
+      (!applicant.birthCertificateNumber && deps.birthCertificateStatus !== "skipped") ||
       !applicant.fullName
     )
       return "Complete all required applicant fields to continue.";
@@ -151,9 +152,9 @@ export function getNextStepReason(deps: NextStepDeps): string {
     return "";
   }
   if (step === 5) {
-    if (deps.locationSkipped && !locationIsReady(deps.location))
+    if (deps.locationStatus === "skipped" && !locationIsReady(deps.location))
       return "Provide the home location you skipped earlier before submitting.";
-    if (deps.birthCertificateSkipped && !deps.applicant?.birthCertificateNumber)
+    if (deps.birthCertificateStatus === "skipped" && !deps.applicant?.birthCertificateNumber)
       return "Provide the birth certificate number you skipped earlier before submitting.";
     if (!deps.declaration?.confirmed || !deps.declaration?.consent)
       return "You must confirm the declaration and provide consent to proceed.";

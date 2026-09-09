@@ -9,6 +9,21 @@ export type LocationDraft = {
   source: "manual" | "device" | "map" | "network" | "admin" | "";
 };
 
+/**
+ * Lifecycle of a field the applicant is allowed to defer.
+ *
+ * A boolean could not tell "not reached yet" apart from "deliberately
+ * skipped", so the UI could not show a skip as outstanding without also
+ * flagging every untouched field.
+ */
+export const FIELD_STATUSES = ["pending", "skipped", "provided"] as const;
+export type FieldStatus = (typeof FIELD_STATUSES)[number];
+
+/** True when the applicant skipped this field and still owes a value. */
+export function isSkipOutstanding(status: FieldStatus, hasValue: boolean): boolean {
+  return status === "skipped" && !hasValue;
+}
+
 export const CATEGORY_TYPES = ["6.1", "6.2", "6.3", "6.4", "6.5", "6.6"] as const;
 export type CategoryType = (typeof CATEGORY_TYPES)[number];
 
@@ -106,8 +121,10 @@ export type ApplicationDraft = {
     email: string;
   };
   residence: {
-    permanentAddress: string;
-    currentAddress: string;
+    permanentAddressEn: string;
+    permanentAddressSi: string;
+    currentAddressEn: string;
+    currentAddressSi: string;
     sameAsPermanent: boolean;
     district: string;
     dsDivision: string;
@@ -127,8 +144,8 @@ export type ApplicationDraft = {
   sessionCode: string;
   duplicateBirthCertificate: boolean;
   locationCanProceed: boolean;
-  locationSkipped: boolean;
-  birthCertificateSkipped: boolean;
+  locationStatus: FieldStatus;
+  birthCertificateStatus: FieldStatus;
   submittedAt: string | null;
   submissionLocked: boolean;
   submissionOpensAt: string;
@@ -175,7 +192,9 @@ export const emptyDraft: ApplicationDraft = {
   selectedLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
   applicant: { fullName: "", sinhalaName: "", gender: "", religion: "", educationMedium: "", dateOfBirth: "", birthCertificateNumber: "" },
   guardian: { relationship: "", fullName: "", sinhalaName: "", nic: "", phone: "", whatsappPhone: "", email: "" },
-  residence: { permanentAddress: "", currentAddress: "", sameAsPermanent: false, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "", districtSearch: "", dsSearch: "", gnSearch: "", electoralSearch: "" },
+  // sameAsPermanent defaults true: only the permanent address is shown until
+  // the applicant says the current address differs.
+  residence: { permanentAddressEn: "", permanentAddressSi: "", currentAddressEn: "", currentAddressSi: "", sameAsPermanent: true, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "", districtSearch: "", dsSearch: "", gnSearch: "", electoralSearch: "" },
   declaration: { confirmed: false, consent: false },
   categories: [],
   deviceLocationHistory: [],
@@ -185,8 +204,8 @@ export const emptyDraft: ApplicationDraft = {
   sessionCode: "",
   duplicateBirthCertificate: false,
   locationCanProceed: false,
-  locationSkipped: false,
-  birthCertificateSkipped: false,
+  locationStatus: "pending",
+  birthCertificateStatus: "pending",
   submittedAt: null,
   submissionLocked: false,
   submissionOpensAt: "",
@@ -294,6 +313,19 @@ export function normalizeCategories(input: unknown): CategoryApplication[] {
   return categories;
 }
 
+/**
+ * Resolves the stored status against the value actually present.
+ *
+ * The value wins whenever there is one, so a status can never claim a field
+ * is outstanding after it has been filled in - including for drafts saved
+ * before this was an enum, which carried only a `*Skipped` boolean.
+ */
+function toFieldStatus(stored: unknown, legacySkipped: boolean, hasValue: boolean): FieldStatus {
+  if (hasValue) return "provided";
+  if (stored === "skipped" || legacySkipped) return "skipped";
+  return "pending";
+}
+
 export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefined): ApplicationDraft {
   const raw = input as Record<string, unknown> | null | undefined;
   let defaultLocations: LocationDraft[] = Array.isArray(input?.defaultLocations) ? normalizeLocationHistory(input?.defaultLocations) : [];
@@ -331,12 +363,34 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
   };
   // Coerce residence fields to their declared types
   const residenceInput = input?.residence as Record<string, unknown> | undefined;
-  const normalizedResidence = {
+  const residenceSameAsPermanent = residenceInput?.sameAsPermanent === true;
+  const residenceBase = {
     ...emptyDraft.residence,
     ...input?.residence,
-    permanentAddress: typeof residenceInput?.permanentAddress === "string" ? residenceInput.permanentAddress : emptyDraft.residence.permanentAddress,
-    currentAddress: typeof residenceInput?.currentAddress === "string" ? residenceInput.currentAddress : emptyDraft.residence.currentAddress,
-    sameAsPermanent: residenceInput?.sameAsPermanent === true,
+    // Drafts saved before the address was split into English/Sinhala carry a
+    // single `permanentAddress`/`currentAddress` string; treat it as the
+    // English value so nothing already entered is lost.
+    permanentAddressEn:
+      typeof residenceInput?.permanentAddressEn === "string"
+        ? residenceInput.permanentAddressEn
+        : typeof residenceInput?.permanentAddress === "string"
+          ? residenceInput.permanentAddress
+          : emptyDraft.residence.permanentAddressEn,
+    permanentAddressSi:
+      typeof residenceInput?.permanentAddressSi === "string"
+        ? residenceInput.permanentAddressSi
+        : emptyDraft.residence.permanentAddressSi,
+    currentAddressEn:
+      typeof residenceInput?.currentAddressEn === "string"
+        ? residenceInput.currentAddressEn
+        : typeof residenceInput?.currentAddress === "string"
+          ? residenceInput.currentAddress
+          : emptyDraft.residence.currentAddressEn,
+    currentAddressSi:
+      typeof residenceInput?.currentAddressSi === "string"
+        ? residenceInput.currentAddressSi
+        : emptyDraft.residence.currentAddressSi,
+    sameAsPermanent: residenceSameAsPermanent,
     district: typeof residenceInput?.district === "string" ? residenceInput.district : emptyDraft.residence.district,
     dsDivision: typeof residenceInput?.dsDivision === "string" ? residenceInput.dsDivision : emptyDraft.residence.dsDivision,
     gnDivision: typeof residenceInput?.gnDivision === "string" ? residenceInput.gnDivision : emptyDraft.residence.gnDivision,
@@ -352,14 +406,40 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
     confirmed: declarationInput?.confirmed === true,
     consent: declarationInput?.consent === true,
   };
+  // Whenever the two addresses are marked as matching, force current to equal
+  // permanent regardless of what was actually stored there. Every write path
+  // (the applicant's own form, and the admin editor's generic field-by-field
+  // updates) funnels through this function before a save, so this is the one
+  // place that can guarantee the saved record is never stale or diverged.
+  const normalizedResidence = residenceSameAsPermanent
+    ? {
+        ...residenceBase,
+        currentAddressEn: residenceBase.permanentAddressEn,
+        currentAddressSi: residenceBase.permanentAddressSi,
+      }
+    : residenceBase;
   // Clamp currentStep to valid range to prevent NaN in UI calculations
   const currentStep = input?.currentStep;
   const clampedCurrentStep = typeof currentStep === "number" ? Math.max(0, Math.min(currentStep, 6)) : emptyDraft.currentStep;
 
+  const normalizedLocation = { ...emptyDraft.location, ...input?.location };
+  const locationStatus = toFieldStatus(
+    raw?.["locationStatus"],
+    raw?.["locationSkipped"] === true,
+    normalizedLocation.latitude != null && normalizedLocation.longitude != null,
+  );
+  const birthCertificateStatus = toFieldStatus(
+    raw?.["birthCertificateStatus"],
+    raw?.["birthCertificateSkipped"] === true,
+    normalizedApplicant.birthCertificateNumber.trim().length > 0,
+  );
+
   return {
     ...emptyDraft,
     ...input,
-    location: { ...emptyDraft.location, ...input?.location },
+    location: normalizedLocation,
+    locationStatus,
+    birthCertificateStatus,
     defaultLocations,
     selectedLocation: { ...emptyDraft.selectedLocation, ...input?.selectedLocation },
     applicant: normalizedApplicant,

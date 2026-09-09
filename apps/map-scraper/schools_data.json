@@ -155,8 +155,8 @@
     "id": "heenatiya-k-v-galle",
     "en": "Heenatiya K.V.",
     "si": "",
-    "lat": 6.2735429,
-    "lng": 80.0541909,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -168,7 +168,7 @@
       "zone": "Ambalangoda",
       "division": "Balapitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Heenatiya/data=!4m7!3m6!1s0x3ae1805597baf51b:0x429cf98a3c1e54a9!8m2!3d6.2735429!4d80.0541909!16s%2Fg%2F11b6_cghlr!19sChIJG_W6l1WA4ToRqVQePIr5nEI?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "katueila-kanishta-vidiyalay-galle",
@@ -364,8 +364,8 @@
     "id": "batapola-m-m-v-galle",
     "en": "Batapola M.M.V.",
     "si": "",
-    "lat": 6.2241821,
-    "lng": 80.1138369,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -377,7 +377,7 @@
       "zone": "Ambalangoda",
       "division": "Ambalangoda"
     },
-    "mapUrl": "https://www.google.com/maps/place/Batapola/@6.2216622,80.1134722,14z/data=!3m1!4b1!4m6!3m5!1s0x3ae178b0f15203d7:0x582dd6969438203c!8m2!3d6.2241821!4d80.1138369!16s%2Fm%2F0463m7x?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "sri-devananda-college-galle",
@@ -440,8 +440,8 @@
     "id": "nindana-m-v-galle",
     "en": "Nindana M.V.",
     "si": "",
-    "lat": 6.20709,
-    "lng": 80.1079608,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -453,7 +453,7 @@
       "zone": "Ambalangoda",
       "division": "Ambalangoda"
     },
-    "mapUrl": "https://www.google.com/maps/place/Nindana/@6.208099,80.1083879,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae17898094a2eeb:0x8eea16231ebae1b8!8m2!3d6.20709!4d80.1079608!16s%2Fg%2F11rfrnz1mm?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "prajapathi-gothami-balika-m-v-galle",
@@ -535,8 +535,8 @@
     "id": "ginimellagaha-k-v-galle",
     "en": "Ginimellagaha K.V.",
     "si": "",
-    "lat": 6.136193,
-    "lng": 80.1774231,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -548,7 +548,7 @@
       "zone": "Galle",
       "division": "Baddegama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Ginimellagaha/data=!4m7!3m6!1s0x3ae17b48d9f0773f:0xc58f22aeb45dfea6!8m2!3d6.136193!4d80.1774231!16s%2Fg%2F11jbdxn3_z!19sChIJP3fw2Uh74ToRpv5dtK4ij8U?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "shasthraloka-k-v-galle",
@@ -611,8 +611,8 @@
     "id": "majuwana-k-v-galle",
     "en": "Majuwana K.V.",
     "si": "",
-    "lat": 6.1531357,
-    "lng": 80.170217,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -624,7 +624,7 @@
       "zone": "Galle",
       "division": "Baddegama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Majuwana/data=!4m7!3m6!1s0x3ae179e6c2ba8f73:0x48e765ae3a5b455f!8m2!3d6.1531357!4d80.170217!16s%2Fg%2F11k530vyf8!19sChIJc4-6wuZ54ToRX0VbOq5l50g?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "sri-buddhadaththa-model-school-galle",
@@ -687,8 +687,8 @@
     "id": "dorala-k-v-galle",
     "en": "Dorala K.V.",
     "si": "",
-    "lat": 6.2286216,
-    "lng": 80.1386714,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -700,7 +700,7 @@
       "zone": "Ambalangoda",
       "division": "Ambalangoda"
     },
-    "mapUrl": "https://www.google.com/maps/place/Dorala,+Batapola/@6.226958,80.1400689,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae178d4e10211e3:0x56f1c28ccf1d794e!8m2!3d6.2286216!4d80.1386714!16s%2Fg%2F12hnlv9kv?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "woodland-k-v-galle",
@@ -725,8 +725,8 @@
     "id": "halpathota-k-v-galle",
     "en": "Halpathota K.V.",
     "si": "",
-    "lat": 6.1741432,
-    "lng": 80.1665806,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -738,7 +738,7 @@
       "zone": "Galle",
       "division": "Baddegama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Halpathota/data=!4m7!3m6!1s0x3ae179966bcccfa7:0x7cfba6d0f1e00632!8m2!3d6.1741432!4d80.1665806!16s%2Fg%2F1hc1_j_8f!19sChIJp8_Ma5Z54ToRMgbg8dCm-3w?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "sri-darmaloka-k-v-galle",
@@ -801,8 +801,8 @@
     "id": "meetiyagoda-k-v-galle",
     "en": "Meetiyagoda K.V.",
     "si": "",
-    "lat": 6.1898343,
-    "lng": 80.0953942,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -814,7 +814,7 @@
       "zone": "Ambalangoda",
       "division": "Ambalangoda"
     },
-    "mapUrl": "https://www.google.com/maps/place/Meetiyagoda/data=!4m7!3m6!1s0x3ae18278b66c18c7:0xff2b1b135b34079!8m2!3d6.1898343!4d80.0953942!16s%2Fg%2F1w3w1h4b!19sChIJxxhstniC4ToReUCzNbGx8g8?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "pathana-k-v-galle",
@@ -915,8 +915,8 @@
     "id": "yatagala-m-v-galle",
     "en": "Yatagala M.V.",
     "si": "",
-    "lat": 6.3365163,
-    "lng": 80.0898085,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -928,7 +928,7 @@
       "zone": "Elpitiya",
       "division": "Karandeniya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Yatagala/data=!4m7!3m6!1s0x3ae22ace99f5771f:0x4751a68ea6fd129a!8m2!3d6.3365163!4d80.0898085!16s%2Fg%2F11rfrp4njz!19sChIJH3f1mc4q4joRmhL9po6mUUc?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "bandula-senadeera-m-v-galle",
@@ -991,8 +991,8 @@
     "id": "agaliya-m-v-galle",
     "en": "Agaliya M.V.",
     "si": "",
-    "lat": 6.19972,
-    "lng": 80.19354,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1004,7 +1004,7 @@
       "zone": "Elpitiya",
       "division": "Divitura-Welivitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Agaliya/data=!4m7!3m6!1s0x3ae17bda06e613cf:0xc537835db6c55845!8m2!3d6.19972!4d80.19354!16s%2Fg%2F11ldhdtj_m!19sChIJzxPmBtp74ToRRVjFtl2DN8U?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "ethkandura-seewalee-m-v-galle",
@@ -1200,8 +1200,8 @@
     "id": "kiripedda-k-v-galle",
     "en": "Kiripedda K.V.",
     "si": "",
-    "lat": 6.2676932,
-    "lng": 80.1214096,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1213,7 +1213,7 @@
       "zone": "Elpitiya",
       "division": "Karandeniya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Kiripedda/data=!4m7!3m6!1s0x3ae17f0b38f4d7a1:0xc5d514e90dd6b30d!8m2!3d6.2676932!4d80.1214096!16s%2Fg%2F11ptv9yxb4!19sChIJodf0OAt_4ToRDbPWDekU1cU?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "anurudda-k-v-galle",
@@ -1352,8 +1352,8 @@
     "id": "thalgahawaththa-k-v-galle",
     "en": "Thalgahawaththa K.V.",
     "si": "",
-    "lat": 6.2876119,
-    "lng": 80.1117708,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1365,7 +1365,7 @@
       "zone": "Elpitiya",
       "division": "Karandeniya"
     },
-    "mapUrl": "https://www.google.com/maps/place/G%2F+Thalgahawaththa+K.V/@6.2876119,80.1117708,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae17f5987779847:0xb545640870c6b5b!8m2!3d6.2876119!4d80.1117708!16s%2Fg%2F11flqszkmg?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "waleguruketiya-k-v-galle",
@@ -1390,8 +1390,8 @@
     "id": "yatagala-k-v-galle",
     "en": "Yatagala K.V.",
     "si": "",
-    "lat": 6.3365163,
-    "lng": 80.0898085,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1403,7 +1403,7 @@
       "zone": "Elpitiya",
       "division": "Karandeniya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Yatagala/data=!4m7!3m6!1s0x3ae22ace99f5771f:0x4751a68ea6fd129a!8m2!3d6.3365163!4d80.0898085!16s%2Fg%2F11rfrp4njz!19sChIJH3f1mc4q4joRmhL9po6mUUc?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "sir-ather-c-clark-model-school-galle",
@@ -1485,8 +1485,8 @@
     "id": "kaluwalagoda-k-v-galle",
     "en": "Kaluwalagoda K.V.",
     "si": "",
-    "lat": 6.3158451,
-    "lng": 80.1065646,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1498,14 +1498,14 @@
       "zone": "Elpitiya",
       "division": "Karandeniya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Kaluwalagoda/data=!4m7!3m6!1s0x3ae3d5570bb2d2f7:0x2b6bd95b9897b800!8m2!3d6.3158451!4d80.1065646!16s%2Fg%2F11q260sl7v!19sChIJ99KyC1fV4zoRALiXmFvZays?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "karandeniya-k-v-galle",
     "en": "Karandeniya K.V.",
     "si": "",
-    "lat": 6.2705454,
-    "lng": 80.0911693,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1517,7 +1517,7 @@
       "zone": "Elpitiya",
       "division": "Karandeniya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Karandeniya/data=!4m7!3m6!1s0x3ae181d2d5030051:0x4ca48deb1176537!8m2!3d6.2705454!4d80.0911693!16s%2Fg%2F1td08c2h!19sChIJUQAD1dKB4ToRN2UXsd5IygQ?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "kotawela-k-v-galle",
@@ -1561,8 +1561,8 @@
     "id": "pathawelivitiya-k-v-galle",
     "en": "Pathawelivitiya K.V.",
     "si": "",
-    "lat": 6.1868807,
-    "lng": 80.2181886,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1574,7 +1574,7 @@
       "zone": "Elpitiya",
       "division": "Divitura-Welivitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Pathawelivitiya/@6.1872241,80.2187606,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae17a4d05d83ff7:0xb6167b8db151ea3b!8m2!3d6.1868807!4d80.2181886!16s%2Fg%2F11q2606ysz?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "unagaswela-k-v-galle",
@@ -1599,8 +1599,8 @@
     "id": "batukanaththa-k-v-galle",
     "en": "Batukanaththa K.V",
     "si": "",
-    "lat": 6.3578805,
-    "lng": 80.0664906,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1612,14 +1612,14 @@
       "zone": "Elpitiya",
       "division": "Karandeniya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Batukanaththa/data=!4m7!3m6!1s0x3ae22b1c09e89c55:0xaa38b8d5dcbe363d!8m2!3d6.3578805!4d80.0664906!16s%2Fg%2F11fk3s99yh!19sChIJVZzoCRwr4joRPTa-3NW4OKo?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "randenigama-k-v-galle",
     "en": "Randenigama K.V.",
     "si": "",
-    "lat": 6.2760985,
-    "lng": 80.0715975,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1631,7 +1631,7 @@
       "zone": "Elpitiya",
       "division": "Karandeniya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Randenigama/data=!4m7!3m6!1s0x3ae181006d611b13:0x779f8219a9f4742e!8m2!3d6.2760985!4d80.0715975!16s%2Fg%2F11x72qjpcv!19sChIJExthbQCB4ToRLnT0qRmCn3c?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "gamini-m-m-v-galle",
@@ -1694,8 +1694,8 @@
     "id": "induruwa-m-v-galle",
     "en": "Induruwa M.V.",
     "si": "",
-    "lat": 6.3771134,
-    "lng": 80.0171609,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1707,14 +1707,14 @@
       "zone": "Elpitiya",
       "division": "Bentota"
     },
-    "mapUrl": "https://www.google.com/maps/place/Induruwa/data=!4m7!3m6!1s0x3ae22be7abbe1427:0xd31b88cea3c3131d!8m2!3d6.3771134!4d80.0171609!16s%2Fg%2F1tfh3249!19sChIJJxS-q-cr4joRHRPDo86IG9M?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "miriswaththa-m-v-galle",
     "en": "Miriswaththa M.V.",
     "si": "",
-    "lat": 6.38112,
-    "lng": 80.05684,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1726,7 +1726,7 @@
       "zone": "Elpitiya",
       "division": "Bentota"
     },
-    "mapUrl": "https://www.google.com/maps/place/Miriswaththa/data=!4m7!3m6!1s0x3ae22b768570926b:0x93bf4dbb68cab89d!8m2!3d6.38112!4d80.05684!16s%2Fg%2F11sbpz15q9!19sChIJa5JwhXYr4joRnbjKaLtNv5M?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "galbada-athuruwalla-m-v-galle",
@@ -1808,8 +1808,8 @@
     "id": "dedduwa-m-v-galle",
     "en": "Dedduwa M.V.",
     "si": "",
-    "lat": 6.4035924,
-    "lng": 80.0283415,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1821,7 +1821,7 @@
       "zone": "Elpitiya",
       "division": "Bentota"
     },
-    "mapUrl": "https://www.google.com/maps/place/Dedduwa/data=!4m7!3m6!1s0x3ae22c0d3c3d955f:0x81379316a4a9e00!8m2!3d6.4035924!4d80.0283415!16s%2Fg%2F11h55nwc4w!19sChIJX5U9PA0s4joRAJ5KajF5Ewg?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "dharmapala-k-v-galle",
@@ -1846,8 +1846,8 @@
     "id": "horawala-k-v-galle",
     "en": "Horawala K.V",
     "si": "",
-    "lat": 6.3967806,
-    "lng": 80.0664142,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1859,7 +1859,7 @@
       "zone": "Elpitiya",
       "division": "Bentota"
     },
-    "mapUrl": "https://www.google.com/maps/place/Horawala/data=!4m7!3m6!1s0x3ae22c9d67a1bd0d:0x9fd000f5656146f8!8m2!3d6.3967806!4d80.0664142!16s%2Fg%2F1vbl5_v8!19sChIJDb2hZ50s4joR-EZhZfUA0J8?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "gurukanda-m-v-galle",
@@ -1884,8 +1884,8 @@
     "id": "kaikawala-sri-rewatha-k-v-galle",
     "en": "Kaikawala Sri Rewatha K, V",
     "si": "",
-    "lat": 6.3730938,
-    "lng": 80.0129679,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1897,7 +1897,7 @@
       "zone": "Elpitiya",
       "division": "Bentota"
     },
-    "mapUrl": "https://www.google.com/maps/place/Kaikawala/data=!4m7!3m6!1s0x3ae22bde21015d99:0x64f17c4e955c15e4!8m2!3d6.3730938!4d80.0129679!16s%2Fg%2F12xp_8sm5!19sChIJmV0BId4r4joR5BVclU588WQ?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "mahawila-k-v-galle",
@@ -1941,8 +1941,8 @@
     "id": "haburugala-dharmaraja-k-v-galle",
     "en": "Haburugala Dharmaraja K.V",
     "si": "",
-    "lat": 6.4037013,
-    "lng": 80.0339312,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -1954,7 +1954,7 @@
       "zone": "Elpitiya",
       "division": "Bentota"
     },
-    "mapUrl": "https://www.google.com/maps/place/Haburugala/data=!4m7!3m6!1s0x3ae22c7484f4bfdd:0xf5683982de527dbd!8m2!3d6.4037013!4d80.0339312!16s%2Fm%2F0b6p768!19sChIJ3b_0hHQs4joRvX1S3oI5aPU?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "hipanwaththa-k-v-galle",
@@ -1998,8 +1998,8 @@
     "id": "ananda-m-v-galle",
     "en": "Ananda M.V.",
     "si": "",
-    "lat": 6.0889494,
-    "lng": 80.1560648,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "national",
     "districtId": "galle",
@@ -2011,7 +2011,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/G%2FDeerananda+Maha+Vidyalaya/data=!4m7!3m6!1s0x3ae176ee77e49db1:0xd48cc59295efe0b8!8m2!3d6.0889494!4d80.1560648!16s%2Fg%2F11hbmdnmpb!19sChIJsZ3kd-524ToRuODvlZLFjNQ?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "awiththawa-nalanda-m-v-galle",
@@ -2036,8 +2036,8 @@
     "id": "amugoda-m-v-galle",
     "en": "Amugoda M.V.",
     "si": "",
-    "lat": 6.3212557,
-    "lng": 80.2188858,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2049,7 +2049,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Amugoda/@6.3211422,80.2183377,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae3d625d3265631:0xe6f539dc155c9706!8m2!3d6.3212557!4d80.2188858!16s%2Fg%2F1hf30nj5m?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "sri-sasanchandra-m-v-galle",
@@ -2074,8 +2074,8 @@
     "id": "kahaduwa-m-v-galle",
     "en": "Kahaduwa M.V.",
     "si": "",
-    "lat": 6.2234515,
-    "lng": 80.2126109,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2087,7 +2087,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Kahaduwa/@6.222345,80.2156501,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae17b8e74f461f9:0x2da3389a44ee2bfb!8m2!3d6.2234515!4d80.2126109!16s%2Fg%2F1tj1_zn7?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "indipalgoda-m-v-galle",
@@ -2112,8 +2112,8 @@
     "id": "nawadagala-m-v-galle",
     "en": "Nawadagala M.V.",
     "si": "",
-    "lat": 6.3112355,
-    "lng": 80.1400671,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2125,7 +2125,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Nawadagala/@6.3074214,80.1394176,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae17fd39831cb19:0x835be692828e039d!8m2!3d6.3112355!4d80.1400671!16s%2Fg%2F11fmypzcg7?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "omaththa-m-v-galle",
@@ -2169,8 +2169,8 @@
     "id": "st-theresa-b-m-v-galle",
     "en": "St. Theresa B.M.V.",
     "si": "",
-    "lat": 6.2774136,
-    "lng": 80.1424905,
+    "lat": null,
+    "lng": null,
     "genderType": "girls",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2182,7 +2182,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/St.+Theresa+Primary+School/data=!4m7!3m6!1s0x3ae17facaa3b6c03:0xf89209dfc2ebc8c0!8m2!3d6.2774136!4d80.1424905!16s%2Fg%2F1tdkq6rl!19sChIJA2w7qqx_4ToRwMjrwt8Jkvg?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "delpona-girimananda-k-v-galle",
@@ -2245,8 +2245,8 @@
     "id": "ganegoda-m-v-galle",
     "en": "Ganegoda M.V.",
     "si": "",
-    "lat": 6.0840063,
-    "lng": 80.2446779,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2258,7 +2258,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Ganegoda/data=!4m7!3m6!1s0x3ae17197e715b20d:0x5d30f690a1babdf3!8m2!3d6.0840063!4d80.2446779!16s%2Fg%2F11fm_h_zr4!19sChIJDbIV55dx4ToR8726oZD2MF0?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "kudagala-k-v-galle",
@@ -2302,8 +2302,8 @@
     "id": "thalagaspe-k-v-galle",
     "en": "Thalagaspe K.V.",
     "si": "",
-    "lat": 6.3042834,
-    "lng": 80.2059868,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2315,7 +2315,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Thalagaspe/data=!4m7!3m6!1s0x3ae17ded8dd3209b:0x12480e6f7d7a8ffc!8m2!3d6.3042834!4d80.2059868!16s%2Fm%2F0b6n5pr!19sChIJmyDTje194ToR_I96fW8OSBI?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "wallabagala-k-v-galle",
@@ -2511,8 +2511,8 @@
     "id": "st-theresa-k-v-galle",
     "en": "St Theresa K.V.",
     "si": "",
-    "lat": 6.2774136,
-    "lng": 80.1424905,
+    "lat": 6.2853937,
+    "lng": 80.1571694,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2524,14 +2524,14 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/St.+Theresa+Primary+School/data=!4m7!3m6!1s0x3ae17facaa3b6c03:0xf89209dfc2ebc8c0!8m2!3d6.2774136!4d80.1424905!16s%2Fg%2F1tdkq6rl!19sChIJA2w7qqx_4ToRwMjrwt8Jkvg?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": "https://www.google.com/maps/place/St.+Theresa+Primary+School/@6.2853937,80.1571694,17z"
   },
   {
     "id": "katandola-k-v-galle",
     "en": "Katandola K.V.",
     "si": "",
-    "lat": 6.3017971,
-    "lng": 80.1958755,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2543,7 +2543,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Katandola/data=!4m7!3m6!1s0x3ae17de5e369dcb9:0x6154d6a5b67e4d44!8m2!3d6.3017971!4d80.1958755!16s%2Fg%2F1tzgh1ks!19sChIJudxp4-V94ToRRE1-tqXWVGE?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "awiththawa-nalanda-k-v-galle",
@@ -2644,8 +2644,8 @@
     "id": "opatha-m-v-galle",
     "en": "Opatha M.V.",
     "si": "",
-    "lat": 6.2677693,
-    "lng": 80.4117869,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2657,7 +2657,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Opatha/@6.2686532,80.4126478,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae160fd045d8a21:0x7b89e493553e266e!8m2!3d6.2677693!4d80.4117869!16s%2Fg%2F1ptws0nh6?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "vidyaraja-national-school-galle",
@@ -2682,8 +2682,8 @@
     "id": "batuwangala-m-v-galle",
     "en": "Batuwangala M.V.",
     "si": "",
-    "lat": 6.3801159,
-    "lng": 80.3811751,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2695,7 +2695,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Batuwangala/@6.3812814,80.3784549,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae3dec78ac6b62f:0x739eb140dac82ac!8m2!3d6.3801159!4d80.3811751!16s%2Fg%2F1tqtw9mq?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "dewalegama-k-v-galle",
@@ -2720,8 +2720,8 @@
     "id": "happitiya-k-v-galle",
     "en": "Happitiya K.V.",
     "si": "",
-    "lat": 6.3635279,
-    "lng": 80.4076132,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2733,14 +2733,14 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Happitiya/@6.3645775,80.410533,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae3de558a2858c9:0xc4df78434f96fedc!8m2!3d6.3635279!4d80.4076132!16s%2Fg%2F11rfrnjc5c?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "kadihingala-m-v-galle",
     "en": "Kadihingala M.V.",
     "si": "",
-    "lat": 6.3513041,
-    "lng": 80.4177884,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2752,14 +2752,14 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Kadihingala/data=!4m7!3m6!1s0x3ae3dfaf6f6a7259:0xb3f4c2e42c3db516!8m2!3d6.3513041!4d80.4177884!16s%2Fm%2F0b6ggwb!19sChIJWXJqb6_f4zoRFrU9LOTC9LM?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "lankagama-k-v-galle",
     "en": "Lankagama K.V.",
     "si": "",
-    "lat": 6.3671372,
-    "lng": 80.4604643,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2771,14 +2771,14 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Lankagama/@6.3690395,80.4585044,14z/data=!3m1!4b1!4m6!3m5!1s0x3ae3e083bacfc911:0x55ca31b18cf3687b!8m2!3d6.3671372!4d80.4604643!16s%2Fg%2F11js307gfc?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "lelwala-gigummaduwa-k-v-galle",
     "en": "Lelwala Gigummaduwa K.V.",
     "si": "",
-    "lat": 6.3334807,
-    "lng": 80.3839246,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2790,7 +2790,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Lelwala/data=!4m7!3m6!1s0x3ae3df43e81a5219:0x23a420a12c4a2550!8m2!3d6.3334807!4d80.3839246!16s%2Fm%2F0b6lj4k!19sChIJGVIa6EPf4zoRUCVKLKEgpCM?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "mawanana-k-v-galle",
@@ -2834,8 +2834,8 @@
     "id": "thalangalla-k-v-galle",
     "en": "Thalangalla K.V.",
     "si": "",
-    "lat": 6.3079897,
-    "lng": 80.3587456,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2847,14 +2847,14 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Thalangalla/@6.3094673,80.3637241,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae1620284af5e81:0xf4c0eaec8be6664b!8m2!3d6.3079897!4d80.3587456!16s%2Fm%2F0b6djgf?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "weerapana-k-v-galle",
     "en": "Weerapana K.V.",
     "si": "",
-    "lat": 6.2469412,
-    "lng": 80.4224759,
+    "lat": 6.2722496,
+    "lng": 80.3019643,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -2866,7 +2866,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Weerapana+k+v/@6.2469412,80.4224759,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae161d5dd338c8f:0xcf7729de7d2e0d23!8m2!3d6.2469412!4d80.4224759!16s%2Fg%2F11fs7_4tr8?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": "https://www.google.com/maps/place/Weerapana+k+v/@6.2722496,80.3019643,17z"
   },
   {
     "id": "batuwangala-west-k-v-galle",
@@ -3005,8 +3005,8 @@
     "id": "ihala-lelwala-k-v-galle",
     "en": "Ihala Lelwala K.V.",
     "si": "",
-    "lat": 6.336947,
-    "lng": 80.3909164,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3018,7 +3018,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Ihala+Lelwala/data=!4m7!3m6!1s0x3ae3df6b3cd996e5:0xfa415c4e85ae7998!8m2!3d6.336947!4d80.3909164!16s%2Fg%2F11rfrnqbwn!19sChIJ5ZbZPGvf4zoRmHmuhU5cQfo?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "dellawa-m-v-galle",
@@ -3081,8 +3081,8 @@
     "id": "millawak-v-galle",
     "en": "Millawak.V.",
     "si": "",
-    "lat": 6.2937958,
-    "lng": 80.4715866,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3094,7 +3094,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Millawa/data=!4m7!3m6!1s0x3ae15f001a2133b3:0xe6836aea8a07d258!8m2!3d6.2937958!4d80.4715866!16s%2Fg%2F11yw_8vfvf!19sChIJszMhGgBf4ToRWNIHiupqg-Y?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "okaduhena-k-v-galle",
@@ -3119,8 +3119,8 @@
     "id": "panangala-west-k-v-galle",
     "en": "Panangala West K.V.",
     "si": "",
-    "lat": 6.2738947,
-    "lng": 80.3171325,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3132,7 +3132,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Panangala+West/@6.273932,80.3158737,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae162fdc26b1af1:0x3752591b717c7744!8m2!3d6.2738947!4d80.3171325!16s%2Fg%2F1jkxryf9b?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "warukandeniya-k-v-galle",
@@ -3157,8 +3157,8 @@
     "id": "weerapana-janapada-k-v-galle",
     "en": "Weerapana Janapada K.V.",
     "si": "",
-    "lat": 6.2469412,
-    "lng": 80.4224759,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3170,7 +3170,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Weerapana+k+v/data=!4m7!3m6!1s0x3ae161d5dd338c8f:0xcf7729de7d2e0d23!8m2!3d6.2469412!4d80.4224759!16s%2Fg%2F11fs7_4tr8!19sChIJj4wz3dVh4ToRIw0ufd4pd88?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "habarakada-dharmapala-k-v-galle",
@@ -3271,8 +3271,8 @@
     "id": "naranovita-porawagama-m-v-galle",
     "en": "Naranovita Porawagama M.V.",
     "si": "",
-    "lat": 6.2865815,
-    "lng": 80.223766,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3284,7 +3284,7 @@
       "zone": "Elpitiya",
       "division": "Pitigala"
     },
-    "mapUrl": "https://www.google.com/maps/place/Naranovita/data=!4m7!3m6!1s0x3ae17da4e0315f85:0xc863e3f82eef5bdc!8m2!3d6.2865815!4d80.223766!16s%2Fg%2F11rfrp4nk3!19sChIJhV8x4KR94ToR3FvvLvjjY8g?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "nagoda-royal-national-school-galle",
@@ -3347,8 +3347,8 @@
     "id": "g-yatalamatta-m-v-galle",
     "en": "G-Yatalamatta M.V.",
     "si": "",
-    "lat": 6.1737333,
-    "lng": 80.2864862,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3360,7 +3360,7 @@
       "zone": "Udugama",
       "division": "Mapalagama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Yatalamatta/@6.1728543,80.285629,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae1653705b268a7:0x993a780eb4e4a9a4!8m2!3d6.1737333!4d80.2864862!16s%2Fg%2F1tfvfmyh?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "manampita-rathanasara-m-v-galle",
@@ -3423,8 +3423,8 @@
     "id": "bambarawana-k-v-galle",
     "en": "Bambarawana K.V.",
     "si": "",
-    "lat": 6.3047056,
-    "lng": 80.2809129,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3436,7 +3436,7 @@
       "zone": "Elpitiya",
       "division": "Pitigala"
     },
-    "mapUrl": "https://www.google.com/maps/place/Bambarawana/@6.3049972,80.28108,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae162b21487dbe9:0xa577d4adfefcbb12!8m2!3d6.3047056!4d80.2809129!16s%2Fg%2F1hc1l__cs?authuser=0&hl=en&entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "gonalagoda-wijayabahu-k-v-galle",
@@ -3480,8 +3480,8 @@
     "id": "udaweliviti-thalawa-m-v-galle",
     "en": "Udaweliviti Thalawa M.V.",
     "si": "",
-    "lat": 6.1873951,
-    "lng": 80.2460718,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3493,7 +3493,7 @@
       "zone": "Udugama",
       "division": "Mapalagama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Udawelivitithalawa/data=!4m7!3m6!1s0x3ae17b1e0fd8e00d:0x764b180e84b6ddf7!8m2!3d6.1873951!4d80.2460718!16s%2Fg%2F11hzyf3g7l!19sChIJDeDYDx574ToR9922hA4YS3Y?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "waththahena-siri-sucharitha-k-v-galle",
@@ -3727,8 +3727,8 @@
     "id": "niyagama-k-v-galle",
     "en": "Niyagama K.V.",
     "si": "",
-    "lat": 6.3083211,
-    "lng": 80.2485299,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3740,7 +3740,7 @@
       "zone": "Elpitiya",
       "division": "Pitigala"
     },
-    "mapUrl": "https://www.google.com/maps/place/Niyagama/data=!4m7!3m6!1s0x3ae17d1608969ef7:0xfe5b53c69538639d!8m2!3d6.3083211!4d80.2485299!16s%2Fm%2F0g9y4hr!19sChIJ956WCBZ94ToRnWM4lcZTW_4?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "niyagama-vijitha-k-v-galle",
@@ -3974,8 +3974,8 @@
     "id": "hemmeliya-kanishta-vidyalaya-galle",
     "en": "Hemmeliya Kanishta Vidyalaya",
     "si": "",
-    "lat": 6.1827724,
-    "lng": 80.2084273,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -3987,14 +3987,14 @@
       "zone": "Galle",
       "division": "Baddegama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Hemmeliya/data=!4m7!3m6!1s0x3ae17a3630150651:0xad8fbb3e57d06bf6!8m2!3d6.1827724!4d80.2084273!16s%2Fg%2F11hzzyjphb!19sChIJUQYVMDZ64ToR9mvQVz67j60?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "lelwala-k-v-galle",
     "en": "Lelwala K.V",
     "si": "",
-    "lat": 6.3334807,
-    "lng": 80.3839246,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -4006,14 +4006,14 @@
       "zone": "Galle",
       "division": "Baddegama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Lelwala/data=!4m7!3m6!1s0x3ae3df43e81a5219:0x23a420a12c4a2550!8m2!3d6.3334807!4d80.3839246!16s%2Fm%2F0b6lj4k!19sChIJGVIa6EPf4zoRUCVKLKEgpCM?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "lelwala-wickramasingha-k-v-galle",
     "en": "Lelwala Wickramasingha K.V",
     "si": "",
-    "lat": null,
-    "lng": null,
+    "lat": 6.1392014,
+    "lng": 80.2418188,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -4025,7 +4025,7 @@
       "zone": "Galle",
       "division": "Baddegama"
     },
-    "mapUrl": null
+    "mapUrl": "https://www.google.com/maps/place/G%2FWickramasinghe+K.V/@6.1392014,80.2418188,17z"
   },
   {
     "id": "mabotuwana-k-v-galle",
@@ -4069,8 +4069,8 @@
     "id": "thalawa-k-v-galle",
     "en": "Thalawa K.V",
     "si": "",
-    "lat": 6.1424183,
-    "lng": 80.292059,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -4082,7 +4082,7 @@
       "zone": "Galle",
       "division": "Baddegama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Thalawa/data=!4m7!3m6!1s0x3ae16ff165e340c9:0x2dffb86512690eb8!8m2!3d6.1424183!4d80.292059!16s%2Fg%2F11rfrnz9yy!19sChIJyUDjZfFv4ToRuA5pEmW4_y0?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "welideniya-kanishta-vidyalaya-galle",
@@ -4259,8 +4259,8 @@
     "id": "gonadeniya-k-v-galle",
     "en": "Gonadeniya K.V.",
     "si": "",
-    "lat": 6.2042399,
-    "lng": 80.3073826,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -4272,7 +4272,7 @@
       "zone": "Udugama",
       "division": "Mapalagama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Gonadeniya/data=!4m7!3m6!1s0x3ae164e5f7b451c9:0xd943bd85f8024c67!8m2!3d6.2042399!4d80.3073826!16s%2Fg%2F11hzxk5kb5!19sChIJyVG09-Vk4ToRZ0wC-IW9Q9k?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "ihala-thellambura-vidyakanthi-k-v-galle",
@@ -4297,8 +4297,8 @@
     "id": "karagoda-dharmaraja-k-v-galle",
     "en": "Karagoda Dharmaraja K.V.",
     "si": "",
-    "lat": 6.035243,
-    "lng": 80.210495,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -4918,7 +4918,7 @@
       "zone": "Ambalangoda",
       "division": "Hikkaduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/G%2FDeerananda+Maha+Vidyalaya/@6.0889494,80.1560648,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae176ee77e49db1:0xd48cc59295efe0b8!8m2!3d6.0889494!4d80.1560648!16s%2Fg%2F11hbmdnmpb?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": "https://www.google.com/maps/place/G%2FDeerananda+Maha+Vidyalaya/@6.0889494,80.1560648,17z"
   },
   {
     "id": "malalankara-k-v-galle",
@@ -4943,8 +4943,8 @@
     "id": "patuwatha-lanka-saba-k-v-galle",
     "en": "Patuwatha Lanka Saba K.V.",
     "si": "",
-    "lat": 6.1151652,
-    "lng": 80.1254113,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -4956,14 +4956,14 @@
       "zone": "Ambalangoda",
       "division": "Hikkaduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/Patuwatha/data=!4m7!3m6!1s0x3ae177b9bf38781f:0x51a6f0fd8aca276c!8m2!3d6.1151652!4d80.1254113!16s%2Fg%2F1ydnytsh4!19sChIJH3g4v7l34ToRbCfKiv3wplE?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "ranapanadeniya-k-v-galle",
     "en": "Ranapanadeniya K.V.",
     "si": "",
-    "lat": 6.1020144,
-    "lng": 80.1568134,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -4975,7 +4975,7 @@
       "zone": "Ambalangoda",
       "division": "Hikkaduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/Ranapanadeniya/@6.1020075,80.1571219,16z/data=!3m1!4b1!4m6!3m5!1s0x3ae176e3ab526577:0xa7bdd5f064ef6187!8m2!3d6.1020144!4d80.1568134!16s%2Fg%2F11q260y6wt?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "thiranagama-vidyathilaka-v-galle",
@@ -6026,8 +6026,8 @@
     "id": "akmeemana-mahavidyalaya-galle",
     "en": "Akmeemana Mahavidyalaya",
     "si": "",
-    "lat": 6.0836306,
-    "lng": 80.2962385,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -6039,7 +6039,7 @@
       "zone": "Galle",
       "division": "Akmeemana"
     },
-    "mapUrl": "https://www.google.com/maps/place/Akmeemana/data=!4m7!3m6!1s0x3ae16e14119d94c5:0x3af77f9242d33be1!8m2!3d6.0836306!4d80.2962385!16s%2Fg%2F11cs604ccf!19sChIJxZSdERRu4ToR4TvTQpJ_9zo?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "yatagala-malcom-vidyalaya-galle",
@@ -6064,8 +6064,8 @@
     "id": "pinnaduwa-jayanthi-m-v-galle",
     "en": "Pinnaduwa Jayanthi M.V.",
     "si": "",
-    "lat": 6.0515951,
-    "lng": 80.2572441,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -6077,14 +6077,14 @@
       "zone": "Galle",
       "division": "Akmeemana"
     },
-    "mapUrl": "https://www.google.com/maps/place/PINNADUWA/data=!4m7!3m6!1s0x3ae1738073ba94b5:0x3adb1d707b0e0f23!8m2!3d6.0515951!4d80.2572441!16s%2Fg%2F11y1nctns1!19sChIJtZS6c4Bz4ToRIw8Oe3Ad2zo?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "ankokkawala-sri-sumangala-m-v-galle",
     "en": "Ankokkawala Sri Sumangala M.V.",
     "si": "",
-    "lat": 6.0532918,
-    "lng": 80.2809129,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -6096,7 +6096,7 @@
       "zone": "Galle",
       "division": "Akmeemana"
     },
-    "mapUrl": "https://www.google.com/maps/place/Ankokkawala/data=!4m7!3m6!1s0x3ae16df7bdf8a557:0x5ce60dd47d255cb2!8m2!3d6.0532918!4d80.2809129!16s%2Fg%2F11h54mgncx!19sChIJV6X4vfdt4ToRslwlfdQN5lw?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "g-opatha-rahula-primary-school-galle",
@@ -6577,8 +6577,8 @@
     "id": "wellethota-sugathananda-m-v-galle",
     "en": "Wellethota Sugathananda M.V.",
     "si": "",
-    "lat": 6.0009954,
-    "lng": 80.2781262,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -6590,7 +6590,7 @@
       "zone": "Galle",
       "division": "Habaraduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/Wellethota/data=!4m7!3m6!1s0x3ae16d5ffe12dae1:0xef10701c71c3cd59!8m2!3d6.0009954!4d80.2781262!16s%2Fg%2F11nn3hfy8k!19sChIJ4doS_l9t4ToRWc3DcRxwEO8?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "bedipita-primary-school-galle",
@@ -6748,8 +6748,8 @@
     "id": "harumalgoda-east-primary-school-galle",
     "en": "Harumalgoda East Primary School",
     "si": "",
-    "lat": 6.0094046,
-    "lng": 80.3115358,
+    "lat": 6.0296574,
+    "lng": 80.2663133,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -6761,14 +6761,14 @@
       "zone": "Galle",
       "division": "Habaraduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/Harumalgoda+East+Primary+School+%E0%B7%84%E0%B6%BB%E0%B7%94%E0%B6%B8%E0%B6%BD%E0%B7%8A%E0%B6%9C%E0%B7%9C%E0%B6%A9+%E0%B6%B1%E0%B7%90%E0%B6%9C%E0%B7%99%E0%B6%B1%E0%B7%84%E0%B7%92%E0%B6%BB+%E0%B6%9A%E0%B6%AB%E0%B7%92%E0%B7%82%E0%B7%8A%E0%B6%A8+%E0%B7%80%E0%B7%92%E0%B6%AF%E0%B7%8A%E2%80%8D%E0%B6%BA%E0%B7%8F%E0%B6%BD%E0%B6%BA/@6.0094046,80.3115358,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae16d77b71efb83:0x99473c07ce5185e7!8m2!3d6.0094046!4d80.3115358!16s%2Fg%2F11hrfwysn9?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": "https://www.google.com/maps/place/Harumalgoda+East+Primary+School/@6.0296574,80.2663133,17z"
   },
   {
     "id": "harumalgoda-west-primary-school-galle",
     "en": "Harumalgoda West Primary School",
     "si": "",
-    "lat": 6.0094046,
-    "lng": 80.3115358,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -6780,7 +6780,7 @@
       "zone": "Galle",
       "division": "Habaraduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/Harumalgoda+East+Primary+School+%E0%B7%84%E0%B6%BB%E0%B7%94%E0%B6%B8%E0%B6%BD%E0%B7%8A%E0%B6%9C%E0%B7%9C%E0%B6%A9+%E0%B6%B1%E0%B7%90%E0%B6%9C%E0%B7%99%E0%B6%B1%E0%B7%84%E0%B7%92%E0%B6%BB+%E0%B6%9A%E0%B6%AB%E0%B7%92%E0%B7%82%E0%B7%8A%E0%B6%A8+%E0%B7%80%E0%B7%92%E0%B6%AF%E0%B7%8A%E2%80%8D%E0%B6%BA%E0%B7%8F%E0%B6%BD%E0%B6%BA/data=!4m7!3m6!1s0x3ae16d77b71efb83:0x99473c07ce5185e7!8m2!3d6.0094046!4d80.3115358!16s%2Fg%2F11hrfwysn9!19sChIJg_set3dt4ToR54VRzgc8R5k?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "paragoda-sri-gunarathana-primary-school-galle",
@@ -7166,8 +7166,8 @@
     "id": "dikkubura-k-v-galle",
     "en": "Dikkubura K.V",
     "si": "",
-    "lat": 6.0173202,
-    "lng": 80.3782564,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -7179,7 +7179,7 @@
       "zone": "Galle",
       "division": "Habaraduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/Dikkumbura/data=!4m7!3m6!1s0x3ae16b708b035ef7:0xd46348ea4063d710!8m2!3d6.0173202!4d80.3782564!16s%2Fg%2F1thw54q2!19sChIJ914Di3Br4ToRENdjQOpIY9Q?authuser=0&hl=en&g_ep=EgoyMDI2MDkwMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "sri-dharmarama-model-school-galle",
@@ -7432,8 +7432,8 @@
     "id": "g-thalgaswala-tamil-k-v-galle",
     "en": "G-Thalgaswala Tamil K.V.",
     "si": "",
-    "lat": 6.2454053,
-    "lng": 80.2722718,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -7445,7 +7445,7 @@
       "zone": "Udugama",
       "division": "Mapalagama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Thalgaswala/@6.2434999,80.2755037,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae17cdddaa3ceef:0xda921a36ab61fa6a!8m2!3d6.2454053!4d80.2722718!16s%2Fg%2F1tnpjfhl?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "g-thalangaha-saraswathi-tamil-vidyalaya-galle",
@@ -7869,8 +7869,8 @@
     "id": "weeragoda-vijayaba-primary-school-galle",
     "en": "Weeragoda Vijayaba Primary School",
     "si": "",
-    "lat": 6.1895953,
-    "lng": 80.0894349,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -7882,7 +7882,7 @@
       "zone": "Ambalangoda",
       "division": "Hikkaduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/Weragoda+Vijayaba+Secondary+School/data=!4m7!3m6!1s0x3ae1827d022f4875:0xc983197c9c357451!8m2!3d6.1895953!4d80.0894349!16s%2Fg%2F11cs3zxd16!19sChIJdUgvAn2C4ToRUXQ1nHwZg8k?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "g-udugama-primary-school-galle",
@@ -7983,8 +7983,8 @@
     "id": "elpitiya-primery-school-galle",
     "en": "Elpitiya Primery School",
     "si": "",
-    "lat": 6.2903899,
-    "lng": 80.1624857,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -7996,7 +7996,7 @@
       "zone": "Elpitiya",
       "division": "Elpitiya"
     },
-    "mapUrl": "https://www.google.com/maps/place/Elpitiya/data=!4m7!3m6!1s0x3ae17f01f1a23aa7:0xf86272ea65da996!8m2!3d6.2903899!4d80.1624857!16s%2Fm%2F0g9ycg3!19sChIJpzqi8QF_4ToRlqldpi4nhg8?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": null
   },
   {
     "id": "al-aksha-primary-school-galle",
@@ -8078,8 +8078,8 @@
     "id": "thawalama-k-v-galle",
     "en": "Thawalama K.V.",
     "si": "",
-    "lat": 6.3351046,
-    "lng": 80.3413392,
+    "lat": null,
+    "lng": null,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -8091,7 +8091,7 @@
       "zone": "Udugama",
       "division": "Thawalama"
     },
-    "mapUrl": "https://www.google.com/maps/place/Thawalama/@6.3354738,80.3420734,15z/data=!3m1!4b1!4m6!3m5!1s0x3ae3d895a2e8f533:0x8cb603980e74d90!8m2!3d6.3351046!4d80.3413392!16s%2Fm%2F0g9y358?authuser=0&hl=en&entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": null
   },
   {
     "id": "royal-model-primay-school-galle",

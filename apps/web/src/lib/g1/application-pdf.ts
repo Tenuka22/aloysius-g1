@@ -133,12 +133,19 @@ export function buildApplicationSections(draft: ApplicationDraft): Section[] {
     {
       heading: "Residence",
       rows: [
-        { label: "Permanent address", value: orDash(draft.residence.permanentAddress) },
+        { label: "Permanent address (English)", value: orDash(draft.residence.permanentAddressEn) },
+        { label: "Permanent address (Sinhala)", value: orDash(draft.residence.permanentAddressSi) },
         {
-          label: "Current address",
+          label: "Current address (English)",
           value: draft.residence.sameAsPermanent
             ? "Same as permanent"
-            : orDash(draft.residence.currentAddress),
+            : orDash(draft.residence.currentAddressEn),
+        },
+        {
+          label: "Current address (Sinhala)",
+          value: draft.residence.sameAsPermanent
+            ? "Same as permanent"
+            : orDash(draft.residence.currentAddressSi),
         },
         { label: "District", value: orDash(draft.residence.district) },
         { label: "DS division", value: orDash(draft.residence.dsDivision) },
@@ -441,7 +448,7 @@ export async function buildApplicationPdf(draft: ApplicationDraft): Promise<Blob
   drawRow(
     [
       "Address",
-      orDash(draft.residence.permanentAddress),
+      orDash(draft.residence.permanentAddressEn),
       "GN division",
       orDash(draft.residence.gnDivision),
     ],

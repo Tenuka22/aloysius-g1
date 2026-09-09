@@ -21,13 +21,13 @@ import sys
 import time
 from pathlib import Path
 
-from .match_logic import accept, review_needed
+from .match_logic import accept, location_hints, review_needed
 from .models import MapSchool, SourceSchool
-from .pdf import parse_galle_schools
+from .pdf import is_primary_school, load_schools
 from .scraper import GoogleMapsScraper, load_attempts, record_attempt, save_attempts
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_SOURCE = HERE.parent / "schools.txt"
+DEFAULT_SOURCE = HERE.parent / "schools.csv"
 DEFAULT_CACHE = HERE.parent / "map_coordinates.json"  # same cache the main scraper writes
 REVIEW_PATH = HERE / "rescue_review.txt"
 
@@ -37,7 +37,7 @@ for _stream in (sys.stdout, sys.stderr):
 
 
 def load_sources(source_path: Path) -> list[SourceSchool]:
-    return parse_galle_schools(source_path)
+    return load_schools(source_path)
 
 
 def load_cache(cache_path: Path) -> dict[str, MapSchool]:
@@ -102,6 +102,8 @@ def main() -> None:
         return
 
     scraper = GoogleMapsScraper(headless=not args.headful, timeout_ms=int(args.timeout * 1_000))
+    # One Google place may only serve one listing row (see scraper.scrape_coordinates).
+    used_place_ids = {result.place_id for result in cache.values() if result.place_id}
     accepted = 0
     review_notes: list[str] = []
     for index, school in enumerate(missing, 1):
@@ -109,7 +111,7 @@ def main() -> None:
         if school_id in cache and cache[school_id].latitude is not None:
             continue
         try:
-            result = scraper.search_school(school)
+            result = scraper.search_school(school, used_place_ids=used_place_ids)
         except Exception as exc:  # noqa: BLE001
             attempts[school_id] = record_attempt("error", note=f"{type(exc).__name__}: {exc}"[:200])
             print(f"  [{index}/{len(missing)}] {school_id}: {school.name} -- ERROR {exc}")
@@ -122,9 +124,17 @@ def main() -> None:
             if args.delay > 0:
                 time.sleep(args.delay)
             continue
-        ok, score = accept(school.name, result.name)
+        ok, score = accept(
+            school.name,
+            result.name,
+            source_is_primary=is_primary_school(school),
+            result_address=result.address,
+            location_hints=location_hints(school.address, school.division, school.name),
+        )
         if ok:
             cache[school_id] = result
+            if result.place_id:
+                used_place_ids.add(result.place_id)
             attempts.pop(school_id, None)
             accepted += 1
             note = "" if score >= 0.9 else "borderline-accept"

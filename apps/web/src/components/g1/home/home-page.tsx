@@ -97,11 +97,11 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
     setActiveKey(key);
     addSavedKey(key);
     ui.closeLoadKey();
-    window.location.assign(`/application/access?key=${encodeURIComponent(key)}`);
+    window.location.assign(`/application?key=${encodeURIComponent(key)}`);
   };
   const handleQrKey = (key: string) => {
     ui.setQrImportOpen(false);
-    if (key) window.location.assign(`/application/access?key=${encodeURIComponent(key)}`);
+    if (key) window.location.assign(`/application?key=${encodeURIComponent(key)}`);
   };
   const submittedCount = keys.filter((k) => records[k]?.submitted).length;
   const draftCount = keys.filter((k) => !records[k]?.submitted).length;
@@ -197,7 +197,7 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
         <div className="grid gap-2.5">{visibleKeys.map((key) => {
           const record = records[key];
           return <Card key={key} className="group transition-all duration-200 hover:shadow-md hover:shadow-foreground/[0.04] hover:ring-primary/20">
-            <Link className="contents" to="/application/access" search={{ key, code: record?.sessionCode }}>
+            <Link className="contents" to="/application" search={{ key, code: record?.sessionCode }}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">

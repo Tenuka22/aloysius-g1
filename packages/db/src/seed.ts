@@ -270,8 +270,12 @@ function generateApplication(index: number, intakeYear: string) {
  email: `${firstName.toLowerCase()}.${(lastName ?? "").toLowerCase().replace(/\s/g, "")}@seed.example.com`,
  },
  residence: {
- permanentAddress: `${randInt(1, 200)} ${pick(["Temple", "Church", "Lake", "Garden", "Hill", "Park", "River", "Road", "Street", "Lane"])} ${pick(["Road", "Street", "Lane", "Place"])}, ${loc.address.split(",").pop()?.trim() ?? "Galle"}`,
- currentAddress: `${randInt(1, 200)} ${pick(["Temple", "Church", "Lake", "Garden", "Hill", "Park", "River", "Road", "Street", "Lane"])} ${pick(["Road", "Street", "Lane", "Place"])}, ${loc.address.split(",").pop()?.trim() ?? "Galle"}`,
+ // Sinhala address text has no seed pool yet; left blank like other
+ // optional Sinhala fields, which also doubles as empty-state test data.
+ permanentAddressEn: `${randInt(1, 200)} ${pick(["Temple", "Church", "Lake", "Garden", "Hill", "Park", "River", "Road", "Street", "Lane"])} ${pick(["Road", "Street", "Lane", "Place"])}, ${loc.address.split(",").pop()?.trim() ?? "Galle"}`,
+ permanentAddressSi: "",
+ currentAddressEn: `${randInt(1, 200)} ${pick(["Temple", "Church", "Lake", "Garden", "Hill", "Park", "River", "Road", "Street", "Lane"])} ${pick(["Road", "Street", "Lane", "Place"])}, ${loc.address.split(",").pop()?.trim() ?? "Galle"}`,
+ currentAddressSi: "",
  sameAsPermanent: Math.random() > 0.3,
  district: pick(["Galle", "Matara", "Hambantota", "Colombo", "Kalutara", "Kandy"]),
  dsDivision: pick(["Galle Four Gravets", "Bope-Poddala", "Habaraduwa", "Baddegama", "Imaduwa", "Dodanduwa"]),

@@ -168,9 +168,10 @@ generated, not hand-written. `apps/web/src/lib/g1/schools.ts` only declares the
 types and gives that JSON a type once, so application code imports `SCHOOLS`
 from the module rather than reaching for the JSON directly.
 
-The data comes from `apps/map-scraper`, which parses
-`apps/map-scraper/schools.txt` — the layout-preserving text extraction of the
-2018 *List of Government Schools* — and merges Google Maps coordinates cached
+The data comes from `apps/map-scraper`, which reads
+`apps/map-scraper/schools.csv` — the formatted conversion of the
+2018 *List of Government Schools* (converted once from the original text
+extraction by `convert_schools_csv.py`) — and merges Google Maps coordinates cached
 in `map_coordinates.json`.
 
 ```bash

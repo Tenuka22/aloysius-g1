@@ -8,11 +8,18 @@ import {
 } from "@/lib/color-classes";
 import { applicationPdfFilename, downloadApplicationPdf } from "@/lib/g1/application-pdf";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@aloysius-admissions/ui/components/tooltip";
+import {
   type ApplicationDraft,
   type CategoryApplication,
   type CategoryType,
   applyLocationChange,
   emptyDraft,
+  isSkipOutstanding,
   normalizeDraft,
   useApplicationStore,
 } from "@/lib/g1/application-store";
@@ -72,7 +79,12 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@aloysius-admissions/ui/components/drawer";
-import { Field, FieldDescription, FieldLabel } from "@aloysius-admissions/ui/components/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@aloysius-admissions/ui/components/field";
 import { Input } from "@aloysius-admissions/ui/components/input";
 import {
   Popover,
@@ -95,12 +107,14 @@ import {
   ArrowRight,
   CalendarIcon,
   Check,
+  ChevronDown,
   Clock3,
   Copy,
   Download,
   FileSearch,
   FileText,
   House,
+  Info,
   KeyRound,
   RotateCcw,
   ShieldCheck,
@@ -236,11 +250,14 @@ function StepIndicator({
   maxVisited,
   steps: stepLabels,
   onStepClick,
+  skippedSteps = [],
 }: {
   current: number;
   maxVisited: number;
   steps: string[];
   onStepClick: (index: number) => void;
+  /** Steps advanced past with a field still owed; drawn in amber. */
+  skippedSteps?: number[];
 }) {
   const { t } = useTranslation();
   // Clamp step index to prevent NaN in progress calculation and invalid array access
@@ -276,12 +293,15 @@ function StepIndicator({
           const isCurrent = index === current;
           const isCompleted = index < maxVisited;
           const canNavigate = index <= maxVisited;
+          const isSkipped = skippedSteps.includes(index);
           return (
             <button
               type="button"
               key={step}
               className={`inline-flex items-center gap-1.5 whitespace-nowrap bg-transparent px-2.5 py-2 text-xs transition-colors ${
-                isCurrent
+                isSkipped
+                  ? `font-bold ${STATUS_WARNING.text}`
+                  : isCurrent
                   ? "font-bold text-foreground"
                   : isCompleted
                     ? "text-foreground/80 hover:text-foreground"
@@ -294,14 +314,22 @@ function StepIndicator({
             >
               <span
                 className={`grid size-6 place-items-center rounded-full border text-[11px] transition-colors ${
-                  isCurrent
+                  isSkipped
+                    ? `${STATUS_WARNING.bgSolid} border-transparent text-white`
+                    : isCurrent
                     ? "border-primary bg-primary text-primary-foreground"
                     : isCompleted
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border"
                 }`}
               >
-                {isCompleted && !isCurrent ? <Check size={14} /> : index + 1}
+                {isSkipped ? (
+                  <TriangleAlert size={13} />
+                ) : isCompleted && !isCurrent ? (
+                  <Check size={14} />
+                ) : (
+                  index + 1
+                )}
               </span>
               {step}
             </button>
@@ -379,8 +407,16 @@ function BirthCertificateField({
     }
   };
 
+  const isBirthCertSkipped = draft.birthCertificateStatus === "skipped";
+
   return (
-    <Field>
+    <Field
+      className={
+        isBirthCertSkipped
+          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`
+          : undefined
+      }
+    >
       <FieldLabel htmlFor="applicant.birthCertificateNumber">
         {t("appForm.birthCert.label")}
       </FieldLabel>
@@ -395,7 +431,7 @@ function BirthCertificateField({
             set({
               applicant: { ...draft.applicant, birthCertificateNumber: e.target.value },
               bcRequestState: "",
-              ...(e.target.value.trim() ? { birthCertificateSkipped: false } : {}),
+              ...(e.target.value.trim() ? { birthCertificateStatus: "provided" as const } : {}),
             });
             scheduleCheck(e.target.value);
           }}
@@ -410,39 +446,22 @@ function BirthCertificateField({
           <RotateCcw size={14} /> {t("appForm.birthCert.refresh")}
         </Button>
       </div>
-      {!draft.applicant.birthCertificateNumber.trim() && (
-        <div
-          className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${
-            draft.birthCertificateSkipped
-              ? `${STATUS_WARNING.borderDash} ${STATUS_WARNING.bgSoft}`
-              : "border-dashed"
-          }`}
-        >
-          <p
-            className={`flex-1 text-sm ${
-              draft.birthCertificateSkipped ? STATUS_WARNING.text : "text-muted-foreground"
-            }`}
-          >
+      {/* Hidden once skipped: the amber notice below carries the state. */}
+      {!draft.applicant.birthCertificateNumber.trim() && !isBirthCertSkipped && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+          <p className="flex-1 text-sm text-muted-foreground">
             {t("appForm.birthCert.skipHint")}
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={
-              draft.birthCertificateSkipped
-                ? `${STATUS_WARNING.borderStrong} ${STATUS_WARNING.bgSoft} ${STATUS_WARNING.textStrong} ${STATUS_WARNING.hoverBg} ${STATUS_WARNING.hoverText}`
-                : undefined
-            }
-            onClick={onSkip}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={onSkip}>
             {t("appForm.birthCert.skipButton")}
           </Button>
         </div>
       )}
-      {draft.birthCertificateSkipped && !draft.applicant.birthCertificateNumber.trim() && (
+      {isBirthCertSkipped && (
         <p className={`text-sm ${STATUS_WARNING.text}`}>
-          {t("appForm.birthCert.alreadySkippedNotice")}
+          {draft.applicant.birthCertificateNumber.trim()
+            ? t("appForm.birthCert.skippedPreviouslyNotice")
+            : t("appForm.birthCert.alreadySkippedNotice")}
         </p>
       )}
       <Drawer open={draft.bcDialogOpen} onOpenChange={(open) => set({ bcDialogOpen: open })}>
@@ -517,8 +536,15 @@ function LocationStepCard({
   onSkip: () => void;
 }) {
   const { t } = useTranslation();
+  const isLocationSkipped = draft.locationStatus === "skipped";
   return (
-    <div className="grid gap-4">
+    <div
+      className={`grid gap-4 ${
+        isLocationSkipped
+          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`
+          : ""
+      }`}
+    >
       <div className="mb-4">
         <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.locationStep.heading")}</h3>
         <p className="text-sm text-muted-foreground">{t("appForm.locationStep.description")}</p>
@@ -532,6 +558,19 @@ function LocationStepCard({
         defaultValue={draft.defaultLocations[0] ?? emptyDraft.location}
         deviceLocationHistory={draft.deviceLocationHistory ?? []}
         userLocationHistory={draft.userLocationHistory ?? []}
+        skipped={isLocationSkipped}
+        onClear={() => {
+          if (readOnly) return;
+          // Clears only the current selection. The captured points stay in
+          // the location histories, so the real location is still offered
+          // under "latest saved" and the skip option becomes available again.
+          set({
+            location: { label: "", address: "", latitude: null, longitude: null, source: "" },
+            selectedLocation: { label: "", address: "", latitude: null, longitude: null, source: "" },
+            locationStatus: "pending",
+            locationCanProceed: false,
+          });
+        }}
         onAvailabilityChange={(canProceed) => set({ locationCanProceed: canProceed })}
         onChange={(value, defaultValue) => {
           if (readOnly) return;
@@ -539,7 +578,7 @@ function LocationStepCard({
           set({
             location: value,
             selectedLocation: value,
-            locationSkipped: false,
+            locationStatus: "provided",
             ...(histories.defaultLocations !== draft.defaultLocations
               ? { defaultLocations: histories.defaultLocations }
               : {}),
@@ -552,37 +591,19 @@ function LocationStepCard({
           });
         }}
       />
-      {!readOnly && !locationIsReady(draft.location) && (
-        <div
-          className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${
-            draft.locationSkipped
-              ? `${STATUS_WARNING.borderDash} ${STATUS_WARNING.bgSoft}`
-              : "border-dashed"
-          }`}
-        >
-          <p
-            className={`flex-1 text-sm ${
-              draft.locationSkipped ? STATUS_WARNING.text : "text-muted-foreground"
-            }`}
-          >
+      {/* Offering the skip again after it was taken is noise; the amber
+          notice below already states what is outstanding. */}
+      {!readOnly && !locationIsReady(draft.location) && !isLocationSkipped && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+          <p className="flex-1 text-sm text-muted-foreground">
             {t("appForm.locationStep.skipHint")}
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={
-              draft.locationSkipped
-                ? `${STATUS_WARNING.borderStrong} ${STATUS_WARNING.bgSoft} ${STATUS_WARNING.textStrong} ${STATUS_WARNING.hoverBg} ${STATUS_WARNING.hoverText}`
-                : undefined
-            }
-            onClick={onSkip}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={onSkip}>
             {t("appForm.locationStep.skipButton")}
           </Button>
         </div>
       )}
-      {draft.locationSkipped && !locationIsReady(draft.location) && (
+      {isLocationSkipped && !locationIsReady(draft.location) && (
         <p className={`text-sm ${STATUS_WARNING.text}`}>
           {t("appForm.locationStep.skippedNotice")}
         </p>
@@ -700,7 +721,7 @@ function ApplicantStep({
         </a>
       </Field>
 
-      <Field>
+      <Field data-invalid={draft.applicant.gender === "Female"}>
         <FieldLabel htmlFor="applicant.gender">{t("appForm.applicantStep.gender")}</FieldLabel>
         <Select
           value={draft.applicant.gender || ""}
@@ -714,16 +735,15 @@ function ApplicantStep({
             <SelectItem value="Male">{t("appForm.applicantStep.gender.male")}</SelectItem>
           </SelectContent>
         </Select>
+        {draft.applicant.gender === "Female" && (
+          <FieldError>
+            {ADMISSION_RESTRICTIONS.restrictGenderMessage ||
+              t("appForm.applicantStep.genderRestriction")}
+          </FieldError>
+        )}
       </Field>
 
-      {draft.applicant.gender === "Female" && (
-        <p className="col-span-full text-sm text-destructive">
-          {ADMISSION_RESTRICTIONS.restrictGenderMessage ||
-            t("appForm.applicantStep.genderRestriction")}
-        </p>
-      )}
-
-      <Field>
+      <Field data-invalid={draft.applicant.religion === "Christian"}>
         <FieldLabel htmlFor="applicant.religion">{t("appForm.applicantStep.religion")}</FieldLabel>
         <Select
           value={draft.applicant.religion || ""}
@@ -743,16 +763,21 @@ function ApplicantStep({
             <SelectItem value="Islam">{t("appForm.applicantStep.religion.islam")}</SelectItem>
           </SelectContent>
         </Select>
+        {draft.applicant.religion === "Christian" && (
+          <FieldError>
+            {ADMISSION_RESTRICTIONS.restrictReligionMessage ||
+              t("appForm.applicantStep.religionRestriction")}
+          </FieldError>
+        )}
       </Field>
 
-      {draft.applicant.religion === "Christian" && (
-        <p className="col-span-full text-sm text-destructive">
-          {ADMISSION_RESTRICTIONS.restrictReligionMessage ||
-            t("appForm.applicantStep.religionRestriction")}
-        </p>
-      )}
-
-      <Field>
+      <Field
+        data-invalid={
+          draft.applicant.educationMedium === "Tamil" &&
+          ADMISSION_RESTRICTIONS.allowedEducationMediums.length > 0 &&
+          !ADMISSION_RESTRICTIONS.allowedEducationMediums.includes(draft.applicant.educationMedium)
+        }
+      >
         <FieldLabel htmlFor="applicant.educationMedium">
           {t("appForm.applicantStep.educationMedium")}
         </FieldLabel>
@@ -774,69 +799,65 @@ function ApplicantStep({
             </SelectItem>
           </SelectContent>
         </Select>
+        {draft.applicant.educationMedium === "Tamil" &&
+          ADMISSION_RESTRICTIONS.allowedEducationMediums.length > 0 &&
+          !ADMISSION_RESTRICTIONS.allowedEducationMediums.includes(
+            draft.applicant.educationMedium,
+          ) && (
+            <FieldError>
+              {ADMISSION_RESTRICTIONS.restrictMediumMessage ||
+                t("appForm.applicantStep.mediumRestriction")}
+            </FieldError>
+          )}
       </Field>
 
-      {draft.applicant.educationMedium === "Tamil" &&
-        ADMISSION_RESTRICTIONS.allowedEducationMediums.length > 0 &&
-        !ADMISSION_RESTRICTIONS.allowedEducationMediums.includes(
-          draft.applicant.educationMedium,
-        ) && (
-          <p className="col-span-full text-sm text-destructive">
-            {ADMISSION_RESTRICTIONS.restrictMediumMessage ||
-              t("appForm.applicantStep.mediumRestriction")}
-          </p>
-        )}
-
-      <Field>
+      <Field data-invalid={Boolean(draft.applicant.dateOfBirth) && !isG1EligibleDob(draft.applicant.dateOfBirth)}>
         <FieldLabel htmlFor="applicant.dateOfBirth">
           {t("appForm.applicantStep.dateOfBirth")}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                type="button"
+                aria-label={t("appForm.applicantStep.dateOfBirthRuleAria")}
+                className="ml-1.5 inline-flex align-middle text-muted-foreground hover:text-foreground"
+              >
+                <Info size={14} />
+              </TooltipTrigger>
+              <TooltipContent className="leading-relaxed">
+                {t("appForm.applicantStep.dateOfBirthDescription", {
+                  earliest: format(new Date(G1_DOB_EARLIEST() + "T00:00:00"), "dd/MM/yyyy"),
+                  latest: format(new Date(G1_DOB_LATEST() + "T00:00:00"), "dd/MM/yyyy"),
+                })}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </FieldLabel>
         <DateOfBirthPicker
           value={draft.applicant.dateOfBirth}
           onChange={(dateStr) => set({ applicant: { ...draft.applicant, dateOfBirth: dateStr } })}
         />
-        <FieldDescription>
-          {t("appForm.applicantStep.dateOfBirthDescription", {
-            earliest: format(new Date(G1_DOB_EARLIEST() + "T00:00:00"), "dd/MM/yyyy"),
-            latest: format(new Date(G1_DOB_LATEST() + "T00:00:00"), "dd/MM/yyyy"),
-          })}
-        </FieldDescription>
         {draft.applicant.dateOfBirth &&
           (() => {
-            const age = ageAsOf(draft.applicant.dateOfBirth);
             const cutoffAge = ageAsOf(
               draft.applicant.dateOfBirth,
               new Date(G1_DOB_CUTOFF() + "T00:00:00"),
             );
             return (
-              age && (
-                <div className="grid gap-0.5">
-                  <p className="text-sm text-muted-foreground">
-                    {t("appForm.applicantStep.dateOfBirthCurrentAge", {
-                      years: age.years,
-                      months: age.months,
-                    })}
-                  </p>
-                  {cutoffAge && (
-                    <p className="text-sm text-muted-foreground">
-                      {t("appForm.applicantStep.dateOfBirthCutoffAge", {
-                        date: format(new Date(G1_DOB_CUTOFF() + "T00:00:00"), "d MMM yyyy"),
-                        years: cutoffAge.years,
-                        months: cutoffAge.months,
-                      })}
-                    </p>
-                  )}
-                </div>
+              cutoffAge && (
+                <p className="text-sm text-muted-foreground">
+                  {t("appForm.applicantStep.dateOfBirthCutoffAge", {
+                    date: format(new Date(G1_DOB_CUTOFF() + "T00:00:00"), "d MMM yyyy"),
+                    years: cutoffAge.years,
+                    months: cutoffAge.months,
+                  })}
+                </p>
               )
             );
           })()}
+        {draft.applicant.dateOfBirth && !isG1EligibleDob(draft.applicant.dateOfBirth) && (
+          <FieldError>{t("appForm.applicantStep.dateOfBirthRestriction")}</FieldError>
+        )}
       </Field>
-
-      {draft.applicant.dateOfBirth && !isG1EligibleDob(draft.applicant.dateOfBirth) && (
-        <p className="col-span-full text-sm text-destructive">
-          {t("appForm.applicantStep.dateOfBirthRestriction")}
-        </p>
-      )}
 
       <div className="col-span-full">
         <BirthCertificateField draft={draft} set={set} onSkip={onSkip} />
@@ -916,7 +937,7 @@ function GuardianStep({
         </a>
       </Field>
 
-      <Field>
+      <Field data-invalid={!nicValid}>
         <FieldLabel htmlFor="guardian.nic">{t("appForm.guardianStep.nic")}</FieldLabel>
         <Input
           id="guardian.nic"
@@ -930,7 +951,7 @@ function GuardianStep({
           }
         />
         {!nicValid && (
-          <p className="text-sm text-destructive">{t("appForm.guardianStep.nicError")}</p>
+          <FieldError>{t("appForm.guardianStep.nicError")}</FieldError>
         )}
       </Field>
 
@@ -984,6 +1005,21 @@ function ResidenceStep({
   const setResidence = (residence: Partial<ApplicationDraft["residence"]>) =>
     set({ residence: { ...draft.residence, ...residence } } as Partial<ApplicationDraft>);
 
+  // While the addresses match, every permanent-address edit is mirrored into
+  // the current-address fields too. That keeps `currentAddressEn/Si` correct
+  // in the saved record without every downstream reader (PDF, admin views,
+  // data extraction) having to special-case `sameAsPermanent` itself.
+  const setPermanentAddress = (patch: { permanentAddressEn?: string; permanentAddressSi?: string }) =>
+    setResidence({
+      ...patch,
+      ...(sameAsPermanent
+        ? {
+            currentAddressEn: patch.permanentAddressEn ?? draft.residence.permanentAddressEn,
+            currentAddressSi: patch.permanentAddressSi ?? draft.residence.permanentAddressSi,
+          }
+        : {}),
+    });
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div className="col-span-full mb-4">
@@ -992,48 +1028,87 @@ function ResidenceStep({
       </div>
 
       <Field>
-        <FieldLabel htmlFor="residence.permanentAddress">
-          {t("appForm.residenceStep.permanentAddress")}
+        <FieldLabel htmlFor="residence.permanentAddressEn">
+          {t("appForm.residenceStep.permanentAddressEn")}
         </FieldLabel>
         <Input
-          id="residence.permanentAddress"
-          value={draft.residence.permanentAddress}
-          placeholder={t("appForm.residenceStep.permanentAddressPlaceholder")}
-          onChange={(e) => setResidence({ permanentAddress: e.target.value })}
+          id="residence.permanentAddressEn"
+          value={draft.residence.permanentAddressEn}
+          placeholder={t("appForm.residenceStep.permanentAddressEnPlaceholder")}
+          onChange={(e) => setPermanentAddress({ permanentAddressEn: e.target.value })}
         />
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="residence.currentAddress">
-          {t("appForm.residenceStep.currentAddress")}
+        <FieldLabel htmlFor="residence.permanentAddressSi">
+          {t("appForm.residenceStep.permanentAddressSi")}
         </FieldLabel>
         <Input
-          id="residence.currentAddress"
-          value={draft.residence.currentAddress}
-          placeholder={t("appForm.residenceStep.currentAddressPlaceholder")}
-          disabled={sameAsPermanent}
-          onChange={(e) => setResidence({ currentAddress: e.target.value })}
+          id="residence.permanentAddressSi"
+          value={draft.residence.permanentAddressSi}
+          onChange={(e) => setPermanentAddress({ permanentAddressSi: e.target.value })}
         />
+        <a
+          className="text-xs text-primary underline underline-offset-1 hover:text-primary/80"
+          href="https://www.helakuru.lk/keyboard"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t("appForm.residenceStep.sinhalaKeyboardLink")}
+        </a>
       </Field>
 
       <div className="col-span-full">
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
             className="size-5"
-            checked={sameAsPermanent}
+            checked={!sameAsPermanent}
             onCheckedChange={(checked) => {
-              const c = checked === true;
+              const differs = checked === true;
               setResidence({
-                sameAsPermanent: c,
-                currentAddress: c
-                  ? draft.residence.permanentAddress
-                  : draft.residence.currentAddress,
+                sameAsPermanent: !differs,
+                // Turning "differs" off snaps current back to permanent
+                // immediately, rather than leaving stale text behind that
+                // just happens to be hidden.
+                ...(!differs
+                  ? {
+                      currentAddressEn: draft.residence.permanentAddressEn,
+                      currentAddressSi: draft.residence.permanentAddressSi,
+                    }
+                  : {}),
               });
             }}
           />
-          {t("appForm.residenceStep.sameAsPermanent")}
+          {t("appForm.residenceStep.addressDiffers")}
         </label>
       </div>
+
+      {!sameAsPermanent && (
+        <>
+          <Field>
+            <FieldLabel htmlFor="residence.currentAddressEn">
+              {t("appForm.residenceStep.currentAddressEn")}
+            </FieldLabel>
+            <Input
+              id="residence.currentAddressEn"
+              value={draft.residence.currentAddressEn}
+              placeholder={t("appForm.residenceStep.currentAddressEnPlaceholder")}
+              onChange={(e) => setResidence({ currentAddressEn: e.target.value })}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="residence.currentAddressSi">
+              {t("appForm.residenceStep.currentAddressSi")}
+            </FieldLabel>
+            <Input
+              id="residence.currentAddressSi"
+              value={draft.residence.currentAddressSi}
+              onChange={(e) => setResidence({ currentAddressSi: e.target.value })}
+            />
+          </Field>
+        </>
+      )}
 
       <Field>
         <FieldLabel htmlFor="residence.district">{t("appForm.residenceStep.district")}</FieldLabel>
@@ -1069,6 +1144,7 @@ function ResidenceStep({
         <Combobox
           items={dsOptions}
           value={draft.residence.dsDivision || ""}
+          disabled={!selectedDistrict}
           onValueChange={(val) => {
             if (val) {
               setResidence({ dsDivision: val, dsSearch: val, gnDivision: "" });
@@ -1077,7 +1153,14 @@ function ResidenceStep({
             }
           }}
         >
-          <ComboboxInput placeholder={t("appForm.residenceStep.dsDivisionPlaceholder")} />
+          <ComboboxInput
+            disabled={!selectedDistrict}
+            placeholder={
+              selectedDistrict
+                ? t("appForm.residenceStep.dsDivisionPlaceholder")
+                : t("appForm.residenceStep.dsDivisionLocked")
+            }
+          />
           <ComboboxContent>
             <ComboboxEmpty>{t("appForm.residenceStep.dsDivisionEmpty")}</ComboboxEmpty>
             <ComboboxList>
@@ -1089,6 +1172,9 @@ function ResidenceStep({
             </ComboboxList>
           </ComboboxContent>
         </Combobox>
+        {!selectedDistrict && (
+          <FieldDescription>{t("appForm.residenceStep.dsDivisionLockedHint")}</FieldDescription>
+        )}
       </Field>
 
       <Field>
@@ -1098,6 +1184,7 @@ function ResidenceStep({
         <Combobox
           items={gnOptions}
           value={draft.residence.gnDivision || ""}
+          disabled={!selectedDs}
           onValueChange={(val) => {
             if (val) {
               setResidence({ gnDivision: val, gnSearch: val });
@@ -1106,7 +1193,14 @@ function ResidenceStep({
             }
           }}
         >
-          <ComboboxInput placeholder={t("appForm.residenceStep.gnDivisionPlaceholder")} />
+          <ComboboxInput
+            disabled={!selectedDs}
+            placeholder={
+              selectedDs
+                ? t("appForm.residenceStep.gnDivisionPlaceholder")
+                : t("appForm.residenceStep.gnDivisionLocked")
+            }
+          />
           <ComboboxContent>
             <ComboboxEmpty>{t("appForm.residenceStep.gnDivisionEmpty")}</ComboboxEmpty>
             <ComboboxList>
@@ -1118,6 +1212,9 @@ function ResidenceStep({
             </ComboboxList>
           </ComboboxContent>
         </Combobox>
+        {!selectedDs && (
+          <FieldDescription>{t("appForm.residenceStep.gnDivisionLockedHint")}</FieldDescription>
+        )}
       </Field>
 
       <Field>
@@ -1160,9 +1257,8 @@ function DeclarationStep({
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   const { t } = useTranslation();
-  const locationMissing = draft.locationSkipped && !locationIsReady(draft.location);
-  const birthCertMissing =
-    draft.birthCertificateSkipped && !draft.applicant.birthCertificateNumber.trim();
+  const locationSkipped = draft.locationStatus === "skipped";
+  const birthCertSkipped = draft.birthCertificateStatus === "skipped";
   return (
     <div className="grid max-w-[920px] gap-5">
       <div className="mb-4">
@@ -1170,56 +1266,52 @@ function DeclarationStep({
         <p className="text-sm text-muted-foreground">{t("appForm.declarationStep.description")}</p>
       </div>
 
-      {(locationMissing || birthCertMissing) && (
-        <div className="grid gap-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
-          <p className="text-sm font-medium text-primary">
-            {t("appForm.declarationStep.completeSkippedHeading")}
-          </p>
-          {locationMissing && (
-            <div className="grid gap-2">
-              <span className="text-sm font-medium">{t("appForm.locationStep.heading")}</span>
-              <LocationStep
-                readOnly={false}
-                autoRequestLocation={
-                  draft.location?.latitude == null && draft.selectedLocation?.latitude == null
-                }
-                value={draft.location ?? emptyDraft.location}
-                defaultValue={draft.defaultLocations[0] ?? emptyDraft.location}
-                deviceLocationHistory={draft.deviceLocationHistory ?? []}
-                userLocationHistory={draft.userLocationHistory ?? []}
-                onAvailabilityChange={(canProceed) => set({ locationCanProceed: canProceed })}
-                onChange={(value, defaultValue) => {
-                  const histories = applyLocationChange(draft, value, defaultValue);
-                  set({
-                    location: value,
-                    selectedLocation: value,
-                    locationSkipped: false,
-                    ...(histories.defaultLocations !== draft.defaultLocations
-                      ? { defaultLocations: histories.defaultLocations }
-                      : {}),
-                    ...(histories.deviceLocationHistory !== draft.deviceLocationHistory
-                      ? { deviceLocationHistory: histories.deviceLocationHistory }
-                      : {}),
-                    ...(histories.userLocationHistory !== draft.userLocationHistory
-                      ? { userLocationHistory: histories.userLocationHistory }
-                      : {}),
-                  });
-                }}
-              />
-            </div>
-          )}
-          {birthCertMissing && (
-            <div className="grid gap-2">
-              {/* Already on the final step: re-skipping here only re-marks the
-                  field, there is nowhere further to advance to. */}
-              <BirthCertificateField
-                draft={draft}
-                set={set}
-                onSkip={() => set({ birthCertificateSkipped: true })}
-              />
-            </div>
-          )}
+      {(locationSkipped || birthCertSkipped) && (
+        <p className="text-sm font-medium text-amber-700">
+          {t("appForm.declarationStep.completeSkippedHeading")}
+        </p>
+      )}
+
+      {locationSkipped && (
+        <div className={`grid gap-2 rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`}>
+          <span className="text-sm font-medium">{t("appForm.locationStep.heading")}</span>
+          <LocationStep
+            readOnly={false}
+            skipped
+            autoRequestLocation={
+              draft.location?.latitude == null && draft.selectedLocation?.latitude == null
+            }
+            value={draft.location ?? emptyDraft.location}
+            defaultValue={draft.defaultLocations[0] ?? emptyDraft.location}
+            deviceLocationHistory={draft.deviceLocationHistory ?? []}
+            userLocationHistory={draft.userLocationHistory ?? []}
+            onAvailabilityChange={(canProceed) => set({ locationCanProceed: canProceed })}
+            onChange={(value, defaultValue) => {
+              const histories = applyLocationChange(draft, value, defaultValue);
+              set({
+                location: value,
+                selectedLocation: value,
+                ...(histories.defaultLocations !== draft.defaultLocations
+                  ? { defaultLocations: histories.defaultLocations }
+                  : {}),
+                ...(histories.deviceLocationHistory !== draft.deviceLocationHistory
+                  ? { deviceLocationHistory: histories.deviceLocationHistory }
+                  : {}),
+                ...(histories.userLocationHistory !== draft.userLocationHistory
+                  ? { userLocationHistory: histories.userLocationHistory }
+                  : {}),
+              });
+            }}
+          />
         </div>
+      )}
+
+      {birthCertSkipped && (
+        <BirthCertificateField
+          draft={draft}
+          set={set}
+          onSkip={() => set({ birthCertificateStatus: "skipped" })}
+        />
       )}
 
       <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
@@ -1270,7 +1362,7 @@ function ReviewStep({
       step: 0,
       fields: [
         [
-          t("appForm.reviewStep.fields.permanentAddress"),
+          t("appForm.reviewStep.fields.locationAddress"),
           draft.location.address || t("appForm.reviewStep.status.notCompleted"),
         ],
       ] as [string, string][],
@@ -1344,12 +1436,24 @@ function ReviewStep({
       step: 3,
       fields: [
         [
-          t("appForm.reviewStep.fields.permanentAddress"),
-          draft.residence.permanentAddress || t("appForm.reviewStep.status.notCompleted"),
+          t("appForm.reviewStep.fields.permanentAddressEn"),
+          draft.residence.permanentAddressEn || t("appForm.reviewStep.status.notCompleted"),
         ],
         [
-          t("appForm.reviewStep.fields.currentAddress"),
-          draft.residence.currentAddress || t("appForm.reviewStep.status.notCompleted"),
+          t("appForm.reviewStep.fields.permanentAddressSi"),
+          draft.residence.permanentAddressSi || t("appForm.reviewStep.status.notProvided"),
+        ],
+        [
+          t("appForm.reviewStep.fields.currentAddressEn"),
+          draft.residence.sameAsPermanent
+            ? t("appForm.reviewStep.status.sameAsPermanent")
+            : draft.residence.currentAddressEn || t("appForm.reviewStep.status.notCompleted"),
+        ],
+        [
+          t("appForm.reviewStep.fields.currentAddressSi"),
+          draft.residence.sameAsPermanent
+            ? t("appForm.reviewStep.status.sameAsPermanent")
+            : draft.residence.currentAddressSi || t("appForm.reviewStep.status.notProvided"),
         ],
         [
           t("appForm.reviewStep.fields.district"),
@@ -1704,6 +1808,9 @@ export function ApplicationForm({
   // Blocks a second Continue click while the previous one is still saving to
   // the server, so the step transition genuinely waits for the save.
   const [isAdvancing, setIsAdvancing] = useState(false);
+  // Only consulted below `md`, where the identity cards are collapsed behind a
+  // toggle. From `md` up the grid is always shown and this is ignored.
+  const [identityOpen, setIdentityOpen] = useState(false);
   const [pendingSkipAdvance, setPendingSkipAdvance] = useState(false);
   /**
    * PDF receipt download. Explicit states rather than a bare boolean so the
@@ -2035,15 +2142,32 @@ export function ApplicationForm({
     step: current,
     locationCanProceed: draft.locationCanProceed,
     location: draft.location,
-    locationSkipped: draft.locationSkipped,
+    locationStatus: draft.locationStatus,
     duplicateBirthCertificate: draft.duplicateBirthCertificate,
-    birthCertificateSkipped: draft.birthCertificateSkipped,
+    birthCertificateStatus: draft.birthCertificateStatus,
     applicant: draft.applicant,
     guardian: draft.guardian,
     categories: draft.categories,
     declaration: draft.declaration,
   });
   const isNextDisabled = Boolean(nextDisabledReason);
+
+  // Steps the applicant advanced past by skipping a field they still owe.
+  // Surfaced on the stepper and on Continue so an outstanding skip stays
+  // visible instead of being discovered at the very end.
+  const locationOutstanding = isSkipOutstanding(
+    draft.locationStatus,
+    locationIsReady(draft.location),
+  );
+  const birthCertOutstanding = isSkipOutstanding(
+    draft.birthCertificateStatus,
+    draft.applicant.birthCertificateNumber.trim().length > 0,
+  );
+  const skippedSteps: number[] = [
+    ...(locationOutstanding ? [0] : []),
+    ...(birthCertOutstanding ? [1] : []),
+  ];
+  const advancingWithSkip = skippedSteps.includes(current);
 
   // Skipping a field advances to the next step, but only when the skip is what
   // was holding the step back. On the applicant step the birth certificate is
@@ -2074,81 +2198,103 @@ export function ApplicationForm({
               {t("appForm.buttons.applicantInfoDescription")}
             </p>
             {(draft.sessionCode || draft.accessKey || draft.applicant.fullName) && (
-              <div className="mt-5 grid max-w-[900px] grid-cols-1 gap-3 sm:grid-cols-2">
-                {draft.applicant.fullName && (
-                  <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
-                    <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                      <span>{t("appForm.reviewStep.fields.fullName")}</span>
+              <div className="mt-5 max-w-[1180px]">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-2 rounded-[14px] border border-primary/25 bg-primary/5 p-4 text-left md:hidden"
+                  aria-expanded={identityOpen}
+                  onClick={() => setIdentityOpen((open) => !open)}
+                >
+                  <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
+                    {t("appForm.buttons.applicantInfoToggle")}
+                  </span>
+                  <ChevronDown
+                    size={18}
+                    className={`shrink-0 text-muted-foreground transition-transform ${identityOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <div
+                  className={`gap-4 md:mt-0 md:grid md:grid-cols-2 lg:grid-cols-3 ${identityOpen ? "mt-3 grid" : "hidden"}`}
+                >
+                  {draft.applicant.fullName && (
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
+                      <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
+                        {t("appForm.reviewStep.fields.fullName")}
+                      </span>
+                      <span className="block mt-1 font-bold tracking-wide text-[clamp(1rem,1.4vw,1.12rem)]">
+                        {draft.applicant.fullName}
+                      </span>
                     </div>
-                    <span className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
-                      {draft.applicant.fullName}
-                    </span>
-                  </div>
-                )}
-                {draft.sessionCode && (
-                  <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
-                    <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                      <span>{t("appForm.sessionCode.label")}</span>
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 border-0 rounded-md px-1.5 py-1 text-primary bg-transparent text-[0.72rem] hover:bg-primary/10"
-                        aria-label={t("appForm.sessionCode.copyAriaLabel")}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyWithFeedback("session", draft.sessionCode);
-                        }}
-                      >
-                        {draft.copiedField === "session" ? (
-                          <>
-                            <Check size={15} /> {t("appForm.sessionCode.copied")}
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={15} /> {t("appForm.sessionCode.copy")}
-                          </>
-                        )}
-                      </button>
+                  )}
+                  {draft.sessionCode && (
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
+                          {t("appForm.sessionCode.label")}
+                        </span>
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-md px-1.5 py-1 text-primary text-[0.72rem] transition-colors hover:bg-primary/10"
+                          aria-label={t("appForm.sessionCode.copyAriaLabel")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyWithFeedback("session", draft.sessionCode);
+                          }}
+                        >
+                          {draft.copiedField === "session" ? (
+                            <>
+                              <Check size={14} /> {t("appForm.sessionCode.copied")}
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={14} /> {t("appForm.sessionCode.copy")}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <code className="block mt-1 overflow-wrap-anywhere font-bold tracking-wide text-[clamp(0.98rem,1.3vw,1.1rem)]">
+                        {draft.sessionCode}
+                      </code>
+                      <span className="text-primary text-[0.78rem] font-semibold leading-relaxed">
+                        {t("appForm.sessionCode.hint")}
+                      </span>
                     </div>
-                    <code className="block overflow-wrap-anywhere text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
-                      {draft.sessionCode}
-                    </code>
-                    <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
-                      {t("appForm.sessionCode.hint")}
-                    </span>
-                  </div>
-                )}
-                {draft.accessKey && (
-                  <div className="grid gap-2 p-4 rounded-[14px] border border-primary/25 bg-primary/5">
-                    <div className="flex items-center justify-between gap-3 text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                      <span>{t("appForm.accessKey.label")}</span>
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 border-0 rounded-md px-1.5 py-1 text-primary bg-transparent text-[0.72rem] hover:bg-primary/10"
-                        aria-label={t("appForm.accessKey.copyAriaLabel")}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyWithFeedback("key", draft.accessKey);
-                        }}
-                      >
-                        {draft.copiedField === "key" ? (
-                          <>
-                            <Check size={15} /> {t("appForm.sessionCode.copied")}
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={15} /> {t("appForm.sessionCode.copy")}
-                          </>
-                        )}
-                      </button>
+                  )}
+                  {draft.accessKey && (
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
+                          {t("appForm.accessKey.label")}
+                        </span>
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-md px-1.5 py-1 text-primary text-[0.72rem] transition-colors hover:bg-primary/10"
+                          aria-label={t("appForm.accessKey.copyAriaLabel")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyWithFeedback("key", draft.accessKey);
+                          }}
+                        >
+                          {draft.copiedField === "key" ? (
+                            <>
+                              <Check size={14} /> {t("appForm.accessKey.copied")}
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={14} /> {t("appForm.accessKey.copy")}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <code className="block mt-1 break-all font-bold tracking-wide text-[clamp(0.98rem,1.3vw,1.1rem)] truncate max-w-md">
+                        {draft.accessKey}
+                      </code>
+                      <span className="py-2 text-primary text-[0.78rem] font-semibold leading-relaxed">
+                        {t("appForm.accessKey.hint")}
+                      </span>
                     </div>
-                    <code className="block break-all text-[clamp(1rem,1.5vw,1.18rem)] font-bold tracking-wide">
-                      {draft.accessKey}
-                    </code>
-                    <span className="block rounded-lg bg-primary/11 px-2.5 py-2 text-primary text-[0.82rem] font-semibold leading-relaxed">
-                      {t("appForm.accessKey.hint")}
-                    </span>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -2184,6 +2330,7 @@ export function ApplicationForm({
           current={current}
           maxVisited={draft.maxVisitedStep}
           steps={steps}
+          skippedSteps={skippedSteps}
           onStepClick={(index) => draft.setStep(index)}
         />
 
@@ -2193,14 +2340,14 @@ export function ApplicationForm({
               draft={draft}
               readOnly={readOnly}
               set={set}
-              onSkip={() => skipAndAdvance({ locationSkipped: true })}
+              onSkip={() => skipAndAdvance({ locationStatus: "skipped" })}
             />
           )}
           {current === 1 && (
             <ApplicantStep
               draft={draft}
               set={set}
-              onSkip={() => skipAndAdvance({ birthCertificateSkipped: true })}
+              onSkip={() => skipAndAdvance({ birthCertificateStatus: "skipped" })}
             />
           )}
           {current === 2 && <GuardianStep draft={draft} set={set} />}
@@ -2671,8 +2818,20 @@ export function ApplicationForm({
                   </Button>
                 )}
                 {current < steps.length - 1 ? (
-                  <Button disabled={isNextDisabled || isAdvancing} onClick={next}>
-                    {t("appForm.buttons.continue")} <ArrowRight size={17} />
+                  <Button
+                    disabled={isNextDisabled || isAdvancing}
+                    className={
+                      advancingWithSkip
+                        ? `${STATUS_WARNING.bgSolid} text-white ${STATUS_WARNING.hoverBg} ${STATUS_WARNING.hoverText}`
+                        : undefined
+                    }
+                    onClick={next}
+                  >
+                    {advancingWithSkip && <TriangleAlert size={16} />}
+                    {advancingWithSkip
+                      ? t("appForm.buttons.continueSkipped")
+                      : t("appForm.buttons.continue")}{" "}
+                    <ArrowRight size={17} />
                   </Button>
                 ) : (
                   <Button

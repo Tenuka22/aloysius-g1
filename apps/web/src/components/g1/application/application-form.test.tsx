@@ -158,8 +158,10 @@ const validGuardian = {
 };
 
 const validResidence = {
-  permanentAddress: "123 Temple St, Colombo",
-  currentAddress: "456 Park Rd, Colombo",
+  permanentAddressEn: "123 Temple St, Colombo",
+  permanentAddressSi: "",
+  currentAddressEn: "456 Park Rd, Colombo",
+  currentAddressSi: "",
   sameAsPermanent: false,
   district: "Colombo",
   dsDivision: "Colombo",
@@ -440,12 +442,12 @@ describe("ApplicationForm – step 3 (residence)", () => {
     expect(screen.getByText("Marking scheme categories")).toBeInTheDocument();
   });
 
-  it("copies permanent address to current when sameAsPermanent is toggled", async () => {
-    setStore({ currentStep: 3, residence: { ...validResidence, sameAsPermanent: false, currentAddress: "" } });
+  it("copies permanent address to current when unmarked as different", async () => {
+    setStore({ currentStep: 3, residence: { ...validResidence, sameAsPermanent: false, currentAddressEn: "" } });
     await renderForm();
-    const checkbox = screen.getByRole("checkbox", { name: /same as permanent/i });
+    const checkbox = screen.getByRole("checkbox", { name: /different from the permanent address/i });
     await userEvent.click(checkbox);
-    expect(useApplicationStore.getState().residence.currentAddress).toBe(validResidence.permanentAddress);
+    expect(useApplicationStore.getState().residence.currentAddressEn).toBe(validResidence.permanentAddressEn);
   });
 
   it("returns to residence when Back is clicked from the categories step", async () => {
@@ -688,23 +690,23 @@ describe("ApplicationForm – form field typing", () => {
   });
 
   it("types into the permanent address field", async () => {
-    setStore({ currentStep: 3, residence: { ...validResidence, permanentAddress: "" } });
+    setStore({ currentStep: 3, residence: { ...validResidence, permanentAddressEn: "" } });
     const user = userEvent.setup();
     await renderForm();
-    const input = document.body.querySelector('[id="residence.permanentAddress"]') as HTMLInputElement;
+    const input = document.body.querySelector('[id="residence.permanentAddressEn"]') as HTMLInputElement;
     expect(input).not.toBeNull();
     await user.type(input, "123 Main St");
-    expect(useApplicationStore.getState().residence.permanentAddress).toBe("123 Main St");
+    expect(useApplicationStore.getState().residence.permanentAddressEn).toBe("123 Main St");
   });
 
   it("types into the current address field", async () => {
-    setStore({ currentStep: 3, residence: { ...validResidence, currentAddress: "" } });
+    setStore({ currentStep: 3, residence: { ...validResidence, sameAsPermanent: false, currentAddressEn: "" } });
     const user = userEvent.setup();
     await renderForm();
-    const input = document.body.querySelector('[id="residence.currentAddress"]') as HTMLInputElement;
+    const input = document.body.querySelector('[id="residence.currentAddressEn"]') as HTMLInputElement;
     expect(input).not.toBeNull();
     await user.type(input, "456 Park Rd");
-    expect(useApplicationStore.getState().residence.currentAddress).toBe("456 Park Rd");
+    expect(useApplicationStore.getState().residence.currentAddressEn).toBe("456 Park Rd");
   });
 });
 

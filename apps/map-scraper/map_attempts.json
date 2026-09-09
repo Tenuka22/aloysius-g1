@@ -398,13 +398,6 @@
     "note": null,
     "ts": 1788438056.4
   },
-  "0715017": {
-    "status": "review",
-    "result": "G/Wickramasinghe K.V",
-    "score": 0.72,
-    "note": null,
-    "ts": 1788438121.1
-  },
   "0715018": {
     "status": "no-match",
     "result": "Mahamevnawa Buddhist Monastery - Galle | මහමෙව්නාව භාවනා අසපුව - ගාල්ල",
@@ -768,5 +761,19 @@
     "score": 0.24,
     "note": null,
     "ts": 1788442190.7
+  },
+  "0704046": {
+    "status": "review",
+    "result": null,
+    "score": null,
+    "note": "scrubbed by repair_duplicates.py: pin judged wrong or unverifiable",
+    "ts": 1788976853.4
+  },
+  "0715016": {
+    "status": "review",
+    "result": null,
+    "score": null,
+    "note": "scrubbed by repair_duplicates.py: pin judged wrong or unverifiable",
+    "ts": 1788976853.4
   }
 }
