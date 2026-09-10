@@ -1,7 +1,6 @@
 import { createAuth, ensureSiteAdmin, ensureSubAdmins } from "@aloysius-admissions/auth";
 import { CLIENT_IP_HEADER } from "@aloysius-admissions/auth/client-ip-header";
 import { db } from "@aloysius-admissions/db";
-import { backup } from "@aloysius-admissions/db/scripts/backup";
 
 /**
  * Server-only surface the web app mounts.
@@ -15,7 +14,7 @@ import { backup } from "@aloysius-admissions/db/scripts/backup";
 /** The configured Better Auth instance, shared by the mounted handler. */
 export const auth = createAuth();
 
-export { CLIENT_IP_HEADER, ensureSiteAdmin, ensureSubAdmins, backup };
+export { CLIENT_IP_HEADER, ensureSiteAdmin, ensureSubAdmins };
 
 export type DatabaseHealth = {
   status: "healthy" | "unhealthy";

@@ -81,12 +81,12 @@ aloysius-g1/
 ├── packages/
 │   ├── api/           # oRPC routers and business logic
 │   ├── auth/          # Better Auth configuration and admin bootstrap
-│   ├── db/            # Drizzle schema, migrations, seed, backup/restore
+│   ├── db/            # Drizzle schema, migrations, seed
 │   ├── env/           # Validated environment schema
 │   ├── ui/            # Shared shadcn/Base UI components and design tokens
 │   ├── config/        # Shared TypeScript config
 │   └── docker/        # Side-by-side Docker Compose stack
-├── data/              # SQLite database and backups (git-ignored)
+├── data/              # Local SQLite database for development (git-ignored)
 └── docker-compose.yml # Podman Compose stack
 ```
 
@@ -110,24 +110,10 @@ aloysius-g1/
 | --- | --- |
 | `bun run db:push` | Push the schema straight to SQLite (development) |
 | `bun run db:generate` | Generate a migration from schema changes |
-| `bun run db:migrate` | Back up, then apply pending migrations |
+| `bun run db:migrate` | Apply pending migrations |
 | `bun run db:studio` | Open Drizzle Studio |
 | `bun run db:seed` | Seed reference data |
 | `bun run db:auth` | Regenerate the Better Auth Drizzle schema |
-
-Run backup and restore from `packages/db`:
-
-```bash
-bun --cwd packages/db run db:backup
-bun --cwd packages/db run db:restore            # newest backup
-bun --cwd packages/db run db:restore 2026-01-01_12-00-00-000.db
-```
-
-Backups land in `data/backups`. A snapshot is taken before every migration and
-every six hours while the server runs. Snapshots identical to the previous one
-are skipped, so a restart loop cannot churn through the retention window.
-Retention keeps everything from the last 30 days, never fewer than 10 backups
-and never more than 200.
 
 ### Tests
 
@@ -224,11 +210,9 @@ The app builds through the Nitro Vite plugin already wired into
 6. **Deploy** by pushing to the connected branch, or `npx vercel deploy --prod`
    from `apps/web`.
 
-Backups are Turso's responsibility once deployed: `packages/db/scripts/backup.ts`
-and `restore.ts` only operate on the local SQLite file used for development,
-and no-op with a clear message against a remote `TURSO_DATABASE_URL`. Use
+Backups are Turso's responsibility once deployed - see
 [Turso's built-in point-in-time recovery](https://docs.turso.tech/features/point-in-time-recovery)
-or `turso db shell <db> .dump` for hosted backups instead.
+or `turso db shell <db> .dump`.
 
 ### Podman Compose
 
@@ -246,8 +230,8 @@ published on `3001`, the API on `3000`.
 | `bun run podman:down` | Stop and remove |
 
 Runtime configuration comes from `apps/web/.env`, with the database path and
-public origin overridden in the compose file. The container takes a backup and
-applies pending Drizzle migrations before it starts serving.
+public origin overridden in the compose file. The container applies pending
+Drizzle migrations before it starts serving.
 
 The container runs as a non-root user and therefore listens on an unprivileged
 port inside the container; the published host port is unchanged.

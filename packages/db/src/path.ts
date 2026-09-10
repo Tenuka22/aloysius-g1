@@ -30,17 +30,16 @@ export function resolveDatabaseUrl(): string {
  * rather than the process working directory, so the same value works
  * whichever app or script opens the database.
  *
- * This lives in its own module so the backup and restore scripts can resolve
- * the path without importing `./index`, which opens a connection on load.
+ * This lives in its own module so callers can resolve the path without
+ * importing `./index`, which opens a connection on load.
  *
- * Throws for a remote Turso URL: there is no local file to resolve, and the
- * file-based backup/restore scripts only apply to local development.
+ * Throws for a remote Turso URL: there is no local file to resolve.
  */
 export function resolveDatabasePath(): string {
   const configured = env.TURSO_DATABASE_URL;
   if (isRemoteDatabaseUrl(configured)) {
     throw new Error(
-      `resolveDatabasePath() cannot resolve a filesystem path for a remote Turso database (TURSO_DATABASE_URL=${configured}). File-based backup/restore only apply to local development.`,
+      `resolveDatabasePath() cannot resolve a filesystem path for a remote Turso database (TURSO_DATABASE_URL=${configured}).`,
     );
   }
   const configuredPath = configured.replace(/^file:/, "");

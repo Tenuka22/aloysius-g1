@@ -43,7 +43,6 @@ COPY packages/env/package.json packages/env/
 COPY apps/web/package.json apps/web/
 RUN bun install --frozen-lockfile
 COPY packages/db/ packages/db/
-# The backup/restore scripts resolve the database path through this package.
 COPY packages/env/ packages/env/
 
 COPY --from=builder --chown=appuser:appgroup /app/apps/web/.output ./.output
@@ -55,5 +54,4 @@ USER appuser
 ENV PORT=3000
 EXPOSE 3000
 
-# Back up before migrating so a bad migration is recoverable, then serve.
-CMD ["sh", "-c", "cd /app/packages/db && bun scripts/backup-cli.ts && bunx drizzle-kit migrate && cd /app && exec node .output/server/index.mjs"]
+CMD ["sh", "-c", "cd /app/packages/db && bunx drizzle-kit migrate && cd /app && exec node .output/server/index.mjs"]
