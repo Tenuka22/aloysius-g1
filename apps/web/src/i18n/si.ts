@@ -1,7 +1,6 @@
 const si = {
   // ─── header.tsx ───────────────────────────────────────────────
-  "header.brand": "Aloysius Admissions",
-  "header.brand.school": "ශාන්ත ඇලෝසියස් විද්‍යාලය",
+  "header.brand": "Aloysius College Galle",
   "header.nav.home": "මුල් පිටුව",
 
   // ─── user-menu.tsx ────────────────────────────────────────────
@@ -15,21 +14,27 @@ const si = {
   "auth.hero.motto": "Certa Viriliter",
 
   // ─── footer.tsx ───────────────────────────────────────────────
-  "footer.brand": "Aloysius Admissions",
+  "footer.brand": "Aloysius College Galle",
   "footer.tagline": "සෑම විටම නවීනයි, කිසිදිනක පැරණි නැත.",
-  "footer.project.heading": "ව්‍යාපෘතිය",
-  "footer.project.portal": "පාසල් ඇතුළත් කිරීමේ ද්වාරය",
-  "footer.project.intake": "1 ශ්‍රේණිය ඇතුළත් කිරීමේ පද්ධතිය",
+  "footer.project.heading": "ඇතුළත් කිරීම්",
+  "footer.project.portal": "1 ශ්‍රේණිය ඇතුළත් කිරීමේ ද්වාරය",
+  "footer.project.intake": "1 ශ්‍රේණිය {year} ඇතුළත් කිරීම",
   "footer.school.heading": "පාසල",
   "footer.school.name": "ගාල්ල ශාන්ත ඇලෝසියස් විද්‍යාලය",
   "footer.school.location": "ගාල්ල, ශ්‍රී ලංකාව",
   "footer.developers.heading": "සංවර්ධකයින්",
   "footer.developers.name": "Team CS Development",
   "footer.copyright": "© {year} Team CS Development. සියලුම හිමිකම් ඇවිරිණි.",
-  "footer.builtWith": "ශාන්ත ඇලෝසියස් විද්‍යාලය වෙනුවෙන් ආදරයෙන් නිර්මාණය කරන ලදී",
+
+  // ─── building-page.tsx ────────────────────────────────────────
+  "building.description": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ වෙබ් අඩවිය මේ වන විට සකස් වෙමින් පවතී. එතෙක් 1 ශ්‍රේණිය ඇතුළත් කිරීමේ ද්වාරය පහතින් විවෘතව ඇත.",
+  "building.schoolName": "ගාල්ල ශාන්ත ඇලෝසියස් විද්‍යාලය",
+  "building.location": "ගාල්ල, ශ්‍රී ලංකාව",
+  "building.crestAlt": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ ලාංඡනය",
+  "building.admissionsCta": "1 ශ්‍රේණිය {year} ඇතුළත් කිරීම්",
 
   // ─── routes/index.tsx ─────────────────────────────────────────
-  "home.hero.badge": "2026 ශ්‍රේණිය 1 ඇතුළත් කිරීම",
+  "home.hero.badge": "{year} ශ්‍රේණිය 1 ඇතුළත් කිරීම",
   "home.hero.title": "අයදුම්පත් පාලක පුවරුව",
   "home.hero.description": "නව අයදුම්පතක් සාදන්න, පවතින එකක් ඉදිරියට ගෙන යන්න, හෝ සුරැකි අයදුම්පත් කළමනාකරණය කරන්න.",
   "home.stats.total": "මුළු එකතුව",
@@ -497,7 +502,7 @@ const si = {
   "appForm.declarationStep.confirmAccuracy":
     "මා විසින් ලබා දී ඇති තොරතුරු මාගේ දැනීමේ හැටියට නිවැරදි බව තහවුරු කරමි.",
   "appForm.declarationStep.consentProcessing":
-    "2026 1 ශ්‍රේණිය ඇතුළත් කිරීමේ අයදුම්පත සකස් කිරීම සඳහා මෙම තොරතුරු භාවිත කිරීමට මම එකඟ වෙමි.",
+    "{year} 1 ශ්‍රේණිය ඇතුළත් කිරීමේ අයදුම්පත සකස් කිරීම සඳහා මෙම තොරතුරු භාවිත කිරීමට මම එකඟ වෙමි.",
   "appForm.reviewStep.heading": "ඔබගේ සටහන පරීක්ෂා කරන්න",
   "appForm.reviewStep.description":
     "අයදුම්පත යොමු කිරීමේ පියවර විවෘත වීමට පෙර එකතු කරන ලද සියලුම තොරතුරු නිවැරදිදැයි පරීක්ෂා කරන්න.",
@@ -663,10 +668,10 @@ const si = {
   "appForm.buttons.submitError.couldNotSubmit": "අයදුම්පත යොමු කිරීමට නොහැකි විය. කරුණාකර නැවත උත්සාහ කරන්න.",
   "appForm.buttons.submitError.networkError":
     "සර්වරය (Server) සමඟ සම්බන්ධ වීමට නොහැකි විය. අන්තර්ජාල සබඳතාව පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
-  "appForm.buttons.restoring": "2026 අයදුම්පත් සටහන නැවත ලබා ගනිමින් පවතී",
+  "appForm.buttons.restoring": "{year} අයදුම්පත් සටහන නැවත ලබා ගනිමින් පවතී",
   "appForm.buttons.applicantInfo": "අයදුම්කරුගේ තොරතුරු",
   "appForm.buttons.applicantInfoDescription":
-    "2026 1 ශ්‍රේණිය ඇතුළත් කිරීම · තොරතුරු ඔබේ වේගයට අනුව සම්පූර්ණ කරන්න. ඔබගේ ප්‍රගතිය සුරක්ෂිතව සුරැකෙන අතර Session code එක සහ ප්‍රවේශ සංකේතය මඟින් නැවත විවෘත කළ හැක.",
+    "{year} 1 ශ්‍රේණිය ඇතුළත් කිරීම · තොරතුරු ඔබේ වේගයට අනුව සම්පූර්ණ කරන්න. ඔබගේ ප්‍රගතිය සුරක්ෂිතව සුරැකෙන අතර Session code එක සහ ප්‍රවේශ සංකේතය මඟින් නැවත විවෘත කළ හැක.",
   "appForm.buttons.applicantInfoToggle": "ඔබගේ සැසි කේතය සහ ප්‍රවේශ යතුර",
   // ─── components/application/category-step.tsx ─────────────────
   "category.tabLabels.6_1": "පදිංචිය සහ ආසන්නතාවය",

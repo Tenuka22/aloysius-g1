@@ -1,4 +1,5 @@
 import type { ApplicationDraft, CategoryType } from "./application-store";
+import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
 import { scoreCategory } from "./scoring";
 
 /**
@@ -404,7 +405,7 @@ export async function buildApplicationPdf(draft: ApplicationDraft): Promise<Blob
   doc.setFontSize(9.5);
   doc.setTextColor(20);
   doc.text(
-    "Grade 1 Admission — 2026 Intake · Marking scheme verification sheet",
+    `Grade 1 Admission — ${INTAKE_YEAR_DEFAULT} Intake · Marking scheme verification sheet`,
     pageWidth / 2,
     y + 19,
     { align: "center" },

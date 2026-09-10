@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@aloysius-admissions/ui/components/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@aloysius-admissions/ui/components/tabs";
@@ -250,7 +251,7 @@ function MarkAllocationPage() {
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Admin / Reference</p>
             <h1 className="mt-1 font-heading text-[clamp(1.7rem,3vw,2.6rem)] leading-tight">Mark allocation</h1>
             <p className="mt-1.5 max-w-[60ch] text-sm text-muted-foreground">
-              How the G1 2026 marking scheme distributes 100 marks across sub-categories for each admission type.
+              How the G1 {INTAKE_YEAR_DEFAULT} marking scheme distributes 100 marks across sub-categories for each admission type.
             </p>
           </div>
 

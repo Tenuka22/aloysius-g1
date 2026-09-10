@@ -59,7 +59,7 @@ function KeyNotFoundState() {
       <div className="grid max-w-md gap-4 text-center">
         <h1 className="font-heading text-2xl">{t("application.keyNotFound.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("application.keyNotFound.description")}</p>
-        <Link to="/" className="mx-auto">
+        <Link to="/g1-admissions" className="mx-auto">
           <Button type="button">{t("application.keyNotFound.backToDashboard")}</Button>
         </Link>
       </div>

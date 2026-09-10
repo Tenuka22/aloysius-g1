@@ -1,4 +1,5 @@
 import { PhoneInput } from "@/components/g1/application/phone-input";
+import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
 import {
   SECTION_COLORS,
   STATUS_ERROR,
@@ -1344,7 +1345,7 @@ function DeclarationStep({
             set({ declaration: { ...draft.declaration, consent: checked === true } })
           }
         />
-        {t("appForm.declarationStep.consentProcessing")}
+        {t("appForm.declarationStep.consentProcessing", { year: INTAKE_YEAR_DEFAULT })}
       </label>
     </div>
   );
@@ -2211,7 +2212,7 @@ export function ApplicationForm({
               {t("appForm.buttons.applicantInfo")}
             </h1>
             <p className="mt-4 max-w-[48rem] text-[1.05rem] leading-relaxed text-muted-foreground">
-              {t("appForm.buttons.applicantInfoDescription")}
+              {t("appForm.buttons.applicantInfoDescription", { year: INTAKE_YEAR_DEFAULT })}
             </p>
             {(draft.sessionCode || draft.accessKey || draft.applicant.fullName) && (
               <div className="mt-5 max-w-[1180px]">
@@ -2809,7 +2810,7 @@ export function ApplicationForm({
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => void navigate({ to: "/" })}
+                  onClick={() => void navigate({ to: "/g1-admissions" })}
                 >
                   <House size={17} /> {t("appForm.submitted.backToHome")}
                 </Button>
@@ -2944,7 +2945,7 @@ export function ApplicationForm({
                       clearActiveKey();
                       draft.reset();
                       set({ clearDraftDialogOpen: false });
-                      window.location.assign("/");
+                      window.location.assign("/g1-admissions");
                     }}
                   >
                     {t("appForm.buttons.clearDraftDialog.confirm")}

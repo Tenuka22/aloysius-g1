@@ -1,4 +1,5 @@
 import { lazy, useEffect, useState } from "react";
+import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
 import { Check, CircleAlert, MapPin, Save, X, User, Phone, Mail, Calendar, CreditCard, Hash, Map, FileText, Building, Globe, ChevronRight, CircleDot, Settings, Eye, EyeOff, LayoutGrid, Rows3 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
@@ -432,7 +433,7 @@ export function AdminApplicationView({ id }: { id: string }) {
     {detail.isLoading && <Card><CardContent><p>Loading application…</p></CardContent></Card>}
     {detail.isError && <Card className="text-destructive"><CardContent className="flex items-center gap-2"><CircleAlert size={18} /> Could not load application: {detail.error.message}</CardContent></Card>}
     {record && <Card className="grid gap-4">
-      <CardHeader><div className="flex items-start justify-between gap-4"><div><p className="text-primary font-bold tracking-widest uppercase text-xs">{data.applicant.fullName || "Unnamed applicant"}</p><CardTitle>G1 2026 application</CardTitle></div><Badge variant={metadata?.submittedAt ? "default" : "secondary"}>{metadata?.submittedAt ? "submitted" : "draft"}</Badge></div></CardHeader>
+      <CardHeader><div className="flex items-start justify-between gap-4"><div><p className="text-primary font-bold tracking-widest uppercase text-xs">{data.applicant.fullName || "Unnamed applicant"}</p><CardTitle>G1 {INTAKE_YEAR_DEFAULT} application</CardTitle></div><Badge variant={metadata?.submittedAt ? "default" : "secondary"}>{metadata?.submittedAt ? "submitted" : "draft"}</Badge></div></CardHeader>
       <CardContent className="grid gap-4">
         <div className="flex gap-4 flex-wrap text-muted-foreground text-sm"><span>Session code <strong>{metadata?.sessionCode ?? "Not available"}</strong></span><span>Created {new Date(metadata?.createdAt ?? "").toLocaleString()}</span><span>Updated {new Date(metadata?.updatedAt ?? "").toLocaleString()}</span></div>
         <div className="flex flex-wrap items-center justify-end gap-1">

@@ -146,9 +146,6 @@
         "typescript": "catalog:",
       },
     },
-    "packages/docker": {
-      "name": "@aloysius-admissions/docker",
-    },
     "packages/env": {
       "name": "@aloysius-admissions/env",
       "version": "0.0.0",
@@ -168,6 +165,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@base-ui/react": "^1.6.0",
+        "@fontsource-variable/noto-sans-sinhala": "^5.3.0",
         "@shadcn/react": "^0.2.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -224,8 +222,6 @@
     "@aloysius-admissions/config": ["@aloysius-admissions/config@workspace:packages/config"],
 
     "@aloysius-admissions/db": ["@aloysius-admissions/db@workspace:packages/db"],
-
-    "@aloysius-admissions/docker": ["@aloysius-admissions/docker@workspace:packages/docker"],
 
     "@aloysius-admissions/env": ["@aloysius-admissions/env@workspace:packages/env"],
 
@@ -446,6 +442,8 @@
     "@floating-ui/utils": ["@floating-ui/utils@0.2.12", "", {}, "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="],
 
     "@fontsource-variable/dm-sans": ["@fontsource-variable/dm-sans@5.3.0", "", {}, "sha512-BpUG5bqePiDFMBM4ZtLSlPdAIOM990uB1dlXzIf4aw21yQR7BmykedLXXXMqGWsR18aMLOsbWccwJNh3ztTQaA=="],
+
+    "@fontsource-variable/noto-sans-sinhala": ["@fontsource-variable/noto-sans-sinhala@5.3.0", "", {}, "sha512-iVQn1Geci7M7mWSt0BLhm5oErJOxgWXnH/+I+2D8lLV7LWqsHl2BOA1k2+ik1HhekHuk1sJSdmdGE5dCU6oAOg=="],
 
     "@fontsource-variable/playfair-display": ["@fontsource-variable/playfair-display@5.3.0", "", {}, "sha512-IHdzTvE8eGIXHteZql7KXoqdc3Gfm+Zs1u4XlSC3MeplkwviT3sx/P6gI0tLwg/xIYLF4ZJYveZ5V+bl9cnDwA=="],
 

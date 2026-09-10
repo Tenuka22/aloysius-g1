@@ -11,6 +11,7 @@ import { Input } from "@aloysius-admissions/ui/components/input";
 import { orpc } from "@/utils/orpc";
 import type { ApplicationDraft } from "@/lib/g1/application-store";
 import { completionPercent } from "@/lib/g1/completion";
+import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
 import { clearActiveKey, setActiveKey } from "@/lib/g1/saved-keys";
 import { useSavedApplicationsStore } from "@/lib/g1/saved-applications-store";
 import { useHomeUiStore } from "@/lib/g1/home-ui-store";
@@ -116,7 +117,7 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
   });
 
   return (
-    <div className="flex min-h-svh flex-col" data-surface="g1-2026-application">
+    <div className="flex min-h-svh flex-col" data-surface="g1-application">
       <Header />
       <main className="flex-1">
       <div className="mx-auto max-w-[1120px] px-4 sm:px-8 pt-4 pb-8 sm:pt-8 sm:pb-16 grid gap-6 sm:gap-10">
@@ -127,7 +128,7 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
               <LayoutDashboard size={14} />
             </div>
             <p className="text-primary font-bold tracking-widest uppercase text-[0.65rem]">
-              {t("home.hero.badge")}
+              {t("home.hero.badge", { year: INTAKE_YEAR_DEFAULT })}
             </p>
           </div>
           <h1 className="font-heading text-3xl sm:text-4xl font-medium tracking-tight text-foreground">

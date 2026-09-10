@@ -1,7 +1,6 @@
 const en = {
   // ─── header.tsx ───────────────────────────────────────────────
-  "header.brand": "Aloysius Admissions",
-  "header.brand.school": "St. Aloysius' College",
+  "header.brand": "Aloysius College Galle",
   "header.nav.home": "Home",
 
   // ─── user-menu.tsx ────────────────────────────────────────────
@@ -15,21 +14,27 @@ const en = {
   "auth.hero.motto": "Certa Viriliter",
 
   // ─── footer.tsx ───────────────────────────────────────────────
-  "footer.brand": "Aloysius Admissions",
+  "footer.brand": "Aloysius College Galle",
   "footer.tagline": "Always modernised, never ancient.",
-  "footer.project.heading": "Project",
-  "footer.project.portal": "School Admissions Portal",
-  "footer.project.intake": "Grade 1 Intake System",
+  "footer.project.heading": "Admissions",
+  "footer.project.portal": "Grade 1 Admissions Portal",
+  "footer.project.intake": "Grade 1 {year} Intake",
   "footer.school.heading": "School",
   "footer.school.name": "St. Aloysius' College",
   "footer.school.location": "Galle, Sri Lanka",
   "footer.developers.heading": "Developers",
   "footer.developers.name": "Team CS Development",
   "footer.copyright": "© {year} Team CS Development. All rights reserved.",
-  "footer.builtWith": "Built with ♥ for St. Aloysius' College",
+
+  // ─── building-page.tsx ────────────────────────────────────────
+  "building.description": "The St. Aloysius' College website is currently under construction. In the meantime, the Grade 1 admissions portal is open below.",
+  "building.schoolName": "St. Aloysius' College",
+  "building.location": "Galle, Sri Lanka",
+  "building.crestAlt": "St. Aloysius' College crest",
+  "building.admissionsCta": "Grade 1 {year} admissions",
 
   // ─── routes/index.tsx ─────────────────────────────────────────
-  "home.hero.badge": "G1 2026 intake",
+  "home.hero.badge": "G1 {year} intake",
   "home.hero.title": "Application dashboard",
   "home.hero.description": "Create a record, continue an existing one, or manage saved records.",
   "home.stats.total": "Total",
@@ -522,7 +527,7 @@ const en = {
   "appForm.declarationStep.confirmAccuracy":
     "I confirm that the information I provide is accurate to the best of my knowledge.",
   "appForm.declarationStep.consentProcessing":
-    "I consent to this information being used to prepare the Grade 1 2026 intake application.",
+    "I consent to this information being used to prepare the Grade 1 {year} intake application.",
   "appForm.reviewStep.heading": "Review your draft",
   "appForm.reviewStep.description":
     "Check all collected information before the application submission step becomes available.",
@@ -690,10 +695,10 @@ const en = {
     "Could not submit the application. Please try again.",
   "appForm.buttons.submitError.networkError":
     "Could not reach the server. Check your internet connection and try again.",
-  "appForm.buttons.restoring": "Restoring your draft 2026",
+  "appForm.buttons.restoring": "Restoring your {year} draft",
   "appForm.buttons.applicantInfo": "Applicant information",
   "appForm.buttons.applicantInfoDescription":
-    "G1 2026 intake · Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.",
+    "G1 {year} intake · Complete the details at your own pace. Your progress is saved securely and can be reopened with your session code and access key.",
   "appForm.buttons.applicantInfoToggle": "Your session code and access key",
 
   // ─── components/application/category-step.tsx ─────────────────

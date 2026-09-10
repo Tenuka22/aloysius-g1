@@ -23,7 +23,7 @@ function SubAdminPage() {
             <CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">{t("subAdmin.noAccess.title")}</CardTitle>
             <CardDescription className="leading-relaxed">{t("subAdmin.noAccess.description")}</CardDescription>
           </CardHeader>
-          <Button variant="default" className="w-fit" render={<Link to="/" />}><ArrowLeft size={17} /> {t("subAdmin.noAccess.backToDashboard")}</Button>
+          <Button variant="default" className="w-fit" render={<Link to="/g1-admissions" />}><ArrowLeft size={17} /> {t("subAdmin.noAccess.backToDashboard")}</Button>
         </Card>
       </main>
     );
@@ -56,7 +56,7 @@ function SubAdminPage() {
       </SidebarGroup>
     </SidebarContent>
     <SidebarFooter>
-      <Link className="flex items-center gap-2.5 min-h-10 px-2.5 rounded-lg text-muted-foreground text-sm no-underline hover:text-foreground hover:bg-muted transition-colors" to="/">
+      <Link className="flex items-center gap-2.5 min-h-10 px-2.5 rounded-lg text-muted-foreground text-sm no-underline hover:text-foreground hover:bg-muted transition-colors" to="/g1-admissions">
         <ArrowLeft size={18} /> {t("subAdmin.sidebar.backToDashboard")}
       </Link>
     </SidebarFooter>

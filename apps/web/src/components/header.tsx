@@ -13,23 +13,16 @@ export default function Header() {
           <img
             src="/logo.png"
             alt=""
-            className="h-9 w-9 shrink-0 object-contain"
-            width={36}
-            height={36}
+            className="h-8 w-8 shrink-0 object-contain"
+            width={32}
+            height={32}
           />
-          <span className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate font-heading text-sm font-semibold text-foreground sm:text-base">
-              {t("header.brand")}
-            </span>
-            <span className="hidden truncate text-[0.68rem] text-muted-foreground sm:block">
-              {t("header.brand.school")}
-            </span>
+          <span className="truncate font-heading text-sm font-semibold text-foreground sm:text-base">
+            {t("header.brand")}
           </span>
         </Link>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <UserMenu />
-        </div>
+        <UserMenu />
       </div>
     </header>
   );

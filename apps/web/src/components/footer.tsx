@@ -1,4 +1,5 @@
-import { Heart } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
 import { useTranslation } from "@/lib/i18n";
 
 export default function Footer() {
@@ -21,8 +22,8 @@ export default function Footer() {
           <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-sm sm:grid-cols-3 sm:gap-x-16 sm:gap-y-6">
             <div className="flex flex-col gap-1.5">
               <span className="font-medium text-foreground">{t("footer.project.heading")}</span>
-              <span className="text-muted-foreground">{t("footer.project.portal")}</span>
-              <span className="text-muted-foreground">{t("footer.project.intake")}</span>
+              <Link to="/g1-admissions" className="text-muted-foreground no-underline hover:text-foreground">{t("footer.project.portal")}</Link>
+              <span className="text-muted-foreground">{t("footer.project.intake", { year: INTAKE_YEAR_DEFAULT })}</span>
             </div>
             <div className="flex flex-col gap-1.5">
               <span className="font-medium text-foreground">{t("footer.school.heading")}</span>
@@ -40,9 +41,6 @@ export default function Footer() {
           <div className="mx-auto flex max-w-7xl flex-col items-center gap-1 px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:justify-between sm:px-6 sm:py-4">
             <span>
               {t("footer.copyright", { year: new Date().getFullYear() })}
-            </span>
-            <span className="flex items-center gap-1">
-              {t("footer.builtWith")}
             </span>
           </div>
         </div>

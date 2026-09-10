@@ -37,11 +37,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1.0",
       },
       {
-        title: "St. Aloysius' College — Grade 1 Admissions",
+        title: "St. Aloysius' College, Galle",
       },
       {
         name: "description",
-        content: "Online admissions portal for Grade 1 applications to St. Aloysius' College.",
+        content: "Official website of St. Aloysius' College, Galle, Sri Lanka.",
       },
       {
         name: "theme-color",
