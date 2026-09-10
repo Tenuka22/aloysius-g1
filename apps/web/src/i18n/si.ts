@@ -53,6 +53,9 @@ const si = {
   "error.boundary.retry": "නැවත උත්සාහ කරන්න",
   "error.boundary.home": "පැනලයට ආපසු යන්න",
   "error.boundary.details": "තාක්ෂණික විස්තර",
+  "error.notFound.title": "පිටුව හමු නොවීය",
+  "error.notFound.description": "ඔබ සොයන පිටුව නොපවතී හෝ වෙනත් ස්ථානයකට ගෙන ගොස් ඇත.",
+  "error.notFound.home": "පුවරුවට ආපසු",
   "home.saved.unnamed": "නම සඳහන් නොකළ අයදුම්කරු",
   "home.saved.notProvided": "ලබා දී නොමැත",
   "home.saved.unavailableApplication": "ලබාගත නොහැකි අයදුම්පතක්",
@@ -596,6 +599,10 @@ const si = {
   "appForm.submitted.accessKeyDescription":
     "මෙම සංකේතය මඟින් ඔබට මෙම අයදුම්පත නැරඹීමට හෝ යාවත්කාලීන කිරීමට හැක.",
   "appForm.submitted.copyKey": "සංකේතය පිටපත් කරන්න",
+  "appForm.submitted.yourSessionCode": "ඔබගේ Session code එක",
+  "appForm.submitted.sessionCodeDescription":
+    "නැවත අයදුම්පතට පිවිසීමට ප්‍රවේශ සංකේතය සමඟ මෙය අවශ්‍ය වේ.",
+  "appForm.submitted.copyCode": "කේතය පිටපත් කරන්න",
   "appForm.submitted.pdf.title": "ඔබගේ අයදුම්පත් සටහන",
   "appForm.submitted.pdf.description":
     "ඔබ ඇතුලත් කරන ලද සියලු තොරතුරු {filename} ලෙස PDF ගොනුවක සුරැකේ. සම්මුඛ පරීක්ෂණය සඳහා එය තබා ගන්න.",

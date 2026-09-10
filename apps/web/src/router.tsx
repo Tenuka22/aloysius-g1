@@ -2,6 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, stringifySearchWith } from "@tanstack/react-router";
 
 import Loader from "./components/loader";
+import { NotFoundState } from "./components/not-found-state";
 import { routeTree } from "./routeTree.gen";
 import { orpc, queryClient } from "./utils/orpc";
 
@@ -28,6 +29,7 @@ export function getRouter() {
     defaultPreload: "intent",
     scrollRestoration: true,
     defaultPendingComponent: () => <Loader />,
+    defaultNotFoundComponent: () => <NotFoundState />,
     stringifySearch: plainStringifySearch,
     context: { orpc, queryClient },
     Wrap: function WrapComponent({ children }: { children: React.ReactNode }) {

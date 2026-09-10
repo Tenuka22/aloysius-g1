@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { AdmissionsPage } from "@/routes/_auth/g1/admin/admissions";
+import { AdmissionsPage } from "@/components/g1/admin/admissions-view";
 
 const mockNavigate = vi.fn();
 
@@ -15,6 +15,7 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (config: Record<string, unknown>) => ({ ...config, useSearch: () => ({ intakeYear: "2027" }) }),
+  getRouteApi: () => ({ useSearch: () => ({ intakeYear: "2027" }) }),
   Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { id?: string } }) => <a href={`${to}${params?.id ? `/${params.id}` : ""}`}>{children}</a>,
   useNavigate: () => mockNavigate,
   useLocation: () => ({ pathname: "/g1/admin/admissions" }),

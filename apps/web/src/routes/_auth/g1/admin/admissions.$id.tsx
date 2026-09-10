@@ -8,7 +8,7 @@ import { normalizeDraft } from "@/lib/g1/application-store";
 import { scoreCategory } from "@/lib/g1/scoring";
 import { Badge } from "@aloysius-admissions/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
-import { type AdmissionStatus, type AdmissionDetail, CATEGORY_LABELS } from "./admissions";
+import { type AdmissionStatus, type AdmissionDetail, CATEGORY_LABELS } from "@/components/g1/admin/admissions-view";
 
 export const Route = createFileRoute("/_auth/g1/admin/admissions/$id")({
   loader: async ({ context, params }) => {

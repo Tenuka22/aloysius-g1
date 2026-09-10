@@ -116,6 +116,7 @@ import {
   House,
   Info,
   KeyRound,
+  Hash,
   RotateCcw,
   ShieldCheck,
   ShieldX,
@@ -2711,6 +2712,43 @@ export function ApplicationForm({
                       </>
                     )}
                   </Button>
+                  {draft.sessionCode && (
+                    <div className="grid gap-3 border-t border-primary/15 pt-4">
+                      <div className="grid gap-1">
+                        <div className="flex items-center gap-2 text-primary">
+                          <Hash size={18} />
+                          <h3 className="text-base font-semibold text-foreground">
+                            {t("appForm.submitted.yourSessionCode")}
+                          </h3>
+                        </div>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {t("appForm.submitted.sessionCodeDescription")}
+                        </p>
+                      </div>
+                  <code className="block overflow-x-auto rounded-xl bg-background px-4 py-3 font-mono text-sm font-semibold leading-relaxed tracking-wide text-foreground ring-1 ring-border/70">
+                        {draft.sessionCode}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                          copyWithFeedback("codecard", draft.sessionCode);
+                    }}
+                  >
+                        {draft.copiedField === "codecard" ? (
+                          <>
+                        <Check size={16} /> {t("appForm.submitted.copied")}
+                          </>
+                    ) : (
+                          <>
+                            <Copy size={16} /> {t("appForm.submitted.copyCode")}
+                          </>
+                    )}
+                  </Button>
+                    </div>
+                    )}
                 </section>
 
                 <section

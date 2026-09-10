@@ -54,6 +54,10 @@ const en = {
   "error.boundary.retry": "Try again",
   "error.boundary.home": "Back to dashboard",
   "error.boundary.details": "Technical details",
+  "error.notFound.title": "Page not found",
+  "error.notFound.description":
+    "The page you\u2019re looking for doesn\u2019t exist or may have moved.",
+  "error.notFound.home": "Back to dashboard",
   "home.saved.unnamed": "Unnamed applicant",
   "home.saved.notProvided": "Not provided",
   "home.saved.unavailableApplication": "Unavailable application",
@@ -616,6 +620,10 @@ const en = {
   "appForm.submitted.accessKeyDescription":
     "This key lets you view or update this child's application.",
   "appForm.submitted.copyKey": "Copy key",
+  "appForm.submitted.yourSessionCode": "Your session code",
+  "appForm.submitted.sessionCodeDescription":
+    "You need this together with the access key to return to this application.",
+  "appForm.submitted.copyCode": "Copy code",
   "appForm.submitted.pdf.title": "Your application record",
   "appForm.submitted.pdf.description":
     "A PDF copy of everything you entered, saved as {filename}. Keep it for the interview.",

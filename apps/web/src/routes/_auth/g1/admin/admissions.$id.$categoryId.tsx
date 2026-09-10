@@ -24,7 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@aloysius-admissions/ui/components/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs";
 import { DISTRICTS, DIVISIONAL_SECRETARIATS, ELECTORAL_CONSTITUENCIES, GN_DIVISIONS } from "@/lib/g1/divisions";
-import { type AdmissionStatus, type AdmissionDetail, type FlagEntry, CATEGORY_LABELS } from "./admissions";
+import { type AdmissionStatus, type AdmissionDetail, type FlagEntry, CATEGORY_LABELS } from "@/components/g1/admin/admissions-view";
 import { Category61Fields, Category62Fields, Category63Fields, Category64Fields, Category65Fields, Category66Fields } from "@/components/g1/application/category-step";
 const AdmissionsCategoryMap = lazy(() => import("@/components/g1/admin/admissions-category-map"));
 import type { LocationEvidence } from "@/components/g1/admin/admissions-category-map";
