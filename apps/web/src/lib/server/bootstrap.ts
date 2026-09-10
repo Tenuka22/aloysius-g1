@@ -24,19 +24,19 @@ async function runBootstrap(): Promise<void> {
   // the timer alone would never fire and no backup would ever be taken.
   // `backup()` hashes the database and skips when nothing changed, so this
   // costs nothing when restarts are frequent.
-  runBackup("startup");
+  await runBackup("startup");
 
   const interval = setInterval(() => {
-    runBackup("periodic");
+    void runBackup("periodic");
   }, SIX_HOURS);
   // Do not hold the process open just for the backup timer.
   interval.unref?.();
   console.log("[backup] scheduled periodic backup every 6 hours");
 }
 
-function runBackup(reason: string): void {
+async function runBackup(reason: string): Promise<void> {
   try {
-    const created = backup();
+    const created = await backup();
     console.log(
       created
         ? `[backup] ${reason} backup completed`

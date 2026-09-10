@@ -10,7 +10,7 @@ COPY packages/api/package.json packages/api/
 COPY packages/ui/package.json packages/ui/
 COPY packages/env/package.json packages/env/
 COPY apps/web/package.json apps/web/
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 # The app serves the UI and the API from one origin, so the server routes pull
 # in every workspace package - not just the UI ones.
@@ -24,8 +24,7 @@ FROM oven/bun:1 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Nitro emits a Node server, and better-sqlite3 is a native module, so the
-# runtime needs Node itself rather than only Bun.
+# Nitro emits a Node server, so the runtime needs Node itself rather than only Bun.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends nodejs \
   && rm -rf /var/lib/apt/lists/*
@@ -42,8 +41,10 @@ COPY packages/api/package.json packages/api/
 COPY packages/ui/package.json packages/ui/
 COPY packages/env/package.json packages/env/
 COPY apps/web/package.json apps/web/
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install --frozen-lockfile
+RUN bun install --frozen-lockfile
 COPY packages/db/ packages/db/
+# The backup/restore scripts resolve the database path through this package.
+COPY packages/env/ packages/env/
 
 COPY --from=builder --chown=appuser:appgroup /app/apps/web/.output ./.output
 

@@ -1,7 +1,8 @@
-import Database from "better-sqlite3";
+import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { mkdirSync, readdirSync, statSync, copyFileSync } from "node:fs";
-import { resolveDatabasePath } from "../src/path";
+import { env } from "@aloysius-admissions/env/server";
+import { createClient } from "@libsql/client";
+import { isRemoteDatabaseUrl, resolveDatabasePath } from "../src/path";
 
 function resolveDbPath(): string {
   return resolveDatabasePath();
@@ -11,7 +12,9 @@ function backupsDir(dbPath: string): string {
   return join(dirname(dbPath), "backups");
 }
 
-function listBackups(dbPath: string): Array<{ name: string; path: string; size: string; date: Date }> {
+function listBackups(
+  dbPath: string,
+): Array<{ name: string; path: string; size: string; date: Date }> {
   const dir = backupsDir(dbPath);
   mkdirSync(dir, { recursive: true });
 
@@ -26,7 +29,16 @@ function listBackups(dbPath: string): Array<{ name: string; path: string; size: 
     .sort((a, b) => b.date.getTime() - a.date.getTime());
 }
 
-function restore(target?: string): void {
+async function restore(target?: string): Promise<void> {
+  // Turso's hosted databases have their own point-in-time recovery; this
+  // file-based restore only applies to the local SQLite file used in dev.
+  if (isRemoteDatabaseUrl(env.TURSO_DATABASE_URL)) {
+    console.error(
+      "restore is not supported against a remote Turso database; use Turso's point-in-time recovery instead (`turso db restore` or the Turso dashboard).",
+    );
+    process.exit(1);
+  }
+
   const dbPath = resolveDbPath();
   const backups = listBackups(dbPath);
 
@@ -56,8 +68,8 @@ function restore(target?: string): void {
   console.log(`  date: ${chosen.date.toISOString()}`);
 
   // Checkpoint WAL before restore
-  const currentDb = new Database(dbPath);
-  currentDb.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+  const currentDb = createClient({ url: `file:${dbPath}` });
+  await currentDb.execute("PRAGMA wal_checkpoint(TRUNCATE)");
   currentDb.close();
 
   copyFileSync(chosen.path, dbPath);
@@ -66,6 +78,6 @@ function restore(target?: string): void {
 
 // Run if called directly
 const targetArg = process.argv[2];
-restore(targetArg);
+await restore(targetArg);
 
 export { restore, listBackups };

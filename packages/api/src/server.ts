@@ -1,6 +1,6 @@
-import { db } from "@aloysius-admissions/db";
 import { createAuth, ensureSiteAdmin, ensureSubAdmins } from "@aloysius-admissions/auth";
 import { CLIENT_IP_HEADER } from "@aloysius-admissions/auth/client-ip-header";
+import { db } from "@aloysius-admissions/db";
 import { backup } from "@aloysius-admissions/db/scripts/backup";
 
 /**
@@ -8,7 +8,7 @@ import { backup } from "@aloysius-admissions/db/scripts/backup";
  *
  * The app used to reach `@aloysius-admissions/auth` and `.../db` directly. It
  * now goes through this package instead, so the browser-facing app keeps a
- * single workspace dependency and nothing pulls `bun:sqlite` toward the client
+ * single workspace dependency and nothing pulls the database driver toward the client
  * bundle by accident.
  */
 
@@ -23,10 +23,10 @@ export type DatabaseHealth = {
 };
 
 /** Round-trips a trivial query so a probe can tell "serving HTML" from "serving data". */
-export function checkDatabaseHealth(): DatabaseHealth {
+export async function checkDatabaseHealth(): Promise<DatabaseHealth> {
   const started = Date.now();
   try {
-    db.$client.prepare("SELECT 1").get();
+    await db.$client.execute("SELECT 1");
     return { status: "healthy", latencyMs: Date.now() - started };
   } catch {
     return { status: "unhealthy", latencyMs: Date.now() - started };

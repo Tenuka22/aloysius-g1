@@ -10,8 +10,8 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/health")({
   server: {
     handlers: {
-      GET: () => {
-        const database = checkDatabaseHealth();
+      GET: async () => {
+        const database = await checkDatabaseHealth();
         return Response.json(
           {
             status: database.status,

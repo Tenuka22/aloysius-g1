@@ -15,7 +15,7 @@ services:
         required: false
     environment:
       # Absolute, and inside the volume mount rather than the image.
-      DATABASE_URL: /app/data/local.db
+      TURSO_DATABASE_URL: file:/app/data/local.db
       # The public origin, used for auth callbacks and cookies.
       BETTER_AUTH_URL: http://localhost:3001
     healthcheck:

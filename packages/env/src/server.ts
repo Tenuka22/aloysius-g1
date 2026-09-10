@@ -4,7 +4,10 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    DATABASE_URL: z.string().min(1),
+    /** A `file:` path for local dev, or a `libsql://...-turso.io` URL in production. */
+    TURSO_DATABASE_URL: z.string().min(1),
+    /** Required when TURSO_DATABASE_URL is a remote Turso database; unused for a local file. */
+    TURSO_AUTH_TOKEN: z.string().optional(),
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url(),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),

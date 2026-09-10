@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@aloysius-admissions/env": "workspace:*",
-    "better-sqlite3": "^13.0.3",
+    "@libsql/client": "^0.18.0",
     "dotenv": "catalog:",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
@@ -36,7 +36,6 @@
   },
   "devDependencies": {
     "@aloysius-admissions/config": "workspace:*",
-    "@types/better-sqlite3": "^9.6.0",
     "typescript": "catalog:"
   }
 }

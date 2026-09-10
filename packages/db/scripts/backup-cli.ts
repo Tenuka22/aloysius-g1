@@ -10,4 +10,4 @@
  */
 import { backup } from "./backup";
 
-backup();
+await backup();
