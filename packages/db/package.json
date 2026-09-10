@@ -20,6 +20,7 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:deploy": "bun scripts/migrate-if-configured.ts",
     "db:auth": "bun scripts/generate-auth-schema.ts",
     "db:seed": "bun --env-file ../../apps/web/.env src/seed.ts"
   },

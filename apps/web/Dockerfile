@@ -54,4 +54,4 @@ USER appuser
 ENV PORT=3000
 EXPOSE 3000
 
-CMD ["sh", "-c", "cd /app/packages/db && bunx drizzle-kit migrate && cd /app && exec node .output/server/index.mjs"]
+CMD ["sh", "-c", "cd /app/packages/db && bun run db:migrate:deploy && cd /app && exec node .output/server/index.mjs"]

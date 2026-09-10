@@ -186,28 +186,29 @@ the source address and Maps URL that the web catalog deliberately omits.
 
 The app builds through the Nitro Vite plugin already wired into
 `apps/web/vite.config.ts`, which Vercel detects with zero extra config.
+`apps/web/package.json`'s `vercel-build` script runs pending Drizzle
+migrations against `TURSO_DATABASE_URL` before every build, so the schema
+never needs a manual push - including the very first deploy, which creates
+every table from scratch.
 
 1. **Create the Turso database** (once): [`turso db create`](https://docs.turso.tech/quickstart)
    or the [Turso Cloud dashboard](https://app.turso.tech), then grab its URL and
    an auth token with `turso db show <db> --url` and `turso db tokens create <db>`.
-2. **Push the schema** to that database from your machine before the first
-   deploy: set `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` in `apps/web/.env.production`
-   (or export them) and run `bun run db:push`.
-3. **Import the repo into Vercel.** In Project Settings -> General, set
+2. **Import the repo into Vercel.** In Project Settings -> General, set
    **Root Directory** to `apps/web` and enable **"Include files outside the
    Root Directory in the Build Step"** - the app depends on sibling workspace
    packages (`packages/*`) that live outside `apps/web`.
-4. **Add the Turso Cloud integration** from the
+3. **Add the Turso Cloud integration** from the
    [Vercel Marketplace](https://vercel.com/marketplace/tursocloud) and attach
    this database, which injects `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`
    automatically - or add them yourself under Project Settings -> Environment
    Variables using the values in `apps/web/.env.production`.
-5. **Set the remaining variables** (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
+4. **Set the remaining variables** (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
    `ADMIN_PASSWORD`, `SUB_ADMIN_PASSWORD`, `SUB_ADMIN_EMAILS`,
    `VITE_LOCATION_SEAL_SECRET`) for the Production environment. `BETTER_AUTH_URL`
    must be the public HTTPS origin the app is served from (e.g.
    `https://admissions.aloysiuscollege.lk`).
-6. **Deploy** by pushing to the connected branch, or `npx vercel deploy --prod`
+5. **Deploy** by pushing to the connected branch, or `npx vercel deploy --prod`
    from `apps/web`.
 
 Backups are Turso's responsibility once deployed - see

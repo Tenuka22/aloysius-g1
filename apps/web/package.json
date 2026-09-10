@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "vercel-build": "bun --cwd ../../packages/db run db:migrate:deploy && vite build",
     "start": "node .output/server/index.mjs",
     "check-types": "vite build && tsc --noEmit"
   },
