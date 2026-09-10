@@ -1,8 +1,9 @@
-import Database from "better-sqlite3";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { resolveDatabasePath } from "../src/path";
+import { env } from "@aloysius-admissions/env/server";
+import { createClient } from "@libsql/client";
+import { isRemoteDatabaseUrl, resolveDatabasePath } from "../src/path";
 
 /** Newest backups are always kept, however old they are. */
 const MIN_BACKUPS = 10;
@@ -85,7 +86,16 @@ function isDuplicateOf(candidate: string, previous: BackupFile | undefined): boo
  * Snapshots the database. Returns the new backup's path, or `null` when the
  * database is byte-identical to the most recent backup and no file was written.
  */
-function backup(): string | null {
+async function backup(): Promise<string | null> {
+  // Turso's hosted databases have their own point-in-time recovery; this
+  // file-based snapshot only applies to the local SQLite file used in dev.
+  if (isRemoteDatabaseUrl(env.TURSO_DATABASE_URL)) {
+    console.log(
+      "backup skipped: TURSO_DATABASE_URL points at a remote Turso database; use `turso db shell <db> .dump` or Turso's built-in backups instead.",
+    );
+    return null;
+  }
+
   const dbPath = resolveDbPath();
   const dir = backupsDir(dbPath);
   mkdirSync(dir, { recursive: true });
@@ -98,9 +108,9 @@ function backup(): string | null {
     unlinkSync(dest);
   }
 
-  const db = new Database(dbPath);
-  db.exec(`VACUUM INTO '${dest.replace(/'/g, "''")}'`);
-  db.close();
+  const client = createClient({ url: `file:${dbPath}` });
+  await client.execute(`VACUUM INTO '${dest.replace(/'/g, "''")}'`);
+  client.close();
 
   if (isDuplicateOf(dest, previous)) {
     unlinkSync(dest);

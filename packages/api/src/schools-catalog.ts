@@ -5,7 +5,7 @@ import catalog from "@aloysius-admissions/db/schools-catalog";
  * depending on `@aloysius-admissions/db` directly.
  *
  * This file deliberately imports nothing but the JSON. Reaching the catalog
- * through `../index` would pull in `createDb()` and therefore `bun:sqlite`,
+ * through `../index` would pull in `createDb()` and therefore the database driver,
  * which cannot be bundled for the browser — keeping this a leaf module is what
  * makes the same data safe to use on both sides of the wire.
  */

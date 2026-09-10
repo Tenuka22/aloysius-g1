@@ -21,7 +21,7 @@ access/removal requests.
 | API | TanStack Start server routes, same origin as the UI |
 | RPC | oRPC (typed RPC plus a generated OpenAPI reference) |
 | Auth | Better Auth (admin + multi-session plugins) |
-| Database | SQLite via `bun:sqlite`, Drizzle ORM + drizzle-kit migrations |
+| Database | SQLite via Turso (libSQL), Drizzle ORM + drizzle-kit migrations |
 | Lint / format | Biome |
 | Tests | Vitest (unit), `bun test` (database integration) |
 
@@ -59,7 +59,8 @@ variable is missing, so fill these in before running anything.
 
 | Variable | Required | Notes |
 | --- | --- | --- |
-| `DATABASE_URL` | yes | SQLite path. Relative values resolve from the repo root, e.g. `../../data/local.db`. A `file:` prefix is accepted. |
+| `TURSO_DATABASE_URL` | yes | A local `file:` path for development (relative values resolve from the repo root, e.g. `file:../../data/local.db`), or a `libsql://<db>.turso.io` URL for a hosted Turso database. |
+| `TURSO_AUTH_TOKEN` | only for a remote Turso URL | Auth token for the hosted database. Unused (and unnecessary) for a local `file:` URL. |
 | `BETTER_AUTH_SECRET` | yes | At least 32 characters. |
 | `BETTER_AUTH_URL` | yes | Public origin of the app, e.g. `http://localhost:3001`. |
 | `NODE_ENV` | no | `development` (default), `production` or `test`. |
@@ -137,7 +138,7 @@ and never more than 200.
 | `bun run test:all` | Both of the above |
 
 Integration suites are named `*.integration.test.ts` and run under Bun rather
-than Vitest, because they import `bun:sqlite`.
+than Vitest, matching the rest of the test:integration setup.
 
 ## UI
 
@@ -195,7 +196,44 @@ the source address and Maps URL that the web catalog deliberately omits.
 
 ## Deployment
 
+### Vercel + Turso
+
+The app builds through the Nitro Vite plugin already wired into
+`apps/web/vite.config.ts`, which Vercel detects with zero extra config.
+
+1. **Create the Turso database** (once): [`turso db create`](https://docs.turso.tech/quickstart)
+   or the [Turso Cloud dashboard](https://app.turso.tech), then grab its URL and
+   an auth token with `turso db show <db> --url` and `turso db tokens create <db>`.
+2. **Push the schema** to that database from your machine before the first
+   deploy: set `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` in `apps/web/.env.production`
+   (or export them) and run `bun run db:push`.
+3. **Import the repo into Vercel.** In Project Settings -> General, set
+   **Root Directory** to `apps/web` and enable **"Include files outside the
+   Root Directory in the Build Step"** - the app depends on sibling workspace
+   packages (`packages/*`) that live outside `apps/web`.
+4. **Add the Turso Cloud integration** from the
+   [Vercel Marketplace](https://vercel.com/marketplace/tursocloud) and attach
+   this database, which injects `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`
+   automatically - or add them yourself under Project Settings -> Environment
+   Variables using the values in `apps/web/.env.production`.
+5. **Set the remaining variables** (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
+   `ADMIN_PASSWORD`, `SUB_ADMIN_PASSWORD`, `SUB_ADMIN_EMAILS`,
+   `VITE_LOCATION_SEAL_SECRET`) for the Production environment. `BETTER_AUTH_URL`
+   must be the public HTTPS origin the app is served from (e.g.
+   `https://admissions.aloysiuscollege.lk`).
+6. **Deploy** by pushing to the connected branch, or `npx vercel deploy --prod`
+   from `apps/web`.
+
+Backups are Turso's responsibility once deployed: `packages/db/scripts/backup.ts`
+and `restore.ts` only operate on the local SQLite file used for development,
+and no-op with a clear message against a remote `TURSO_DATABASE_URL`. Use
+[Turso's built-in point-in-time recovery](https://docs.turso.tech/features/point-in-time-recovery)
+or `turso db shell <db> .dump` for hosted backups instead.
+
 ### Podman Compose
+
+Podman/Docker Compose remain available for self-hosting against a local SQLite
+file instead of Turso.
 
 `docker-compose.yml` at the repo root builds and runs both apps. Web is
 published on `3001`, the API on `3000`.

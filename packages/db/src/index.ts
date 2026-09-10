@@ -1,12 +1,13 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { env } from "@aloysius-admissions/env/server";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 
+import { isRemoteDatabaseUrl, resolveDatabasePath, resolveDatabaseUrl } from "./path";
 import * as schema from "./schema";
-import { resolveDatabasePath } from "./path";
 
-export { resolveDatabasePath } from "./path";
+export { resolveDatabasePath, resolveDatabaseUrl, isRemoteDatabaseUrl } from "./path";
 
 export {
   g1Applications,
@@ -17,11 +18,13 @@ export {
 } from "./schema/g1-logic";
 
 export function createDb() {
-  const databasePath = resolveDatabasePath();
-  mkdirSync(dirname(databasePath), { recursive: true });
-  // better-sqlite3 rather than bun:sqlite: the server is a TanStack Start app
-  // whose dev SSR environment runs under Node, which cannot load `bun:sqlite`.
-  return drizzle(new Database(databasePath), { schema });
+  // Local dev/test only: a remote Turso database needs no filesystem
+  // directory, and resolveDatabasePath() throws for one.
+  if (!isRemoteDatabaseUrl(env.TURSO_DATABASE_URL)) {
+    mkdirSync(dirname(resolveDatabasePath()), { recursive: true });
+  }
+  const client = createClient({ url: resolveDatabaseUrl(), authToken: env.TURSO_AUTH_TOKEN });
+  return drizzle(client, { schema });
 }
 
 export const db = createDb();
