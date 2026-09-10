@@ -1,0 +1,9 @@
+[install]
+# Bun's "isolated" linker (its default for workspaces) nests dependencies
+# like drizzle-kit and @libsql's platform-native binary inside each
+# package's own node_modules, reachable only from files inside that
+# package. Nitro's built server bundle requires @libsql's native module by
+# walking up from .output/server/_ssr/, which can only ever find a *hoisted*
+# root node_modules - so local-file SQLite (self-hosted Docker/Podman, or
+# any non-Turso deployment) needs the classic flat layout.
+linker = "hoisted"

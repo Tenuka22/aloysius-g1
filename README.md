@@ -84,10 +84,9 @@ aloysius-g1/
 │   ├── db/            # Drizzle schema, migrations, seed
 │   ├── env/           # Validated environment schema
 │   ├── ui/            # Shared shadcn/Base UI components and design tokens
-│   ├── config/        # Shared TypeScript config
-│   └── docker/        # Side-by-side Docker Compose stack
+│   └── config/        # Shared TypeScript config
 ├── data/              # Local SQLite database for development (git-ignored)
-└── docker-compose.yml # Podman Compose stack
+└── docker-compose.yml # Docker/Podman Compose stack (apps/web/Dockerfile)
 ```
 
 ## Scripts
@@ -217,11 +216,10 @@ or `turso db shell <db> .dump`.
 
 ### Podman Compose
 
-Podman/Docker Compose remain available for self-hosting against a local SQLite
-file instead of Turso.
-
-`docker-compose.yml` at the repo root builds and runs both apps. Web is
-published on `3001`, the API on `3000`.
+Docker/Podman Compose remain available for self-hosting against a local
+SQLite file instead of Turso. `docker-compose.yml` at the repo root builds
+`apps/web/Dockerfile` and runs the one service - the TanStack Start app
+serves the UI and the API from a single origin - published on `3001`.
 
 | Command | Description |
 | --- | --- |
@@ -229,54 +227,42 @@ published on `3001`, the API on `3000`.
 | `bun run podman:up` | Build and start in the background |
 | `bun run podman:logs` | Tail logs |
 | `bun run podman:down` | Stop and remove |
+| `bun run docker:build` / `docker:up` / `docker:logs` / `docker:down` | Same commands through `docker compose` |
 
-Runtime configuration comes from `apps/web/.env`, with the database path and
-public origin overridden in the compose file. The container applies pending
-Drizzle migrations before it starts serving.
+Runtime configuration comes from `apps/web/.env` (copy `apps/web/.env.example`
+to start), with `TURSO_DATABASE_URL` and `PORT` overridden in the compose file
+so the database always lands in the `db-data` volume and the container always
+listens on the port it's published on. The container applies pending Drizzle
+migrations before it starts serving; a failed migration exits non-zero rather
+than starting a server with a stale schema.
 
-The container runs as a non-root user and therefore listens on an unprivileged
-port inside the container; the published host port is unchanged.
+The container runs as the base image's non-root `bun` user. Set `WEB_PORT` to
+publish on a different host port, and `BETTER_AUTH_URL` to match - the app
+makes same-origin requests back to itself during server rendering, so the two
+need to agree.
 
-### Docker Compose, side by side
+`db-data` is a named Docker volume, not a bind mount to a host directory:
+SQLite needs POSIX file locking that Docker Desktop's bind-mount translation
+(Windows/WSL2 and macOS alike) doesn't reliably provide. Back it up with
+`docker compose exec web sh -c "sqlite3 /app/data/local.db .dump"`.
 
-`packages/docker/docker-compose.yml` runs the same app on `3101` so it can
-coexist with the Podman stack. Both share the repository's `data/` directory
-for SQLite.
+### Published image
+
+`docker.io/tenuka22/aloysius-admissions` is the published image, built from
+`apps/web/Dockerfile`:
 
 ```bash
-bun run docker:up
-bun run docker:logs
-bun run docker:down
+podman pull docker.io/tenuka22/aloysius-admissions:latest
 ```
 
-### Published images
-
-| Service | Image | Package |
-| --- | --- | --- |
-| Server | `ghcr.io/tenuka22/aloysius-g1-server` | [aloysius-g1-server](https://github.com/users/Tenuka22/packages/container/package/aloysius-g1-server) |
-| Web | `ghcr.io/tenuka22/aloysius-g1-web` | [aloysius-g1-web](https://github.com/users/Tenuka22/packages/container/package/aloysius-g1-web) |
-
-Each image is tagged `latest` plus the short commit SHA it was built from.
-Public packages can be pulled anonymously; while a package is private, pulling
-needs a token with `read:packages`:
+Publishing a new tag:
 
 ```bash
-gh auth token | podman login ghcr.io -u <github-username> --password-stdin
-podman pull ghcr.io/tenuka22/aloysius-g1-server:latest
-```
-
-Publishing needs `write:packages`
-(`gh auth refresh -h github.com -s write:packages`):
-
-```bash
-bun run podman:build
+podman build -f apps/web/Dockerfile -t docker.io/tenuka22/aloysius-admissions:latest .
 SHA=$(git rev-parse --short HEAD)
-for svc in server web; do
-  podman tag "aloysius-admissions-podman-$svc" "ghcr.io/tenuka22/aloysius-g1-$svc:$SHA"
-  podman tag "aloysius-admissions-podman-$svc" "ghcr.io/tenuka22/aloysius-g1-$svc:latest"
-  podman push "ghcr.io/tenuka22/aloysius-g1-$svc:$SHA"
-  podman push "ghcr.io/tenuka22/aloysius-g1-$svc:latest"
-done
+podman tag docker.io/tenuka22/aloysius-admissions:latest "docker.io/tenuka22/aloysius-admissions:$SHA"
+podman push docker.io/tenuka22/aloysius-admissions:latest
+podman push "docker.io/tenuka22/aloysius-admissions:$SHA"
 ```
 
 ## Operational notes

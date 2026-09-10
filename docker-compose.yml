@@ -1,33 +1,44 @@
-name: aloysius-admissions-podman
+name: aloysius-admissions
 
 services:
   # One service: the TanStack Start app serves the UI and the API (auth, RPC,
-  # OpenAPI) from a single origin, so there is no cross-origin wiring left.
+  # OpenAPI) from a single origin, so there's no cross-origin wiring to add.
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+    image: aloysius-admissions-web:latest
     init: true
     ports:
-      - "3001:3000"
+      - "${WEB_PORT:-3001}:${WEB_PORT:-3001}"
     env_file:
+      # Everything except the two overrides below: BETTER_AUTH_SECRET,
+      # ADMIN_PASSWORD, SUB_ADMIN_PASSWORD, SUB_ADMIN_EMAILS.
       - path: apps/web/.env
         required: false
     environment:
-      # Absolute, and inside the volume mount rather than the image.
+      # The server-rendered app makes same-origin requests back to itself
+      # (session/oRPC calls during SSR) using the port it's reached on, so
+      # the container must listen on the same port it's published as -
+      # otherwise those self-requests target a port nothing inside the
+      # container is bound to and every page 500s.
+      PORT: ${WEB_PORT:-3001}
+      # Always the volume-backed file below - a Turso URL in apps/web/.env is
+      # meant for `bun run dev`, not this self-hosted container.
       TURSO_DATABASE_URL: file:/app/data/local.db
-      # The public origin, used for auth callbacks and cookies.
-      BETTER_AUTH_URL: http://localhost:3001
-    healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    restart: unless-stopped
+      # Update this alongside WEB_PORT for a non-default host port, and set
+      # it to the real public origin when fronted by a domain/reverse proxy.
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3001}
     volumes:
-      - ./data:/app/data
+      - db-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  # A named volume, not a bind mount: SQLite needs POSIX file locking that
+  # Docker Desktop's bind-mount translation (Windows/WSL2 and macOS alike)
+  # doesn't reliably provide, which surfaces as "unable to open database"
+  # errors under load. A named volume lives inside the Docker VM's real
+  # filesystem instead. Back it up with `docker compose exec web sh -c
+  # "sqlite3 /app/data/local.db .dump"` (or `docker cp` the volume's mount
+  # point) rather than reaching for it on the host directly.
+  db-data:
