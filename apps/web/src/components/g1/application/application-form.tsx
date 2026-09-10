@@ -19,7 +19,6 @@ import {
   type CategoryType,
   applyLocationChange,
   emptyDraft,
-  isSkipOutstanding,
   normalizeDraft,
   useApplicationStore,
 } from "@/lib/g1/application-store";
@@ -34,6 +33,7 @@ import {
   G1_DOB_EARLIEST,
   G1_DOB_LATEST,
   ageAsOf,
+  fieldNeedsAttention,
   getNextStepReason,
   isG1EligibleDob,
   locationIsReady,
@@ -432,7 +432,6 @@ function BirthCertificateField({
             set({
               applicant: { ...draft.applicant, birthCertificateNumber: e.target.value },
               bcRequestState: "",
-              ...(e.target.value.trim() ? { birthCertificateStatus: "provided" as const } : {}),
             });
             scheduleCheck(e.target.value);
           }}
@@ -580,7 +579,6 @@ function LocationStepCard({
           set({
             location: value,
             selectedLocation: value,
-            locationStatus: "provided",
             ...(histories.defaultLocations !== draft.defaultLocations
               ? { defaultLocations: histories.defaultLocations }
               : {}),
@@ -1259,8 +1257,19 @@ function DeclarationStep({
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   const { t } = useTranslation();
-  const locationSkipped = draft.locationStatus === "skipped";
-  const birthCertSkipped = draft.birthCertificateStatus === "skipped";
+  // Also catches a field that was never explicitly skipped but whose value
+  // was cleared after its step was already passed - that is just as
+  // outstanding as a skip, and must surface here too, not just for skips.
+  const locationSkipped = fieldNeedsAttention(
+    draft.locationStatus,
+    draft.maxVisitedStep > 0,
+    locationIsReady(draft.location),
+  );
+  const birthCertSkipped = fieldNeedsAttention(
+    draft.birthCertificateStatus,
+    draft.maxVisitedStep > 1,
+    draft.applicant.birthCertificateNumber.trim().length > 0,
+  );
   return (
     <div className="grid max-w-[920px] gap-5">
       <div className="mb-4">
@@ -1279,7 +1288,7 @@ function DeclarationStep({
           <span className="text-sm font-medium">{t("appForm.locationStep.heading")}</span>
           <LocationStep
             readOnly={false}
-            skipped
+            skipped={draft.locationStatus === "skipped"}
             autoRequestLocation={
               draft.location?.latitude == null && draft.selectedLocation?.latitude == null
             }
@@ -2157,12 +2166,17 @@ export function ApplicationForm({
   // Steps the applicant advanced past by skipping a field they still owe.
   // Surfaced on the stepper and on Continue so an outstanding skip stays
   // visible instead of being discovered at the very end.
-  const locationOutstanding = isSkipOutstanding(
+  // Also catches an applicant who never clicked skip but cleared a
+  // previously provided value after moving past this step - that is just
+  // as outstanding as an explicit skip, and must not go unflagged.
+  const locationOutstanding = fieldNeedsAttention(
     draft.locationStatus,
+    draft.maxVisitedStep > 0,
     locationIsReady(draft.location),
   );
-  const birthCertOutstanding = isSkipOutstanding(
+  const birthCertOutstanding = fieldNeedsAttention(
     draft.birthCertificateStatus,
+    draft.maxVisitedStep > 1,
     draft.applicant.birthCertificateNumber.trim().length > 0,
   );
   const skippedSteps: number[] = [

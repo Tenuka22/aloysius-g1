@@ -47,8 +47,9 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
   const ui = useHomeUiStore();
   const refreshSavedKeys = useSavedApplicationsStore((s) => s.refresh);
 
-  // The saved-keys list lives in localStorage, external to this store; re-sync on mount
-  // in case it changed since the store module was first evaluated (e.g. another tab).
+  // The store starts empty (see saved-applications-store.ts) so it never reads cookies
+  // during server rendering; this mount-time refresh is what actually loads the real
+  // saved-keys list, client-side, once per page view.
   useEffect(() => {
     refreshSavedKeys();
   }, [refreshSavedKeys]);

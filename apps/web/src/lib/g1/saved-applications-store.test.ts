@@ -28,8 +28,8 @@ describe("useSavedApplicationsStore", () => {
   it("seeds its keys from the saved-keys cookie on creation", () => {
     saveKey("ALY-seeded");
     const seeded = useSavedApplicationsStore.getState();
-    // The store was created before this test saved a key, but its initial
-    // state came from getSavedKeys() at module load; verify refresh syncs it.
+    // The store always starts empty (never reads cookies at module load, so
+    // it's SSR-safe) regardless of what's already saved; verify refresh syncs it.
     expect(seeded.keys).not.toContain("ALY-seeded");
     seeded.refresh();
     expect(useSavedApplicationsStore.getState().keys).toContain("ALY-seeded");
