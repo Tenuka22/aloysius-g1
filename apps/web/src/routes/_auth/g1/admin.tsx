@@ -271,6 +271,16 @@ function AdminPage() {
   );
 }
 
+// `value` here is a datetime-local-style string ("YYYY-MM-DDTHH:mm", no
+// timezone) and `new Date(value)` parses that as local time - so it must be
+// built from local getters too. Using `toISOString()` (UTC) to produce it
+// desynced the two conversions by the browser's UTC offset, which is why the
+// picker showed and saved the wrong hour outside UTC.
+function toLocalDateTimeValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function DateTimePicker({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   const [open, setOpen] = useState(false);
   const { t } = useTranslation();
@@ -282,7 +292,7 @@ function DateTimePicker({ value, onChange, label }: { value: string; onChange: (
     if (!date) return;
     const d = new Date(date);
     d.setHours(Number(h), Number(m));
-    onChange(d.toISOString().slice(0, 16));
+    onChange(toLocalDateTimeValue(d));
   };
 
   const display = date
@@ -305,7 +315,7 @@ function DateTimePicker({ value, onChange, label }: { value: string; onChange: (
             onSelect={(day) => {
               if (!day) return;
               day.setHours(Number(hours), Number(minutes));
-              onChange(day.toISOString().slice(0, 16));
+              onChange(toLocalDateTimeValue(day));
             }}
           />
           <div className="flex items-center gap-2 border-t px-4 py-3">
@@ -340,18 +350,28 @@ function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
   const [opensAt, setOpensAt] = useState("");
   const [closesAt, setClosesAt] = useState("");
   const [selectedYear, setSelectedYear] = useState(intakeYear);
+  // Tracks which year's data the fields below currently reflect, so the sync
+  // effect only overwrites them when the admin switches years (or on first
+  // load) - not on every background refetch of the same year, which would
+  // otherwise stomp an in-progress pick with the last-saved value the
+  // instant a native <select> dropdown's focus/blur cycle triggers React
+  // Query's refetch-on-window-focus.
+  const syncedYearRef = useRef<string | null>(null);
   const yearSettings = useQuery(orpc.admin.settings.get.queryOptions({ input: { intakeYear: selectedYear } }));
   const { t } = useTranslation();
 
   useEffect(() => {
+    if (syncedYearRef.current === selectedYear) return;
     if (yearSettings.data) {
-      setOpensAt(yearSettings.data.opensAt.toISOString().slice(0, 16));
-      setClosesAt(yearSettings.data.closesAt.toISOString().slice(0, 16));
+      setOpensAt(toLocalDateTimeValue(yearSettings.data.opensAt));
+      setClosesAt(toLocalDateTimeValue(yearSettings.data.closesAt));
+      syncedYearRef.current = selectedYear;
     } else if (yearSettings.isFetched && !yearSettings.data) {
       setOpensAt("");
       setClosesAt("");
+      syncedYearRef.current = selectedYear;
     }
-  }, [yearSettings.data, yearSettings.isFetched]);
+  }, [yearSettings.data, yearSettings.isFetched, selectedYear]);
 
   const windowStatus = yearSettings.data
     ? (() => {

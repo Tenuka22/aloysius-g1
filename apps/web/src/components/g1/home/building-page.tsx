@@ -1,8 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
-import Footer from "@/components/footer";
-import Header from "@/components/header";
 import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
 import { useTranslation } from "@/lib/i18n";
 
@@ -14,7 +12,6 @@ export function BuildingPage() {
 
   return (
     <div className="flex min-h-svh flex-col" data-surface="school-home-building">
-      <Header />
       <main className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-12 sm:px-8">
         <div
           aria-hidden="true"
@@ -50,7 +47,6 @@ export function BuildingPage() {
           </Link>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

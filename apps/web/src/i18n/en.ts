@@ -27,7 +27,7 @@ const en = {
   "footer.copyright": "© {year} Team CS Development. All rights reserved.",
 
   // ─── building-page.tsx ────────────────────────────────────────
-  "building.description": "The St. Aloysius' College website is currently under construction. In the meantime, the Grade 1 admissions portal is open below.",
+  "building.description": "The St. Aloysius' College website is currently under construction.",
   "building.schoolName": "St. Aloysius' College",
   "building.location": "Galle, Sri Lanka",
   "building.crestAlt": "St. Aloysius' College crest",
@@ -37,12 +37,6 @@ const en = {
   "home.hero.badge": "G1 {year} intake",
   "home.hero.title": "Application dashboard",
   "home.hero.description": "Create a record, continue an existing one, or manage saved records.",
-  "home.stats.total": "Total",
-  "home.stats.saved": "Saved",
-  "home.stats.submitted": "Submitted",
-  "home.stats.drafts": "Drafts",
-  "home.stats.errors": "Errors",
-  "home.stats.incomplete": "Incomplete",
   "home.quickActions.heading": "Quick actions",
   "home.quickActions.newApplication": "New application",
   "home.quickActions.loadWithKey": "Load with a key",

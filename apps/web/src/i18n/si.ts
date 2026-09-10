@@ -27,7 +27,7 @@ const si = {
   "footer.copyright": "© {year} Team CS Development. සියලුම හිමිකම් ඇවිරිණි.",
 
   // ─── building-page.tsx ────────────────────────────────────────
-  "building.description": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ වෙබ් අඩවිය මේ වන විට සකස් වෙමින් පවතී. එතෙක් 1 ශ්‍රේණිය ඇතුළත් කිරීමේ ද්වාරය පහතින් විවෘතව ඇත.",
+  "building.description": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ වෙබ් අඩවිය මේ වන විට සකස් වෙමින් පවතී.",
   "building.schoolName": "ගාල්ල ශාන්ත ඇලෝසියස් විද්‍යාලය",
   "building.location": "ගාල්ල, ශ්‍රී ලංකාව",
   "building.crestAlt": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ ලාංඡනය",
@@ -37,12 +37,6 @@ const si = {
   "home.hero.badge": "{year} ශ්‍රේණිය 1 ඇතුළත් කිරීම",
   "home.hero.title": "අයදුම්පත් පාලක පුවරුව",
   "home.hero.description": "නව අයදුම්පතක් සාදන්න, පවතින එකක් ඉදිරියට ගෙන යන්න, හෝ සුරැකි අයදුම්පත් කළමනාකරණය කරන්න.",
-  "home.stats.total": "මුළු එකතුව",
-  "home.stats.saved": "සුරැකි",
-  "home.stats.submitted": "යොමු කළ",
-  "home.stats.drafts": "අසම්පූර්ණ සටහන්",
-  "home.stats.errors": "දෝෂ",
-  "home.stats.incomplete": "අසම්පූර්ණ",
   "home.quickActions.heading": "ක්ෂණික පියවර",
   "home.quickActions.newApplication": "නව අයදුම්පතක්",
   "home.quickActions.loadWithKey": "මුරසංකේතය (Key) මඟින් ප්‍රවේශ වන්න",

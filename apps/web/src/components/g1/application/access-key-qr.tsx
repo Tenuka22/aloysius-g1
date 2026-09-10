@@ -74,10 +74,10 @@ export function AccessKeyQrImporter({ onKey }: { onKey: (key: string) => void })
   return (
     <div className="grid gap-2">
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary" type="button" className="w-full min-w-0 whitespace-normal text-center" onClick={() => setCameraOpen(true)}>
+        <Button variant="secondary" type="button" className="h-auto w-full min-w-0 flex-col items-center gap-1.5 whitespace-normal py-3 text-center" onClick={() => setCameraOpen(true)}>
           <Camera size={16} /> {t("qrImporter.scanWithCamera")}
         </Button>
-        <label className={buttonVariants({ variant: "secondary", className: "w-full min-w-0 cursor-pointer whitespace-normal text-center" })}>
+        <label className={buttonVariants({ variant: "secondary", className: "h-auto w-full min-w-0 cursor-pointer flex-col items-center gap-1.5 whitespace-normal py-3 text-center" })}>
           <Upload size={16} /> {t("qrImporter.importImage")}
           <input type="file" accept="image/*" className="sr-only" onChange={(event) => void readFile(event.target.files?.[0])} />
         </label>
