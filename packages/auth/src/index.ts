@@ -1,4 +1,4 @@
-import { createDb } from "@aloysius-admissions/db";
+import type { Database } from "@aloysius-admissions/db";
 import * as schema from "@aloysius-admissions/db/schema/auth";
 import { env, getSubAdminEmails } from "@aloysius-admissions/env/server";
 import { betterAuth } from "better-auth";
@@ -30,9 +30,7 @@ function getSubAdminPassword(): string {
   return env.SUB_ADMIN_PASSWORD;
 }
 
-export function createAuth() {
-  const db = createDb();
-
+export function createAuth(db: Database) {
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -113,10 +111,7 @@ export function createAuth() {
  * contract this module owns rather than on `typeof createAuth`. */
 export type AuthInstance = ReturnType<typeof createAuth>;
 
-export const auth = createAuth();
-
-export async function ensureSiteAdmin(authInstance: AuthInstance = auth) {
-  const db = createDb();
+export async function ensureSiteAdmin(db: Database, authInstance: AuthInstance) {
   const existing = await db
     .select()
     .from(schema.user)
@@ -171,11 +166,11 @@ export async function ensureSiteAdmin(authInstance: AuthInstance = auth) {
 }
 
 export async function ensureSubAdmin(
+  db: Database,
   email: string,
   name: string,
-  authInstance: AuthInstance = auth,
+  authInstance: AuthInstance,
 ) {
-  const db = createDb();
   const existing = await db.select().from(schema.user).where(eq(schema.user.email, email)).limit(1);
   const user = existing[0];
 
@@ -243,7 +238,7 @@ export async function ensureSubAdmin(
  * logged per account rather than thrown: one bad address must not stop the
  * server from booting, the way a throw here previously would have.
  */
-export async function ensureSubAdmins(authInstance: AuthInstance = auth) {
+export async function ensureSubAdmins(db: Database, authInstance: AuthInstance) {
   const emails = getSubAdminEmails();
   if (emails.length === 0) {
     console.log("[auth] No SUB_ADMIN_EMAILS configured; skipping sub-admin seed");
@@ -253,7 +248,7 @@ export async function ensureSubAdmins(authInstance: AuthInstance = auth) {
   for (const email of emails) {
     const name = email.split("@")[0] ?? "Sub Admin";
     try {
-      await ensureSubAdmin(email, name, authInstance);
+      await ensureSubAdmin(db, email, name, authInstance);
     } catch (error) {
       console.error(`[auth] Could not ensure sub-admin ${email}:`, error);
     }

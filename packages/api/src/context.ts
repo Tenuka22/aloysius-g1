@@ -1,4 +1,4 @@
-import { createAuth } from "@aloysius-admissions/auth";
+import { auth } from "./server";
 
 export type CreateContextOptions = {
   /** Incoming request headers; the session cookie is read from these. */
@@ -13,7 +13,7 @@ export type CreateContextOptions = {
  * depending on a server framework.
  */
 export async function createContext({ headers }: CreateContextOptions) {
-  const session = await createAuth().api.getSession({ headers });
+  const session = await auth.api.getSession({ headers });
   return {
     auth: null,
     session,

@@ -1,30 +1,27 @@
 import { afterAll, beforeAll, describe, expect, it, spyOn } from "bun:test";
+import type { Database } from "@aloysius-admissions/db";
 import * as authSchema from "@aloysius-admissions/db/schema/auth";
 import { type TestDatabase, provisionTestDatabase } from "@aloysius-admissions/db/test-utils";
 import type { Auth } from "better-auth";
 import { eq } from "drizzle-orm";
-import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import type {
   createAuth as CreateAuthFn,
   ensureSiteAdmin as EnsureSiteAdminFn,
   ensureSubAdmin as EnsureSubAdminFn,
 } from "./index";
 
-type AuthSchema = typeof authSchema;
-
 interface TestContext {
   testDb: TestDatabase;
   ensureSiteAdmin: typeof EnsureSiteAdminFn;
   ensureSubAdmin: typeof EnsureSubAdminFn;
-  db: LibSQLDatabase<AuthSchema>;
+  db: Database;
   auth: Auth;
 }
 
 /**
- * Dynamic imports here are required, not stylistic: packages/auth/src/index.ts
- * and @aloysius-admissions/db both call createDb()/createAuth() as a *module-load-time*
- * side effect (`export const auth = createAuth()`, `export const db =
- * createDb()`), which reads TURSO_DATABASE_URL/BETTER_AUTH_SECRET from process.env at
+ * The dynamic import here is required, not stylistic: `@aloysius-admissions/db`
+ * calls `createDb()` as a *module-load-time* side effect (`export const db =
+ * await createDb()`), which reads `TURSO_DATABASE_URL` from `process.env` at
  * that instant. A static import would be hoisted and evaluated before
  * provisionTestDatabase() has set those vars, silently binding to the wrong
  * (or no) database.
@@ -37,12 +34,13 @@ async function setUpTestContext(): Promise<TestContext> {
   const authModule = await import("./index");
   const dbModule = await import("@aloysius-admissions/db");
   const createAuthFn: typeof CreateAuthFn = authModule.createAuth;
+  const db = await dbModule.createDb();
   return {
     testDb,
     ensureSiteAdmin: authModule.ensureSiteAdmin,
     ensureSubAdmin: authModule.ensureSubAdmin,
-    db: dbModule.createDb(),
-    auth: createAuthFn(),
+    db,
+    auth: createAuthFn(db),
   };
 }
 
@@ -87,7 +85,9 @@ afterAll(() => {
 
 describe("ensureSiteAdmin", () => {
   it("creates the site admin with a random one-time password, not a hardcoded one", async () => {
-    const passwords = await capturePrintedPasswords(() => context.ensureSiteAdmin(context.auth));
+    const passwords = await capturePrintedPasswords(() =>
+      context.ensureSiteAdmin(context.db, context.auth),
+    );
 
     expect(passwords).toHaveLength(1);
     const [generatedPassword] = passwords;
@@ -114,7 +114,9 @@ describe("ensureSiteAdmin", () => {
   it("never touches the password on a subsequent run (regression: used to silently reset it every boot)", async () => {
     const { credential: before } = await credentialAccountFor(SITE_ADMIN_EMAIL);
 
-    const passwords = await capturePrintedPasswords(() => context.ensureSiteAdmin(context.auth));
+    const passwords = await capturePrintedPasswords(() =>
+      context.ensureSiteAdmin(context.db, context.auth),
+    );
     expect(passwords).toHaveLength(0);
 
     const { credential: after } = await credentialAccountFor(SITE_ADMIN_EMAIL);
@@ -126,7 +128,7 @@ describe("ensureSiteAdmin", () => {
       .update(authSchema.user)
       .set({ role: "user" })
       .where(eq(authSchema.user.email, SITE_ADMIN_EMAIL));
-    await context.ensureSiteAdmin(context.auth);
+    await context.ensureSiteAdmin(context.db, context.auth);
     const { user } = await credentialAccountFor(SITE_ADMIN_EMAIL);
     expect(user?.role).toBe("admin");
   });
@@ -137,7 +139,7 @@ describe("ensureSubAdmin", () => {
 
   it("creates a sub-admin with a random one-time password, not a hardcoded one", async () => {
     const passwords = await capturePrintedPasswords(() =>
-      context.ensureSubAdmin(email, "Sub Admin", context.auth),
+      context.ensureSubAdmin(context.db, email, "Sub Admin", context.auth),
     );
 
     expect(passwords).toHaveLength(1);
@@ -157,7 +159,7 @@ describe("ensureSubAdmin", () => {
     const { credential: before } = await credentialAccountFor(email);
 
     const passwords = await capturePrintedPasswords(() =>
-      context.ensureSubAdmin(email, "Sub Admin", context.auth),
+      context.ensureSubAdmin(context.db, email, "Sub Admin", context.auth),
     );
     expect(passwords).toHaveLength(0);
 

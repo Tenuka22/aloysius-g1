@@ -10,8 +10,9 @@
  * process, so that header is attacker-controlled and any caller could forge
  * the address attributed to them.
  *
- * This lives in its own module because `./index.ts` opens a database
- * connection at import time (`export const auth = createAuth()`); consumers
- * that only need the header name must not drag that in.
+ * This lives in its own module because `./index.ts` imports
+ * `@aloysius-admissions/db`'s schema and `createAuth()` needs a `Database`
+ * handle passed in by its caller; consumers that only need the header name
+ * must not drag any of that in.
  */
 export const CLIENT_IP_HEADER = "x-client-ip";

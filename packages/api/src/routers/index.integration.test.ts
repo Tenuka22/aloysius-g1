@@ -20,9 +20,10 @@ function applicantFullName(data: unknown): string | undefined {
 }
 
 /**
- * Dynamic import is required, not stylistic: packages/api/src/routers/index.ts
- * calls createDb() as a module-load-time side effect (`const db = createDb()`),
- * which reads TURSO_DATABASE_URL from process.env at that instant. A static import
+ * Dynamic import is required, not stylistic: importing `./index` transitively
+ * imports `@aloysius-admissions/db`, which calls `createDb()` as a
+ * module-load-time side effect (`export const db = await createDb()`), which
+ * reads TURSO_DATABASE_URL from process.env at that instant. A static import
  * would be hoisted and evaluated before provisionTestDatabase() has set that
  * var, silently binding to the wrong (or no) database.
  *

@@ -1,7 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { env } from "@aloysius-admissions/env/server";
-import { drizzle } from "drizzle-orm/libsql";
+import type { Client } from "@libsql/client";
+import type { LibSQLDatabase } from "drizzle-orm/libsql/driver-core";
 
 import { isRemoteDatabaseUrl, resolveDatabasePath, resolveDatabaseUrl } from "./path";
 import * as schema from "./schema";
@@ -16,26 +17,34 @@ export {
   g1SchoolCoordinateOverrides,
 } from "./schema/g1-logic";
 
-export async function createDb() {
-  // The default `@libsql/client` (Node build) eagerly requires a
-  // platform-specific native binary (e.g. `@libsql/linux-x64-gnu`) as soon as
-  // it is imported, even when only talking to a remote database over HTTP.
-  // Vercel's serverless file tracing does not see that dynamic require and
-  // the binary 404s at runtime, so a remote Turso database must go through
-  // `@libsql/client/web` instead - a pure `fetch()` implementation with no
-  // native code. That variant cannot open a local `file:` URL, so local dev
-  // keeps using the native client, imported dynamically so its native-binary
-  // side effect never runs (and never needs bundling) in the deployed app.
+/** The shared server-side database handle. Only `@aloysius-admissions/api` may import this module. */
+export type Database = LibSQLDatabase<typeof schema> & { $client: Client };
+
+export async function createDb(): Promise<Database> {
+  // Drizzle's default `drizzle-orm/libsql` entry statically imports the native
+  // `@libsql/client`, whose module body eagerly `require()`s a
+  // platform-specific binary the instant it loads. Bundlers inline that body
+  // into the server chunk and run it on module load, so *any* import of the
+  // default entry 500s every request on a host without the binary (e.g.
+  // Vercel's serverless runtime). The granular `drizzle-orm/libsql/web` and
+  // `.../node` entries each pull in only one client - `@libsql/client/web` (a
+  // pure `fetch()` implementation, no native code) and `@libsql/client/node`
+  // (native) respectively - so importing each *dynamically*, per branch,
+  // keeps the native binary out of the module graph any remote deployment
+  // ever loads. The native path is reached only for a local `file:` URL,
+  // which self-hosted (Docker/Podman) deployments use and where the binary is
+  // present.
   if (isRemoteDatabaseUrl(env.TURSO_DATABASE_URL)) {
-    const { createClient } = await import("@libsql/client/web");
-    const client = createClient({ url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN });
-    return drizzle(client, { schema });
+    const { drizzle } = await import("drizzle-orm/libsql/web");
+    return drizzle({
+      connection: { url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN },
+      schema,
+    });
   }
 
   mkdirSync(dirname(resolveDatabasePath()), { recursive: true });
-  const { createClient } = await import("@libsql/client");
-  const client = createClient({ url: resolveDatabaseUrl() });
-  return drizzle(client, { schema });
+  const { drizzle } = await import("drizzle-orm/libsql/node");
+  return drizzle({ connection: { url: resolveDatabaseUrl() }, schema });
 }
 
 export const db = await createDb();

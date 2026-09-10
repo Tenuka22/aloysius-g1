@@ -2,8 +2,8 @@ import { ORPCError } from "@orpc/client";
 import { EventPublisher, eventIterator } from "@orpc/server";
 
 import { randomUUID } from "node:crypto";
-import { createDb } from "@aloysius-admissions/db";
 import {
+  db,
   g1ApplicationAccessRequests,
   g1ApplicationMarks,
   g1ApplicationSettings,
@@ -33,7 +33,6 @@ import type { ApplicationData } from "../g1-logic";
 import { adminProcedure, publicProcedure, subAdminProcedure } from "../index";
 import { SCHOOL_CATALOG } from "../schools-catalog";
 
-const db = createDb();
 const uniqueSessionCode = async () => {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const sessionCode = createSessionCode();

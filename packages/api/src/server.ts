@@ -1,4 +1,8 @@
-import { createAuth, ensureSiteAdmin, ensureSubAdmins } from "@aloysius-admissions/auth";
+import {
+  createAuth,
+  ensureSiteAdmin as ensureSiteAdminWith,
+  ensureSubAdmins as ensureSubAdminsWith,
+} from "@aloysius-admissions/auth";
 import { CLIENT_IP_HEADER } from "@aloysius-admissions/auth/client-ip-header";
 import { db } from "@aloysius-admissions/db";
 
@@ -12,9 +16,19 @@ import { db } from "@aloysius-admissions/db";
  */
 
 /** The configured Better Auth instance, shared by the mounted handler. */
-export const auth = createAuth();
+export const auth = createAuth(db);
 
-export { CLIENT_IP_HEADER, ensureSiteAdmin, ensureSubAdmins };
+export { CLIENT_IP_HEADER };
+
+/** Seeds the site admin account, bound to this package's shared `db` and `auth`. */
+export function ensureSiteAdmin(): Promise<void> {
+  return ensureSiteAdminWith(db, auth);
+}
+
+/** Seeds every configured sub-admin account, bound to this package's shared `db` and `auth`. */
+export function ensureSubAdmins(): Promise<void> {
+  return ensureSubAdminsWith(db, auth);
+}
 
 export type DatabaseHealth = {
   status: "healthy" | "unhealthy";
