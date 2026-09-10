@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { env } from "@aloysius-admissions/env/server";
-import { createClient } from "@libsql/client";
 import { isRemoteDatabaseUrl, resolveDatabasePath } from "../src/path";
 
 /** Newest backups are always kept, however old they are. */
@@ -108,6 +107,13 @@ async function backup(): Promise<string | null> {
     unlinkSync(dest);
   }
 
+  // Dynamic import, not stylistic: the default `@libsql/client` eagerly
+  // requires a platform-specific native binary as soon as it is imported,
+  // and this module is also pulled into the deployed app's bundle (through
+  // the periodic backup scheduler) where that binary is never bundled. The
+  // guard above means this line never runs against a remote Turso database,
+  // so the import only executes for local dev/CLI use.
+  const { createClient } = await import("@libsql/client");
   const client = createClient({ url: `file:${dbPath}` });
   await client.execute(`VACUUM INTO '${dest.replace(/'/g, "''")}'`);
   client.close();
