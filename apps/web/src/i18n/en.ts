@@ -241,7 +241,6 @@ const en = {
   "admin.overview.formAvailability.notConfigured": "Not configured - set dates to enable",
   "admin.overview.formAvailability.opens": "Opens",
   "admin.overview.formAvailability.closes": "Closes",
-  "admin.overview.formAvailability.dateTimePickerPlaceholder": "Select date & time",
   "admin.overview.formAvailability.saved": "Form window saved",
   "admin.overview.formAvailability.saveError": "Could not save form window",
   "admin.overview.formAvailability.saving": "Saving…",

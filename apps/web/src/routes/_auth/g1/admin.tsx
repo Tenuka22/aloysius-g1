@@ -7,8 +7,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-admissions/ui/components/card";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Badge } from "@aloysius-admissions/ui/components/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@aloysius-admissions/ui/components/popover";
-import { Calendar } from "@aloysius-admissions/ui/components/calendar";
+import { Input } from "@aloysius-admissions/ui/components/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-admissions/ui/components/select";
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
@@ -282,65 +281,16 @@ function toLocalDateTimeValue(d: Date): string {
 }
 
 function DateTimePicker({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
-  const [open, setOpen] = useState(false);
-  const { t } = useTranslation();
-  const date = value ? new Date(value) : undefined;
-  const hours = date ? String(date.getHours()).padStart(2, "0") : "00";
-  const minutes = date ? String(date.getMinutes()).padStart(2, "0") : "00";
-
-  const setTime = (h: string, m: string) => {
-    if (!date) return;
-    const d = new Date(date);
-    d.setHours(Number(h), Number(m));
-    onChange(toLocalDateTimeValue(d));
-  };
-
-  const display = date
-    ? date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) + " · " + date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
-    : t("admin.overview.formAvailability.dateTimePickerPlaceholder");
-
+  // A native datetime-local input's value is always "YYYY-MM-DDTHH:mm" in
+  // local time - exactly this state's format (see toLocalDateTimeValue) and
+  // exactly what new Date(value) parses it back as - so there's no separate
+  // hour/minute state to keep in sync, and the browser owns the whole
+  // calendar/time UI instead of a hand-rolled Popover+Calendar+<select>
+  // combination.
   return (
     <div className="grid gap-1">
       <span className="text-muted-foreground text-xs font-semibold">{label}</span>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          className="flex min-h-10.5 w-full min-w-0 items-center gap-2 px-3 rounded-lg border border-input bg-background text-foreground text-sm cursor-pointer"
-        >
-          <span className={`truncate ${date ? "" : "text-muted-foreground"}`} title={display}>{display}</span>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={(day) => {
-              if (!day) return;
-              day.setHours(Number(hours), Number(minutes));
-              onChange(toLocalDateTimeValue(day));
-            }}
-          />
-          <div className="flex items-center gap-2 border-t px-4 py-3">
-            <select
-              className="rounded-md border border-input bg-background px-2 py-1 text-sm"
-              value={hours}
-              onChange={(e) => setTime(e.target.value, minutes)}
-            >
-              {Array.from({ length: 24 }, (_, i) => (
-                <option key={i} value={String(i).padStart(2, "0")}>{String(i).padStart(2, "0")}</option>
-              ))}
-            </select>
-            <span className="text-muted-foreground">:</span>
-            <select
-              className="rounded-md border border-input bg-background px-2 py-1 text-sm"
-              value={minutes}
-              onChange={(e) => setTime(hours, e.target.value)}
-            >
-              {["00", "15", "30", "45"].map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
-        </PopoverContent>
-      </Popover>
+      <Input type="datetime-local" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

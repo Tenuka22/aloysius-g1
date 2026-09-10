@@ -230,7 +230,6 @@ const si = {
   "admin.overview.formAvailability.notConfigured": "සකසා නොමැත - සක්‍රිය කිරීමට දිනයන් සකසන්න",
   "admin.overview.formAvailability.opens": "විවෘත වන දිනය",
   "admin.overview.formAvailability.closes": "වැසෙන දිනය",
-  "admin.overview.formAvailability.dateTimePickerPlaceholder": "දිනය සහ වේලාව තෝරන්න",
   "admin.overview.formAvailability.saved": "කාල සීමාව සුරකින ලදී",
   "admin.overview.formAvailability.saveError": "කාල සීමාව සුරැකීමට නොහැකි විය",
   "admin.overview.formAvailability.saving": "සුරකිමින් පවතී…",
