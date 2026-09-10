@@ -10,7 +10,7 @@ function G1AdmissionsRouteComponent() {
   return <HomeComponent isAdmin={isAdmin} isSubAdmin={isSubAdmin} />;
 }
 
-export const Route = createFileRoute("/g1-admissions")({
+export const Route = createFileRoute("/admissions")({
   head: () => ({
     meta: [
       { title: "St. Aloysius' College — Grade 1 Admissions" },

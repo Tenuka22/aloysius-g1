@@ -1,6 +1,6 @@
 const si = {
   // ─── header.tsx ───────────────────────────────────────────────
-  "header.brand": "Aloysius College Galle",
+  "header.brand": "St. Aloysius' College - Galle",
   "header.nav.home": "මුල් පිටුව",
 
   // ─── user-menu.tsx ────────────────────────────────────────────
@@ -27,7 +27,8 @@ const si = {
   "footer.copyright": "© {year} Team CS Development. සියලුම හිමිකම් ඇවිරිණි.",
 
   // ─── building-page.tsx ────────────────────────────────────────
-  "building.description": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ වෙබ් අඩවිය මේ වන විට සකස් වෙමින් පවතී.",
+  "building.status": "වෙබ් අඩවිය සකස් වෙමින් පවතී",
+  "building.description": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ නව වෙබ් අඩවිය සකස් කරමින් සිටිමු.",
   "building.schoolName": "ගාල්ල ශාන්ත ඇලෝසියස් විද්‍යාලය",
   "building.location": "ගාල්ල, ශ්‍රී ලංකාව",
   "building.crestAlt": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ ලාංඡනය",

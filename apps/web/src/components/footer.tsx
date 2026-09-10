@@ -7,7 +7,7 @@ export default function Footer() {
 
   return (
     <footer className="mt-auto">
-      <div className="h-1 bg-gradient-to-r from-primary/80 via-primary to-primary/80" />
+      <div className="h-1 bg-gradient-to-r from-primary-dark via-primary to-primary-dark" />
       <div className="border-t bg-muted/40">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
           <div className="flex flex-col gap-1.5">
@@ -22,7 +22,7 @@ export default function Footer() {
           <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-sm sm:grid-cols-3 sm:gap-x-16 sm:gap-y-6">
             <div className="flex flex-col gap-1.5">
               <span className="font-medium text-foreground">{t("footer.project.heading")}</span>
-              <Link to="/g1-admissions" className="text-muted-foreground no-underline hover:text-foreground">{t("footer.project.portal")}</Link>
+              <Link to="/admissions" className="text-muted-foreground no-underline hover:text-foreground">{t("footer.project.portal")}</Link>
               <span className="text-muted-foreground">{t("footer.project.intake", { year: INTAKE_YEAR_DEFAULT })}</span>
             </div>
             <div className="flex flex-col gap-1.5">

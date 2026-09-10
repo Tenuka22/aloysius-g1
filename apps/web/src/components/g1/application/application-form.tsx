@@ -712,14 +712,6 @@ function ApplicantStep({
           value={draft.applicant.sinhalaName}
           onChange={(e) => set({ applicant: { ...draft.applicant, sinhalaName: e.target.value } })}
         />
-        <a
-          className="text-xs text-primary underline underline-offset-1 hover:text-primary/80"
-          href="https://www.helakuru.lk/keyboard"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("appForm.applicantStep.sinhalaKeyboardLink")}
-        </a>
       </Field>
 
       <Field data-invalid={draft.applicant.gender === "Female"}>
@@ -928,14 +920,6 @@ function GuardianStep({
           value={draft.guardian.sinhalaName}
           onChange={(e) => set({ guardian: { ...draft.guardian, sinhalaName: e.target.value } })}
         />
-        <a
-          className="text-xs text-primary underline underline-offset-1 hover:text-primary/80"
-          href="https://www.helakuru.lk/keyboard"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("appForm.guardianStep.sinhalaKeyboardLink")}
-        </a>
       </Field>
 
       <Field data-invalid={!nicValid}>
@@ -1049,14 +1033,6 @@ function ResidenceStep({
           value={draft.residence.permanentAddressSi}
           onChange={(e) => setPermanentAddress({ permanentAddressSi: e.target.value })}
         />
-        <a
-          className="text-xs text-primary underline underline-offset-1 hover:text-primary/80"
-          href="https://www.helakuru.lk/keyboard"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("appForm.residenceStep.sinhalaKeyboardLink")}
-        </a>
       </Field>
 
       <div className="col-span-full">
@@ -2810,7 +2786,7 @@ export function ApplicationForm({
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => void navigate({ to: "/g1-admissions" })}
+                  onClick={() => void navigate({ to: "/admissions" })}
                 >
                   <House size={17} /> {t("appForm.submitted.backToHome")}
                 </Button>
@@ -2945,7 +2921,7 @@ export function ApplicationForm({
                       clearActiveKey();
                       draft.reset();
                       set({ clearDraftDialogOpen: false });
-                      window.location.assign("/g1-admissions");
+                      window.location.assign("/admissions");
                     }}
                   >
                     {t("appForm.buttons.clearDraftDialog.confirm")}

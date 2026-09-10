@@ -4,6 +4,7 @@
 @import "@fontsource-variable/dm-sans";
 @import "@fontsource-variable/playfair-display";
 @import "@fontsource-variable/noto-sans-sinhala";
+@import "@fontsource/abhaya-libre/400.css";
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
@@ -16,6 +17,24 @@
   --popover-foreground: oklch(0.19 0.02 155);
   --primary: oklch(0.36 0.09 147);
   --primary-foreground: oklch(0.98 0.01 150);
+  /* Heritage green: a lighter, more saturated mid-tone than --primary, for a
+     secondary brand accent (dividers, secondary emphasis) distinct from both
+     the crest green and the near-neutral --secondary below. */
+  --heritage-green: oklch(0.46 0.1 150);
+  --heritage-green-foreground: oklch(0.98 0.01 150);
+  /* Dark variant of --primary, for deep hero/footer bands that need more
+     contrast than the crest green alone - replaces ad hoc gradient hacks
+     pages were using to fake extra depth. */
+  --primary-dark: oklch(0.26 0.07 148);
+  --primary-dark-foreground: oklch(0.97 0.01 150);
+  /* Warm ivory/champagne surface tier. Opt-in only - --background/--card stay
+     neutral white so every existing shadcn primitive (dialogs, popovers,
+     forms, admin tables) is unaffected. Used where a page explicitly wants a
+     warmer surface instead of white. */
+  --surface-ivory: oklch(0.98 0.012 80);
+  --surface-ivory-foreground: var(--foreground);
+  --surface-champagne: oklch(0.95 0.025 80);
+  --surface-champagne-foreground: var(--foreground);
   --secondary: oklch(0.965 0.006 145);
   --secondary-foreground: oklch(0.24 0.03 150);
   --muted: oklch(0.966 0.005 100);
@@ -28,6 +47,12 @@
   --ring: oklch(0.6 0.09 147);
   --brand-gold: oklch(0.79 0.16 76);
   --brand-gold-foreground: oklch(0.32 0.07 60);
+  /* Systematized shadow tiers, replacing the ad hoc shadow-lg/shadow-black
+     strings previously hand-rolled per call site. --shadow-gold is a tinted
+     shadow for gold CTAs/accents, instead of a generic black shadow. */
+  --shadow-soft: 0 1px 2px color-mix(in oklch, var(--foreground) 6%, transparent), 0 2px 8px color-mix(in oklch, var(--foreground) 4%, transparent);
+  --shadow-elevated: 0 4px 12px color-mix(in oklch, var(--foreground) 8%, transparent), 0 12px 32px color-mix(in oklch, var(--foreground) 10%, transparent);
+  --shadow-gold: 0 8px 24px color-mix(in oklch, var(--brand-gold) 25%, transparent);
   --chart-1: oklch(0.36 0.09 147);
   --chart-2: oklch(0.52 0.1 152);
   --chart-3: oklch(0.68 0.12 120);
@@ -48,6 +73,17 @@
   --font-sans: 'DM Sans Variable', 'Noto Sans Sinhala Variable', sans-serif;
   --color-brand-gold-foreground: var(--brand-gold-foreground);
   --color-brand-gold: var(--brand-gold);
+  --color-heritage-green-foreground: var(--heritage-green-foreground);
+  --color-heritage-green: var(--heritage-green);
+  --color-primary-dark-foreground: var(--primary-dark-foreground);
+  --color-primary-dark: var(--primary-dark);
+  --color-surface-ivory-foreground: var(--surface-ivory-foreground);
+  --color-surface-ivory: var(--surface-ivory);
+  --color-surface-champagne-foreground: var(--surface-champagne-foreground);
+  --color-surface-champagne: var(--surface-champagne);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-gold: var(--shadow-gold);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -87,6 +123,14 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --font-heading: 'Playfair Display Variable', 'Noto Sans Sinhala Variable', serif;
+  /* Distinct from --font-heading: reserved for the single largest headline on
+     a page (hero H1) so a future display-face change doesn't also affect
+     every card/section title. Same underlying face today (Playfair Display /
+     Abhaya Libre under html[lang="si"] - see the .font-display override in
+     @layer base below, following the exact same selector-override pattern
+     documented next to .font-heading, since @theme inline values are baked
+     as literals and can't be swapped by redeclaring the custom property). */
+  --font-display: 'Playfair Display Variable', 'Noto Sans Sinhala Variable', serif;
 
   /* Fluid type scale: each clamp() floors at today's fixed rem value (so
      nothing ever shrinks below current sizing - protects Sinhala legibility)
@@ -99,6 +143,13 @@
   --text-xl: clamp(1.25rem, 1.15rem + 0.4vw, 1.4rem);
   --text-2xl: clamp(1.5rem, 1.35rem + 0.6vw, 1.75rem);
   --text-3xl: clamp(1.875rem, 1.65rem + 0.9vw, 2.25rem);
+  /* Extends the scale past the previous 3xl ceiling so hero titles can use a
+     named text-4xl/5xl/6xl utility instead of hand-rolled inline clamp()
+     arbitrary values (which building-page.tsx and home-page.tsx previously
+     duplicated independently). */
+  --text-4xl: clamp(2.25rem, 1.9rem + 1.5vw, 3rem);
+  --text-5xl: clamp(2.75rem, 2.2rem + 2.2vw, 3.75rem);
+  --text-6xl: clamp(3.25rem, 2.4rem + 3.5vw, 4.75rem);
 }
 
 @layer base {
@@ -134,7 +185,9 @@
     --font-weight-bold: 800;
     --font-weight-extrabold: 850;
     --font-weight-black: 900;
+
   }
+
 
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -186,4 +239,37 @@
     background-size: 24px 100%, 24px 100%, 8px 100%, 8px 100%;
     background-attachment: local, local, scroll, scroll;
   }
+}
+
+/* Sinhala heading/display faces.
+   ---------------------------------------------------------------------------
+   DELIBERATELY UNLAYERED - do not move these inside @layer base.
+
+   Two separate things had to be true for this to work, and getting either
+   wrong makes the override silently do nothing:
+
+   1. `@theme inline` bakes font stacks as LITERAL values into the compiled
+      utility (`.font-heading { font-family: 'Playfair Display Variable', ... }`),
+      so redeclaring --font-heading / --font-display under html[lang="si"] is
+      dead code - the variable is never read at runtime. font-family has to be
+      overridden on the class selector itself.
+
+   2. Tailwind declares `@layer theme, base, components, utilities`, and
+      .font-heading/.font-display are emitted into `utilities`. Cascade layers
+      beat specificity: ANY rule in `utilities` wins over ANY rule in `base`,
+      even `html[lang="si"] .font-display` (0,2,0) vs `.font-display` (0,1,0).
+      Putting these in @layer base looks correct and does nothing.
+
+   Unlayered styles outrank every layered style, so declaring them here is what
+   actually makes them apply.
+
+   Playfair Display has no Sinhala glyphs, so without this the Sinhala locale
+   fell back to the same plain sans as body text. Abhaya Libre is a real
+   Sinhala serif with thick/thin stroke contrast, matching Playfair's editorial
+   role on the English side. Only weight 400 is imported, so headings are
+   pinned to 400 rather than inheriting the html[lang="si"] body 500 bump. */
+html[lang="si"] .font-heading,
+html[lang="si"] .font-display {
+  font-family: 'Abhaya Libre', 'Noto Sans Sinhala Variable', serif;
+  font-weight: 400;
 }

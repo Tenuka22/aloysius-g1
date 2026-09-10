@@ -1,6 +1,6 @@
 const en = {
   // ─── header.tsx ───────────────────────────────────────────────
-  "header.brand": "Aloysius College Galle",
+  "header.brand": "St. Aloysius' College - Galle",
   "header.nav.home": "Home",
 
   // ─── user-menu.tsx ────────────────────────────────────────────
@@ -27,7 +27,8 @@ const en = {
   "footer.copyright": "© {year} Team CS Development. All rights reserved.",
 
   // ─── building-page.tsx ────────────────────────────────────────
-  "building.description": "The St. Aloysius' College website is currently under construction.",
+  "building.status": "Website under construction",
+  "building.description": "We're building a new home for the St. Aloysius' College website.",
   "building.schoolName": "St. Aloysius' College",
   "building.location": "Galle, Sri Lanka",
   "building.crestAlt": "St. Aloysius' College crest",

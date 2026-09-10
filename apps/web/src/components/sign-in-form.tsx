@@ -26,7 +26,7 @@ export default function SignInForm({
         { email: value.email, password: value.password },
         {
           onSuccess: () => {
-            navigate({ to: "/g1-admissions" });
+            navigate({ to: "/admissions" });
             toast.success(t("signIn.success"));
           },
           onError: (error) => {
