@@ -37,17 +37,38 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1.0",
       },
       {
-        title: "aloysius-admissions",
+        title: "St. Aloysius' College — Grade 1 Admissions",
       },
       {
         name: "description",
-        content: "aloysius-admissions is a web application",
+        content: "Online admissions portal for Grade 1 applications to St. Aloysius' College.",
+      },
+      {
+        name: "theme-color",
+        content: "#0b4619",
       },
     ],
     links: [
       {
         rel: "icon",
         href: "/favicon.ico",
+        sizes: "any",
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "32x32",
+        href: "/favicon-32.png",
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "192x192",
+        href: "/icon-192.png",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/apple-touch-icon.png",
       },
     ],
   }),
@@ -67,30 +88,36 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
-  const [client] = useState<AppRouterClient>(() => createORPCClient(link));
-  const navigate = useNavigate();
   return (
     <html>
       <head>
         <HeadContent />
       </head>
       <body>
-        <AuthProvider
-          authClient={authClient}
-          navigate={navigate}
-          Link={({ href, ...props }) => <Link to={href} {...props} />}
-          plugins={[multiSessionPlugin()]}
-        >
-          <I18nProvider>
-            <div className="h-svh overflow-auto">{children}</div>
-            <Toaster richColors />
-            <LocaleSwitcher />
-          </I18nProvider>
-        </AuthProvider>
+        <AppProviders>{children}</AppProviders>
         {/*<TanStackRouterDevtools position="bottom-left" />
         <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />*/}
         <Scripts />
       </body>
     </html>
+  );
+}
+
+function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
+  const [client] = useState<AppRouterClient>(() => createORPCClient(link));
+  const navigate = useNavigate();
+  return (
+    <AuthProvider
+      authClient={authClient}
+      navigate={navigate}
+      Link={({ href, ...props }) => <Link to={href} {...props} />}
+      plugins={[multiSessionPlugin()]}
+    >
+      <I18nProvider>
+        <div className="h-svh overflow-auto">{children}</div>
+        <Toaster richColors />
+        <LocaleSwitcher />
+      </I18nProvider>
+    </AuthProvider>
   );
 }

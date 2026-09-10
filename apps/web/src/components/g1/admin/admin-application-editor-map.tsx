@@ -30,7 +30,7 @@ export default function AdminApplicationEditorMap({
 
   return (
     <>
-      <MapContainer center={center} zoom={allPoints.length > 0 ? 13 : 7} scrollWheelZoom style={{ height: "390px", width: "100%" }}>
+      <MapContainer center={center} zoom={allPoints.length > 0 ? 13 : 7} scrollWheelZoom className="z-0 h-[clamp(280px,48vw,390px)] w-full">
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {browserPoint && (
           <CircleMarker center={browserPoint} radius={8} pathOptions={{ color: "#1d4ed8", fillColor: "#60a5fa", fillOpacity: .9, weight: 2 }}>

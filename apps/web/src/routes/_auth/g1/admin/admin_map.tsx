@@ -153,7 +153,7 @@ function AdminMapPage() {
 
   return (
     <main className="min-h-svh overflow-hidden bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)] p-4 md:p-6 xl:p-8">
-      <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[min(1700px,100%)] flex-col gap-4 2xl:max-w-[calc(100%-2rem)]">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Admin / Map</p>
@@ -175,7 +175,7 @@ function AdminMapPage() {
           <span className="inline-flex items-center gap-1.5 tabular-nums"><span className="size-2 rounded-full bg-muted-foreground/40" /><strong>{unlocated.length}</strong><span className="text-xs text-muted-foreground">no location</span></span>
         </div>
 
-        <div className="grid gap-4 xl:h-[calc(100dvh-15.75rem)] xl:grid-cols-[minmax(290px,330px)_minmax(0,1fr)]">
+        <div className="grid gap-4 xl:h-[calc(100dvh-15.75rem)] xl:grid-cols-[minmax(290px,clamp(330px,22vw,420px))_minmax(0,1fr)]">
           <aside className="grid content-start gap-3 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
             <Panel title="Scenario" hint="Home point and selected school.">
               <div className="grid gap-2.5">
@@ -263,10 +263,11 @@ function AdminMapPage() {
                 )}
                 <button
                   onClick={() => setFullscreenOpen(true)}
-                  className="pointer-events-auto ml-1 shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="pointer-events-auto -my-1.5 -mr-1 ml-1 flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                   title="Open fullscreen map"
+                  aria-label="Open fullscreen map"
                 >
-                  <Maximize2 size={14} />
+                  <Maximize2 size={15} />
                 </button>
               </div>
               <ClientOnly fallback={<div className="h-full w-full bg-muted" />}>
@@ -301,7 +302,7 @@ function AdminMapPage() {
       <style>{`.school-tooltip{background:#18181b!important;color:#fafafa!important;border:1px solid #27272a!important;border-radius:8px!important;padding:6px 10px!important;font-size:12px!important;box-shadow:0 4px 12px rgba(0,0,0,.3)!important;white-space:nowrap!important;display:flex;flex-direction:column;gap:1px!important}.school-tooltip::before{border-top-color:#18181b!important}`}</style>
 
       <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
-        <DialogContent className="!fixed !top-[5vh] !left-[5vw] !translate-x-0 !translate-y-0 !max-w-none !w-[90vw] !h-[90vh] !p-0 !gap-0 !overflow-hidden !rounded-xl !grid !grid-rows-[auto_1fr] !z-[1100]" showCloseButton={false}>
+        <DialogContent className="!fixed !top-[5dvh] !left-[5dvw] !translate-x-0 !translate-y-0 !max-w-none !w-[90dvw] !h-[90dvh] !p-0 !gap-0 !overflow-hidden !rounded-xl !grid !grid-rows-[auto_1fr] !z-[1100]" showCloseButton={false}>
           <DialogTitle className="px-4 py-3 border-b flex items-center justify-between shrink-0">
             <span>{selectedSchool?.en ?? "Map"} - Fullscreen</span>
             <div className="flex items-center gap-3 text-sm text-muted-foreground font-normal">

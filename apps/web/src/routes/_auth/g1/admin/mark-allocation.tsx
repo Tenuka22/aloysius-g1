@@ -258,7 +258,7 @@ function MarkAllocationPage() {
             <CardContent className="p-0">
               <Tabs value={activeTab} onValueChange={(v) => { if (v) setActiveTab(v); }}>
                 <div className="border-b px-4 pt-3">
-                  <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+                  <TabsList variant="line" className="scroll-shadow-x w-full justify-start overflow-x-auto">
                     {categories.map((cat) => (
                       <TabsTrigger key={cat.id} value={cat.id} className="shrink-0">
                         {cat.id}
@@ -279,7 +279,7 @@ function MarkAllocationPage() {
             <Card className="mt-4">
               <CardContent className="p-4">
                 <h3 className="text-sm font-semibold mb-3">Deed transfer age-based scoring</h3>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-7">
                   {deedAgeTable.map((d) => (
                     <div key={d.label} className="rounded-lg border bg-muted/30 px-3 py-2 text-center">
                       <span className="block text-xs text-muted-foreground">{d.label}</span>

@@ -1,4 +1,19 @@
 const si = {
+  // ─── header.tsx ───────────────────────────────────────────────
+  "header.brand": "Aloysius Admissions",
+  "header.brand.school": "ශාන්ත ඇලෝසියස් විද්‍යාලය",
+  "header.nav.home": "මුල් පිටුව",
+
+  // ─── user-menu.tsx ────────────────────────────────────────────
+  "userMenu.signIn": "පිවිසෙන්න",
+  "userMenu.myAccount": "මගේ ගිණුම",
+  "userMenu.signOut": "ඉවත් වන්න",
+
+  // ─── routes/auth/$path.tsx ────────────────────────────────────
+  "auth.hero.title": "1 ශ්‍රේණිය ඇතුළත් කිරීම්",
+  "auth.hero.subtitle": "ගාල්ල ශාන්ත ඇලෝසියස් විද්‍යාලයේ මාර්ගගත අයදුම්පත් ද්වාරය.",
+  "auth.hero.motto": "Certa Viriliter",
+
   // ─── footer.tsx ───────────────────────────────────────────────
   "footer.brand": "Aloysius Admissions",
   "footer.tagline": "සෑම විටම නවීනයි, කිසිදිනක පැරණි නැත.",
@@ -53,14 +68,14 @@ const si = {
   "error.boundary.retry": "නැවත උත්සාහ කරන්න",
   "error.boundary.home": "පැනලයට ආපසු යන්න",
   "error.boundary.details": "තාක්ෂණික විස්තර",
-  "error.notFound.title": "පිටුව හමු නොවීය",
-  "error.notFound.description": "ඔබ සොයන පිටුව නොපවතී හෝ වෙනත් ස්ථානයකට ගෙන ගොස් ඇත.",
-  "error.notFound.home": "පුවරුවට ආපසු",
   "home.saved.unnamed": "නම සඳහන් නොකළ අයදුම්කරු",
   "home.saved.notProvided": "ලබා දී නොමැත",
   "home.saved.unavailableApplication": "ලබාගත නොහැකි අයදුම්පතක්",
   "home.saved.unavailable": "ලබාගත නොහැක",
   "home.saved.updatedAt": "{date} දින යාවත්කාලීන කරන ලදී",
+  "home.saved.emptyTitle": "තවම සුරැකි අයදුම්පත් නොමැත",
+  "home.saved.emptyDescription":
+    "ඉහත ඉක්මන් ක්‍රියා භාවිතයෙන් නව අයදුම්පතක් ආරම්භ කරන්න හෝ ප්‍රවේශ සංකේතයක් සමඟ එකක් ලෝඩ් කරන්න.",
   "home.removeDialog.title": "මෙම අයදුම්පත් සංකේතය ඉවත් කරන්නද?",
   "home.removeDialog.description":
     "මෙයින් සිදු වන්නේ මෙම උපාංගයෙන් පමණක් සංකේතය ඉවත් වීමයි. අයදුම්පත දත්ත සමුදායේ සුරක්ෂිතව පවතින අතර Session code එක සහ Access key එක භාවිතයෙන් නැවත ලෝඩ් කළ හැක.",
@@ -346,11 +361,6 @@ const si = {
   "subAdminRemoval.reset": "යළි පිහිටුවන්න",
   // ─── lib/school-config.ts ─────────────────────────────────────
   "schoolConfig.fallbackName": "මෙම පාසල",
-  "schoolConfig.restrictions.gender":
-    "මෙය පිරිමි පාසල ය, එබැවින් ස්ත්‍රී ඉල්ලුම්කරුවන් මෙම ඉල්ලීම සහිතව කරගෙන යාම බැහැ.",
-  "schoolConfig.restrictions.religion": "මෙම අධිකරණය ක්‍රිස්තියානු ඉල්ලුම්කරුවන්ට ලබා ගත හැකි නොවේ.",
-
-  "schoolConfig.fallbackName": "මෙම පාසල",
   "schoolConfig.restrictions.gender": "මෙය පිරිමි පාසලක් බැවින්, ගැහැණු ළමුන් සඳහා අයදුම් කළ නොහැක.",
   "schoolConfig.restrictions.religion": "මෙම ඇතුළත් කිරීම කතෝලික/ක්‍රිස්තියානි අයදුම්කරුවන් සඳහා ලබාගත නොහැක.",
 
@@ -562,10 +572,9 @@ const si = {
   "appForm.sessionCode.label": "Session code එක",
   "appForm.sessionCode.copyAriaLabel": "Session code එක පිටපත් කරන්න",
   "appForm.sessionCode.copy": "පිටපත් කරන්න",
-  "appForm.sessionCode.copied": "පිටපත් වූාරුවේ ද",
-  "appForm.accessKey.copy": "පිටපත් කරන්න",
-  "appForm.accessKey.copied": "පිටපත් වූාරුවේ ද",
   "appForm.sessionCode.copied": "පිටපත් කරගන්නා ලදී",
+  "appForm.accessKey.copy": "පිටපත් කරන්න",
+  "appForm.accessKey.copied": "පිටපත් කරගන්නා ලදී",
   "appForm.sessionCode.hint": "වෙනත් උපාංගයකින් මෙම අයදුම්පත සෙවීමට මෙම සංකේතය මතක තබා ගන්න.",
   "appForm.accessKey.label": "ප්‍රවේශ සංකේතය (Access key)",
   "appForm.accessKey.copyAriaLabel": "ප්‍රවේශ සංකේතය පිටපත් කරන්න",
@@ -599,10 +608,6 @@ const si = {
   "appForm.submitted.accessKeyDescription":
     "මෙම සංකේතය මඟින් ඔබට මෙම අයදුම්පත නැරඹීමට හෝ යාවත්කාලීන කිරීමට හැක.",
   "appForm.submitted.copyKey": "සංකේතය පිටපත් කරන්න",
-  "appForm.submitted.yourSessionCode": "ඔබගේ Session code එක",
-  "appForm.submitted.sessionCodeDescription":
-    "නැවත අයදුම්පතට පිවිසීමට ප්‍රවේශ සංකේතය සමඟ මෙය අවශ්‍ය වේ.",
-  "appForm.submitted.copyCode": "කේතය පිටපත් කරන්න",
   "appForm.submitted.pdf.title": "ඔබගේ අයදුම්පත් සටහන",
   "appForm.submitted.pdf.description":
     "ඔබ ඇතුලත් කරන ලද සියලු තොරතුරු {filename} ලෙස PDF ගොනුවක සුරැකේ. සම්මුඛ පරීක්ෂණය සඳහා එය තබා ගන්න.",
@@ -1002,6 +1007,22 @@ const si = {
   "category.66.employmentPurpose.education": "අධ්‍යාපනික",
   "category.66.nearbySchools.hint":
     "උපරිම ලකුණු 35 යි.\nවට ප්‍රමාණය ඇතුළත පිහිටි පාසලකට ලකුණු 3.5 බැගින් අඩු වේ\n({school} හැර).\n\nවෙනත් පාසල් නොමැති නම් = ලකුණු 35\nපාසල් 10 ක් තිබේ නම් = ලකුණු 0",
+
+  // ─── access-key-qr.tsx ────────────────────────────────────────
+  "qrImporter.scanWithCamera": "කැමරාවෙන් සුපිරික්සන්න",
+  "qrImporter.importImage": "QR රූපයක් ආයාත කරන්න",
+  "qrImporter.error.notFound": "මෙම QR කේතයේ ප්‍රවේශ යතුරක් හමු නොවීය",
+  "qrImporter.error.unreadable": "එම QR කේතය කියවිය නොහැකි විය",
+  "qrImporter.dialog.title": "ප්‍රවේශ යතුර සුපිරික්සන්න",
+  "qrImporter.dialog.description":
+    "කැමරා ප්‍රවේශය අවසර දී, අයදුම්පත් QR කේතය රාමුව ඇතුළත තබන්න.",
+  "qrImporter.camera.unsupported": "මෙම බ්‍රවුසරය මගින් කැමරා ප්‍රවේශයට සහාය නොදක්වයි.",
+  "qrImporter.camera.previewFailed":
+    "කැමරා පෙරදසුන ආරම්භ කළ නොහැකි විය. බ්‍රවුසර අවසර පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
+  "qrImporter.camera.unavailable":
+    "කැමරා ප්‍රවේශය ලබා ගත නොහැකි විය. බ්‍රවුසර අවසරය පරීක්ෂා කර නැවත උත්සාහ කරන්න, නැතහොත් QR රූපයක් ආයාත කරන්න.",
+  "qrImporter.camera.starting": "කැමරාව ආරම්භ වෙමින්…",
+  "qrImporter.camera.hint": "ඔබේ කැමරාව QR කේතය දෙසට යොමු කරන්න",
 };
 
 export default si;

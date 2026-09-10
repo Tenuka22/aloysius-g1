@@ -12,9 +12,11 @@ import { Skeleton } from "@aloysius-admissions/ui/components/skeleton";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
+import { useTranslation } from "@/lib/i18n";
 
 export default function UserMenu() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending) {
@@ -23,8 +25,8 @@ export default function UserMenu() {
 
   if (!session) {
     return (
-      <Link to="/login">
-        <Button variant="outline">Sign In</Button>
+      <Link to="/auth/$path" params={{ path: "sign-in" }}>
+        <Button variant="outline">{t("userMenu.signIn")}</Button>
       </Link>
     );
   }
@@ -36,7 +38,7 @@ export default function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-card">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("userMenu.myAccount")}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
           <DropdownMenuItem
@@ -53,7 +55,7 @@ export default function UserMenu() {
               });
             }}
           >
-            Sign Out
+            {t("userMenu.signOut")}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

@@ -1,27 +1,94 @@
 import * as React from "react"
 import { cn } from "@aloysius-admissions/ui/lib/utils"
-import { PanelLeftIcon } from "lucide-react"
+import { PanelLeftIcon, XIcon } from "lucide-react"
 
+type SidebarContextValue = {
+  open: boolean
+  setOpen: (open: boolean) => void
+  toggle: () => void
+}
+
+const SidebarContext = React.createContext<SidebarContextValue | null>(null)
+
+function useSidebar() {
+  const context = React.useContext(SidebarContext)
+  if (!context) {
+    throw new Error("useSidebar must be used within a SidebarProvider")
+  }
+  return context
+}
+
+/**
+ * Owns the mobile drawer's open/closed state so `Sidebar`, `SidebarTrigger`,
+ * and any in-menu close action share one source of truth instead of each
+ * consumer route hand-rolling its own `useState` + backdrop (as the admin
+ * and sub-admin shells used to before this became a shared primitive).
+ */
 function SidebarProvider({ className, children, ...props }: React.ComponentProps<"div">) {
+  const [open, setOpen] = React.useState(false)
+  const toggle = React.useCallback(() => setOpen((prev) => !prev), [])
+  const value = React.useMemo(() => ({ open, setOpen, toggle }), [open])
+
   return (
-    <div data-slot="sidebar-provider" className={cn("flex min-h-svh w-full", className)} {...props}>
-      {children}
-    </div>
+    <SidebarContext.Provider value={value}>
+      <div data-slot="sidebar-provider" className={cn("flex min-h-svh w-full", className)} {...props}>
+        {children}
+      </div>
+    </SidebarContext.Provider>
   )
 }
 
-function Sidebar({ className, children, ...props }: React.ComponentProps<"aside"> & { "data-open"?: boolean }) {
+/**
+ * Static column on `md:`+ (unchanged behaviour). Below `md:`, renders as a
+ * translating drawer plus backdrop driven by `SidebarProvider`'s context,
+ * closing on backdrop tap, Escape, or navigation (via `SidebarMenuButton`'s
+ * `onClick`, which calls `setOpen(false)` automatically - see below).
+ */
+function Sidebar({ className, children, ...props }: React.ComponentProps<"aside">) {
+  const { open, setOpen } = useSidebar()
+
+  React.useEffect(() => {
+    if (!open) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [open, setOpen])
+
   return (
-    <aside
-      data-slot="sidebar"
-      className={cn(
-        "fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </aside>
+    <>
+      <div
+        aria-hidden="true"
+        data-slot="sidebar-backdrop"
+        className={cn(
+          "fixed inset-0 z-40 bg-black/20 backdrop-blur-xs transition-opacity md:hidden",
+          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={() => setOpen(false)}
+      />
+      <aside
+        data-slot="sidebar"
+        data-state={open ? "open" : "closed"}
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl transition-transform duration-200 md:sticky md:top-0 md:z-40 md:h-svh md:w-64 md:translate-x-0 md:shadow-none",
+          open ? "translate-x-0" : "-translate-x-full",
+          className
+        )}
+        {...props}
+      >
+        <button
+          type="button"
+          data-slot="sidebar-mobile-close"
+          className="absolute top-2.5 right-2.5 flex size-8 items-center justify-center rounded-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent md:hidden"
+          onClick={() => setOpen(false)}
+        >
+          <XIcon className="size-4" />
+          <span className="sr-only">Close sidebar</span>
+        </button>
+        {children}
+      </aside>
+    </>
   )
 }
 
@@ -29,7 +96,7 @@ function SidebarInset({ className, children, ...props }: React.ComponentProps<"m
   return (
     <main
       data-slot="sidebar-inset"
-      className={cn("flex min-h-svh flex-1 flex-col bg-background md:ml-64", className)}
+      className={cn("flex min-h-svh flex-1 flex-col bg-background md:min-w-0", className)}
       {...props}
     >
       {children}
@@ -37,18 +104,23 @@ function SidebarInset({ className, children, ...props }: React.ComponentProps<"m
   )
 }
 
+/** Opens/closes the mobile drawer. Hidden at `md:`+ where the sidebar is a static column. */
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<"button">) {
+  const { toggle } = useSidebar()
   return (
     <button
       data-slot="sidebar-trigger"
       className={cn(
-        "inline-flex items-center justify-center h-7 w-7 rounded-md text-foreground transition-colors hover:bg-accent hover:text-accent-foreground md:hidden",
+        "inline-flex size-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent hover:text-accent-foreground md:hidden",
         className
       )}
-      onClick={onClick}
+      onClick={(event) => {
+        onClick?.(event)
+        toggle()
+      }}
       {...props}
     >
-      <PanelLeftIcon className="h-4 w-4" />
+      <PanelLeftIcon className="h-4.5 w-4.5" />
       <span className="sr-only">Toggle Sidebar</span>
     </button>
   )
@@ -94,17 +166,32 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
   return <li data-slot="sidebar-menu-item" className={cn("group/menu-item relative", className)} {...props} />
 }
 
-function SidebarMenuButton({ className, isActive = false, ...props }: React.ComponentProps<"a"> & { isActive?: boolean }) {
+/**
+ * Closes the mobile drawer on navigation automatically (in addition to
+ * whatever `onClick` the caller passes), so routes no longer need to thread
+ * their own `setSidebarOpen(false)` into every menu button.
+ */
+function SidebarMenuButton({
+  className,
+  isActive = false,
+  onClick,
+  ...props
+}: React.ComponentProps<"a"> & { isActive?: boolean }) {
+  const { setOpen } = useSidebar()
   return (
     <a
       data-slot="sidebar-menu-button"
       data-active={isActive || undefined}
       className={cn(
-        "flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        "flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         "[&>svg]:size-4 [&>svg]:shrink-0",
         isActive && "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
         className
       )}
+      onClick={(event) => {
+        onClick?.(event)
+        setOpen(false)
+      }}
       {...props}
     />
   )
@@ -149,4 +236,5 @@ export {
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 }

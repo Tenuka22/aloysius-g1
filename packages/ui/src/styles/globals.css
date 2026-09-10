@@ -3,46 +3,51 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/dm-sans";
 @import "@fontsource-variable/playfair-display";
+@import "@fontsource-variable/noto-sans-sinhala";
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 :root {
   --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.25);
+  --foreground: oklch(0.19 0.02 155);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.147 0.004 49.25);
+  --card-foreground: oklch(0.19 0.02 155);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.25);
-  --primary: oklch(0.508 0.118 165.612);
-  --primary-foreground: oklch(0.979 0.021 166.113);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0.001 106.424);
-  --muted-foreground: oklch(0.42 0.013 58.071);
-  --accent: oklch(0.97 0.001 106.424);
-  --accent-foreground: oklch(0.216 0.006 56.043);
+  --popover-foreground: oklch(0.19 0.02 155);
+  --primary: oklch(0.36 0.09 147);
+  --primary-foreground: oklch(0.98 0.01 150);
+  --secondary: oklch(0.965 0.006 145);
+  --secondary-foreground: oklch(0.24 0.03 150);
+  --muted: oklch(0.966 0.005 100);
+  --muted-foreground: oklch(0.45 0.015 100);
+  --accent: oklch(0.955 0.02 95);
+  --accent-foreground: oklch(0.3 0.04 145);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.923 0.003 48.717);
-  --input: oklch(0.923 0.003 48.717);
-  --ring: oklch(0.709 0.01 56.259);
-  --chart-1: oklch(0.845 0.143 164.978);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.596 0.145 163.225);
-  --chart-4: oklch(0.508 0.118 165.612);
-  --chart-5: oklch(0.432 0.095 166.913);
+  --border: oklch(0.915 0.008 130);
+  --input: oklch(0.915 0.008 130);
+  --ring: oklch(0.6 0.09 147);
+  --brand-gold: oklch(0.79 0.16 76);
+  --brand-gold-foreground: oklch(0.32 0.07 60);
+  --chart-1: oklch(0.36 0.09 147);
+  --chart-2: oklch(0.52 0.1 152);
+  --chart-3: oklch(0.68 0.12 120);
+  --chart-4: oklch(0.75 0.15 90);
+  --chart-5: oklch(0.79 0.16 76);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.001 106.423);
-  --sidebar-foreground: oklch(0.147 0.004 49.25);
-  --sidebar-primary: oklch(0.596 0.145 163.225);
-  --sidebar-primary-foreground: oklch(0.979 0.021 166.113);
-  --sidebar-accent: oklch(0.97 0.001 106.424);
-  --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
-  --sidebar-border: oklch(0.923 0.003 48.717);
-  --sidebar-ring: oklch(0.709 0.01 56.259);
+  --sidebar: oklch(0.985 0.004 130);
+  --sidebar-foreground: oklch(0.19 0.02 155);
+  --sidebar-primary: oklch(0.36 0.09 147);
+  --sidebar-primary-foreground: oklch(0.98 0.01 150);
+  --sidebar-accent: oklch(0.94 0.02 100);
+  --sidebar-accent-foreground: oklch(0.28 0.04 148);
+  --sidebar-border: oklch(0.915 0.008 130);
+  --sidebar-ring: oklch(0.6 0.09 147);
 }
 
 @theme inline {
-  --font-sans: 'DM Sans Variable', sans-serif;
+  --font-sans: 'DM Sans Variable', 'Noto Sans Sinhala Variable', sans-serif;
+  --color-brand-gold-foreground: var(--brand-gold-foreground);
+  --color-brand-gold: var(--brand-gold);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -81,7 +86,19 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  --font-heading: 'Playfair Display Variable', serif;
+  --font-heading: 'Playfair Display Variable', 'Noto Sans Sinhala Variable', serif;
+
+  /* Fluid type scale: each clamp() floors at today's fixed rem value (so
+     nothing ever shrinks below current sizing - protects Sinhala legibility)
+     and grows gently with viewport width up to a capped ceiling. Class names
+     (text-sm, text-base, ...) are unchanged everywhere in the app; only the
+     computed size becomes viewport-responsive between 320px and 1536px. */
+  --text-sm: clamp(0.875rem, 0.83rem + 0.2vw, 0.95rem);
+  --text-base: clamp(1rem, 0.94rem + 0.25vw, 1.0625rem);
+  --text-lg: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.15rem + 0.4vw, 1.4rem);
+  --text-2xl: clamp(1.5rem, 1.35rem + 0.6vw, 1.75rem);
+  --text-3xl: clamp(1.875rem, 1.65rem + 0.9vw, 2.25rem);
 }
 
 @layer base {
@@ -148,5 +165,25 @@
   }
   *::-webkit-scrollbar-corner {
     background: transparent;
+  }
+
+  /* Edge fade that only appears where a horizontally-scrollable strip still has
+     more content to reveal (background-attachment: local scrolls the opaque
+     cover with the content, so it naturally occludes the shadow layer once a
+     scroll edge is reached). Touch-only hint - callers typically clear this at
+     `sm:` once the strip stops overflowing on wider viewports. The surface
+     color is a custom property so callers on a non-card background (e.g. a
+     muted panel) can override --scroll-shadow-bg instead of forking the rule. */
+  .scroll-shadow-x,
+  .data-table-scroll-shadow {
+    --scroll-shadow-bg: var(--card);
+    background:
+      linear-gradient(to right, var(--scroll-shadow-bg) 30%, transparent) left,
+      linear-gradient(to left, var(--scroll-shadow-bg) 30%, transparent) right,
+      linear-gradient(to right, color-mix(in oklch, var(--foreground) 14%, transparent), transparent) left,
+      linear-gradient(to left, color-mix(in oklch, var(--foreground) 14%, transparent), transparent) right;
+    background-repeat: no-repeat;
+    background-size: 24px 100%, 24px 100%, 8px 100%, 8px 100%;
+    background-attachment: local, local, scroll, scroll;
   }
 }

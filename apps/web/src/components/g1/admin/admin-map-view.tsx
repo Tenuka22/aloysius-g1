@@ -32,7 +32,7 @@ function createLabeledIcon(svg: string, bgColor: string, borderColor: string, la
 
 const iconHome = createIcon(HOME_SVG, "#dc2626", "#991b1b", 34);
 const iconSchool = createIcon(SCHOOL_SVG, "#64748b", "#475569", 24);
-const iconIneligible = createIcon(SCHOOL_SVG, "#c4b5fd", "#8b5cf6", 18);
+const iconIneligible = createIcon(SCHOOL_SVG, "#c4b5fd", "#8b5cf6", 22);
 const iconSelectedSchool = createIcon(SELECTED_SCHOOL_SVG, "#f59e0b", "#b45309", 36);
 const iconApplicant = createIcon(APPLICANT_SVG, "#087f5b", "#065f46", 24);
 

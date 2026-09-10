@@ -127,7 +127,7 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       {toolbar?.(table)}
       <div className="size-full flex">
-        <div className="overflow-x-auto rounded-md border grow flex-1 w-0">
+        <div className="data-table-scroll-shadow overflow-x-auto rounded-md border grow flex-1 w-0 sm:[background:none]">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (

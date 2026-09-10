@@ -1,4 +1,19 @@
 const en = {
+  // ─── header.tsx ───────────────────────────────────────────────
+  "header.brand": "Aloysius Admissions",
+  "header.brand.school": "St. Aloysius' College",
+  "header.nav.home": "Home",
+
+  // ─── user-menu.tsx ────────────────────────────────────────────
+  "userMenu.signIn": "Sign in",
+  "userMenu.myAccount": "My account",
+  "userMenu.signOut": "Sign out",
+
+  // ─── routes/auth/$path.tsx ────────────────────────────────────
+  "auth.hero.title": "Grade 1 Admissions",
+  "auth.hero.subtitle": "Online application portal for St. Aloysius' College, Galle.",
+  "auth.hero.motto": "Certa Viriliter",
+
   // ─── footer.tsx ───────────────────────────────────────────────
   "footer.brand": "Aloysius Admissions",
   "footer.tagline": "Always modernised, never ancient.",
@@ -54,15 +69,14 @@ const en = {
   "error.boundary.retry": "Try again",
   "error.boundary.home": "Back to dashboard",
   "error.boundary.details": "Technical details",
-  "error.notFound.title": "Page not found",
-  "error.notFound.description":
-    "The page you\u2019re looking for doesn\u2019t exist or may have moved.",
-  "error.notFound.home": "Back to dashboard",
   "home.saved.unnamed": "Unnamed applicant",
   "home.saved.notProvided": "Not provided",
   "home.saved.unavailableApplication": "Unavailable application",
   "home.saved.unavailable": "Unavailable",
   "home.saved.updatedAt": "Updated {date}",
+  "home.saved.emptyTitle": "No saved applications yet",
+  "home.saved.emptyDescription":
+    "Start a new application or load one with an access key using the quick actions above.",
   "home.removeDialog.title": "Forget this application key?",
   "home.removeDialog.description":
     "This removes the key from this device only. The application remains safely stored in the database and can be loaded again with its session code and access key.",
@@ -620,10 +634,6 @@ const en = {
   "appForm.submitted.accessKeyDescription":
     "This key lets you view or update this child's application.",
   "appForm.submitted.copyKey": "Copy key",
-  "appForm.submitted.yourSessionCode": "Your session code",
-  "appForm.submitted.sessionCodeDescription":
-    "You need this together with the access key to return to this application.",
-  "appForm.submitted.copyCode": "Copy code",
   "appForm.submitted.pdf.title": "Your application record",
   "appForm.submitted.pdf.description":
     "A PDF copy of everything you entered, saved as {filename}. Keep it for the interview.",
@@ -1040,6 +1050,22 @@ const en = {
   "category.66.employmentPurpose.education": "Education",
   "category.66.nearbySchools.hint":
     "Max 35 marks.\nDeduct 3.5 per school within radius\n(excluding {school}).\n\nNo other schools = 35 marks\n10 schools = 0 marks",
+
+  // ─── access-key-qr.tsx ────────────────────────────────────────
+  "qrImporter.scanWithCamera": "Scan with camera",
+  "qrImporter.importImage": "Import QR image",
+  "qrImporter.error.notFound": "No access key found in this QR code",
+  "qrImporter.error.unreadable": "Could not read that QR code",
+  "qrImporter.dialog.title": "Scan access key",
+  "qrImporter.dialog.description":
+    "Allow camera access and hold the application QR code inside the frame.",
+  "qrImporter.camera.unsupported": "Camera access is not supported by this browser.",
+  "qrImporter.camera.previewFailed":
+    "The camera preview could not start. Check browser permissions and try again.",
+  "qrImporter.camera.unavailable":
+    "Camera access was unavailable. Check the browser permission, then try again or import a QR image instead.",
+  "qrImporter.camera.starting": "Starting camera…",
+  "qrImporter.camera.hint": "Point your camera at the QR code",
 } as const;
 
 export default en;

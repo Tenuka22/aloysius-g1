@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, Database, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, Minus, Plus, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, Database, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, Minus, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
-import { cn } from "@aloysius-admissions/ui/lib/utils";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@aloysius-admissions/ui/components/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-admissions/ui/components/card";
 import { Button } from "@aloysius-admissions/ui/components/button";
@@ -15,6 +14,7 @@ import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/g1/application/access-key-qr";
 import Footer from "@/components/footer";
+import UserMenu from "@/components/user-menu";
 import { intakeYearOptions, intakeYearSearchSchema } from "@/lib/g1/intake-year";
 import { useTranslation } from "@/lib/i18n";
 
@@ -69,7 +69,6 @@ function AdminPage() {
   const navigate = useNavigate({ from: "/g1/admin" });
   const queryClient = useQueryClient();
   const search = useSearch({ from: Route.id });
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const intakeYear = search.intakeYear;
   const { t } = useTranslation();
 
@@ -118,7 +117,7 @@ function AdminPage() {
   const sidebarNav = <>
     <SidebarHeader>
       <div className="flex items-center gap-2.5">
-            <div className="grid place-items-center w-9 h-9 rounded-lg text-primary-foreground bg-primary"><ShieldCheck size={24} /></div>
+        <img src="/logo.png" alt="" className="h-9 w-9 shrink-0 object-contain" width={36} height={36} />
         <div className="flex-1 min-w-0">
           <strong className="block">{t("admin.sidebar.brand")}</strong>
           <span className="block text-muted-foreground text-xs mt-0.5">{t("admin.sidebar.console")}</span>
@@ -144,34 +143,34 @@ function AdminPage() {
         <SidebarGroupLabel>{t("admin.sidebar.workspace")}</SidebarGroupLabel>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin")} isActive={location.pathname === "/g1/admin"} onClick={() => setSidebarOpen(false)}><LayoutDashboard size={20} /> {t("admin.sidebar.overview")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin")} isActive={location.pathname === "/g1/admin"}><LayoutDashboard size={20} /> {t("admin.sidebar.overview")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/applications")} isActive={location.pathname.startsWith("/g1/admin/applications")} onClick={() => setSidebarOpen(false)}><BarChart3 size={20} /> {t("admin.sidebar.applications")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/applications")} isActive={location.pathname.startsWith("/g1/admin/applications")}><BarChart3 size={20} /> {t("admin.sidebar.applications")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/admissions")} isActive={location.pathname.startsWith("/g1/admin/admissions")} onClick={() => setSidebarOpen(false)}><ClipboardCheck size={20} /> {t("admin.sidebar.admissions")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/admissions")} isActive={location.pathname.startsWith("/g1/admin/admissions")}><ClipboardCheck size={20} /> {t("admin.sidebar.admissions")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/schools")} isActive={location.pathname === "/g1/admin/schools"} onClick={() => setSidebarOpen(false)}><MapPinned size={20} /> {t("admin.sidebar.schoolsHub")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/schools")} isActive={location.pathname === "/g1/admin/schools"}><MapPinned size={20} /> {t("admin.sidebar.schoolsHub")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/admin_map")} isActive={location.pathname === "/g1/admin/admin_map"} onClick={() => setSidebarOpen(false)}><MapPin size={20} /> {t("admin.sidebar.mapView")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/admin_map")} isActive={location.pathname === "/g1/admin/admin_map"}><MapPin size={20} /> {t("admin.sidebar.mapView")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/mark-allocation")} isActive={location.pathname === "/g1/admin/mark-allocation"} onClick={() => setSidebarOpen(false)}><ListOrdered size={20} /> {t("admin.sidebar.markAllocation")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/mark-allocation")} isActive={location.pathname === "/g1/admin/mark-allocation"}><ListOrdered size={20} /> {t("admin.sidebar.markAllocation")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/data-extraction")} isActive={location.pathname === "/g1/admin/data-extraction"} onClick={() => setSidebarOpen(false)}><Database size={20} /> {t("admin.sidebar.dataExtraction")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/data-extraction")} isActive={location.pathname === "/g1/admin/data-extraction"}><Database size={20} /> {t("admin.sidebar.dataExtraction")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/requests")} isActive={location.pathname === "/g1/admin/requests"} onClick={() => setSidebarOpen(false)}><FileWarning size={20} /> {t("admin.sidebar.submissionRequests")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/requests")} isActive={location.pathname === "/g1/admin/requests"}><FileWarning size={20} /> {t("admin.sidebar.submissionRequests")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/removal-requests")} isActive={location.pathname === "/g1/admin/removal-requests"} onClick={() => setSidebarOpen(false)}><Trash2 size={20} /> {t("admin.sidebar.removalRequests")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/removal-requests")} isActive={location.pathname === "/g1/admin/removal-requests"}><Trash2 size={20} /> {t("admin.sidebar.removalRequests")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/forgot-requests")} isActive={location.pathname === "/g1/admin/forgot-requests"} onClick={() => setSidebarOpen(false)}><KeyRound size={20} /> {t("admin.sidebar.forgotKeyRequests")}</SidebarMenuButton>
+            <SidebarMenuButton href={adminHref("/g1/admin/forgot-requests")} isActive={location.pathname === "/g1/admin/forgot-requests"}><KeyRound size={20} /> {t("admin.sidebar.forgotKeyRequests")}</SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
@@ -186,27 +185,14 @@ function AdminPage() {
   return (
     <SidebarProvider>
       <Sidebar>{sidebarNav}</Sidebar>
-      {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-xs md:hidden" onClick={() => setSidebarOpen(false)} />}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl transition-transform duration-200 md:hidden",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <button
-          className="absolute top-3 right-3 p-1 rounded-md hover:bg-sidebar-accent text-sidebar-foreground z-50"
-          onClick={() => setSidebarOpen(false)}
-          aria-label={t("admin.sidebar.closeSidebar")}
-        >
-          <X size={18} />
-        </button>
-        {sidebarNav}
-      </div>
       <SidebarInset>
         <div className="flex min-h-svh flex-col">
-          <header className="flex h-10 shrink-0 items-center gap-2 border-b px-3 md:hidden">
-            <SidebarTrigger onClick={() => setSidebarOpen(!sidebarOpen)} />
-            <span className="text-sm font-medium">{t("admin.sidebar.mobileHeader")}</span>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+            <SidebarTrigger />
+            <span className="flex-1 truncate text-sm font-medium md:hidden">{t("admin.sidebar.mobileHeader")}</span>
+            <div className="ml-auto flex items-center gap-1.5">
+              <UserMenu />
+            </div>
           </header>
           <div className="flex-1">
             {location.pathname === "/g1/admin" && (
@@ -308,9 +294,9 @@ function DateTimePicker({ value, onChange, label }: { value: string; onChange: (
       <span className="text-muted-foreground text-xs font-semibold">{label}</span>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
-          className="flex min-h-10.5 items-center gap-2 px-3 rounded-lg border border-input bg-background text-foreground text-sm cursor-pointer"
+          className="flex min-h-10.5 w-full min-w-0 items-center gap-2 px-3 rounded-lg border border-input bg-background text-foreground text-sm cursor-pointer"
         >
-          <span className={date ? "" : "text-muted-foreground"}>{display}</span>
+          <span className={`truncate ${date ? "" : "text-muted-foreground"}`} title={display}>{display}</span>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
@@ -394,8 +380,8 @@ function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
           <CardHeader className="p-0"><CardTitle>{t("admin.overview.formAvailability.title")}</CardTitle></CardHeader>
           <CardDescription>{t("admin.overview.formAvailability.description")}</CardDescription>
         </div>
-        <div className="grid grid-cols-3 gap-4 items-start">
-          <div className="grid gap-1">
+        <div className="grid grid-cols-1 gap-4 items-start sm:grid-cols-3">
+          <div className="grid min-w-0 gap-1">
             <span className="text-muted-foreground text-xs font-semibold">{t("admin.overview.formAvailability.intakeYearLabel")}</span>
             <YearStepper value={selectedYear} onChange={setSelectedYear} />
             {windowStatus
@@ -403,8 +389,12 @@ function FormWindowSettings({ intakeYear }: { intakeYear: string }) {
               : <span className="text-[10px] text-muted-foreground">{t("admin.overview.formAvailability.notConfigured")}</span>
             }
           </div>
-          <DateTimePicker value={opensAt} onChange={setOpensAt} label={t("admin.overview.formAvailability.opens")} />
-          <DateTimePicker value={closesAt} onChange={setClosesAt} label={t("admin.overview.formAvailability.closes")} />
+          <div className="min-w-0">
+            <DateTimePicker value={opensAt} onChange={setOpensAt} label={t("admin.overview.formAvailability.opens")} />
+          </div>
+          <div className="min-w-0">
+            <DateTimePicker value={closesAt} onChange={setClosesAt} label={t("admin.overview.formAvailability.closes")} />
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="default" type="button" disabled={saveMutation.isPending || !opensAt || !closesAt} onClick={() => saveMutation.mutate()}>
@@ -473,17 +463,17 @@ function AccessRequestQueue({ requests, onRefresh }: { requests: Array<{ id: str
               {requests.map((request) => {
                 const isRemoval = request.requestType === "removal";
                 return (
-                  <div className="flex items-center justify-between gap-4 py-3 border-b border-border" key={request.id}>
-                    <div className="grid gap-0.5">
+                  <div className="flex flex-wrap items-center justify-between gap-4 py-3 border-b border-border" key={request.id}>
+                    <div className="grid min-w-0 gap-0.5">
                       <strong className="font-semibold">{isRemoval ? t("admin.overview.requestQueue.removalRequest") : t("admin.overview.requestQueue.accessKeyRecovery")}</strong>
                       <small className="text-muted-foreground text-xs">{request.applicantName}{isRemoval && request.guardianName ? ` · ${t("admin.overview.requestQueue.guardianLabel", { name: request.guardianName })}` : ""}</small>
                       <small className="text-muted-foreground text-xs">{request.contactPhone || request.contactEmail || t("admin.overview.requestQueue.noContact")}</small>
                       <small className="text-muted-foreground text-xs">{t("admin.overview.requestQueue.birthCertEnding", { last4: request.birthCertificateNumber.slice(-4) })} · {new Date(request.createdAt).toLocaleString()}</small>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       {isRemoval
-                        ? <Button variant="secondary" type="button" disabled={removeMutation.isPending} onClick={() => removeMutation.mutate(request.id)}><Trash2 size={15} /> {removeMutation.isPending ? t("admin.overview.requestQueue.deleting") : t("admin.overview.requestQueue.deleteAfterReview")}</Button>
-                        : <Button variant="secondary" type="button" disabled={rotateMutation.isPending} onClick={() => rotateMutation.mutate(request.id)}><KeyRound size={15} /> {rotateMutation.isPending ? t("admin.overview.requestQueue.generating") : t("admin.overview.requestQueue.generateKey")}</Button>}
+                        ? <Button variant="secondary" type="button" className="whitespace-normal" disabled={removeMutation.isPending} onClick={() => removeMutation.mutate(request.id)}><Trash2 size={15} /> {removeMutation.isPending ? t("admin.overview.requestQueue.deleting") : t("admin.overview.requestQueue.deleteAfterReview")}</Button>
+                        : <Button variant="secondary" type="button" className="whitespace-normal" disabled={rotateMutation.isPending} onClick={() => rotateMutation.mutate(request.id)}><KeyRound size={15} /> {rotateMutation.isPending ? t("admin.overview.requestQueue.generating") : t("admin.overview.requestQueue.generateKey")}</Button>}
                       <Button variant="ghost" size="icon" title={t("admin.overview.requestQueue.dismissRequest")} type="button" className="hover:text-destructive" disabled={dismissMutation.isPending} onClick={() => dismissMutation.mutate(request.id)}><Trash2 size={16} /></Button>
                     </div>
                   </div>

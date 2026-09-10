@@ -1,12 +1,11 @@
-import { useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "@/lib/i18n";
-import { ArrowLeft, FileWarning, KeyRound, LayoutDashboard, ShieldCheck, Trash2, X } from "lucide-react";
-import { cn } from "@aloysius-admissions/ui/lib/utils";
+import { ArrowLeft, FileWarning, KeyRound, LayoutDashboard, ShieldCheck, Trash2 } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@aloysius-admissions/ui/components/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-admissions/ui/components/card";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import Footer from "@/components/footer";
+import UserMenu from "@/components/user-menu";
 
 export const Route = createFileRoute("/_auth/sub-admin")({ component: SubAdminPage });
 
@@ -14,7 +13,6 @@ function SubAdminPage() {
   const { t } = useTranslation();
   const { session } = Route.useRouteContext();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (session.data?.user.role !== "admin" && session.data?.user.role !== "sub-admin") {
     return (
@@ -34,7 +32,7 @@ function SubAdminPage() {
   const sidebarNav = <>
     <SidebarHeader>
       <div className="flex items-center gap-2.5">
-        <div className="grid place-items-center w-9 h-9 rounded-lg text-primary-foreground bg-primary"><ShieldCheck size={24} /></div>
+        <img src="/logo.png" alt="" className="h-9 w-9 shrink-0 object-contain" width={36} height={36} />
         <div>
           <strong className="block">{t("subAdmin.sidebar.brand")}</strong>
           <span className="block text-muted-foreground text-xs mt-0.5">{t("subAdmin.sidebar.console")}</span>
@@ -46,13 +44,13 @@ function SubAdminPage() {
         <SidebarGroupLabel>{t("subAdmin.sidebar.requests")}</SidebarGroupLabel>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/sub-admin" isActive={location.pathname === "/sub-admin"} onClick={() => setSidebarOpen(false)}><LayoutDashboard size={20} /> {t("subAdmin.sidebar.overview")}</SidebarMenuButton>
+            <SidebarMenuButton href="/sub-admin" isActive={location.pathname === "/sub-admin"}><LayoutDashboard size={20} /> {t("subAdmin.sidebar.overview")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/sub-admin/forgot-requests" isActive={location.pathname === "/sub-admin/forgot-requests"} onClick={() => setSidebarOpen(false)}><KeyRound size={20} /> {t("subAdmin.sidebar.forgotKeyRequests")}</SidebarMenuButton>
+            <SidebarMenuButton href="/sub-admin/forgot-requests" isActive={location.pathname === "/sub-admin/forgot-requests"}><KeyRound size={20} /> {t("subAdmin.sidebar.forgotKeyRequests")}</SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="/sub-admin/removal-requests" isActive={location.pathname === "/sub-admin/removal-requests"} onClick={() => setSidebarOpen(false)}><Trash2 size={20} /> {t("subAdmin.sidebar.removalRequests")}</SidebarMenuButton>
+            <SidebarMenuButton href="/sub-admin/removal-requests" isActive={location.pathname === "/sub-admin/removal-requests"}><Trash2 size={20} /> {t("subAdmin.sidebar.removalRequests")}</SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
@@ -67,27 +65,14 @@ function SubAdminPage() {
   return (
     <SidebarProvider>
       <Sidebar>{sidebarNav}</Sidebar>
-      {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-xs md:hidden" onClick={() => setSidebarOpen(false)} />}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl transition-transform duration-200 md:hidden",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <button
-          className="absolute top-3 right-3 p-1 rounded-md hover:bg-sidebar-accent text-sidebar-foreground z-50"
-          onClick={() => setSidebarOpen(false)}
-          aria-label={t("subAdmin.sidebar.closeSidebar")}
-        >
-          <X size={18} />
-        </button>
-        {sidebarNav}
-      </div>
       <SidebarInset>
         <div className="flex min-h-svh flex-col">
-          <header className="flex h-10 shrink-0 items-center gap-2 border-b px-3 md:hidden">
-            <SidebarTrigger onClick={() => setSidebarOpen(!sidebarOpen)} />
-            <span className="text-sm font-medium">{t("subAdmin.sidebar.mobileHeader")}</span>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+            <SidebarTrigger />
+            <span className="flex-1 truncate text-sm font-medium md:hidden">{t("subAdmin.sidebar.mobileHeader")}</span>
+            <div className="ml-auto flex items-center gap-1.5">
+              <UserMenu />
+            </div>
           </header>
           <div className="flex-1">
             <Outlet />

@@ -19,6 +19,7 @@ import {
   type CategoryType,
   applyLocationChange,
   emptyDraft,
+  isSkipOutstanding,
   normalizeDraft,
   useApplicationStore,
 } from "@/lib/g1/application-store";
@@ -33,7 +34,6 @@ import {
   G1_DOB_EARLIEST,
   G1_DOB_LATEST,
   ageAsOf,
-  fieldNeedsAttention,
   getNextStepReason,
   isG1EligibleDob,
   locationIsReady,
@@ -116,7 +116,6 @@ import {
   House,
   Info,
   KeyRound,
-  Hash,
   RotateCcw,
   ShieldCheck,
   ShieldX,
@@ -287,7 +286,7 @@ function StepIndicator({
         />
       </div>
       <nav
-        className="flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8"
+        className="scroll-shadow-x flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8"
         aria-label={t("appForm.stepIndicator.ariaLabel")}
       >
         {stepLabels.map((step, index) => {
@@ -312,6 +311,7 @@ function StepIndicator({
               }`}
               onClick={() => canNavigate && onStepClick(index)}
               disabled={!canNavigate}
+              aria-current={isCurrent ? "step" : undefined}
             >
               <span
                 className={`grid size-6 place-items-center rounded-full border text-[11px] transition-colors ${
@@ -414,7 +414,7 @@ function BirthCertificateField({
     <Field
       className={
         isBirthCertSkipped
-          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} sm:p-4`
+          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`
           : undefined
       }
     >
@@ -432,6 +432,7 @@ function BirthCertificateField({
             set({
               applicant: { ...draft.applicant, birthCertificateNumber: e.target.value },
               bcRequestState: "",
+              ...(e.target.value.trim() ? { birthCertificateStatus: "provided" as const } : {}),
             });
             scheduleCheck(e.target.value);
           }}
@@ -440,6 +441,7 @@ function BirthCertificateField({
           type="button"
           variant="ghost"
           size="sm"
+          className="whitespace-normal"
           title={t("appForm.birthCert.refreshTitle")}
           onClick={() => void check(draft.applicant.birthCertificateNumber, false)}
         >
@@ -448,11 +450,11 @@ function BirthCertificateField({
       </div>
       {/* Hidden once skipped: the amber notice below carries the state. */}
       {!draft.applicant.birthCertificateNumber.trim() && !isBirthCertSkipped && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-2 sm:p-3">
-          <p className="flex-1 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+          <p className="min-w-40 flex-1 text-sm text-muted-foreground">
             {t("appForm.birthCert.skipHint")}
           </p>
-          <Button type="button" variant="outline" size="sm" onClick={onSkip}>
+          <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={onSkip}>
             {t("appForm.birthCert.skipButton")}
           </Button>
         </div>
@@ -541,7 +543,7 @@ function LocationStepCard({
     <div
       className={`grid gap-4 ${
         isLocationSkipped
-          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} sm:p-4`
+          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`
           : ""
       }`}
     >
@@ -578,6 +580,7 @@ function LocationStepCard({
           set({
             location: value,
             selectedLocation: value,
+            locationStatus: "provided",
             ...(histories.defaultLocations !== draft.defaultLocations
               ? { defaultLocations: histories.defaultLocations }
               : {}),
@@ -593,11 +596,11 @@ function LocationStepCard({
       {/* Offering the skip again after it was taken is noise; the amber
           notice below already states what is outstanding. */}
       {!readOnly && !locationIsReady(draft.location) && !isLocationSkipped && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-2 sm:p-3">
-          <p className="flex-1 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+          <p className="min-w-40 flex-1 text-sm text-muted-foreground">
             {t("appForm.locationStep.skipHint")}
           </p>
-          <Button type="button" variant="outline" size="sm" onClick={onSkip}>
+          <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={onSkip}>
             {t("appForm.locationStep.skipButton")}
           </Button>
         </div>
@@ -1256,19 +1259,8 @@ function DeclarationStep({
   set: (patch: Partial<ApplicationDraft>) => void;
 }) {
   const { t } = useTranslation();
-  // Also catches a field that was never explicitly skipped but whose value
-  // was cleared after its step was already passed - that is just as
-  // outstanding as a skip, and must surface here too, not just for skips.
-  const locationSkipped = fieldNeedsAttention(
-    draft.locationStatus,
-    draft.maxVisitedStep > 0,
-    locationIsReady(draft.location),
-  );
-  const birthCertSkipped = fieldNeedsAttention(
-    draft.birthCertificateStatus,
-    draft.maxVisitedStep > 1,
-    draft.applicant.birthCertificateNumber.trim().length > 0,
-  );
+  const locationSkipped = draft.locationStatus === "skipped";
+  const birthCertSkipped = draft.birthCertificateStatus === "skipped";
   return (
     <div className="grid max-w-[920px] gap-5">
       <div className="mb-4">
@@ -1283,11 +1275,11 @@ function DeclarationStep({
       )}
 
       {locationSkipped && (
-        <div className={`grid gap-2 rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} sm:p-4`}>
+        <div className={`grid gap-2 rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`}>
           <span className="text-sm font-medium">{t("appForm.locationStep.heading")}</span>
           <LocationStep
             readOnly={false}
-            skipped={draft.locationStatus === "skipped"}
+            skipped
             autoRequestLocation={
               draft.location?.latitude == null && draft.selectedLocation?.latitude == null
             }
@@ -1324,7 +1316,7 @@ function DeclarationStep({
         />
       )}
 
-      <label className="flex items-start gap-2 rounded-lg border p-3 sm:p-4 text-sm">
+      <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
         <Checkbox
           className="size-5 mt-0.5"
           checked={draft.declaration.confirmed}
@@ -1335,7 +1327,7 @@ function DeclarationStep({
         {t("appForm.declarationStep.confirmAccuracy")}
       </label>
 
-      <label className="flex items-start gap-2 rounded-lg border p-3 sm:p-4 text-sm">
+      <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
         <Checkbox
           className="size-5 mt-0.5"
           checked={draft.declaration.consent}
@@ -1502,7 +1494,7 @@ function ReviewStep({
       <div className="grid sm:grid-cols-2 gap-4 items-start">
         {groupedSections.map((section) => (
           <div key={section.title} className="rounded-xl border bg-card overflow-hidden">
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 border-b bg-muted/40">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
               <h4 className="text-sm font-medium text-foreground">{section.title}</h4>
               <button
                 type="button"
@@ -1514,7 +1506,7 @@ function ReviewStep({
             </div>
             <div className="divide-y">
               {section.fields.map(([label, value]) => (
-                <div className="flex items-baseline justify-between gap-4 px-3 sm:px-4 py-2" key={label}>
+                <div className="flex items-baseline justify-between gap-4 px-4 py-2.5" key={label}>
                   <span className="text-xs text-muted-foreground shrink-0">{label}</span>
                   <span className="text-sm font-medium text-right text-foreground truncate">
                     {value || t("appForm.reviewStep.none")}
@@ -1541,7 +1533,7 @@ function ReviewStep({
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {categoryRows.map(([label, summary]) => (
-            <div key={label} className="rounded-xl border bg-card p-3 sm:p-4">
+            <div key={label} className="rounded-xl border bg-card p-4">
               <span className="text-xs font-medium text-foreground block mb-1">{label}</span>
               {summary && (
                 <p className="text-xs text-muted-foreground leading-relaxed">{summary}</p>
@@ -1554,7 +1546,7 @@ function ReviewStep({
       {draft.submittedAt && (
         <>
           <div className="mt-6 rounded-xl border overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b bg-muted/40">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b bg-muted/40">
               <div>
                 <h4 className="text-sm font-medium text-foreground">
                   {t("appForm.reviewStep.admissionReview")}
@@ -2165,17 +2157,12 @@ export function ApplicationForm({
   // Steps the applicant advanced past by skipping a field they still owe.
   // Surfaced on the stepper and on Continue so an outstanding skip stays
   // visible instead of being discovered at the very end.
-  // Also catches an applicant who never clicked skip but cleared a
-  // previously provided value after moving past this step - that is just
-  // as outstanding as an explicit skip, and must not go unflagged.
-  const locationOutstanding = fieldNeedsAttention(
+  const locationOutstanding = isSkipOutstanding(
     draft.locationStatus,
-    draft.maxVisitedStep > 0,
     locationIsReady(draft.location),
   );
-  const birthCertOutstanding = fieldNeedsAttention(
+  const birthCertOutstanding = isSkipOutstanding(
     draft.birthCertificateStatus,
-    draft.maxVisitedStep > 1,
     draft.applicant.birthCertificateNumber.trim().length > 0,
   );
   const skippedSteps: number[] = [
@@ -2216,7 +2203,7 @@ export function ApplicationForm({
               <div className="mt-5 max-w-[1180px]">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-2 rounded-[14px] border border-primary/25 bg-primary/5 p-3 sm:p-4 text-left md:hidden"
+                  className="flex w-full items-center justify-between gap-2 rounded-[14px] border border-primary/25 bg-primary/5 p-4 text-left md:hidden"
                   aria-expanded={identityOpen}
                   onClick={() => setIdentityOpen((open) => !open)}
                 >
@@ -2232,7 +2219,7 @@ export function ApplicationForm({
                   className={`gap-4 md:mt-0 md:grid md:grid-cols-2 lg:grid-cols-3 ${identityOpen ? "mt-3 grid" : "hidden"}`}
                 >
                   {draft.applicant.fullName && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-3 sm:p-4">
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
                       <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
                         {t("appForm.reviewStep.fields.fullName")}
                       </span>
@@ -2242,7 +2229,7 @@ export function ApplicationForm({
                     </div>
                   )}
                   {draft.sessionCode && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-3 sm:p-4">
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
                           {t("appForm.sessionCode.label")}
@@ -2276,7 +2263,7 @@ export function ApplicationForm({
                     </div>
                   )}
                   {draft.accessKey && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-3 sm:p-4">
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
                           {t("appForm.accessKey.label")}
@@ -2301,7 +2288,7 @@ export function ApplicationForm({
                           )}
                         </button>
                       </div>
-                      <code className="block mt-1 break-all font-bold tracking-wide text-[clamp(0.98rem,1.3vw,1.1rem)] truncate max-w-md">
+                      <code className="block mt-1 max-w-full break-all font-bold tracking-wide text-[clamp(0.98rem,1.3vw,1.1rem)]">
                         {draft.accessKey}
                       </code>
                       <span className="py-2 text-primary text-[0.78rem] font-semibold leading-relaxed">
@@ -2313,12 +2300,12 @@ export function ApplicationForm({
               </div>
             )}
           </div>
-          <div className="grid gap-3 rounded-2xl border border-primary/20 bg-card/85 p-4 sm:p-5 shadow-[0_14px_32px_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
+          <div className="grid gap-3 rounded-2xl border border-primary/20 bg-card/85 p-5 shadow-[0_14px_32px_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
             <div className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
               <span>{t("appForm.statusBar.applicationStatus")}</span>
               <ShieldCheck className="text-primary" size={17} />
             </div>
-            <strong className="font-heading text-2xl">
+            <strong className="font-heading text-2xl leading-tight">
               {t("appForm.statusBar.stepOf", { current: current + 1, total: steps.length })}
             </strong>
             <p className="text-sm leading-relaxed text-muted-foreground">
@@ -2374,7 +2361,7 @@ export function ApplicationForm({
           )}
         </CardContent>
 
-        <div className="flex flex-col items-stretch justify-between gap-4 border-t px-5 py-5 sm:flex-row sm:items-center md:px-8 md:py-6">
+        <div className="flex flex-col flex-wrap items-stretch justify-between gap-4 border-t px-5 py-5 sm:flex-row sm:items-center md:px-8 md:py-6">
           {draft.submitError && (
             <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 max-w-md">
               <TriangleAlert size={16} className="shrink-0 mt-0.5 text-destructive" />
@@ -2712,43 +2699,6 @@ export function ApplicationForm({
                       </>
                     )}
                   </Button>
-                  {draft.sessionCode && (
-                    <div className="grid gap-3 border-t border-primary/15 pt-4">
-                      <div className="grid gap-1">
-                        <div className="flex items-center gap-2 text-primary">
-                          <Hash size={18} />
-                          <h3 className="text-base font-semibold text-foreground">
-                            {t("appForm.submitted.yourSessionCode")}
-                          </h3>
-                        </div>
-                        <p className="text-sm leading-relaxed text-muted-foreground">
-                          {t("appForm.submitted.sessionCodeDescription")}
-                        </p>
-                      </div>
-                  <code className="block overflow-x-auto rounded-xl bg-background px-4 py-3 font-mono text-sm font-semibold leading-relaxed tracking-wide text-foreground ring-1 ring-border/70">
-                        {draft.sessionCode}
-                  </code>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                          copyWithFeedback("codecard", draft.sessionCode);
-                    }}
-                  >
-                        {draft.copiedField === "codecard" ? (
-                          <>
-                        <Check size={16} /> {t("appForm.submitted.copied")}
-                          </>
-                    ) : (
-                          <>
-                            <Copy size={16} /> {t("appForm.submitted.copyCode")}
-                          </>
-                    )}
-                  </Button>
-                    </div>
-                    )}
                 </section>
 
                 <section
@@ -2863,7 +2813,7 @@ export function ApplicationForm({
                   <Check size={15} /> {t("appForm.statusBar.savedLocally")}
                 </span>
               )}
-              <div className="ml-auto flex gap-3">
+              <div className="ml-auto flex flex-wrap justify-end gap-2 sm:gap-3">
                 {current > 0 && (
                   <Button variant="secondary" onClick={back}>
                     <ArrowLeft size={17} /> {t("appForm.buttons.back")}
@@ -2875,7 +2825,7 @@ export function ApplicationForm({
                     className={
                       advancingWithSkip
                         ? `${STATUS_WARNING.bgSolid} text-white ${STATUS_WARNING.hoverBg} ${STATUS_WARNING.hoverText}`
-                        : undefined
+                        : "shadow-md shadow-primary/15"
                     }
                     onClick={next}
                   >
@@ -2896,6 +2846,7 @@ export function ApplicationForm({
                     aria-label={
                       collectionOnly ? t("appForm.buttons.collectionOnlyAriaLabel") : undefined
                     }
+                    className="shadow-md shadow-primary/15"
                     onClick={() => void submitApplication()}
                   >
                     {collectionOnly ? (

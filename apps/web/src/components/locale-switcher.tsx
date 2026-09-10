@@ -16,11 +16,11 @@ export function LocaleSwitcher() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         aria-label="Change language"
-        className="fixed bottom-4 right-4 z-50 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg h-11 w-11 hover:bg-primary/90 transition-colors"
+        className="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground ring-4 ring-background shadow-[0_6px_20px_rgba(0,0,0,.28)] h-11 w-11 hover:bg-primary/90 transition-colors"
       >
         <Globe size={20} />
       </PopoverTrigger>
-      <PopoverContent align="end" side="top" className="w-44 p-1">
+      <PopoverContent align="start" side="top" className="w-44 p-1">
         <button
           type="button"
           onClick={() => select("en")}

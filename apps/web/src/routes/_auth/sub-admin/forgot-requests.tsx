@@ -159,8 +159,8 @@ function SubAdminForgotRequestsPage() {
   const role = session.data?.user.role;
   const items = (requests.data?.items ?? []) as ForgotRequestRow[];
   const pageCount = requests.data ? Math.ceil(requests.data.total / requests.data.pageSize) : 0;    return (
-    <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-      <div className="flex items-end justify-between gap-8 mb-8">
+    <main className="min-h-svh p-4 sm:p-8 lg:p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
+      <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-8 mb-8">
         <div>
           <p className="text-primary font-bold tracking-widest uppercase text-xs">{t("subAdminForgot.breadcrumb")}</p>
           <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">{t("subAdminForgot.title")}</h1>
@@ -194,13 +194,13 @@ function SubAdminForgotRequestsPage() {
                 table.setColumnFilters(next);
               };
               return (
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-1 items-center gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-1 flex-wrap items-center gap-2">
                     <Input
                       placeholder={t("subAdminForgot.filterPlaceholder")}
                       value={(filters.find((f) => f.id === "query")?.value as string) ?? ""}
                       onChange={(e) => setFilter("query", e.target.value)}
-                      className="h-8 w-[200px] lg:w-[250px]"
+                      className="h-8 w-full sm:w-50 lg:w-62.5"
                     />
                     {isFiltered && (
                       <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">

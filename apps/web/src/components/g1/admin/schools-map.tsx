@@ -32,7 +32,7 @@ interface SchoolMapProps {
 
 export default function SchoolMap({ lat, lng, onPick }: SchoolMapProps) {
   return (
-    <MapContainer center={GALLE_CENTER} zoom={11} scrollWheelZoom className="h-[360px] w-full z-0">
+    <MapContainer center={GALLE_CENTER} zoom={11} scrollWheelZoom className="z-0 h-[clamp(280px,45vw,360px)] w-full">
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <MapClickPicker position={[lat, lng]} onPick={onPick} />
     </MapContainer>

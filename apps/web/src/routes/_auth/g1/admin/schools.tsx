@@ -106,7 +106,7 @@ function SetCoordinatesDialog({ state, onClose, onSaved }: { state: CoordinateDi
               <Button type="button" variant="ghost" size="sm" render={<a href={links.web} target="_blank" rel="noopener noreferrer" />} nativeButton={false}><ExternalLink size={15} /> Google</Button>
             </div>
             <div className="relative overflow-hidden rounded-xl border">
-              <ClientOnly fallback={<div className="h-[360px] w-full" />}>
+              <ClientOnly fallback={<div className="h-90 w-full max-md:h-75" />}>
                 <SchoolMap lat={lat} lng={lng} onPick={(nextLat, nextLng) => { setLat(nextLat); setLng(nextLng); }} />
               </ClientOnly>
             </div>
@@ -251,8 +251,8 @@ function AdminSchoolsPage() {
   ];
 
   return (
-    <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-      <div className="flex items-end justify-between gap-8 mb-8">
+    <main className="min-h-svh p-4 sm:p-8 lg:p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
+      <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-8 mb-8">
         <div>
           <p className="text-primary font-bold tracking-widest uppercase text-xs">Workspace / Schools</p>
           <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">Schools hub</h1>
@@ -351,7 +351,7 @@ function AdminSchoolsPage() {
                     {status === "manual" ? (
                       <>
                         <Button type="button" variant="secondary" size="sm" onClick={() => openEditor(school)}>Edit</Button>
-                        <Button type="button" variant="ghost" size="icon" title="Remove manual coordinates" onClick={() => void clearOverride(school)} className="hover:text-destructive"><Trash2 size={15} /></Button>
+                        <Button type="button" variant="ghost" size="icon" title="Remove manual coordinates" aria-label="Remove manual coordinates" onClick={() => void clearOverride(school)} className="hover:text-destructive"><Trash2 size={15} /></Button>
                       </>
                     ) : (
                       <Button type="button" variant="secondary" size="sm" onClick={() => openEditor(school)}>
@@ -389,7 +389,7 @@ function AdminSchoolsPage() {
                       type="button"
                       variant={pageNum === safePage ? "default" : "outline"}
                       size="sm"
-                      className="min-w-[2rem] px-1"
+                      className="min-w-9 px-1"
                       onClick={() => setPage(pageNum)}
                     >
                       {pageNum + 1}

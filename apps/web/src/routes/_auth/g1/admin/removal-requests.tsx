@@ -192,8 +192,8 @@ function AdminRemovalRequestsPage() {
   ], [refetch]);
 
   return (
-    <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-      <div className="flex items-end justify-between gap-8 mb-8">
+    <main className="min-h-svh p-4 sm:p-8 lg:p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
+      <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-8 mb-8">
         <div>
           <p className="text-primary font-bold tracking-widest uppercase text-xs">Workspace / Requests</p>
           <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">Removal requests</h1>
@@ -229,13 +229,13 @@ function AdminRemovalRequestsPage() {
                 table.setColumnFilters(next);
               };
               return (
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-1 items-center gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-1 flex-wrap items-center gap-2">
                     <Input
                       placeholder="Filter by name or email…"
                       value={(filters.find((f) => f.id === "query")?.value as string) ?? ""}
                       onChange={(e) => setFilter("query", e.target.value)}
-                      className="h-8 w-[200px] lg:w-[250px]"
+                      className="h-8 w-full sm:w-50 lg:w-62.5"
                     />
                     <div className="flex items-center gap-1 rounded-lg border p-0.5">
                       {(["all", "open", "resolved", "dismissed"] as const).map((s) => (

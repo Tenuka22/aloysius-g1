@@ -427,7 +427,7 @@ export function AdminApplicationView({ id }: { id: string }) {
     prefs.setDefaultTab(active);
   }, [active]);
 
-  return <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
+  return <main className="min-h-svh p-4 sm:p-8 lg:p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
     <AdminHeader title="Application details" description="Review the submitted record in a readable format." />
     {detail.isLoading && <Card><CardContent><p>Loading application…</p></CardContent></Card>}
     {detail.isError && <Card className="text-destructive"><CardContent className="flex items-center gap-2"><CircleAlert size={18} /> Could not load application: {detail.error.message}</CardContent></Card>}
@@ -435,17 +435,25 @@ export function AdminApplicationView({ id }: { id: string }) {
       <CardHeader><div className="flex items-start justify-between gap-4"><div><p className="text-primary font-bold tracking-widest uppercase text-xs">{data.applicant.fullName || "Unnamed applicant"}</p><CardTitle>G1 2026 application</CardTitle></div><Badge variant={metadata?.submittedAt ? "default" : "secondary"}>{metadata?.submittedAt ? "submitted" : "draft"}</Badge></div></CardHeader>
       <CardContent className="grid gap-4">
         <div className="flex gap-4 flex-wrap text-muted-foreground text-sm"><span>Session code <strong>{metadata?.sessionCode ?? "Not available"}</strong></span><span>Created {new Date(metadata?.createdAt ?? "").toLocaleString()}</span><span>Updated {new Date(metadata?.updatedAt ?? "").toLocaleString()}</span></div>
-        <div className="flex items-center justify-between gap-2">
-          <div />
-          <div className="flex items-center gap-1">
-            <button onClick={() => prefs.setDensity(isCompact ? "comfortable" : "compact")} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground hover:bg-accent transition-colors" title={isCompact ? "Switch to comfortable" : "Switch to compact"}>
-              {isCompact ? <LayoutGrid size={13} /> : <Rows3 size={13} />}
-              {isCompact ? "Comfortable" : "Compact"}
-            </button>
-            <button onClick={() => setShowPrefs(!showPrefs)} className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors ${showPrefs ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent"}`} title="View preferences">
-              <Settings size={13} />
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => prefs.setDensity(isCompact ? "comfortable" : "compact")}
+            title={isCompact ? "Switch to comfortable" : "Switch to compact"}
+          >
+            {isCompact ? <LayoutGrid size={13} /> : <Rows3 size={13} />}
+            {isCompact ? "Comfortable" : "Compact"}
+          </Button>
+          <Button
+            variant={showPrefs ? "secondary" : "outline"}
+            size="icon-sm"
+            onClick={() => setShowPrefs(!showPrefs)}
+            title="View preferences"
+            aria-label="View preferences"
+          >
+            <Settings size={13} />
+          </Button>
         </div>
         {showPrefs && (
           <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 px-4 py-2.5 text-xs">
@@ -465,7 +473,7 @@ export function AdminApplicationView({ id }: { id: string }) {
                 <SelectItem value="categories">Categories</SelectItem>
               </SelectContent>
             </Select>
-            <button onClick={() => prefs.resetPreferences()} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">Reset</button>
+            <Button variant="ghost" size="sm" onClick={() => prefs.resetPreferences()} className="ml-auto">Reset</Button>
           </div>
         )}
         <Tabs value={active} onValueChange={setActive}>
@@ -653,7 +661,7 @@ function EditorStepIndicator({ current, steps: stepLabels, onStepClick }: { curr
       <div className="h-1 bg-secondary">
         <div className="h-full bg-primary transition-[width] duration-350 ease-in-out" style={{ width: `${Math.max(progress, 8)}%` }} />
       </div>
-      <nav className="flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8" aria-label="Edit steps">
+      <nav className="scroll-shadow-x flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8" aria-label="Edit steps">
         {stepLabels.map((step, index) => (
           <button type="button" key={step} className={`inline-flex items-center gap-1.5 whitespace-nowrap bg-transparent px-2.5 py-2 text-xs ${index === current ? "font-bold text-foreground" : "text-muted-foreground"}`} onClick={() => onStepClick(index)}>
             <span className={`grid size-6 place-items-center rounded-full border text-[11px] ${index === current ? "border-primary bg-primary text-primary-foreground" : index < current ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{index < current ? <Check size={14} /> : index + 1}</span>
@@ -694,8 +702,8 @@ export function AdminApplicationEditor({ id }: { id: string }) {
       setSaving(false);
     }
   };
-  if (detail.isLoading) return <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]"><Card><CardContent><p>Loading application…</p></CardContent></Card></main>;
-  if (detail.isError) return <main className="min-h-svh p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]"><Card className="text-destructive"><CardContent className="flex items-center gap-2"><CircleAlert size={18} /> Could not load application: {detail.error.message}</CardContent></Card></main>;
+  if (detail.isLoading) return <main className="min-h-svh p-4 sm:p-8 lg:p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]"><Card><CardContent><p>Loading application…</p></CardContent></Card></main>;
+  if (detail.isError) return <main className="min-h-svh p-4 sm:p-8 lg:p-12.5 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]"><Card className="text-destructive"><CardContent className="flex items-center gap-2"><CircleAlert size={18} /> Could not load application: {detail.error.message}</CardContent></Card></main>;
 
   const stepContent = [
     <AdminFieldSection key="applicant" section="applicant" label="Applicant" value={draft.applicant as Record<string, unknown>} onChange={set} />,
@@ -724,14 +732,14 @@ export function AdminApplicationEditor({ id }: { id: string }) {
         <CardContent className="min-h-[440px] p-5 md:p-9">
           {stepContent[currentStep]}
         </CardContent>
-        <div className="flex items-center justify-between gap-3 border-t px-5 py-4 md:px-9">
-          <Button variant="secondary" disabled={saving} onClick={() => void navigate({ to: "/g1/admin/applications/$id", params: { id } })}><X size={16} /> Cancel</Button>
-          <div className="flex gap-2">
-            {currentStep > 0 && <Button variant="outline" disabled={saving} onClick={() => setCurrentStep(currentStep - 1)}>Back</Button>}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4 md:px-9">
+          <Button variant="secondary" className="whitespace-normal" disabled={saving} onClick={() => void navigate({ to: "/g1/admin/applications/$id", params: { id } })}><X size={16} /> Cancel</Button>
+          <div className="flex flex-wrap gap-2">
+            {currentStep > 0 && <Button variant="outline" className="whitespace-normal" disabled={saving} onClick={() => setCurrentStep(currentStep - 1)}>Back</Button>}
             {currentStep < EDITOR_STEPS.length - 1 ? (
-              <Button disabled={saving} onClick={() => setCurrentStep(currentStep + 1)}>Next</Button>
+              <Button className="whitespace-normal" disabled={saving} onClick={() => setCurrentStep(currentStep + 1)}>Next</Button>
             ) : (
-              <Button disabled={saving} onClick={() => void save()}><Save size={16} /> {saving ? "Saving…" : "Save changes"}</Button>
+              <Button className="whitespace-normal" disabled={saving} onClick={() => void save()}><Save size={16} /> {saving ? "Saving…" : "Save changes"}</Button>
             )}
           </div>
         </div>
@@ -800,9 +808,9 @@ function AdminCategoryEditor({ category, onPatch, onRemove }: { category: Catego
 
   return (
     <div className="grid gap-3 p-4 border rounded-[10px]">
-      <div className="flex items-center justify-between gap-3">
-        <h4 className="font-semibold">{CATEGORY_LABELS[category.categoryType]} – <span className="font-mono">{score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}/{CATEGORY_MAX_MARKS}</span></h4>
-        <Button variant="secondary" size="sm" onClick={onRemove}><X size={16} /> Remove</Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h4 className="min-w-0 font-semibold">{CATEGORY_LABELS[category.categoryType]} – <span className="font-mono">{score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}/{CATEGORY_MAX_MARKS}</span></h4>
+        <Button variant="secondary" size="sm" className="shrink-0 whitespace-normal" onClick={onRemove}><X size={16} /> Remove</Button>
       </div>
       {renderFields()}
       <p className="text-muted-foreground text-[0.82rem]">Schools selected: {schoolsSelectedSummary(inputs.schoolsWithinRadius)}</p>
@@ -811,4 +819,4 @@ function AdminCategoryEditor({ category, onPatch, onRemove }: { category: Catego
 }
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) { return <label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={checked} onCheckedChange={(value) => onChange(value === true)} /><span>{label}</span></label>; }
-function AdminHeader({ title, description, status }: { title: string; description: string; status?: string }) { return <div className="flex items-end justify-between gap-8 mb-8"><div><p className="text-primary font-bold tracking-widest uppercase text-xs">Admin / Applications</p><h1>{title}</h1><p>{description}</p></div>{status && <span className="inline-flex items-center gap-1.5 text-primary text-sm font-semibold"><span /> {status}</span>}</div>; }
+function AdminHeader({ title, description, status }: { title: string; description: string; status?: string }) { return <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-8 mb-8"><div><p className="text-primary font-bold tracking-widest uppercase text-xs">Admin / Applications</p><h1>{title}</h1><p>{description}</p></div>{status && <span className="inline-flex items-center gap-1.5 text-primary text-sm font-semibold"><span /> {status}</span>}</div>; }
