@@ -302,7 +302,13 @@ class GoogleMapsScraper:
         )
         return results
 
-    def search_school(self, school: SourceSchool, *, used_place_ids: set[str] | None = None) -> MapSchool | None:
+    def search_school(
+        self,
+        school: SourceSchool,
+        *,
+        used_place_ids: set[str] | None = None,
+        all_schools: list[SourceSchool] | None = None,
+    ) -> MapSchool | None:
         query = f"{school.name}, {school.address}, Galle, Sri Lanka"
         results = self.search_and_extract(query, limit=3)
         if not results:
@@ -317,6 +323,15 @@ class GoogleMapsScraper:
         # and without this the second school inherited the first one's pin.
         hints = location_hints(school.address, school.division, school.name)
         source_is_primary = is_primary_school(school)
+        # Same-division rows are the only ones that could steal a card - the
+        # matcher uses them to tell "Google renamed our school" (no sibling
+        # matches the card, accept) from "the card names our sibling" (sibling
+        # matches, reject: Yatagala K.V. vs its M.V. sibling).
+        siblings = tuple(
+            other.name
+            for other in (all_schools or [school])
+            if other.division == school.division and other.school_id != school.school_id
+        )
         candidates = [
             result
             for result in results
@@ -332,6 +347,7 @@ class GoogleMapsScraper:
                 source_is_primary=source_is_primary,
                 result_address=result.address,
                 location_hints=hints,
+                sibling_names=siblings,
             )
             return (score if ok else 0.0, location_corroborated(result.address, hints))
 
@@ -471,6 +487,11 @@ class GoogleMapsScraper:
                         source_is_primary=is_primary_school(school),
                         result_address=result.address,
                         location_hints=location_hints(school.address, school.division, school.name),
+                        sibling_names=tuple(
+                            other.name
+                            for other in schools
+                            if other.division == school.division and other.school_id != school.school_id
+                        ),
                     )
                     if ok:
                         cache[school_id] = result

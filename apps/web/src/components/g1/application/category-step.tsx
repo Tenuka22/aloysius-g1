@@ -2716,7 +2716,7 @@ function CategoryCard({
             )}
           </div>
         ) : proximityConfig ? (
-          <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+          <p className="rounded-lg border p-3 sm:p-4 text-sm text-muted-foreground">
             {t("category.nearbySchools.noLocationHint")}
           </p>
         ) : null}

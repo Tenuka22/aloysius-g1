@@ -104,6 +104,11 @@ def main() -> None:
     scraper = GoogleMapsScraper(headless=not args.headful, timeout_ms=int(args.timeout * 1_000))
     # One Google place may only serve one listing row (see scraper.scrape_coordinates).
     used_place_ids = {result.place_id for result in cache.values() if result.place_id}
+
+    def siblings_of(school: SourceSchool) -> tuple[str, ...]:
+        return tuple(
+            other.name for other in sources if other.division == school.division and other.school_id != school.school_id
+        )
     accepted = 0
     review_notes: list[str] = []
     for index, school in enumerate(missing, 1):
@@ -111,7 +116,7 @@ def main() -> None:
         if school_id in cache and cache[school_id].latitude is not None:
             continue
         try:
-            result = scraper.search_school(school, used_place_ids=used_place_ids)
+            result = scraper.search_school(school, used_place_ids=used_place_ids, all_schools=sources)
         except Exception as exc:  # noqa: BLE001
             attempts[school_id] = record_attempt("error", note=f"{type(exc).__name__}: {exc}"[:200])
             print(f"  [{index}/{len(missing)}] {school_id}: {school.name} -- ERROR {exc}")
@@ -130,6 +135,7 @@ def main() -> None:
             source_is_primary=is_primary_school(school),
             result_address=result.address,
             location_hints=location_hints(school.address, school.division, school.name),
+            sibling_names=siblings_of(school),
         )
         if ok:
             cache[school_id] = result

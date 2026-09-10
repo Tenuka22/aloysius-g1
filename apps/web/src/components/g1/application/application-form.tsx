@@ -413,7 +413,7 @@ function BirthCertificateField({
     <Field
       className={
         isBirthCertSkipped
-          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`
+          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} sm:p-4`
           : undefined
       }
     >
@@ -447,7 +447,7 @@ function BirthCertificateField({
       </div>
       {/* Hidden once skipped: the amber notice below carries the state. */}
       {!draft.applicant.birthCertificateNumber.trim() && !isBirthCertSkipped && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-2 sm:p-3">
           <p className="flex-1 text-sm text-muted-foreground">
             {t("appForm.birthCert.skipHint")}
           </p>
@@ -540,7 +540,7 @@ function LocationStepCard({
     <div
       className={`grid gap-4 ${
         isLocationSkipped
-          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`
+          ? `rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} sm:p-4`
           : ""
       }`}
     >
@@ -592,7 +592,7 @@ function LocationStepCard({
       {/* Offering the skip again after it was taken is noise; the amber
           notice below already states what is outstanding. */}
       {!readOnly && !locationIsReady(draft.location) && !isLocationSkipped && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-2 sm:p-3">
           <p className="flex-1 text-sm text-muted-foreground">
             {t("appForm.locationStep.skipHint")}
           </p>
@@ -1282,7 +1282,7 @@ function DeclarationStep({
       )}
 
       {locationSkipped && (
-        <div className={`grid gap-2 rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`}>
+        <div className={`grid gap-2 rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} sm:p-4`}>
           <span className="text-sm font-medium">{t("appForm.locationStep.heading")}</span>
           <LocationStep
             readOnly={false}
@@ -1323,7 +1323,7 @@ function DeclarationStep({
         />
       )}
 
-      <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
+      <label className="flex items-start gap-2 rounded-lg border p-3 sm:p-4 text-sm">
         <Checkbox
           className="size-5 mt-0.5"
           checked={draft.declaration.confirmed}
@@ -1334,7 +1334,7 @@ function DeclarationStep({
         {t("appForm.declarationStep.confirmAccuracy")}
       </label>
 
-      <label className="flex items-start gap-2 rounded-lg border p-4 text-sm">
+      <label className="flex items-start gap-2 rounded-lg border p-3 sm:p-4 text-sm">
         <Checkbox
           className="size-5 mt-0.5"
           checked={draft.declaration.consent}
@@ -1501,7 +1501,7 @@ function ReviewStep({
       <div className="grid sm:grid-cols-2 gap-4 items-start">
         {groupedSections.map((section) => (
           <div key={section.title} className="rounded-xl border bg-card overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 border-b bg-muted/40">
               <h4 className="text-sm font-medium text-foreground">{section.title}</h4>
               <button
                 type="button"
@@ -1513,7 +1513,7 @@ function ReviewStep({
             </div>
             <div className="divide-y">
               {section.fields.map(([label, value]) => (
-                <div className="flex items-baseline justify-between gap-4 px-4 py-2.5" key={label}>
+                <div className="flex items-baseline justify-between gap-4 px-3 sm:px-4 py-2" key={label}>
                   <span className="text-xs text-muted-foreground shrink-0">{label}</span>
                   <span className="text-sm font-medium text-right text-foreground truncate">
                     {value || t("appForm.reviewStep.none")}
@@ -1540,7 +1540,7 @@ function ReviewStep({
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {categoryRows.map(([label, summary]) => (
-            <div key={label} className="rounded-xl border bg-card p-4">
+            <div key={label} className="rounded-xl border bg-card p-3 sm:p-4">
               <span className="text-xs font-medium text-foreground block mb-1">{label}</span>
               {summary && (
                 <p className="text-xs text-muted-foreground leading-relaxed">{summary}</p>
@@ -1553,7 +1553,7 @@ function ReviewStep({
       {draft.submittedAt && (
         <>
           <div className="mt-6 rounded-xl border overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b bg-muted/40">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b bg-muted/40">
               <div>
                 <h4 className="text-sm font-medium text-foreground">
                   {t("appForm.reviewStep.admissionReview")}
@@ -2215,7 +2215,7 @@ export function ApplicationForm({
               <div className="mt-5 max-w-[1180px]">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-2 rounded-[14px] border border-primary/25 bg-primary/5 p-4 text-left md:hidden"
+                  className="flex w-full items-center justify-between gap-2 rounded-[14px] border border-primary/25 bg-primary/5 p-3 sm:p-4 text-left md:hidden"
                   aria-expanded={identityOpen}
                   onClick={() => setIdentityOpen((open) => !open)}
                 >
@@ -2231,7 +2231,7 @@ export function ApplicationForm({
                   className={`gap-4 md:mt-0 md:grid md:grid-cols-2 lg:grid-cols-3 ${identityOpen ? "mt-3 grid" : "hidden"}`}
                 >
                   {draft.applicant.fullName && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-3 sm:p-4">
                       <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
                         {t("appForm.reviewStep.fields.fullName")}
                       </span>
@@ -2241,7 +2241,7 @@ export function ApplicationForm({
                     </div>
                   )}
                   {draft.sessionCode && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-3 sm:p-4">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
                           {t("appForm.sessionCode.label")}
@@ -2275,7 +2275,7 @@ export function ApplicationForm({
                     </div>
                   )}
                   {draft.accessKey && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
+                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-3 sm:p-4">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
                           {t("appForm.accessKey.label")}
@@ -2312,7 +2312,7 @@ export function ApplicationForm({
               </div>
             )}
           </div>
-          <div className="grid gap-3 rounded-2xl border border-primary/20 bg-card/85 p-5 shadow-[0_14px_32px_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
+          <div className="grid gap-3 rounded-2xl border border-primary/20 bg-card/85 p-4 sm:p-5 shadow-[0_14px_32px_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
             <div className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
               <span>{t("appForm.statusBar.applicationStatus")}</span>
               <ShieldCheck className="text-primary" size={17} />

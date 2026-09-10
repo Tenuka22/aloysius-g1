@@ -40,6 +40,7 @@ TYPE_PATTERNS = [
     "balika",
     "royal",
     "college",
+    "coollege",
     "school",
     "mixed",
     "junior",
@@ -156,6 +157,8 @@ def _compact(value: str) -> str:
     normalized = _normalise(value)
     normalized = normalized.replace("saint", "st")
     normalized = normalized.replace("sent ", "st ")
+    # Listing typo seen in the wild ("MAPALAGAMA CENTRAL COOLLEGE").
+    normalized = normalized.replace("coollege", "college")
     normalized = normalized.replace("kanishta viduhala", "kv")
     normalized = normalized.replace("kanistha vidyalaya", "kv")
     normalized = normalized.replace("kanishta vidyalaya", "kv")
@@ -165,6 +168,8 @@ def _compact(value: str) -> str:
     normalized = normalized.replace("kanituviduhala", "kv")
     normalized = normalized.replace("viduhala", "vidyalaya")
     normalized = normalized.replace("viddayalaya", "vidyalaya")
+    normalized = normalized.replace("viddiyalaya", "vidyalaya")
+    normalized = normalized.replace("viddyalaya", "vidyalaya")
     normalized = normalized.replace("vidiyalaya", "vidyalaya")
     normalized = normalized.replace("maha vidyalaya", "mv")
     normalized = normalized.replace("m m v", "mmv")
@@ -257,6 +262,12 @@ _COMPATIBLE_FAMILIES = {
     frozenset({"college", "central"}),
     frozenset({"college", "secondary"}),
     frozenset({"college", "vidyalaya"}),
+    # A K.V./primary listing whose card reads plain "... Vidyalaya" or
+    # "... School" is routinely the same school: Google cards drop the
+    # "Kanishta" qualifier ("Niyagama Vidyadara Vidyalaya" for NIYAGAMA
+    # VIDYADARA K.V).  Upgraded families (maha/college/central/...) stay
+    # strict so sibling pairs like Yatagala K.V./M.V. still conflict.
+    frozenset({"primary", "vidyalaya"}),
 }
 
 
@@ -272,19 +283,23 @@ def _type_family_conflict(source: str, result: str, *, source_is_primary: bool =
     """True when the two names carry incompatible school-type families."""
     source_family = _type_family(source)
     result_family = _type_family(result)
-    # The listing's own metadata can outrank the name: a row graded "Grade 1-5"
-    # is a primary school even when its name carries no primary marker
-    # ("YATAGALA MALCOM VIDYALAYA", Type 3), so its Google card legitimately
-    # reads "... Primary School".
-    if source_is_primary:
-        source_family = "primary"
-    if source_family is None or result_family is None:
-        return False  # nothing to compare
-    if source_family == result_family or frozenset({source_family, result_family}) in _COMPATIBLE_FAMILIES:
+    name_conflict = (
+        source_family is not None
+        and result_family is not None
+        and source_family != result_family
+        and frozenset({source_family, result_family}) not in _COMPATIBLE_FAMILIES
+    )
+    # The listing's grade span can relax one specific conflict: a row graded
+    # "Grade 1-5" is a primary school even when its name carries no primary
+    # marker ("YATAGALA MALCOM VIDYALAYA", Type 3), so an explicitly-primary
+    # Google card ("... Primary School") is the same school, not a sibling.
+    # It must never CREATE conflicts for name-consistent pairs ("Hegoda
+    # Sooriya Model School" listing vs identical card).
+    if name_conflict and source_is_primary and result_family == "primary":
         return False
     # One-sided village labels (family-less result naming the same core) are
     # handled by _village_only_match; here we only veto explicit conflicts.
-    return True
+    return name_conflict
 
 
 def _direction_conflict(source: str, result: str) -> bool:
@@ -312,6 +327,8 @@ _TYPE_WORDS = {
     "vidyalaya",
     "vidiyalaya",
     "viddayalaya",
+    "viddiyalaya",
+    "viddyalaya",
     "vidyalay",
     "prathamika",
     "primary",
@@ -320,6 +337,8 @@ _TYPE_WORDS = {
     "prinary",
     "junior",
     "maha",
+    "madhya",
+    "madya",
     "mmv",
     "bmv",
     "mv",
@@ -352,27 +371,43 @@ def _content_words(name: str) -> list[str]:
     return [word for word in words if len(word) > 1 and word not in _TYPE_WORDS]
 
 
+def _has_type_word(name: str) -> bool:
+    """Whether the raw name carries any school-type word at all.
+
+    "YATAGALA M.V." does; the bare village card "Yatagala" does not.
+    """
+    return _normalise(name).split() != _content_words(name)
+
+
 def _village_only_match(source: str, result: str) -> bool:
     """True when the result is a bare village label for a longer listing name.
 
-    Village-label cards ("Karandeniya" for "KARANDENIYA K.V.", "Lelwala" for
-    "LELWALA GIGUMMADUWA K.V.") usually belong to the village, not to the
-    listed school, and are often a sibling's pin.  A one-token card may only
-    stand in for a listing whose content is that same single token
-    ("Karandeniya K.V.").
+    Village-label cards ("Karandeniya" for "KARANDENIYA K.V.", "Yatagala" for
+    "YATAGALA M.V.") usually belong to the village, not to the listed school,
+    and are often a sibling's pin.  Rules:
+
+    * identical content words match UNLESS exactly one side carries a school
+      type word and the type-less side is a single token ("Yatagala" vs
+      "YATAGALA M.V.").  Type-less multi-word names ("Sacred Heart Convent")
+      are full school names, not village labels, and type-plus-name spellings
+      ("Meepe Amathayana School" for "MEEPE AMATHAYANA PRIMARY SCHOOL") match.
+    * a one-token card is only acceptable when it carries a school type word
+      ("Samimale School" for "SAMIMALE VIDYANANDA K.V." - Google dropped the
+      second name word); a type-less token ("Mahagoda") is the village.
     """
     source_words = _content_words(source)
     result_words = _content_words(result)
     if not source_words or not result_words:
         return False
     if source_words == result_words:
-        # Same content words, but only one side names the school type at all
-        # ("Yatagala" vs "YATAGALA M.V."): the card is the village, not a
-        # verified school listing.
-        return _type_family(source) is not None and _type_family(result) is None
-    if len(result_words) != 1:
-        return False
-    return len(source_words) > 1 and result_words[0] == source_words[0]
+        typed_source, typed_result = _has_type_word(source), _has_type_word(result)
+        if typed_source == typed_result:
+            return False
+        typeless_words = result_words if typed_source else source_words
+        return len(typeless_words) == 1
+    if len(result_words) == 1 and len(source_words) > 1 and result_words[0] == source_words[0]:
+        return not _has_type_word(result)
+    return False
 
 
 def _mid_token_embedding(source: str, result: str) -> bool:
@@ -486,6 +521,48 @@ def location_corroborated(result_address: str | None, hints: tuple[str, ...]) ->
     return any(hint in address_words for hint in hints)
 
 
+def words_match(a: str, b: str) -> bool:
+    """Whether two name words are the same word despite Sinhala
+    transliteration drift ("Gintota"/"Ginthota", "Mawanana"/"Mawenana")."""
+    if a == b:
+        return True
+    if abs(len(a) - len(b)) <= 1:
+        # Longest-common-subsequence similarity handles both insertion drift
+        # ("Gintota"/"Ginthota") and substitution drift
+        # ("Metiwiliya"/"Mativiliya").
+        return difflib.SequenceMatcher(None, a, b).ratio() >= 0.75
+    return False
+
+
+def _claimed_by_sibling(source: str, result: str, sibling_names: tuple[str, ...]) -> bool:
+    """Whether another listing row's name plausibly names the same place as ``result``.
+
+    Used to adjudicate type-family conflicts: a "... Kanitu Viduhala" card is
+    only dangerous to a "... M.V." listing when a K.V. sibling row exists that
+    the card actually matches (Thotagoda Attadassi K.V. vs its M.V. sibling).
+    Word-based so order/abbreviations don't matter, but deliberately name-only
+    (no family logic) to avoid recursion.
+    """
+    if not sibling_names:
+        return False
+    result_words = _content_words(result)
+    result_set = set(result_words)
+    if not result_words:
+        return False
+    for sibling in sibling_names:
+        if sibling == source:
+            continue
+        sibling_words = _content_words(sibling)
+        if not sibling_words:
+            continue
+        smaller, larger = (result_set, set(sibling_words)) if len(result_set) <= len(sibling_words) else (set(sibling_words), result_set)
+        if len(smaller) < 2:
+            continue
+        if all(any(words_match(word, other) for other in larger) for word in smaller):
+            return True
+    return False
+
+
 def accept(
     source: str,
     result: str,
@@ -493,13 +570,18 @@ def accept(
     source_is_primary: bool = False,
     result_address: str | None = None,
     location_hints: tuple[str, ...] = (),
+    sibling_names: tuple[str, ...] = (),
 ) -> tuple[bool, float]:
     """True when ``result`` can be trusted as the Google Maps listing of ``source``.
 
     ``source_is_primary`` comes from the listing's grade span (a "Grade 1-5"
     row is primary regardless of its name), ``result_address`` plus
     ``location_hints`` let listing-place tokens corroborate a borderline name
-    match.  Both are optional; the plain two-name call stays authoritative.
+    match, and ``sibling_names`` are the other listing rows a card could
+    belong to - a type-word conflict ("K.V." listing vs "Maha Vidyalaya"
+    card) only vetoes when one of those siblings actually matches the card;
+    without a sibling the conflict is just Google lagging a rename/upgrade.
+    All extras are optional; the plain two-name call stays authoritative.
     """
     score = school_aware_score(source, result)
     # Even a perfect score is untrustworthy when the names actively disagree:
@@ -508,12 +590,19 @@ def accept(
     # before the score threshold, not only under it.
     if _direction_conflict(source, result):
         return False, score
-    if _type_family_conflict(source, result, source_is_primary=source_is_primary):
+    if _mid_token_embedding(source, result):
         return False, score
     if _village_only_match(source, result):
         return False, score
-    if _mid_token_embedding(source, result):
-        return False, score
+    if _type_family_conflict(source, result, source_is_primary=source_is_primary):
+        # Not every family mismatch is a sibling trap - Google cards lag
+        # renames and upgrades ("K.V." became "College").  When another
+        # listing row claims this card the card belongs THERE; otherwise a
+        # strong name match is the same school despite the stale type word.
+        if _claimed_by_sibling(source, result, sibling_names):
+            return False, score
+        if score < 0.9:
+            return False, score
     if score >= 0.94:
         return True, score
     # Below the strict threshold the result must still look like a school and
@@ -530,17 +619,15 @@ def accept(
     source_words = _content_words(source)
     result_words = _content_words(result)
     if source_words and result_words:
-        def words_match(a: str, b: str) -> bool:
-            if a == b:
-                return True
-            if abs(len(a) - len(b)) <= 1:
-                # Longest-common-subsequence similarity handles both insertion
-                # drift ("Gintota"/"Ginthota") and substitution drift
-                # ("Metiwiliya"/"Mativiliya") common in Sinhala transliteration.
-                return difflib.SequenceMatcher(None, a, b).ratio() >= 0.75
-            return False
+        def joined(words: list[str]) -> set[str]:
+            """Adjacent-word compounds: cards split Sinhala compounds
+            ("Dhamma Rathana" for "Dhammarathana")."""
+            out = set(words)
+            for index in range(len(words) - 1):
+                out.add(words[index] + words[index + 1])
+            return out
 
-        source_set, result_set = set(source_words), set(result_words)
+        source_set, result_set = joined(source_words), joined(result_words)
         smaller, larger = (source_set, result_set) if len(source_set) <= len(result_set) else (result_set, source_set)
         if len(smaller) >= 2 and all(any(words_match(word, other) for other in larger) for word in smaller):
             return True, max(score, 0.9)
@@ -553,10 +640,10 @@ def accept(
     source_core = _strip_types(source_compact)
     result_core = _strip_types(result_compact)
     substring = bool(source_core and result_core and (source_core in result_core or result_core in source_core))
-    threshold = 0.75 if substring else 0.85
+    threshold = 0.75 if substring else 0.80
     # The listing's place tokens proving the card's address still count for
     # something: with geographic corroboration a near-threshold name match
-    # (0.75+) is trustworthy, without one we keep the strict floors.
+    # (0.75+) is trustworthy, without one we keep the floors.
     if score >= threshold:
         return True, score
     if score >= 0.75 and location_corroborated(result_address, location_hints):

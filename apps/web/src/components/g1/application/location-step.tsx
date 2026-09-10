@@ -223,7 +223,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         )}
 
         {locationError && !readOnly && (
-          <div className={`grid gap-3 rounded-lg border ${STATUS_WARNING.borderStrong} bg-transparent p-3`} role="alert">
+          <div className={`grid gap-3 rounded-lg border ${STATUS_WARNING.borderStrong} bg-transparent p-2 sm:p-3`} role="alert">
             <div className="flex items-start gap-2 text-sm">
               <TriangleAlert size={17} className={`mt-0.5 shrink-0 ${STATUS_WARNING.text}`} />
               <div>
@@ -241,7 +241,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         {status && !locationError && <p className="text-sm text-primary" role="status">{t(`location.status.${status}`)}</p>}
 
         {point && (
-          <div className="grid gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3" data-testid="location-resolution" aria-live="polite">
+          <div className="grid gap-3 rounded-lg border border-primary/20 bg-primary/5 p-2 sm:p-3" data-testid="location-resolution" aria-live="polite">
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm font-semibold text-primary">{value.source === "network" ? t("location.resolved.networkTitle") : t("location.resolved.capturedTitle")}</p>
               {deviceAccuracy !== null && <span className="text-xs text-muted-foreground">Accuracy ~{Math.round(deviceAccuracy)} m</span>}
@@ -289,7 +289,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         )}
 
         {previousLocations.length > 0 && (
-          <div className="grid gap-2 rounded-lg border p-3">
+          <div className="grid gap-2 rounded-lg border p-2 sm:p-3">
             <p className="text-[0.78rem] font-semibold text-muted-foreground">{t("location.latestSaved.title")}</p>
             <div className="grid gap-1 max-h-[16rem] overflow-y-auto">
               {previousLocations.map((entry, index) => (
