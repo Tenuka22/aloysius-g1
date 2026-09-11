@@ -172,7 +172,7 @@ type FieldEditOption = { value: string; label: string };
 
 const FIELD_OPTIONS: Record<string, FieldEditOption[]> = {
   gender: [{ value: "Male", label: "Male" }, { value: "Female", label: "Female" }],
-  religion: [{ value: "Buddhist", label: "Buddhist" }, { value: "Catholic", label: "Catholic" }, { value: "Christian", label: "Christian" }, { value: "Islam", label: "Islam" }],
+  religion: [{ value: "Buddhist", label: "Buddhist" }, { value: "Catholic", label: "Catholic" }, { value: "Christian", label: "Christian" }, { value: "Islam", label: "Islam" }, { value: "Hindu", label: "Hindu" }],
   educationMedium: [{ value: "Sinhala", label: "Sinhala" }, { value: "Tamil", label: "Tamil" }],
   relationship: [{ value: "Mother", label: "Mother" }, { value: "Father", label: "Father" }, { value: "Guardian", label: "Guardian" }],
 };

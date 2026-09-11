@@ -8,6 +8,7 @@ import {
   STATUS_WARNING,
 } from "@/lib/color-classes";
 import { applicationPdfFilename, downloadApplicationPdf } from "@/lib/g1/application-pdf";
+import { clearDraftLocally, loadUnsyncedDraft, saveDraftLocally } from "@/lib/g1/draft-local-cache";
 import {
   Tooltip,
   TooltipContent,
@@ -754,6 +755,7 @@ function ApplicantStep({
             </SelectItem>
             <SelectItem value="Buddhist">{t("appForm.applicantStep.religion.buddhist")}</SelectItem>
             <SelectItem value="Islam">{t("appForm.applicantStep.religion.islam")}</SelectItem>
+            <SelectItem value="Hindu">{t("appForm.applicantStep.religion.hindu")}</SelectItem>
           </SelectContent>
         </Select>
         {draft.applicant.religion === "Christian" && (
@@ -1791,7 +1793,19 @@ export function ApplicationForm({
 
   const set = (patch: Partial<ApplicationDraft>) => draft.updateDraft(patch);
 
-  const collectionOnly = draft.submissionLocked && draft.submittedAt !== null;
+  // A brand-new (never-submitted) application must not be allowed to actually
+  // submit before the window opens - previously `collectionOnly` only caught
+  // an *already-submitted* application being re-edited after the window later
+  // closed, so a first-time submit attempt before opening fell through to the
+  // normal Submit button, hit the server's "outside the configured form
+  // window" rejection, and was misrouted into the post-close "request
+  // approval" flow. Gating on `beforeWindowOpens` here reuses that same
+  // disabled-button/"Submission opens {date}" UI for the pre-open case too.
+  const beforeWindowOpens =
+    draft.submissionLocked &&
+    draft.submissionOpensAt !== "" &&
+    new Date() < new Date(draft.submissionOpensAt);
+  const collectionOnly = (draft.submissionLocked && draft.submittedAt !== null) || beforeWindowOpens;
 
   // Blocks a second Continue click while the previous one is still saving to
   // the server, so the step transition genuinely waits for the save.
@@ -1912,6 +1926,28 @@ export function ApplicationForm({
     };
   }, []);
 
+  // Recovers a draft that was written to the local safety net (see
+  // draft-local-cache.ts) but never confirmed saved to the DB - e.g. the tab
+  // closed or the connection dropped during the 1.5s debounce window. Waits
+  // for `restorePromise` first so this merges on top of the server's actual
+  // record, not the still-empty default draft the store starts with.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (restorePromise.current) await restorePromise.current;
+      if (cancelled) return;
+      const key = useApplicationStore.getState().accessKey;
+      if (!key) return;
+      const unsynced = loadUnsyncedDraft(key);
+      if (!unsynced) return;
+      set(unsynced);
+      void saveToServer();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastSavedSnapshot = useRef("");
 
@@ -1924,6 +1960,11 @@ export function ApplicationForm({
       return;
     }
     if (snapshot === lastSavedSnapshot.current) return;
+    // Instant, durable local safety net - written synchronously on every
+    // change, well ahead of the 1.5s debounced DB sync below, so a closed
+    // tab or dropped connection during that window doesn't lose the edit
+    // (see draft-local-cache.ts). Cleared once the DB sync actually confirms.
+    saveDraftLocally(draft.accessKey, normalizeDraft(draft));
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       lastSavedSnapshot.current = snapshot;
@@ -1978,6 +2019,9 @@ export function ApplicationForm({
           await promise;
         }
         set({ saveStatus: t("appForm.statusBar.savedSecurely") });
+        // The DB now has this exact state, so the local safety-net entry
+        // (see draft-local-cache.ts) has nothing left to recover.
+        if (currentDraft.accessKey) clearDraftLocally(currentDraft.accessKey);
       } catch {
         set({ saveStatus: t("appForm.statusBar.saveFailed") });
       }

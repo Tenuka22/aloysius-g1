@@ -42,14 +42,14 @@ describe("applicantStepSchema", () => {
     expect(applicantStepSchema.safeParse({ ...validApplicant, gender: "Male" }).success).toBe(true);
   });
   it("accepts all religions", () => {
-    for (const religion of ["Catholic", "Christian", "Buddhist", "Islam"]) {
+    for (const religion of ["Catholic", "Christian", "Buddhist", "Islam", "Hindu"]) {
       expect(applicantStepSchema.safeParse({ ...validApplicant, religion }).success).toBe(true);
     }
   });
   it("rejects a gender outside the enum", () =>
     expect(applicantStepSchema.safeParse({ ...validApplicant, gender: "Other" }).success).toBe(false));
   it("rejects a religion outside the enum", () =>
-    expect(applicantStepSchema.safeParse({ ...validApplicant, religion: "Hindu" }).success).toBe(false));
+    expect(applicantStepSchema.safeParse({ ...validApplicant, religion: "Sikh" }).success).toBe(false));
   it("rejects English as education medium", () =>
     expect(applicantStepSchema.safeParse({ ...validApplicant, educationMedium: "English" }).success).toBe(false));
   it("rejects a missing education medium", () =>

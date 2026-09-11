@@ -33,6 +33,10 @@ const en = {
   "building.location": "Galle, Sri Lanka",
   "building.crestAlt": "St. Aloysius' College crest",
   "building.admissionsCta": "Grade 1 {year} admissions",
+  "building.admissionsWindow.loading": "Checking the admissions schedule…",
+  "building.admissionsWindow.open": "Applications open now · closes {closesDate}",
+  "building.admissionsWindow.upcoming": "Applications open {opensDate}",
+  "building.admissionsWindow.closed": "Applications closed on {closesDate}",
 
   // ─── routes/index.tsx ─────────────────────────────────────────
   "home.hero.badge": "G1 {year} intake",
@@ -453,6 +457,7 @@ const en = {
   "appForm.applicantStep.religion.christian": "Christian",
   "appForm.applicantStep.religion.buddhist": "Buddhist",
   "appForm.applicantStep.religion.islam": "Islam",
+  "appForm.applicantStep.religion.hindu": "Hindu",
   "appForm.applicantStep.religionRestriction":
     "This intake is not available to applicants of this religion.",
   "appForm.applicantStep.educationMedium": "Education medium",

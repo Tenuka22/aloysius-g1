@@ -33,6 +33,10 @@ const si = {
   "building.location": "ගාල්ල, ශ්‍රී ලංකාව",
   "building.crestAlt": "ශාන්ත ඇලෝසියස් විද්‍යාලයේ ලාංඡනය",
   "building.admissionsCta": "1 ශ්‍රේණිය {year} ඇතුළත් කිරීම්",
+  "building.admissionsWindow.loading": "ඇතුළත් කිරීමේ කාලසටහන පරීක්ෂා කරමින්…",
+  "building.admissionsWindow.open": "අයදුම්පත් බාරගැනීම දැන් විවෘතයි · {closesDate} දින වසා දමේ",
+  "building.admissionsWindow.upcoming": "අයදුම්පත් බාරගැනීම {opensDate} දින විවෘත වේ",
+  "building.admissionsWindow.closed": "අයදුම්පත් බාරගැනීම {closesDate} දින වසා ඇත",
 
   // ─── routes/index.tsx ─────────────────────────────────────────
   "home.hero.badge": "{year} ශ්‍රේණිය 1 ඇතුළත් කිරීම",
@@ -431,6 +435,7 @@ const si = {
   "appForm.applicantStep.religion.christian": "ක්‍රිස්තියානි",
   "appForm.applicantStep.religion.buddhist": "බෞද්ධ",
   "appForm.applicantStep.religion.islam": "ඉස්ලාම්",
+  "appForm.applicantStep.religion.hindu": "හින්දු",
   "appForm.applicantStep.religionRestriction": "මෙම ආගමේ අයදුම්කරුවන් සඳහා මෙම ඇතුළත් කිරීම ලබාගත නොහැක.",
   "appForm.applicantStep.educationMedium": "අධ්‍යාපන මාධ්‍යය",
   "appForm.applicantStep.educationMediumPlaceholder": "මාධ්‍යය තෝරන්න",

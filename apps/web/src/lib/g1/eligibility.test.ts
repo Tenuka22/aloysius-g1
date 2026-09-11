@@ -140,7 +140,7 @@ describe("getNextStepReason \u2013 step 0 (location)", () => {
 
 describe("getNextStepReason – step 1 (applicant) exhaustive combinations", () => {
   const genders = ["", "Female", "Male"];
-  const religions = ["", "Catholic", "Christian", "Buddhist", "Islam"];
+  const religions = ["", "Catholic", "Christian", "Buddhist", "Islam", "Hindu"];
   const datesOfBirth = ["", "2019-01-01", "2021-01-31", "2022-01-31", "2022-02-01", "2023-12-31"];
   const certificates = ["", "ABC1234567"];
   const names = ["", "Ashan Perera"];
@@ -182,7 +182,10 @@ describe("getNextStepReason – step 1 (applicant) exhaustive combinations", () 
       }
     }
   }
-  it(`exercised every combination (${combinationCount})`, () => expect(combinationCount).toBe(2 * 3 * 5 * 6 * 2 * 2 * 3));
+  it(`exercised every combination (${combinationCount})`, () =>
+    expect(combinationCount).toBe(
+      2 * genders.length * religions.length * datesOfBirth.length * certificates.length * names.length * mediums.length,
+    ));
 });
 
 describe("getNextStepReason – step 2 (guardian)", () => {

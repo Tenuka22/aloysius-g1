@@ -113,6 +113,7 @@ function currentDraftData(): typeof emptyDraft {
 
 beforeEach(() => {
   useApplicationStore.getState().reset();
+  window.localStorage.clear();
   removeAppCookie("aloysius-admissions-application-key");
   removeAppCookie("aloysius-admissions-application-keys");
   removeAppCookie("aloysius-admissions-application-session-code");

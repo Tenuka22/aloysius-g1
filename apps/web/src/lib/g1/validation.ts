@@ -6,7 +6,10 @@ export const applicantStepSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   sinhalaName: z.string().optional(),
   gender: z.enum(["Female", "Male"], { message: "Gender is required" }),
-  religion: z.enum(["Catholic", "Christian", "Buddhist", "Islam"], { message: "Religion is required" }),
+  // "Hindu" sits alongside the other four - the admission-eligibility logic in
+  // eligibility.ts already treats "Hindu" as unrestricted, so this enum was the
+  // only place a Hindu applicant was actually blocked from completing step 1.
+  religion: z.enum(["Catholic", "Christian", "Buddhist", "Islam", "Hindu"], { message: "Religion is required" }),
   educationMedium: z.enum(["Sinhala", "Tamil"], { message: "Education medium is required" }),
   dateOfBirth: z
     .string()

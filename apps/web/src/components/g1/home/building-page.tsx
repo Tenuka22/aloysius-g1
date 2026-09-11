@@ -1,10 +1,36 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, HardHat } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, CalendarClock, HardHat } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Eyebrow } from "@aloysius-admissions/ui/components/eyebrow";
 import { HeroVignette } from "@aloysius-admissions/ui/components/hero-vignette";
 import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
+import { orpc } from "@/utils/orpc";
 import { useTranslation } from "@/lib/i18n";
+
+// The submission window (opensAt/closesAt) is fetched from the same public
+// `application.status` endpoint the application form itself polls (see
+// application-form.tsx), so this page always mirrors the real admissions
+// schedule instead of a hand-maintained date.
+function useAdmissionsWindowText(locale: string) {
+  const { t } = useTranslation();
+  const status = useQuery(orpc.application.status.queryOptions({ input: { intakeYear: INTAKE_YEAR_DEFAULT } }));
+
+  if (status.isPending) return t("building.admissionsWindow.loading");
+  if (status.isError || !status.data) return null;
+
+  const formatter = new Intl.DateTimeFormat(locale === "si" ? "si-LK" : "en-LK", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const opensAt = new Date(status.data.submissionOpensAt);
+  const closesAt = new Date(status.data.submissionClosesAt);
+  const now = new Date();
+
+  if (now < opensAt) return t("building.admissionsWindow.upcoming", { opensDate: formatter.format(opensAt) });
+  if (now > closesAt) return t("building.admissionsWindow.closed", { closesDate: formatter.format(closesAt) });
+  return t("building.admissionsWindow.open", { closesDate: formatter.format(closesAt) });
+}
 
 // Placeholder landing page for the school website while the real site is
 // being built. The Grade 1 admissions portal lives at /admissions and is
@@ -12,7 +38,8 @@ import { useTranslation } from "@/lib/i18n";
 // a full-bleed crest-green hero (not a small centered card) so it carries
 // the same visual weight and brand language as the admissions dashboard.
 export function BuildingPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const admissionsWindowText = useAdmissionsWindowText(locale);
 
   return (
     <div className="flex min-h-svh flex-col bg-primary text-primary-foreground" data-surface="school-home-building">
@@ -62,6 +89,15 @@ export function BuildingPage() {
           <p className="max-w-[38rem] text-[clamp(0.9rem,0.85rem+0.2vw,1.0625rem)] leading-relaxed text-primary-foreground/70">
             {t("building.description")}
           </p>
+
+          {admissionsWindowText && (
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/15 bg-primary-foreground/6 px-3.5 py-1.5 backdrop-blur-sm">
+              <CalendarClock size={13} strokeWidth={2.25} className="text-brand-gold" />
+              <span className="text-[0.75rem] font-medium tracking-wide text-primary-foreground/85">
+                {admissionsWindowText}
+              </span>
+            </div>
+          )}
 
           <Link to="/admissions" className="contents">
             <Button
