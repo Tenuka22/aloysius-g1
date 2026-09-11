@@ -54,6 +54,18 @@ FROM oven/bun:${BUN_VERSION}-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# The Nitro build output targets the "node-server" preset (see
+# apps/web/.output/nitro.json) - it was never built for Bun. Serving it
+# through Bun's Node-compatibility shim instead of real Node.js hits
+# TanStack Start's documented Bun-specific SSR streaming bug: the
+# dehydrated router state occasionally arrives truncated/corrupted client
+# side, crashing hydration with "Cannot read properties of undefined
+# (reading 'manifest')" on direct/hard page loads (see
+# https://github.com/TanStack/router/issues/3989). Installing real Node.js
+# alongside Bun and using it only to run the built server avoids this
+# entirely; Bun still does the install/build/migrate steps everywhere else.
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
+
 # Every workspace dependency, including drizzle-kit (packages/db's own
 # dependency that the migration step below shells out to) - reused as-is
 # from `deps` rather than reinstalled.
@@ -87,4 +99,4 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
 
 # Apply pending Drizzle migrations against the mounted SQLite file, then
 # serve. A failed migration exits non-zero and never starts the server.
-CMD ["sh", "-c", "cd packages/db && bun run db:migrate:deploy && cd /app && exec bun .output/server/index.mjs"]
+CMD ["sh", "-c", "cd packages/db && bun run db:migrate:deploy && cd /app && exec node .output/server/index.mjs"]
