@@ -100,6 +100,7 @@ const si = {
   "application.keyNotFound.title": "අයදුම්පත සොයා ගැනීමට නොහැකි විය",
   "application.keyNotFound.description": "එම ප්‍රවේශ යතුර සොයා ගැනීමට නොහැකි විය. සබැඳිය හෝ QR කේතය පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
   "application.keyNotFound.backToDashboard": "පුවරුවට ආපසු",
+  "application.loading": "අයදුම්පත පූරණය වෙමින්\u2026",
   // ─── components/sign-in-form.tsx ──────────────────────────────
   "signIn.title": "ආයුබෝවන්",
   "signIn.email": "විද්‍යුත් තැපෑල (Email)",

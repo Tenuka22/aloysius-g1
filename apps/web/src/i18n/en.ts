@@ -103,6 +103,7 @@ const en = {
   "application.keyNotFound.description":
     "That access key was not found. Check the link or QR code and try again.",
   "application.keyNotFound.backToDashboard": "Back to dashboard",
+  "application.loading": "Loading your application\u2026",
 
   // ─── components/sign-in-form.tsx ──────────────────────────────
   "signIn.title": "Welcome Back",

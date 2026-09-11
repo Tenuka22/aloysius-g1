@@ -1,9 +1,10 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { ApplicationForm } from "@/components/g1/application/application-form";
 import { useTranslation } from "@/lib/i18n";
-import { client } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 
 const applicationSearchSchema = z.object({
   key: z.string().optional(),
@@ -12,44 +13,52 @@ const applicationSearchSchema = z.object({
 
 export const Route = createFileRoute("/application/")({
   validateSearch: applicationSearchSchema,
-  loaderDeps: ({ search }) => ({ key: search.key, code: search.code }),
+  loaderDeps: ({ search }) => ({ key: search.key }),
   loader: async ({ deps }) => {
-    if (!deps.key) {
-      // No access key at all: nothing to resume, so start a fresh draft.
-      // This also covers what `/application/access` used to be the second
-      // step of - loading by key is now handled below, on this same route.
-      const created = await client.application.create({ data: {} });
-      throw redirect({ to: "/application", search: { key: created.accessKey, code: created.sessionCode } });
-    }
-    // A key alone (from "load with key" or a scanned QR code) is enough to
-    // resolve the application - the session code is only a human-friendly
-    // label, fetched here if the URL did not already carry it.
-    const [application, status] = await Promise.all([
-      client.application.get({ accessKey: deps.key }).catch(() => null),
-      client.application.status().catch(() => null),
-    ]);
-    if (!application) {
-      // A key was given but does not resolve to a real application. Say so
-      // explicitly rather than silently seeding a blank draft under that key:
-      // saves against an unknown key fail server-side anyway, so surfacing
-      // the problem now is kinder than a mysterious "save failed" later.
-      return { key: deps.key, code: deps.code ?? null, application: null, status, keyNotFound: true as const };
-    }
-    return {
-      key: deps.key,
-      code: deps.code ?? application.sessionCode,
-      application,
-      status,
-      keyNotFound: false as const,
-    };
+    if (deps.key) return;
+    // No access key at all: nothing to resume, so start a fresh draft. This
+    // also covers what `/application/access` used to be the second step of -
+    // loading by key is handled entirely client-side below, on this same
+    // route, so a returning applicant's draft (which can carry an arbitrary
+    // amount of nested form data) never has to be serialized into the SSR
+    // payload - TanStack Start's dehydration chokes on some of that data's
+    // shape (see the seroval crash this replaced).
+    const created = await client.application.create({ data: {} });
+    throw redirect({ to: "/application", search: { key: created.accessKey, code: created.sessionCode } });
   },
   component: ApplicationIndexPage,
 });
 
 function ApplicationIndexPage() {
-  const initialData = Route.useLoaderData();
-  if (initialData.keyNotFound) return <KeyNotFoundState />;
-  return <ApplicationForm initialData={initialData} />;
+  const { t } = useTranslation();
+  const { key, code } = Route.useSearch();
+  // `key` is only briefly empty here: the loader above redirects to a freshly
+  // created draft's key before this ever renders without one.
+  const applicationQuery = useQuery({
+    ...orpc.application.get.queryOptions({ input: { accessKey: key ?? "" } }),
+    enabled: Boolean(key),
+    retry: false,
+    // An unresolved key (bad link, stale QR code, since-removed application)
+    // is an expected, explicitly-handled state below - not an unexpected
+    // failure worth an error toast on top of the "not found" screen.
+    meta: { skipErrorToast: true },
+  });
+  const statusQuery = useQuery(orpc.application.status.queryOptions());
+
+  if (!key || applicationQuery.isPending || statusQuery.isPending) {
+    return <main className="grid min-h-svh place-items-center p-6 text-sm text-muted-foreground">{t("application.loading")}</main>;
+  }
+  if (applicationQuery.isError) return <KeyNotFoundState />;
+  return (
+    <ApplicationForm
+      initialData={{
+        key,
+        code: code ?? applicationQuery.data.sessionCode,
+        application: applicationQuery.data,
+        status: statusQuery.data ?? null,
+      }}
+    />
+  );
 }
 
 function KeyNotFoundState() {
