@@ -4,7 +4,7 @@ import { createRouter, stringifySearchWith } from "@tanstack/react-router";
 import Loader from "./components/loader";
 import { NotFoundState } from "./components/not-found-state";
 import { routeTree } from "./routeTree.gen";
-import { orpc, queryClient } from "./utils/orpc";
+import { createQueryClient, orpc } from "./utils/orpc";
 
 /**
  * Plain `key=value` search serialization (no JSON quoting).
@@ -24,6 +24,16 @@ const plainStringifySearch = stringifySearchWith(
 );
 
 export function getRouter() {
+  // A fresh QueryClient per router instance - never the shared module-level
+  // singleton from utils/orpc.ts. The server process is long-running and
+  // handles many concurrent requests from different users; a shared
+  // QueryClient would let one request's cache/dehydration state leak into
+  // another's SSR response, which is exactly what caused the intermittent
+  // "Cannot read properties of undefined (reading 'manifest')" client
+  // hydration crash on direct/hard loads of /application. On the client,
+  // getRouter() runs exactly once per page load, so a fresh instance there
+  // is equally correct (and matches TanStack Start's own guidance).
+  const queryClient = createQueryClient();
   const router = createRouter({
     routeTree,
     defaultPreload: "intent",

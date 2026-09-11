@@ -37,8 +37,6 @@ export function createQueryClient() {
   });
 }
 
-export const queryClient = createQueryClient();
-
 /**
  * The RPC endpoint lives on this app's own origin, so the browser just uses a
  * relative URL. During SSR there is no origin and no cookie jar, so the link
