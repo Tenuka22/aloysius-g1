@@ -119,8 +119,8 @@ describe("Score consistency", () => {
         mainDocumentType: "title-deed-applicant",
         additionalDocs: ["nic", "driving-license", "landline-bill", "marriage-certificate", "life-insurance-policy", "school-leaving-certificate", "child-birth-certificate", "vehicle-registration", "bank-passbook"],
         deedTransferDate: "2021-09-01",
-        electoralMotherSince: 2020,
-        electoralFatherSince: 2020,
+        electoralMotherYears: [2021, 2022, 2023, 2024, 2025],
+        electoralFatherYears: [2021, 2022, 2023, 2024, 2025],
         schoolsWithinRadius: ["s1", "s2", "s3", "s4", "s5"],
       },
     };

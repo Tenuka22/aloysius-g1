@@ -71,6 +71,9 @@ const schoolIds = ["st-aloysius-galle", "richmond-galle", "mahinda-galle", "rive
 const docTypes61 = ["title-deed-applicant", "title-deed-parents", "feeder-electoral-5yrs", "lease-deed", "municipal-ds-certificate", "other-documents"];
 const docTypes63 = ["title-deed-applicant-spouse", "title-deed-parents", "feeder-electoral-5yrs", "lease-deed", "municipal-ds-rentact-cert", "other-documents"];
 const additionalDocsPool = ["nic", "driving-license", "landline-bill", "bank-passbook", "electricity-bill", "water-bill", "rental-agreement", "gas-bill", "telephone-bill", "gps-coordinates"];
+// Matches the app's dynamic electoralRegisterYears() window for the current
+// intake cycle (2027 intake scores 2021-2025) - see apps/web/src/lib/g1/marking-scheme.ts.
+const electoralYearsPool = [2021, 2022, 2023, 2024, 2025];
 
 const sportsLevels = ["inter-house", "zonal", "district", "provincial", "national", "international"];
 const leadershipRoles = ["prefect-primary", "prefect-junior", "prefect-senior", "deputy-head-prefect", "head-prefect", "first-team-vice-captain", "first-team-captain"];
@@ -90,8 +93,8 @@ function gen61(): Record<string, unknown> {
  documentOwnership: pick(["applicant", "parent"]),
  deedTransferDate: randDate(2015, 2024),
  additionalDocs: pickN(additionalDocsPool, randInt(0, 5)),
- electoralMotherSince: randInt(2015, 2024),
- electoralFatherSince: randInt(2015, 2024),
+ electoralMotherYears: pickN(electoralYearsPool, randInt(0, 5)),
+ electoralFatherYears: pickN(electoralYearsPool, randInt(0, 5)),
  schoolsWithinRadius: pickN(schoolIds, randInt(0, 4)),
  schoolsRadiusKm: Math.round(Math.random() * 8 * 10) / 10,
  residenceToSchoolKm: Math.round(Math.random() * 15 * 10) / 10,
@@ -147,8 +150,8 @@ function gen63(): Record<string, unknown> {
  documentOwnership: pick(["applicant", "parent", "spouse"]),
  deedTransferDate: randDate(2015, 2024),
  additionalDocs: pickN(additionalDocsPool, randInt(0, 3)),
- electoralMotherSince: randInt(2015, 2024),
- electoralFatherSince: randInt(2015, 2024),
+ electoralMotherYears: pickN(electoralYearsPool, randInt(0, 5)),
+ electoralFatherYears: pickN(electoralYearsPool, randInt(0, 5)),
  schoolsWithinRadius: pickN(schoolIds, randInt(0, 3)),
  schoolsRadiusKm: Math.round(Math.random() * 8 * 10) / 10,
  residenceToSchoolKm: Math.round(Math.random() * 15 * 10) / 10,

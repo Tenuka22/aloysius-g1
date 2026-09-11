@@ -30,7 +30,17 @@ describe("emptyDraft", () => {
     expect(emptyDraft.defaultLocations).toEqual([]);
     expect(emptyDraft.applicant).toMatchObject({ fullName: "", sinhalaName: "", gender: "", religion: "", educationMedium: "", dateOfBirth: "", birthCertificateNumber: "" });
     expect(emptyDraft.guardian).toMatchObject({ relationship: "", fullName: "", nic: "", phone: "", whatsappPhone: "", email: "" });
-    expect(emptyDraft.residence).toMatchObject({ permanentAddress: "", currentAddress: "", sameAsPermanent: false, district: "", dsDivision: "", gnDivision: "", electoralDistrict: "" });
+    expect(emptyDraft.residence).toMatchObject({
+      permanentAddressEn: "",
+      permanentAddressSi: "",
+      currentAddressEn: "",
+      currentAddressSi: "",
+      sameAsPermanent: true,
+      district: "",
+      dsDivision: "",
+      gnDivision: "",
+      electoralDistrict: "",
+    });
     expect(emptyDraft.declaration).toEqual({ confirmed: false, consent: false });
   });
 });

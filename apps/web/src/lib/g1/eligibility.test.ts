@@ -23,6 +23,8 @@ const NIC_REASON = "Complete all required guardian fields to continue.";
 const NIC_INVALID_REASON = "Enter a valid NIC number for the guardian.";
 const DECLARATION_REASON = "You must confirm the declaration and provide consent to proceed.";
 const CATEGORIES_REASON = "Select at least one category to continue.";
+const PERMANENT_ADDRESS_REASON = "Complete the permanent address in both English and Sinhala to continue.";
+const CURRENT_ADDRESS_REASON = "Complete the current address in both English and Sinhala to continue.";
 
 describe("isRestrictedGender", () => {
   test.each(DISALLOWED_GENDERS)("blocks %s", (gender) => expect(isRestrictedGender(gender)).toBe(true));
@@ -144,9 +146,10 @@ describe("getNextStepReason – step 1 (applicant) exhaustive combinations", () 
   const datesOfBirth = ["", "2019-01-01", "2021-01-31", "2022-01-31", "2022-02-01", "2023-12-31"];
   const certificates = ["", "ABC1234567"];
   const names = ["", "Ashan Perera"];
+  const sinhalaNames = ["", "\u0d85\u0dc1\u0dcf\u0db1\u0dca \u0db4\u0dd9\u0dbb\u0dda\u0dbb\u0dcf"];
   const mediums = ["", "Sinhala", "Tamil"];
 
-  type ApplicantCase = { duplicate: boolean; gender: string; religion: string; dateOfBirth: string; certificate: string; name: string; medium: string };
+  type ApplicantCase = { duplicate: boolean; gender: string; religion: string; dateOfBirth: string; certificate: string; name: string; sinhalaName: string; medium: string };
 
   function expectedReason(case_: ApplicantCase): string {
     if (case_.duplicate) return DUP_REASON;
@@ -156,6 +159,7 @@ describe("getNextStepReason – step 1 (applicant) exhaustive combinations", () 
       !isG1EligibleDob(case_.dateOfBirth) ||
       !case_.certificate ||
       !case_.name ||
+      !case_.sinhalaName ||
       !case_.medium ||
       !educationMediumAllowed(case_.medium);
     return fieldBlocked ? FIELDS_REASON : "";
@@ -168,13 +172,15 @@ describe("getNextStepReason – step 1 (applicant) exhaustive combinations", () 
         for (const dateOfBirth of datesOfBirth) {
           for (const certificate of certificates) {
             for (const name of names) {
-              for (const medium of mediums) {
-                combinationCount += 1;
-                const description = `duplicate=${duplicate} gender=${gender || "∅"} religion=${religion || "∅"} dob=${dateOfBirth || "∅"} cert=${certificate || "∅"} name=${name || "∅"} medium=${medium || "∅"}`;
-                test(description, () => {
-                  const applicant = { gender, religion, dateOfBirth, birthCertificateNumber: certificate, fullName: name, educationMedium: medium };
-                  expect(getNextStepReason({ step: 1, duplicateBirthCertificate: duplicate, applicant })).toBe(expectedReason({ duplicate, gender, religion, dateOfBirth, certificate, name, medium }));
-                });
+              for (const sinhalaName of sinhalaNames) {
+                for (const medium of mediums) {
+                  combinationCount += 1;
+                  const description = `duplicate=${duplicate} gender=${gender || "\u2205"} religion=${religion || "\u2205"} dob=${dateOfBirth || "\u2205"} cert=${certificate || "\u2205"} name=${name || "\u2205"} sinhalaName=${sinhalaName || "\u2205"} medium=${medium || "\u2205"}`;
+                  test(description, () => {
+                    const applicant = { gender, religion, dateOfBirth, birthCertificateNumber: certificate, fullName: name, sinhalaName, educationMedium: medium };
+                    expect(getNextStepReason({ step: 1, duplicateBirthCertificate: duplicate, applicant })).toBe(expectedReason({ duplicate, gender, religion, dateOfBirth, certificate, name, sinhalaName, medium }));
+                  });
+                }
               }
             }
           }
@@ -184,16 +190,18 @@ describe("getNextStepReason – step 1 (applicant) exhaustive combinations", () 
   }
   it(`exercised every combination (${combinationCount})`, () =>
     expect(combinationCount).toBe(
-      2 * genders.length * religions.length * datesOfBirth.length * certificates.length * names.length * mediums.length,
+      2 * genders.length * religions.length * datesOfBirth.length * certificates.length * names.length * sinhalaNames.length * mediums.length,
     ));
 });
 
+
 describe("getNextStepReason – step 2 (guardian)", () => {
-  const fullGuardian = { relationship: "Mother", fullName: "Jane Doe", nic: "912345678V", phone: "+94712345678" };
+  const fullGuardian = { relationship: "Mother", fullName: "Jane Doe", sinhalaName: "\u0da2\u0dda\u0db1\u0dca \u0da9\u0ddd", nic: "912345678V", phone: "+94712345678" };
   test.each([
     ["all fields provided proceeds", { guardian: fullGuardian }, ""],
     ["missing relationship blocked", { guardian: { ...fullGuardian, relationship: "" } }, NIC_REASON],
     ["missing fullName blocked", { guardian: { ...fullGuardian, fullName: "" } }, NIC_REASON],
+    ["missing sinhalaName blocked", { guardian: { ...fullGuardian, sinhalaName: "" } }, NIC_REASON],
     ["missing nic blocked", { guardian: { ...fullGuardian, nic: "" } }, NIC_REASON],
     ["missing phone blocked", { guardian: { ...fullGuardian, phone: "" } }, NIC_REASON],
     ["invalid NIC blocked", { guardian: { ...fullGuardian, nic: "12345" } }, NIC_INVALID_REASON],
@@ -204,6 +212,30 @@ describe("getNextStepReason – step 2 (guardian)", () => {
     ["missing guardian blocked", {}, NIC_REASON],
   ])("%s", (_label, deps, expected) =>
     expect(getNextStepReason({ step: 2, ...deps })).toBe(expected));
+});
+
+describe("getNextStepReason \u2013 step 3 (residence)", () => {
+  const fullResidence = {
+    permanentAddressEn: "12 Main St",
+    permanentAddressSi: "\u0db8\u0dd4\u0dbd\u0dca \u0db4\u0dd2\u0dba\u0dc3 12",
+    currentAddressEn: "34 Second St",
+    currentAddressSi: "\u0daf\u0dc0\u0dda\u0dc0\u0db1\u0dd2 \u0db4\u0dd2\u0dba\u0dc3 34",
+    sameAsPermanent: false,
+  };
+  test.each([
+    ["all fields provided proceeds", { residence: fullResidence }, ""],
+    ["missing permanentAddressEn blocked", { residence: { ...fullResidence, permanentAddressEn: "" } }, PERMANENT_ADDRESS_REASON],
+    ["missing permanentAddressSi blocked", { residence: { ...fullResidence, permanentAddressSi: "" } }, PERMANENT_ADDRESS_REASON],
+    ["missing currentAddressEn blocked when different", { residence: { ...fullResidence, currentAddressEn: "" } }, CURRENT_ADDRESS_REASON],
+    ["missing currentAddressSi blocked when different", { residence: { ...fullResidence, currentAddressSi: "" } }, CURRENT_ADDRESS_REASON],
+    [
+      "missing current address ignored when same as permanent",
+      { residence: { ...fullResidence, sameAsPermanent: true, currentAddressEn: "", currentAddressSi: "" } },
+      "",
+    ],
+    ["missing residence blocked", {}, PERMANENT_ADDRESS_REASON],
+  ])("%s", (_label, deps, expected) =>
+    expect(getNextStepReason({ step: 3, ...deps })).toBe(expected));
 });
 
 describe("getNextStepReason – step 4 (categories)", () => {
@@ -227,9 +259,9 @@ describe("getNextStepReason – step 5 (declaration) exhaustive", () => {
     expect(getNextStepReason({ step: 5, declaration })).toBe(expected));
 });
 
-describe("getNextStepReason – other steps", () => {
-  test.each([3, 6, -1, 99])("step %d always proceeds", (step) =>
+describe("getNextStepReason \u2013 other steps", () => {
+  test.each([6, -1, 99])("step %d always proceeds", (step) =>
     expect(getNextStepReason({ step })).toBe(""));
   it("respects no other step's rules", () =>
-    expect(getNextStepReason({ step: 3, locationCanProceed: false, duplicateBirthCertificate: true, declaration: { confirmed: false, consent: false } })).toBe(""));
+    expect(getNextStepReason({ step: 6, locationCanProceed: false, duplicateBirthCertificate: true, declaration: { confirmed: false, consent: false } })).toBe(""));
 });

@@ -3,6 +3,7 @@ import { ClientOnly } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { LocateFixed, MapPin, TriangleAlert, X } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { Field, FieldLabel, FieldDescription } from "@aloysius-admissions/ui/components/field";
 import { Input } from "@aloysius-admissions/ui/components/input";
 import { STATUS_WARNING } from "@/lib/color-classes";
@@ -35,8 +36,9 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
   const [status, setStatus] = useState<StatusKey>("");
   const [locationError, setLocationError] = useState<LocationError | null>(null);
   const [deviceAccuracy, setDeviceAccuracy] = useState<number | null>(null);
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const activeLocationRequest = useRef<(() => void) | null>(null);
-  const point = useMemo<[number, number] | null>(() => value.latitude !== null && value.longitude !== null ? [value.latitude, value.longitude] : null, [value.latitude, value.longitude]);
+  const point = useMemo<[number, number] | null>(() => value.latitude != null && value.longitude != null && Number.isFinite(value.latitude) && Number.isFinite(value.longitude) ? [value.latitude, value.longitude] : null, [value.latitude, value.longitude]);
 
   const reverseGeocode = async (latitude: number, longitude: number, source: LocationValue["source"], isDefault = false, accuracy?: number, fallbackAddress = value.address) => {
     setLocationError(null);
@@ -184,7 +186,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
       onAvailabilityChange?.(true);
       return;
     }
-    if (value.latitude !== null && value.longitude !== null) {
+    if (value.latitude != null && value.longitude != null && Number.isFinite(value.latitude) && Number.isFinite(value.longitude)) {
       onAvailabilityChange?.(true);
       return;
     }
@@ -208,7 +210,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
   }, [userLocationHistory, deviceLocationHistory, value.latitude, value.longitude]);
 
   return (
-    <div className="grid grid-cols-[minmax(260px,.8fr)_minmax(0,1.4fr)] gap-6 max-md:grid-cols-1">
+    <div className="grid grid-cols-[minmax(260px,.8fr)_minmax(0,1.4fr)] gap-6 max-lg:grid-cols-1">
       <div className="grid content-start gap-4">
         <Field>
           <FieldLabel htmlFor="location-search">{t("location.label")}</FieldLabel>
@@ -265,9 +267,9 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
               <div className="flex justify-end">
                 <Button
                   type="button"
-                  variant="destructive"
+                  variant="outline"
                   size="sm"
-                  className="h-auto max-w-full whitespace-normal text-center"
+                  className="text-muted-foreground hover:text-destructive hover:border-destructive/50"
                   onClick={() => {
                     setQuery("");
                     setStatus("");
@@ -290,7 +292,7 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         )}
 
         {previousLocations.length > 0 && (
-          <div className="grid gap-2 rounded-lg border p-3">
+          <div className="hidden lg:grid gap-2 rounded-lg border p-3">
             <p className="text-[0.78rem] font-semibold text-muted-foreground">{t("location.latestSaved.title")}</p>
             <div className="grid gap-1 max-h-[16rem] overflow-y-auto">
               {previousLocations.map((entry, index) => (
@@ -319,9 +321,42 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         )}
       </div>
 
-      <div className="min-h-[clamp(300px,50vw,360px)] border rounded-xl overflow-hidden relative" aria-label="OpenStreetMap location picker">
-        <ClientOnly fallback={<div className="h-full min-h-[clamp(300px,50vw,360px)] bg-muted/50" />}>
-          <Suspense fallback={<div className="h-full min-h-[clamp(300px,50vw,360px)] bg-muted/50" />}>
+      {/* Small screens: preview map + open in dialog */}
+      <div className="lg:hidden grid gap-2">
+        <div className="h-[200px] border rounded-xl overflow-hidden relative opacity-80 pointer-events-none">
+          <ClientOnly fallback={<div className="h-full bg-muted/50" />}>
+            <Suspense fallback={<div className="h-full bg-muted/50" />}>
+              <LocationStepMap point={point} readOnly onSelect={() => {}} />
+            </Suspense>
+          </ClientOnly>
+        </div>
+        <Button type="button" variant="secondary" className="w-full" onClick={() => setMapDialogOpen(true)}>
+          <MapPin size={17} className="shrink-0" /> {t("location.openMap")}
+        </Button>
+      </div>
+
+      <Dialog open={mapDialogOpen} onOpenChange={setMapDialogOpen}>
+        <DialogContent fullScreen showCloseButton>
+          <DialogHeader>
+            <DialogTitle>{t("location.label")}</DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 relative overflow-hidden rounded-lg border">
+            <ClientOnly fallback={<div className="h-full min-h-[300px] bg-muted/50" />}>
+              <Suspense fallback={<div className="h-full min-h-[300px] bg-muted/50" />}>
+                <LocationStepMap point={point} readOnly={readOnly} onSelect={(lat, lng) => { void reverseGeocode(lat, lng, "map"); }} />
+              </Suspense>
+            </ClientOnly>
+            <div className="absolute z-500 left-4 bottom-4 bg-card border rounded-lg p-2 text-xs shadow-[0_4px_12px_#0002]">
+              {t("location.mapHint")}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Large screens: full inline map */}
+      <div className="hidden lg:block min-h-[clamp(300px,50vw,400px)] border rounded-xl overflow-hidden relative" aria-label="OpenStreetMap location picker">
+        <ClientOnly fallback={<div className="h-full min-h-[clamp(300px,50vw,400px)] bg-muted/50" />}>
+          <Suspense fallback={<div className="h-full min-h-[clamp(300px,50vw,400px)] bg-muted/50" />}>
             <LocationStepMap point={point} readOnly={readOnly} onSelect={(lat, lng) => { void reverseGeocode(lat, lng, "map"); }} />
           </Suspense>
         </ClientOnly>

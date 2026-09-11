@@ -27,8 +27,8 @@ export type ScoringInputs = {
   documentOwnership?: string;
   deedTransferDate?: string;
   additionalDocs?: string[];
-  electoralMotherSince?: number;
-  electoralFatherSince?: number;
+  electoralMotherYears?: number[];
+  electoralFatherYears?: number[];
   schoolsWithinRadius?: string[];
   schoolsRadiusKm?: number;
   serviceStartDate?: string;
@@ -361,7 +361,10 @@ export function normalizeDraft(input: Partial<ApplicationDraft> | null | undefin
   };
   // Coerce residence fields to their declared types
   const residenceInput = input?.residence as Record<string, unknown> | undefined;
-  const residenceSameAsPermanent = residenceInput?.sameAsPermanent === true;
+  const residenceSameAsPermanent =
+    typeof residenceInput?.sameAsPermanent === "boolean"
+      ? residenceInput.sameAsPermanent
+      : emptyDraft.residence.sameAsPermanent;
   const residenceBase = {
     ...emptyDraft.residence,
     ...input?.residence,

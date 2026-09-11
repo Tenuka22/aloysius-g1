@@ -17,6 +17,7 @@ import {
   DIFFICULT_SERVICE_MAX,
   DIFFICULT_SERVICE_PREVIOUS_BASE,
   DIPLOMA_MARKS,
+  electoralRegisterYears,
   ELECTORAL_MARKS_PER_PERSON_YEAR_63,
   ELECTORAL_MAX_61,
   ELECTORAL_MAX_63,
@@ -264,6 +265,7 @@ function getOlSubjectOptions(t: TFn) {
     ["6", t("category.olSubjectOptions.6")],
     ["8", t("category.olSubjectOptions.8")],
     ["9", t("category.olSubjectOptions.9")],
+    ["10", t("category.olSubjectOptions.10")],
   ] as const;
 }
 
@@ -384,8 +386,6 @@ function getSiblingDocumentOptions(t: TFn) {
 }
 
 const YEAR_OPTIONS = [0, 1, 2, 3, 4, 5];
-
-const ELECTORAL_YEAR_OPTIONS = [2020, 2021, 2022, 2023, 2024] as const;
 
 const PROXIMITY_CATEGORY_CONFIG: Partial<
   Record<CategoryType, { marksPerSchool: number; maxMarks: number }>
@@ -637,7 +637,7 @@ function MarkBadge({ marks, max, hint }: { marks: number; max: number; hint: str
   );
 }
 
-function ElectoralYearSelect({
+function ElectoralYearCheckboxes({
   id,
   label,
   hint,
@@ -647,10 +647,14 @@ function ElectoralYearSelect({
   id: string;
   label: string;
   hint?: string;
-  value: number | undefined;
-  onChange: (year: number | undefined) => void;
+  value: number[] | undefined;
+  onChange: (years: number[]) => void;
 }) {
-  const { t } = useTranslation();
+  const years = electoralRegisterYears();
+  const selected = value ?? [];
+  const toggle = (year: number) => {
+    onChange(selected.includes(year) ? selected.filter((existing) => existing !== year) : [...selected, year]);
+  };
   return (
     <Field>
       <FieldLabel htmlFor={id} className="flex items-center gap-1.5">
@@ -659,7 +663,7 @@ function ElectoralYearSelect({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger className="text-muted-foreground text-xs cursor-help">
-                ⓘ
+                
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs whitespace-normal">
                 {hint}
@@ -668,22 +672,23 @@ function ElectoralYearSelect({
           </TooltipProvider>
         )}
       </FieldLabel>
-      <Select
-        value={value != null ? String(value) : null}
-        onValueChange={(next) => onChange(next === "none" ? undefined : Number(next))}
+      <div className="flex flex-wrap gap-3" id={id}>
+        {years.map((year) => (
+          <label
+            key={year}
+            htmlFor={`${id}-${year}`}
+            className="flex items-center gap-1.5 text-sm cursor-pointer"
       >
-        <SelectTrigger id={id} className="w-full">
-          <SelectValue placeholder={t("category.common.selectYearFirstRegistered")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">{t("category.common.notRegistered")}</SelectItem>
-          {ELECTORAL_YEAR_OPTIONS.map((year) => (
-            <SelectItem key={year} value={String(year)}>
+            <Checkbox
+              id={`${id}-${year}`}
+              className="size-4"
+              checked={selected.includes(year)}
+              onCheckedChange={() => toggle(year)}
+            />
               {year}
-            </SelectItem>
+          </label>
           ))}
-        </SelectContent>
-      </Select>
+      </div>
     </Field>
   );
 }
@@ -822,11 +827,16 @@ export function Category61Fields({
   const addlMarks = additionalDocsMarks61(inputs);
   const electoral = electoralMarks61(inputs);
   const prox = proximityMarks61(inputs);
+  const electoralYears = electoralRegisterYears();
+  const electoralHintYears = {
+    startYear: electoralYears[0],
+    endYear: electoralYears[electoralYears.length - 1],
+  };
   const deedYears = yearsFromDate(inputs.deedTransferDate);
   const deedWeight = deedAgeWeight(deedYears);
   const deedPct = Math.round(deedWeight * 100);
   const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
-  const hasCenter = centerLat != null && centerLng != null;
+  const hasCenter = Number.isFinite(centerLat) && Number.isFinite(centerLng);
   const mainDocumentOptions = getMainDocumentOptions(t);
   const additionalDocOptions = getAdditionalDocOptions(t);
   return (
@@ -834,7 +844,7 @@ export function Category61Fields({
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t("category.61.mainDocument.label")}</span>
+            <span className="text-sm font-semibold">{t("category.61.mainDocument.label")}</span>
             <MarkBadge
               marks={docMarks}
               max={MAIN_DOCUMENT_MAX_61}
@@ -854,7 +864,7 @@ export function Category61Fields({
         </div>
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t("category.61.documentRegistrationDate")}</span>
+            <span className="text-sm font-semibold">{t("category.61.documentRegistrationDate")}</span>
             <FlagButton
               fieldKey="deedTransferDate"
               flaggedInputs={flaggedInputs}
@@ -877,7 +887,7 @@ export function Category61Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.61.supportingDocs.label")}</span>
+          <span className="text-sm font-semibold">{t("category.61.supportingDocs.label")}</span>
           <MarkBadge
             marks={addlMarks}
             max={ADDITIONAL_DOC_MAX_61}
@@ -898,41 +908,41 @@ export function Category61Fields({
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t("category.61.electoralMother.label")}</span>
+            <span className="text-sm font-semibold">{t("category.61.electoralMother.label")}</span>
             <FlagButton
-              fieldKey="electoralMotherSince"
+              fieldKey="electoralMotherYears"
               flaggedInputs={flaggedInputs}
               onToggleInputFlag={onToggleInputFlag}
             />
           </div>
-          <ElectoralYearSelect
+          <ElectoralYearCheckboxes
             id={`electoral-mother-year-${category.id}`}
             label={t("category.61.electoralMother.yearLabel")}
-            hint={t("category.61.electoralMother.hint")}
-            value={inputs.electoralMotherSince}
-            onChange={(electoralMotherSince) => onChange({ electoralMotherSince })}
+            hint={t("category.61.electoralMother.hint", electoralHintYears)}
+            value={inputs.electoralMotherYears}
+            onChange={(electoralMotherYears) => onChange({ electoralMotherYears })}
           />
         </div>
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t("category.61.electoralFather.label")}</span>
+            <span className="text-sm font-semibold">{t("category.61.electoralFather.label")}</span>
             <FlagButton
-              fieldKey="electoralFatherSince"
+              fieldKey="electoralFatherYears"
               flaggedInputs={flaggedInputs}
               onToggleInputFlag={onToggleInputFlag}
             />
           </div>
-          <ElectoralYearSelect
+          <ElectoralYearCheckboxes
             id={`electoral-father-year-${category.id}`}
             label={t("category.61.electoralFather.yearLabel")}
-            hint={t("category.61.electoralFather.hint")}
-            value={inputs.electoralFatherSince}
-            onChange={(electoralFatherSince) => onChange({ electoralFatherSince })}
+            hint={t("category.61.electoralFather.hint", electoralHintYears)}
+            value={inputs.electoralFatherYears}
+            onChange={(electoralFatherYears) => onChange({ electoralFatherYears })}
           />
         </div>
       </div>
       <div className="flex items-center gap-2 border-t pt-3">
-        <span className="text-sm font-medium">{t("category.61.electoralTotal")}</span>
+        <span className="text-sm font-semibold">{t("category.61.electoralTotal")}</span>
         <MarkBadge
           marks={electoral}
           max={ELECTORAL_MAX_61}
@@ -941,7 +951,7 @@ export function Category61Fields({
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.61.nearbySchools.label")}</span>
+          <span className="text-sm font-semibold">{t("category.61.nearbySchools.label")}</span>
           <MarkBadge
             marks={prox}
             max={PROXIMITY_MAX_61}
@@ -1084,7 +1094,7 @@ function GradeCounts({
   const isOverLimit = totalSum > totalCount;
 
   return (
-    <div className="col-span-2 grid grid-cols-4 gap-3 max-md:col-span-1 max-md:grid-cols-2">
+    <div className="grid grid-cols-4 gap-3 max-md:grid-cols-2">
       {grades.map((grade) => {
         const key = keyFor(grade);
         const currentValue = (inputs[key] as number) ?? 0;
@@ -1098,10 +1108,16 @@ function GradeCounts({
         const remaining = totalCount - sumWithoutThis;
         const isThisOver = currentValue > remaining;
 
+        // The 10-subject O/L table's top grade is Distinction ("D"), not
+        // "A" - the underlying field stays olGradeA (matching the shared
+        // S/C/B/A scoring plumbing every other subject-count table uses),
+        // only the label shown to the applicant changes.
+        const displayGrade = prefix === "ol" && totalCount === 10 && grade === "A" ? "D" : grade;
+
         return (
           <Field key={`${category.id}-${key}`}>
             <FieldLabel htmlFor={`${prefix}-grade-${grade}-${category.id}`}>
-              {t("category.common.gradePasses", { grade })}
+              {t("category.common.gradePasses", { grade: displayGrade })}
             </FieldLabel>
             <Input
               id={`${prefix}-grade-${grade}-${category.id}`}
@@ -1197,7 +1213,7 @@ export function Category62Fields({
       {/* Years educated */}
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.yearsEducated.label")}</span>
+          <span className="text-sm font-semibold">{t("category.62.yearsEducated.label")}</span>
           <MarkBadge
             marks={yearsMarks}
             max={YEARS_EDUCATED_MAX}
@@ -1237,7 +1253,7 @@ export function Category62Fields({
       {/* Grade 5 Scholarship */}
       <div className="col-span-2 grid content-start gap-2 sm:flex sm:items-center sm:justify-between sm:gap-4 max-md:col-span-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.grade5Scholarship.label")}</span>
+          <span className="text-sm font-semibold">{t("category.62.grade5Scholarship.label")}</span>
           <MarkBadge
             marks={scholarshipMarks}
             max={GRADE5_SCHOLARSHIP_MARKS}
@@ -1264,7 +1280,7 @@ export function Category62Fields({
       {/* G.C.E. (O/L) */}
       <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3 max-md:col-span-1 max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:rounded-none">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.olResult.label")}</span>
+          <span className="text-sm font-semibold">{t("category.62.olResult.label")}</span>
           <MarkBadge
             marks={(() => {
               let m = 0;
@@ -1293,7 +1309,13 @@ export function Category62Fields({
           <GradeCounts
             category={category}
             prefix="ol"
-            grades={inputs.olSubjectCount === 9 ? ["S", "C", "B", "A"] : ["S", "C", "B"]}
+            grades={
+              inputs.olSubjectCount === 9
+                ? ["S", "C", "B", "A"]
+                : inputs.olSubjectCount === 10
+                  ? ["S", "C", "A"]
+                  : ["S", "C", "B"]
+            }
             totalCount={inputs.olSubjectCount}
             onChange={onChange}
           />
@@ -1305,7 +1327,7 @@ export function Category62Fields({
       {/* G.C.E. (A/L) */}
       <div className="grid content-start gap-1.5 rounded-xl border border-border/70 bg-muted/10 p-3 max-md:col-span-1 max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:rounded-none">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.alResult.label")}</span>
+          <span className="text-sm font-semibold">{t("category.62.alResult.label")}</span>
           <MarkBadge
             marks={(() => {
               let m = 0;
@@ -1350,7 +1372,7 @@ export function Category62Fields({
           {/* Sports / co-curricular */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("category.62.sports.label")}</span>
+              <span className="text-sm font-semibold">{t("category.62.sports.label")}</span>
               <MarkBadge marks={sportsMarks} max={SPORTS_MAX} hint={t("category.62.sports.hint")} />
               <FlagButton
                 fieldKey="sportsLevel"
@@ -1377,7 +1399,7 @@ export function Category62Fields({
           {/* Leadership role */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("category.62.leadership.label")}</span>
+              <span className="text-sm font-semibold">{t("category.62.leadership.label")}</span>
               <MarkBadge
                 marks={leadershipMarks}
                 max={LEADERSHIP_MAX}
@@ -1402,7 +1424,7 @@ export function Category62Fields({
           {/* Student Societies */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("category.62.studentSocieties.label")}</span>
+              <span className="text-sm font-semibold">{t("category.62.studentSocieties.label")}</span>
               <MarkBadge
                 marks={studentSocietiesMarks}
                 max={STUDENT_SOCIETIES_MAX}
@@ -1427,7 +1449,7 @@ export function Category62Fields({
           {/* Other Activities */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("category.62.otherActivities.label")}</span>
+              <span className="text-sm font-semibold">{t("category.62.otherActivities.label")}</span>
               <MarkBadge
                 marks={otherActivityMarks}
                 max={OTHER_ACTIVITIES_MAX}
@@ -1470,7 +1492,7 @@ export function Category62Fields({
       {/* Past Pupils' Association */}
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.62.pastPupils.label")}</span>
+          <span className="text-sm font-semibold">{t("category.62.pastPupils.label")}</span>
           <MarkBadge
             marks={pastPupilsMarks}
             max={PAST_PUPILS_TOTAL_MAX}
@@ -1547,7 +1569,7 @@ export function Category62Fields({
           {/* University Degrees */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("category.62.degrees.label")}</span>
+              <span className="text-sm font-semibold">{t("category.62.degrees.label")}</span>
               <MarkBadge marks={degreeMarks} max={DEGREE_MAX} hint={t("category.62.degrees.hint")} />
               <FlagButton
                 fieldKey="highestDegree"
@@ -1568,7 +1590,7 @@ export function Category62Fields({
           {/* Diploma */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("category.62.diploma.label")}</span>
+              <span className="text-sm font-semibold">{t("category.62.diploma.label")}</span>
               <MarkBadge
                 marks={diplomaMarks}
                 max={DIPLOMA_MARKS}
@@ -1601,7 +1623,7 @@ export function Category62Fields({
           {/* Contribution to School Activities */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("category.62.contribution.label")}</span>
+              <span className="text-sm font-semibold">{t("category.62.contribution.label")}</span>
               <MarkBadge
                 marks={contributionMarks}
                 max={CONTRIBUTION_MAX}
@@ -1636,7 +1658,7 @@ export function Category62Fields({
           {/* Contribution to School Projects */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("category.62.schoolProjects.label")}</span>
+              <span className="text-sm font-semibold">{t("category.62.schoolProjects.label")}</span>
               <MarkBadge
                 marks={projectMarks}
                 max={SCHOOL_PROJECTS_MARKS}
@@ -1682,7 +1704,7 @@ export function Category63Fields({
   const inputs = category.scoringInputs;
   const id = category.id;
   const _selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
-  const _hasCenter = centerLat != null && centerLng != null;
+  const _hasCenter = Number.isFinite(centerLat) && Number.isFinite(centerLng);
   const siblingsMarks = Math.min(
     (inputs.siblingsCurrentlyStudyingCount ?? 0) * SIBLING_MARKS_PER_SIBLING,
     SIBLING_STUDYING_MAX,
@@ -1710,14 +1732,19 @@ export function Category63Fields({
     MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0,
     MAIN_DOCUMENT_MAX_63,
   );
-  const mother = electoralYearsRegistered(inputs.electoralMotherSince);
-  const father = electoralYearsRegistered(inputs.electoralFatherSince);
+  const mother = electoralYearsRegistered(inputs.electoralMotherYears);
+  const father = electoralYearsRegistered(inputs.electoralFatherYears);
   const electoralMarks = Math.min(
     (mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_63,
     ELECTORAL_MAX_63,
   );
   const prox = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_63, PROXIMITY_MAX_63);
 
+  const electoralYears = electoralRegisterYears();
+  const electoralHintYears = {
+    startYear: electoralYears[0],
+    endYear: electoralYears[electoralYears.length - 1],
+  };
   const siblingDocumentOptions = getSiblingDocumentOptions(t);
   const siblingExamOptions = getSiblingExamOptions(t);
   const siblingPrefectLevelOptions = getSportsLevelOptions(t, SIBLING_PREFECT_LEVEL_MARKS);
@@ -1726,7 +1753,7 @@ export function Category63Fields({
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.63.siblingsStudying.label")}</span>
+          <span className="text-sm font-semibold">{t("category.63.siblingsStudying.label")}</span>
           <MarkBadge
             marks={siblingsMarks}
             max={SIBLING_STUDYING_MAX}
@@ -1752,7 +1779,7 @@ export function Category63Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.63.studiedHere.label")}</span>
+          <span className="text-sm font-semibold">{t("category.63.studiedHere.label")}</span>
           <MarkBadge
             marks={studiedHereMarks}
             max={SIBLING_STUDIED_HERE_MARKS}
@@ -1777,7 +1804,7 @@ export function Category63Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.63.multipleSiblings.label")}</span>
+          <span className="text-sm font-semibold">{t("category.63.multipleSiblings.label")}</span>
           <MarkBadge
             marks={multipleApplyingMarks}
             max={SIBLING_MULTIPLE_APPLYING_MARKS}
@@ -1800,7 +1827,7 @@ export function Category63Fields({
       </div>
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.63.cocurricular.label")}</span>
+          <span className="text-sm font-semibold">{t("category.63.cocurricular.label")}</span>
           <MarkBadge
             marks={cocurricularTotal}
             max={SIBLING_COCURRICULAR_TOTAL_MAX}
@@ -1857,7 +1884,7 @@ export function Category63Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.63.residenceDocument.label")}</span>
+          <span className="text-sm font-semibold">{t("category.63.residenceDocument.label")}</span>
           <MarkBadge
             marks={documentMarks}
             max={MAIN_DOCUMENT_MAX_63}
@@ -1877,40 +1904,40 @@ export function Category63Fields({
       </div>
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
-          <ElectoralYearSelect
+          <ElectoralYearCheckboxes
             id={`electoral-mother-year-${id}`}
             label={t("category.63.electoralMother.yearLabel")}
-            hint={t("category.63.electoralMother.hint")}
-            value={inputs.electoralMotherSince}
-            onChange={(electoralMotherSince) => onChange({ electoralMotherSince })}
+            hint={t("category.63.electoralMother.hint", electoralHintYears)}
+            value={inputs.electoralMotherYears}
+            onChange={(electoralMotherYears) => onChange({ electoralMotherYears })}
           />
         </div>
         <div className="grid gap-1.5">
-          <ElectoralYearSelect
+          <ElectoralYearCheckboxes
             id={`electoral-father-year-${id}`}
             label={t("category.63.electoralFather.yearLabel")}
-            hint={t("category.63.electoralFather.hint")}
-            value={inputs.electoralFatherSince}
-            onChange={(electoralFatherSince) => onChange({ electoralFatherSince })}
+            hint={t("category.63.electoralFather.hint", electoralHintYears)}
+            value={inputs.electoralFatherYears}
+            onChange={(electoralFatherYears) => onChange({ electoralFatherYears })}
           />
         </div>
       </div>
       <div className="flex items-center gap-2 border-t pt-3">
-        <span className="text-sm font-medium">{t("category.63.electoralTotal")}</span>
+        <span className="text-sm font-semibold">{t("category.63.electoralTotal")}</span>
         <MarkBadge
           marks={electoralMarks}
           max={ELECTORAL_MAX_63}
           hint={t("category.63.electoralTotal.hint")}
         />
         <FlagButton
-          fieldKey="electoralMotherSince"
+          fieldKey="electoralMotherYears"
           flaggedInputs={flaggedInputs}
           onToggleInputFlag={onToggleInputFlag}
         />
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.61.nearbySchools.label")}</span>
+          <span className="text-sm font-semibold">{t("category.61.nearbySchools.label")}</span>
           <MarkBadge
             marks={prox}
             max={PROXIMITY_MAX_63}
@@ -1971,7 +1998,7 @@ export function Category64Fields({
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.64.servicePeriod.label")}</span>
+          <span className="text-sm font-semibold">{t("category.64.servicePeriod.label")}</span>
           <MarkBadge
             marks={serviceMarks}
             max={SERVICE_PERIOD_MAX}
@@ -1996,7 +2023,7 @@ export function Category64Fields({
       </div>
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.64.difficultService.label")}</span>
+          <span className="text-sm font-semibold">{t("category.64.difficultService.label")}</span>
           <MarkBadge
             marks={difficultMarks}
             max={DIFFICULT_SERVICE_MAX}
@@ -2057,7 +2084,7 @@ export function Category64Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.64.unutilizedLeave.label")}</span>
+          <span className="text-sm font-semibold">{t("category.64.unutilizedLeave.label")}</span>
           <MarkBadge
             marks={leaveMarks}
             max={UNUTILIZED_LEAVE_MAX}
@@ -2081,7 +2108,7 @@ export function Category64Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.64.serviceLocation.label")}</span>
+          <span className="text-sm font-semibold">{t("category.64.serviceLocation.label")}</span>
           <MarkBadge
             marks={locationMarks}
             max={SERVICE_LOCATION_MAX}
@@ -2129,7 +2156,7 @@ export function Category64Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.64.residenceToSchool.label")}</span>
+          <span className="text-sm font-semibold">{t("category.64.residenceToSchool.label")}</span>
           <MarkBadge
             marks={residenceDistance}
             max={RESIDENCE_DISTANCE_MAX_64}
@@ -2150,7 +2177,7 @@ export function Category64Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.64.workplaceToSchool.label")}</span>
+          <span className="text-sm font-semibold">{t("category.64.workplaceToSchool.label")}</span>
           <MarkBadge
             marks={workplaceDistance}
             max={WORKPLACE_DISTANCE_MAX}
@@ -2189,7 +2216,7 @@ export function Category65Fields({
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
   const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
-  const hasCenter = centerLat != null && centerLng != null;
+  const hasCenter = Number.isFinite(centerLat) && Number.isFinite(centerLng);
   const km = inputs.previousWorkplaceDistanceKm;
   const distanceMarks = transferDistanceMarks(km);
   const periodMarks = Math.min(yearsFromDate(inputs.serviceStartDate), TRANSFER_SERVICE_PERIOD_MAX);
@@ -2206,7 +2233,7 @@ export function Category65Fields({
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
+          <span className="text-sm font-semibold">
             {t("category.65.prevWorkplaceDistance.label")}
           </span>
           <MarkBadge
@@ -2229,7 +2256,7 @@ export function Category65Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.65.servicePeriod.label")}</span>
+          <span className="text-sm font-semibold">{t("category.65.servicePeriod.label")}</span>
           <MarkBadge
             marks={periodMarks}
             max={TRANSFER_SERVICE_PERIOD_MAX}
@@ -2254,7 +2281,7 @@ export function Category65Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.65.prevWorkplacePeriod.label")}</span>
+          <span className="text-sm font-semibold">{t("category.65.prevWorkplacePeriod.label")}</span>
           <MarkBadge
             marks={previousPeriodMarks}
             max={TRANSFER_PREVIOUS_PERIOD_MAX}
@@ -2276,7 +2303,7 @@ export function Category65Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.65.timeSinceTransfer.label")}</span>
+          <span className="text-sm font-semibold">{t("category.65.timeSinceTransfer.label")}</span>
           <MarkBadge
             marks={elapsedMarks}
             max={TRANSFER_ELAPSED_MAX}
@@ -2298,7 +2325,7 @@ export function Category65Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.65.unutilizedLeave.label")}</span>
+          <span className="text-sm font-semibold">{t("category.65.unutilizedLeave.label")}</span>
           <MarkBadge
             marks={leaveMarks}
             max={UNUTILIZED_LEAVE_MAX}
@@ -2322,7 +2349,7 @@ export function Category65Fields({
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.61.nearbySchools.label")}</span>
+          <span className="text-sm font-semibold">{t("category.61.nearbySchools.label")}</span>
           <MarkBadge
             marks={prox}
             max={PROXIMITY_MAX_63}
@@ -2378,7 +2405,7 @@ export function Category66Fields({
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
   const selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
-  const hasCenter = centerLat != null && centerLng != null;
+  const hasCenter = Number.isFinite(centerLat) && Number.isFinite(centerLng);
   const abroad = yearsBetween(inputs.abroadStartDate, inputs.abroadEndDate);
   const abroadMarks = abroadPeriodMarks(abroad);
   const purposeMap: Record<string, number> = EMPLOYMENT_PURPOSE_MARKS;
@@ -2391,7 +2418,7 @@ export function Category66Fields({
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.66.periodAbroad.label")}</span>
+          <span className="text-sm font-semibold">{t("category.66.periodAbroad.label")}</span>
           <MarkBadge
             marks={abroadMarks}
             max={ABROAD_PERIOD_MAX}
@@ -2424,7 +2451,7 @@ export function Category66Fields({
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.66.employmentPurpose.label")}</span>
+          <span className="text-sm font-semibold">{t("category.66.employmentPurpose.label")}</span>
           <MarkBadge
             marks={purposeMarks}
             max={EMPLOYMENT_PURPOSE_MAX}
@@ -2474,7 +2501,7 @@ export function Category66Fields({
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t("category.61.nearbySchools.label")}</span>
+          <span className="text-sm font-semibold">{t("category.61.nearbySchools.label")}</span>
           <MarkBadge
             marks={prox}
             max={PROXIMITY_MAX_66}
@@ -2554,7 +2581,7 @@ function CategoryCard({
   const draft = useApplicationStore();
   const selectedSchoolIds = category.scoringInputs.schoolsWithinRadius ?? [];
   const score = scoreCategory(category);
-  const hasCenter = centerLat != null && centerLng != null;
+  const hasCenter = Number.isFinite(centerLat) && Number.isFinite(centerLng);
   const locked = category.locked;
   const proximityConfig = PROXIMITY_CATEGORY_CONFIG[category.categoryType];
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
@@ -2674,7 +2701,7 @@ function CategoryCard({
           <div className="grid gap-2 border-t pt-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="grid gap-1">
-                <p className="text-sm font-medium sr-only">{t("category.nearbySchools.title")}</p>
+                <p className="text-sm font-semibold sr-only">{t("category.nearbySchools.title")}</p>
                 <p className="text-xs text-muted-foreground">
                   {t("category.nearbySchools.calculated")}
                 </p>
@@ -2721,7 +2748,7 @@ function CategoryCard({
           </p>
         ) : null}
         <div className="grid gap-2 border-t pt-5">
-          <p className="text-sm font-medium">
+          <p className="text-sm font-semibold">
             {t("category.exampleMarks.heading", {
               category: categoryLabels[category.categoryType],
             })}
@@ -2795,7 +2822,7 @@ export function CategoryStep() {
   const { t } = useTranslation();
   const draft = useApplicationStore();
   const { latitude, longitude } = draft.selectedLocation;
-  const hasLocation = latitude != null && longitude != null;
+  const hasLocation = Number.isFinite(latitude) && Number.isFinite(longitude);
 
   const categoryLabels = getCategoryLabels(t);
   const tabLabels = getTabLabels(t);

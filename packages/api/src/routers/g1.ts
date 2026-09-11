@@ -274,23 +274,9 @@ export const g1Router = {
         const now = new Date();
         const birthCertificateNumber = extractBirthCertificateNumber(input.data);
         const data = withoutSchoolPreferences(input.data);
-        const existing = birthCertificateNumber
-          ? await db
-              .select({ id: g1Applications.id })
-              .from(g1Applications)
-              .where(
-                and(
-                  eq(g1Applications.birthCertificateNumber, birthCertificateNumber),
-                  isNotNull(g1Applications.submittedAt),
-                ),
-              )
-              .get()
-          : null;
-        if (existing)
-          throw new ORPCError("CONFLICT", {
-            message:
-              "An application with this birth certificate number has already been submitted. Please check the number and try again.",
-          });
+        // Duplicate-birth-certificate protection is enforced at submit time
+        // only (see application.submit), never while a draft is merely being
+        // created or edited.
         await db
           .insert(g1Applications)
           .values({
@@ -570,23 +556,12 @@ export const g1Router = {
           throw new ORPCError("BAD_REQUEST", {
             message: "Submitted applications can only be updated during the configured form window",
           });
-        const duplicate = birthCertificateNumber
-          ? await db
-              .select({ id: g1Applications.id })
-              .from(g1Applications)
-              .where(
-                and(
-                  eq(g1Applications.birthCertificateNumber, birthCertificateNumber),
-                  isNotNull(g1Applications.submittedAt),
-                ),
-              )
-              .get()
-          : null;
-        if (duplicate && duplicate.id !== current?.id)
-          throw new ORPCError("CONFLICT", {
-            message:
-              "An application with this birth certificate number has already been submitted. Please check the number and try again.",
-          });
+        // Duplicate-birth-certificate protection is enforced at submit time
+        // only (see submit below), not here: this handler runs on every
+        // autosave tick while the applicant is still drafting, and a
+        // transient or genuinely-shared-with-a-draft number must never block
+        // ordinary editing. checkBirthCertificate gives the applicant a
+        // live, non-blocking warning while they type instead.
         await db
           .update(g1Applications)
           .set({
@@ -612,7 +587,11 @@ export const g1Router = {
       }),
     submit: publicProcedure.input(z.object({ accessKey: keySchema })).handler(async ({ input }) => {
       const row = await db
-        .select({ id: g1Applications.id, intakeYear: g1Applications.intakeYear })
+        .select({
+          id: g1Applications.id,
+          intakeYear: g1Applications.intakeYear,
+          birthCertificateNumber: g1Applications.birthCertificateNumber,
+        })
         .from(g1Applications)
         .where(eq(g1Applications.accessKeyHash, hashKey(input.accessKey)))
         .get();
@@ -622,6 +601,28 @@ export const g1Router = {
         throw new ORPCError("BAD_REQUEST", {
           message: "Submissions are outside the configured form window",
         });
+      // Duplicate-birth-certificate protection belongs here, at the point an
+      // application actually becomes submitted, not on every autosave tick
+      // (see application.update): a number that merely matches another
+      // still-in-progress draft is not a conflict, only one that matches an
+      // already-submitted application is.
+      if (row.birthCertificateNumber) {
+        const duplicate = await db
+          .select({ id: g1Applications.id })
+          .from(g1Applications)
+          .where(
+            and(
+              eq(g1Applications.birthCertificateNumber, row.birthCertificateNumber),
+              isNotNull(g1Applications.submittedAt),
+            ),
+          )
+          .get();
+        if (duplicate && duplicate.id !== row.id)
+          throw new ORPCError("CONFLICT", {
+            message:
+              "An application with this birth certificate number has already been submitted. Please check the number and try again.",
+          });
+      }
       await db
         .update(g1Applications)
         .set({ submittedAt: new Date(), updatedAt: new Date() })
@@ -1238,7 +1239,7 @@ export const g1Router = {
           z.object({
             id: applicationIdSchema,
             categoryId: z.string(),
-            scoringInputs: z.record(z.unknown()),
+            scoringInputs: z.record(z.string(), z.unknown()),
           }),
         )
         .handler(async ({ input }) => {

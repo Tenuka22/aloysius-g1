@@ -101,7 +101,7 @@ export function isGoodNIC(nic: string | undefined): boolean {
 }
 
 export function locationIsReady(location: { latitude?: number | null; longitude?: number | null } | null | undefined): boolean {
-  return location?.latitude != null && location?.longitude != null;
+  return location?.latitude != null && location?.longitude != null && Number.isFinite(location.latitude) && Number.isFinite(location.longitude);
 }
 
 /**
@@ -124,7 +124,14 @@ export type NextStepDeps = {
   duplicateBirthCertificate?: boolean;
   birthCertificateStatus?: FieldStatus;
   applicant?: ApplicantValues;
-  guardian?: { relationship?: string; fullName?: string; nic?: string; phone?: string };
+  guardian?: { relationship?: string; fullName?: string; sinhalaName?: string; nic?: string; phone?: string };
+  residence?: {
+    permanentAddressEn?: string;
+    permanentAddressSi?: string;
+    currentAddressEn?: string;
+    currentAddressSi?: string;
+    sameAsPermanent?: boolean;
+  };
   categories?: { length?: number };
   declaration?: { confirmed?: boolean; consent?: boolean };
 };
@@ -146,17 +153,26 @@ export function getNextStepReason(deps: NextStepDeps): string {
       !educationMediumAllowed(applicant.educationMedium) ||
       !isG1EligibleDob(applicant.dateOfBirth) ||
       (!applicant.birthCertificateNumber && deps.birthCertificateStatus !== "skipped") ||
-      !applicant.fullName
+      !applicant.fullName ||
+      !applicant.sinhalaName
     )
       return "Complete all required applicant fields to continue.";
     return "";
   }
   if (step === 2) {
     const guardian = deps.guardian ?? {};
-    if (!guardian.relationship || !guardian.fullName || !guardian.nic || !guardian.phone)
+    if (!guardian.relationship || !guardian.fullName || !guardian.sinhalaName || !guardian.nic || !guardian.phone)
       return "Complete all required guardian fields to continue.";
     if (guardianNicInvalid(guardian.nic))
       return "Enter a valid NIC number for the guardian.";
+    return "";
+  }
+  if (step === 3) {
+    const residence = deps.residence ?? {};
+    if (!residence.permanentAddressEn || !residence.permanentAddressSi)
+      return "Complete the permanent address in both English and Sinhala to continue.";
+    if (!residence.sameAsPermanent && (!residence.currentAddressEn || !residence.currentAddressSi))
+      return "Complete the current address in both English and Sinhala to continue.";
     return "";
   }
   if (step === 4) {

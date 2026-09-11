@@ -99,7 +99,7 @@ const loc = { latitude: 7.29, longitude: 80.63, address: "Galle, Sri Lanka" };
 
 const applicant = {
   fullName: "Ashan Perera",
-  sinhalaName: "",
+  sinhalaName: "\u0d85\u0dc1\u0dcf\u0db1\u0dca \u0db4\u0dd9\u0dbb\u0dda\u0dbb\u0dcf",
   gender: "Male",
   religion: "Buddhist",
   educationMedium: "Sinhala",
@@ -110,7 +110,7 @@ const applicant = {
 const guardian = {
   relationship: "Father",
   fullName: "Kamal Perera",
-  sinhalaName: "",
+  sinhalaName: "\u0d9a\u0db8\u0dbd\u0dca \u0db4\u0dd9\u0dbb\u0dda\u0dbb\u0dcf",
   nic: "199012345678",
   phone: "+94712345678",
   whatsappPhone: "",
@@ -119,9 +119,9 @@ const guardian = {
 
 const residence = {
   permanentAddressEn: "123 Temple St, Galle",
-  permanentAddressSi: "",
+  permanentAddressSi: "123 \u0da7\u0dda\u0db8\u0dca\u0db4\u0dc5\u0dca \u0db4\u0dcf\u0dbb, \u0d9c\u0dc5\u0dca\u0dc5\u0dda",
   currentAddressEn: "456 Park Rd, Galle",
-  currentAddressSi: "",
+  currentAddressSi: "456 \u0db4\u0dcf\u0dbb\u0dca\u0d9a\u0dca \u0db4\u0dcf\u0dbb, \u0d9c\u0dc5\u0dca\u0dc5\u0dda",
   sameAsPermanent: false,
   district: "Galle",
   dsDivision: "Galle",
@@ -464,7 +464,8 @@ describe("Indicative marks notice", () => {
     await screen.findByRole("button", { name: /(submit|update) application/i });
 
     const score = scoreCategory(cat);
-    expect(screen.getByText(new RegExp(`Marks \\(indicative\\): ${score.total}`))).toBeInTheDocument();
+    expect(screen.getByText("Marks (indicative)")).toBeInTheDocument();
+    expect(screen.getByText(String(score.total))).toBeInTheDocument();
   });
 });
 

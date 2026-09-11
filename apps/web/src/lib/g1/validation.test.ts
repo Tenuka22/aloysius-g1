@@ -72,14 +72,12 @@ describe("applicantStepSchema", () => {
     expect(applicantStepSchema.safeParse({ ...validApplicant, fullName: "" }).success).toBe(false));
   it("rejects a missing birth certificate number", () =>
     expect(applicantStepSchema.safeParse({ ...validApplicant, birthCertificateNumber: "" }).success).toBe(false));
-  it("allows sinhalaName to be omitted", () => {
-    const { sinhalaName: _omitted, ...withoutSinhalaName } = validApplicant;
-    expect(applicantStepSchema.safeParse(withoutSinhalaName).success).toBe(true);
-  });
+  it("rejects a missing sinhalaName", () =>
+    expect(applicantStepSchema.safeParse({ ...validApplicant, sinhalaName: "" }).success).toBe(false));
 });
 
 describe("guardianStepSchema", () => {
-  const base = { relationship: "Mother", fullName: "Mala Perera", nic: "199012345678", phone: "+94712345678", email: "mala@example.com" };
+  const base = { relationship: "Mother", fullName: "Mala Perera", sinhalaName: "\u0db8\u0dcf\u0dbd\u0dcf \u0db4\u0dda\u0dbb\u0dda\u0dbb\u0dcf", nic: "199012345678", phone: "+94712345678", email: "mala@example.com" };
   it("accepts every relationship", () => {
     for (const relationship of ["Mother", "Father", "Guardian"]) {
       expect(guardianStepSchema.safeParse({ ...base, relationship }).success).toBe(true);
@@ -102,18 +100,29 @@ describe("guardianStepSchema", () => {
     const { email: _omitted, ...withoutEmail } = base;
     expect(guardianStepSchema.safeParse(withoutEmail).success).toBe(true);
   });
+  it("rejects a missing sinhalaName", () =>
+    expect(guardianStepSchema.safeParse({ ...base, sinhalaName: "" }).success).toBe(false));
 });
 
 describe("residenceStepSchema", () => {
-  const base = { permanentAddressEn: "12 Temple Rd", currentAddressEn: "12 Temple Rd", district: "Gampaha", dsDivision: "Gampaha", gnDivision: "Wewaldeniya", electoralDistrict: "Gampaha" };
+  const base = {
+    permanentAddressEn: "12 Temple Rd",
+    permanentAddressSi: "\u0da7\u0dda\u0db8\u0dca\u0db4\u0dc5\u0dca \u0db4\u0dcf\u0dbb 12",
+    currentAddressEn: "12 Temple Rd",
+    currentAddressSi: "\u0da7\u0dda\u0db8\u0dca\u0db4\u0dc5\u0dca \u0db4\u0dcf\u0dbb 12",
+    district: "Gampaha",
+    dsDivision: "Gampaha",
+    gnDivision: "Wewaldeniya",
+    electoralDistrict: "Gampaha",
+  };
   it("accepts a complete residence", () => expect(residenceStepSchema.safeParse(base).success).toBe(true));
   it("accepts currentAddressEn and sameAsPermanent", () =>
     expect(residenceStepSchema.safeParse({ ...base, currentAddressEn: "12 Temple Rd", sameAsPermanent: true }).success).toBe(true));
-  it("accepts an omitted Sinhala address", () =>
-    expect(residenceStepSchema.safeParse(base).success).toBe(true));
   it.each([
     ["permanentAddressEn", "permanentAddressEn", ""],
+    ["permanentAddressSi", "permanentAddressSi", ""],
     ["currentAddressEn", "currentAddressEn", ""],
+    ["currentAddressSi", "currentAddressSi", ""],
     ["district", "district", ""],
     ["dsDivision", "dsDivision", ""],
     ["gnDivision", "gnDivision", ""],
@@ -144,7 +153,7 @@ const validCategory = {
 describe("scoringInputsSchema", () => {
   it("accepts an empty object", () => expect(scoringInputsSchema.safeParse({}).success).toBe(true));
   it("coerces numeric fields from strings", () =>
-    expect(scoringInputsSchema.parse({ electoralMotherSince: "2020", schoolsRadiusKm: "1.5" })).toEqual({ electoralMotherSince: 2020, schoolsRadiusKm: 1.5 }));
+    expect(scoringInputsSchema.parse({ electoralMotherYears: ["2021", "2022"], schoolsRadiusKm: "1.5" })).toEqual({ electoralMotherYears: [2021, 2022], schoolsRadiusKm: 1.5 }));
   it("accepts every difficult service type", () => {
     for (const difficultServiceType of ["current", "previous", "none"]) {
       expect(scoringInputsSchema.safeParse({ difficultServiceType }).success).toBe(true);

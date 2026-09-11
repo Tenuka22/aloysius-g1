@@ -5,14 +5,34 @@
  * reference this file so the app stays in sync with the official scheme.
  */
 
+import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
+
 // ── Global ───────────────────────────────────────────────────────────────────
 
 export const CATEGORY_MAX_MARKS = 100;
 
 // ── Electoral Register (shared) ──────────────────────────────────────────────
 
-export const ELECTORAL_REGISTER_START_YEAR = 2020;
-export const ELECTORAL_REGISTER_END_YEAR = 2024;
+/** Number of electoral-register years scored (2.5 marks/2 marks per year,
+ * see ELECTORAL_MARKS_PER_PERSON_YEAR_61/63). */
+export const ELECTORAL_REGISTER_YEAR_COUNT = 5;
+
+/**
+ * The scored window is always the 5 register years ending two years before
+ * the intake year - e.g. the 2027 intake circular scores 2021-2025, the
+ * 2026 intake circular scored 2020-2024. Deriving it from the intake year
+ * (instead of hardcoding a fixed start/end) means the window advances on
+ * its own every admission cycle instead of silently going stale until
+ * someone notices and hand-edits two constants.
+ */
+export function electoralRegisterYears(intakeYear: string | number = INTAKE_YEAR_DEFAULT): number[] {
+  const year = typeof intakeYear === "string" ? Number.parseInt(intakeYear, 10) : intakeYear;
+  const endYear = Number.isFinite(year) ? year - 2 : Number.parseInt(INTAKE_YEAR_DEFAULT, 10) - 2;
+  return Array.from(
+    { length: ELECTORAL_REGISTER_YEAR_COUNT },
+    (_, i) => endYear - ELECTORAL_REGISTER_YEAR_COUNT + 1 + i,
+  );
+}
 
 // ── 6.1 - Residence Verification & Proximity ─────────────────────────────────
 

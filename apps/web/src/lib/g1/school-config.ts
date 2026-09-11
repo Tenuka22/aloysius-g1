@@ -62,3 +62,30 @@ export const G1_AGE_ELIGIBILITY: G1AgeEligibility = {
   minYears: 5,
   maxYears: 5,
 };
+
+/**
+ * Admissions office support contact, shown wherever an applicant is blocked
+ * from making a change themselves (e.g. the submission window has closed) so
+ * they have a way to reach the school directly instead of being stuck.
+ */
+export const SUPPORT_CONTACT = {
+  /** Local dialling format, as printed to the applicant. */
+  phoneDisplay: "077 936 8304",
+  /** E.164 form (country code 94, no leading 0) required by the wa.me deep link. */
+  whatsappNumber: "94779368304",
+};
+
+/**
+ * A wa.me deep link pre-filled with a support message that already carries
+ * the applicant's session/submission code, so the office does not have to
+ * ask which application a chat is about. `[describe your issue]` is a
+ * placeholder the applicant is expected to replace before sending, not
+ * something this app can fill in on their behalf.
+ */
+export function buildSupportWhatsAppLink(sessionCode: string): string {
+  const code = sessionCode.trim() || "\u2014";
+  const message =
+    `I've an issue [describe your issue here] for the submission ${code} and I would like to be able ` +
+    "to fix it before the submission - could you allocate some time for me or something?";
+  return `https://wa.me/${SUPPORT_CONTACT.whatsappNumber}?text=${encodeURIComponent(message)}`;
+}

@@ -4,7 +4,7 @@ import { CATEGORY_TYPES } from "./application-store";
 
 export const applicantStepSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
-  sinhalaName: z.string().optional(),
+  sinhalaName: z.string().min(1, "Full name (Sinhala) is required"),
   gender: z.enum(["Female", "Male"], { message: "Gender is required" }),
   // "Hindu" sits alongside the other four - the admission-eligibility logic in
   // eligibility.ts already treats "Hindu" as unrestricted, so this enum was the
@@ -21,6 +21,7 @@ export const applicantStepSchema = z.object({
 export const guardianStepSchema = z.object({
   relationship: z.enum(["Mother", "Father", "Guardian"], { message: "Relationship is required" }),
   fullName: z.string().min(1, "Full name is required"),
+  sinhalaName: z.string().min(1, "Full name (Sinhala) is required"),
   nic: z
     .string()
     .min(1, "NIC number is required")
@@ -31,9 +32,9 @@ export const guardianStepSchema = z.object({
 
 export const residenceStepSchema = z.object({
   permanentAddressEn: z.string().min(1, "Permanent address (English) is required"),
-  permanentAddressSi: z.string().optional(),
+  permanentAddressSi: z.string().min(1, "Permanent address (Sinhala) is required"),
   currentAddressEn: z.string().min(1, "Current address (English) is required"),
-  currentAddressSi: z.string().optional(),
+  currentAddressSi: z.string().min(1, "Current address (Sinhala) is required"),
   sameAsPermanent: z.boolean().optional(),
   district: z.string().min(1, "District is required"),
   dsDivision: z.string().min(1, "Divisional Secretariat division is required"),
@@ -51,8 +52,8 @@ export const scoringInputsSchema = z.object({
   documentOwnership: z.string().optional(),
   deedTransferDate: z.string().optional(),
   additionalDocs: z.array(z.string()).optional(),
-  electoralMotherSince: z.coerce.number().optional(),
-  electoralFatherSince: z.coerce.number().optional(),
+  electoralMotherYears: z.array(z.coerce.number()).optional(),
+  electoralFatherYears: z.array(z.coerce.number()).optional(),
   schoolsWithinRadius: z.array(z.string()).optional(),
   schoolsRadiusKm: z.coerce.number().positive("School radius must be greater than zero").optional(),
   serviceStartDate: z.string().optional(),

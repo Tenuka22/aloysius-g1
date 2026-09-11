@@ -140,7 +140,7 @@ beforeEach(() => {
 
 const validApplicant = {
   fullName: "Ashan Perera",
-  sinhalaName: "",
+  sinhalaName: "\u0d85\u0dc1\u0dcf\u0db1\u0dca \u0db4\u0dd9\u0dbb\u0dda\u0dbb\u0dcf",
   gender: "Male",
   religion: "Buddhist",
   educationMedium: "Sinhala",
@@ -151,7 +151,7 @@ const validApplicant = {
 const validGuardian = {
   relationship: "Father",
   fullName: "Kamal Perera",
-  sinhalaName: "",
+  sinhalaName: "\u0d9a\u0db8\u0dbd\u0dca \u0db4\u0dd9\u0dbb\u0dda\u0dbb\u0dcf",
   nic: "199012345678",
   phone: "+94712345678",
   whatsappPhone: "",
@@ -160,9 +160,9 @@ const validGuardian = {
 
 const validResidence = {
   permanentAddressEn: "123 Temple St, Colombo",
-  permanentAddressSi: "",
+  permanentAddressSi: "123 \u0da7\u0dda\u0db8\u0dca\u0db4\u0dc5\u0dca \u0db4\u0dcf\u0dbb, \u0d9a\u0ddc\u0dc5\u0db9", 
   currentAddressEn: "456 Park Rd, Colombo",
-  currentAddressSi: "",
+  currentAddressSi: "456 \u0db4\u0dcf\u0dbb\u0dca\u0d9a\u0dca \u0db4\u0dcf\u0dbb, \u0d9a\u0ddc\u0dc5\u0db9",
   sameAsPermanent: false,
   district: "Colombo",
   dsDivision: "Colombo",
@@ -264,8 +264,8 @@ describe("ApplicationForm – step 1 (applicant) gating", () => {
   });
 });
 
-describe("ApplicationForm – step 2 (guardian) gating", () => {
-  const fullGuardian = { ...emptyDraft.guardian, relationship: "Mother", fullName: "Jane Doe", nic: "199012345678", phone: "+94712345678" };
+describe("ApplicationForm \u2013 step 2 (guardian) gating", () => {
+  const fullGuardian = { ...emptyDraft.guardian, relationship: "Mother", fullName: "Jane Doe", sinhalaName: "\u0da2\u0dda\u0db1\u0dca \u0da9\u0ddd", nic: "199012345678", phone: "+94712345678" };
 
   it("blocks an invalid guardian NIC", async () => {
     setStore({ currentStep: 2, guardian: { ...fullGuardian, nic: "12345" } });
@@ -429,9 +429,18 @@ describe("ApplicationForm – keys", () => {
   });
 });
 
-describe("ApplicationForm – step 3 (residence)", () => {
-  it("enables Continue even with empty residence fields", async () => {
+describe("ApplicationForm \u2013 step 3 (residence)", () => {
+  it("blocks Continue when required residence fields are missing", async () => {
     setStore({ currentStep: 3 });
+    await renderForm();
+    expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
+    expect(
+      screen.getByText("Complete the permanent address in both English and Sinhala to continue."),
+    ).toBeInTheDocument();
+  });
+
+  it("enables Continue once permanent address is provided in both languages", async () => {
+    setStore({ currentStep: 3, residence: validResidence });
     await renderForm();
     expect(screen.getByRole("button", { name: /continue/i })).toBeEnabled();
   });
@@ -475,10 +484,12 @@ describe("ApplicationForm – step 6 (review)", () => {
   it("renders a Categories summary with indicative marks", async () => {
     setStore({ ...fullValidDraft, currentStep: 6 });
     await renderReview();
-    expect(screen.getByText("6.1 – Residence Verification & Proximity")).toBeInTheDocument();
-    expect(screen.getByText(/Main document: title-deed-applicant/)).toBeInTheDocument();
-    expect(screen.getByText(/1 school within radius/)).toBeInTheDocument();
-    expect(screen.getByText(/Marks \(indicative\):/)).toBeInTheDocument();
+    expect(screen.getByText("6.1 \u2013 Residence Verification & Proximity")).toBeInTheDocument();
+    expect(screen.getByText("Main Document Type")).toBeInTheDocument();
+    expect(screen.getByText("title-deed-applicant")).toBeInTheDocument();
+    expect(screen.getByText("Schools Within Radius")).toBeInTheDocument();
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+    expect(screen.getByText("Marks (indicative)")).toBeInTheDocument();
   });
 
   it("shows Not completed for empty fields", async () => {
@@ -595,7 +606,7 @@ describe("ApplicationForm – state transitions", () => {
     await renderForm();
     await userEvent.click(screen.getByRole("button", { name: /continue/i }));
     await waitFor(() => {
-      expect(screen.getByText(/saving/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /saving/i })).toBeInTheDocument();
     });
     await waitFor(() => {
       expect(screen.getByText(/^Saved$/)).toBeInTheDocument();
@@ -638,7 +649,7 @@ describe("ApplicationForm – server errors", () => {
     const user = userEvent.setup();
     await renderForm();
     await user.click(screen.getByRole("button", { name: /continue/i }));
-    expect(await screen.findByText("Save failed - retrying…")).toBeInTheDocument();
+    expect(await screen.findByText("Save failed - retrying\u2026 (Save failed)")).toBeInTheDocument();
     // Continue advances the step optimistically and saves in the background;
     // a failed save surfaces the status message above but does not block
     // navigation or revert the step.

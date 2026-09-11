@@ -7,7 +7,12 @@ import {
   STATUS_SUCCESS,
   STATUS_WARNING,
 } from "@/lib/color-classes";
-import { applicationPdfFilename, downloadApplicationPdf } from "@/lib/g1/application-pdf";
+import {
+  applicationCategoryPdfFilename,
+  applicationPdfFilenameForLocale,
+  downloadApplicationPdf,
+  type PdfLocale,
+} from "@/lib/g1/application-pdf";
 import { clearDraftLocally, loadUnsyncedDraft, saveDraftLocally } from "@/lib/g1/draft-local-cache";
 import {
   Tooltip,
@@ -19,6 +24,7 @@ import {
   type ApplicationDraft,
   type CategoryApplication,
   type CategoryType,
+  type ScoringInputs,
   applyLocationChange,
   emptyDraft,
   normalizeDraft,
@@ -46,7 +52,7 @@ import {
   getActiveSessionCode,
   setActiveApplication,
 } from "@/lib/g1/saved-keys";
-import { ADMISSION_RESTRICTIONS } from "@/lib/g1/school-config";
+import { ADMISSION_RESTRICTIONS, buildSupportWhatsAppLink } from "@/lib/g1/school-config";
 import { scoreCategory } from "@/lib/g1/scoring";
 import { useTranslation } from "@/lib/i18n";
 import { client } from "@/utils/orpc";
@@ -109,7 +115,6 @@ import {
   ArrowRight,
   CalendarIcon,
   Check,
-  ChevronDown,
   Clock3,
   Copy,
   Download,
@@ -118,6 +123,7 @@ import {
   House,
   Info,
   KeyRound,
+  MessageCircle,
   RotateCcw,
   ShieldCheck,
   ShieldX,
@@ -176,75 +182,165 @@ function getCategoryLabels(t: (key: string) => string): Record<CategoryType, str
   };
 }
 
-function categorySummary(category: CategoryApplication): string {
+// Turns a scoringInputs key like "residenceToSchoolKm" into "Residence To School Km"
+// -> readable label; a handful of abbreviations get a nicer casing afterwards.
+function humanizeCategoryFieldKey(key: string): string {
+  const spaced = key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/^./, (c) => c.toUpperCase());
+  return spaced
+    .replace(/\bKm\b/g, "(km)")
+    .replace(/\bNic\b/g, "NIC")
+    .replace(/\bOl\b/g, "O/L")
+    .replace(/\bAl\b/g, "A/L")
+    .replace(/\bGn\b/g, "GN")
+    .replace(/\bDs\b/g, "DS");
+}
+
+function humanizeCategoryFieldValue(key: string, value: unknown): string {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "None";
+    if (/year/i.test(key)) return value.join(", ");
+    return `${value.length} selected`;
+  }
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (/date$/i.test(key) && typeof value === "string" && value) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return format(parsed, "dd MMM yyyy");
+  }
+  return String(value);
+}
+
+/**
+ * The complete set of scoring-input fields the category step actually asks
+ * for per category type (see category-step.tsx's Category6XFields), in the
+ * order they appear there. Listing every field explicitly - rather than only
+ * whatever happens to already be in `scoringInputs` - is what lets the
+ * review screen show a field the applicant hasn't gotten to yet as "missing"
+ * instead of it silently not appearing at all. Grouped under the same
+ * sub-headings the category step itself uses, so a category with two dozen
+ * fields (6.2) reads as several short, labelled clusters instead of one
+ * undifferentiated wall of rows.
+ */
+type CategoryFieldGroup = { heading: string; fields: (keyof ScoringInputs)[] };
+
+const CATEGORY_SCORING_GROUPS: Record<CategoryType, CategoryFieldGroup[]> = {
+  "6.1": [
+    { heading: "Residence document", fields: ["mainDocumentType", "deedTransferDate", "additionalDocs"] },
+    { heading: "Electoral register", fields: ["electoralMotherYears", "electoralFatherYears"] },
+    { heading: "Proximity", fields: ["schoolsWithinRadius"] },
+  ],
+  "6.2": [
+    { heading: "Years at school", fields: ["alumniStartDate", "alumniEndDate"] },
+    { heading: "Grade 5 Scholarship", fields: ["grade5ScholarshipPassed"] },
+    { heading: "G.C.E. (O/L)", fields: ["olSubjectCount", "olGradeS", "olGradeC", "olGradeB", "olGradeA"] },
+    { heading: "G.C.E. (A/L)", fields: ["alSubjectCount", "alGradeS", "alGradeC", "alGradeB", "alGradeA"] },
+    {
+      heading: "Extra-curricular",
+      fields: ["sportsLevel", "sportsCount", "leadershipRole", "studentSocietiesRole", "otherActivity", "otherActivityName"],
+    },
+    {
+      heading: "Past Pupils' Association",
+      fields: [
+        "pastPupilsLifeMember",
+        "pastPupilsMembershipStart",
+        "pastPupilsMembershipEnd",
+        "pastPupilsCommitteeMember",
+        "pastPupilsExecutiveOffice",
+      ],
+    },
+    { heading: "Academic qualifications", fields: ["highestDegree", "hasDiploma"] },
+    {
+      heading: "School contributions",
+      fields: ["sportsMeetContribution", "shramadanaContribution", "schoolProjectsContribution"],
+    },
+  ],
+  "6.3": [
+    {
+      heading: "Siblings",
+      fields: [
+        "siblingsCurrentlyStudyingCount",
+        "siblingStudiedAtAppliedSchool",
+        "twoOrMoreSiblingsApplying",
+        "siblingPrefectLevel",
+        "siblingPrefectCount",
+        "siblingExamAchievement",
+        "siblingPraiseworthyAchievement",
+      ],
+    },
+    { heading: "Residence document", fields: ["mainDocumentType", "deedTransferDate", "additionalDocs"] },
+    { heading: "Electoral register", fields: ["electoralMotherYears", "electoralFatherYears"] },
+    { heading: "Proximity", fields: ["schoolsWithinRadius"] },
+  ],
+  "6.4": [
+    {
+      heading: "Service period",
+      fields: [
+        "serviceStartDate",
+        "difficultServiceType",
+        "difficultServiceDistanceKm",
+        "difficultServiceExtraPeriods",
+        "unutilizedLeaveYears",
+        "serviceLocationLevel",
+      ],
+    },
+    { heading: "Distance", fields: ["residenceToSchoolKm", "workplaceToSchoolKm"] },
+  ],
+  "6.5": [
+    {
+      heading: "Transfer",
+      fields: ["previousWorkplaceDistanceKm", "previousWorkplaceStartDate", "transferDate", "unutilizedLeaveYears"],
+    },
+    { heading: "Proximity", fields: ["schoolsWithinRadius"] },
+  ],
+  "6.6": [
+    { heading: "Foreign employment", fields: ["abroadStartDate", "abroadEndDate", "employmentPurpose"] },
+    { heading: "Proximity", fields: ["schoolsWithinRadius"] },
+  ],
+};
+
+function fieldHasValue(value: unknown): boolean {
+  if (value === undefined || value === null || value === "" || value === false) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+/** Grouped rows for every field the category step asks for (see
+ * `CATEGORY_SCORING_GROUPS`) - filled fields show their value, unfilled ones
+ * show as missing so nothing the applicant hasn't gotten to yet goes
+ * unnoticed. Ends with a "Summary" group holding the category's indicative
+ * total. */
+function categoryFieldRows(
+  category: CategoryApplication,
+  t: (key: string) => string,
+): { heading: string; rows: { label: string; value: string; missing: boolean }[] }[] {
   const inputs = category.scoringInputs;
-  const parts: string[] = [];
-  if (inputs.mainDocumentType) parts.push(`Main document: ${inputs.mainDocumentType}`);
-  if (inputs.difficultServiceType) parts.push(`Difficult service: ${inputs.difficultServiceType}`);
-  if (inputs.employmentPurpose) parts.push(`Employment purpose: ${inputs.employmentPurpose}`);
-  if (inputs.abroadStartDate && inputs.abroadEndDate) {
-    const days = Math.round(
-      Math.abs(
-        new Date(inputs.abroadEndDate).getTime() - new Date(inputs.abroadStartDate).getTime(),
-      ) / 86400000,
-    );
-    parts.push(`Period abroad: ~${Math.round(days / 365)} years`);
-  }
-  if (inputs.residenceToSchoolKm != null)
-    parts.push(`Residence to school: ${inputs.residenceToSchoolKm} km`);
-  if (inputs.workplaceToSchoolKm != null)
-    parts.push(`Workplace to school: ${inputs.workplaceToSchoolKm} km`);
-  if (inputs.previousWorkplaceDistanceKm != null)
-    parts.push(`Previous workplace: ${inputs.previousWorkplaceDistanceKm} km`);
-  if (inputs.alumniStartDate && inputs.alumniEndDate) {
-    const days = Math.round(
-      Math.abs(
-        new Date(inputs.alumniEndDate).getTime() - new Date(inputs.alumniStartDate).getTime(),
-      ) / 86400000,
-    );
-    parts.push(`Alumni years at school: ~${Math.round(days / 365)}`);
-  }
-  if (inputs.grade5ScholarshipPassed) parts.push("Grade 5 Scholarship passed");
-  if (inputs.olSubjectCount != null)
-    parts.push(
-      `O/L (${inputs.olSubjectCount} subjects): ${["S", "C", "B", "A"]
-        .map((grade) => {
-          const count = inputs[`olGrade${grade}` as "olGradeS"] as number | undefined;
-          return count != null ? `${grade}=${count}` : null;
-        })
-        .filter(Boolean)
-        .join(" ")}`,
-    );
-  if (inputs.alSubjectCount != null)
-    parts.push(
-      `A/L (${inputs.alSubjectCount} subjects): ${["S", "C", "B", "A"]
-        .map((grade) => {
-          const count = inputs[`alGrade${grade}` as "alGradeS"] as number | undefined;
-          return count != null ? `${grade}=${count}` : null;
-        })
-        .filter(Boolean)
-        .join(" ")}`,
-    );
-  if (inputs.sportsLevel)
-    parts.push(
-      `Sports level: ${inputs.sportsLevel}${inputs.sportsCount != null ? ` ×${inputs.sportsCount}` : ""}`,
-    );
-  if (inputs.leadershipRole) parts.push(`Leadership: ${inputs.leadershipRole}`);
-  if (inputs.siblingsCurrentlyStudyingCount != null)
-    parts.push(`Siblings at school: ${inputs.siblingsCurrentlyStudyingCount}`);
-  if (inputs.siblingStudiedAtAppliedSchool) parts.push("Sibling studied here");
-  if (inputs.twoOrMoreSiblingsApplying) parts.push("Two or more siblings applying");
-  if (inputs.siblingPrefectLevel)
-    parts.push(
-      `Sibling prefect level: ${inputs.siblingPrefectLevel}${inputs.siblingPrefectCount != null ? ` ×${inputs.siblingPrefectCount}` : ""}`,
-    );
-  if (inputs.siblingExamAchievement) parts.push(`Sibling exam: ${inputs.siblingExamAchievement}`);
-  if (inputs.siblingPraiseworthyAchievement) parts.push("Sibling praiseworthy achievement");
-  if (inputs.parentsSupportRendered) parts.push("Parent support rendered");
-  const schools = inputs.schoolsWithinRadius?.length ?? 0;
-  parts.push(`${schools} ${schools === 1 ? "school" : "schools"} within radius`);
-  parts.push(`Marks (indicative): ${scoreCategory(category).total}`);
-  return parts.join(" · ");
+  const groups = CATEGORY_SCORING_GROUPS[category.categoryType] ?? [
+    { heading: "", fields: Object.keys(inputs) as (keyof ScoringInputs)[] },
+  ];
+  const groupedRows = groups.map((group) => ({
+    heading: group.heading,
+    rows: group.fields.map((key) => {
+      const value = inputs[key];
+      const missing = !fieldHasValue(value);
+      return {
+        label: humanizeCategoryFieldKey(key),
+        value: missing ? t("appForm.reviewStep.status.notProvided") : humanizeCategoryFieldValue(key, value),
+        missing,
+      };
+    }),
+  }));
+  groupedRows.push({
+    heading: t("appForm.reviewStep.summary"),
+    rows: [
+      {
+        label: t("appForm.reviewStep.fields.marksIndicative"),
+        value: String(scoreCategory(category).total),
+        missing: false,
+      },
+    ],
+  });
+  return groupedRows;
 }
 
 function StepIndicator({
@@ -253,16 +349,18 @@ function StepIndicator({
   steps: stepLabels,
   onStepClick,
   skippedSteps = [],
+  saveStatus,
+  accessKey,
 }: {
   current: number;
   maxVisited: number;
   steps: string[];
   onStepClick: (index: number) => void;
-  /** Steps advanced past with a field still owed; drawn in amber. */
   skippedSteps?: number[];
+  saveStatus: string;
+  accessKey: string;
 }) {
   const { t } = useTranslation();
-  // Clamp step index to prevent NaN in progress calculation and invalid array access
   const clampedCurrent = Math.max(0, Math.min(current, stepLabels.length - 1));
   const progress = Math.round((clampedCurrent / (stepLabels.length - 1)) * 100);
   return (
@@ -291,54 +389,66 @@ function StepIndicator({
         className="scroll-shadow-x flex gap-1 overflow-x-auto border-b px-5 py-3 md:px-8"
         aria-label={t("appForm.stepIndicator.ariaLabel")}
       >
-        {stepLabels.map((step, index) => {
-          const isCurrent = index === current;
-          const isCompleted = index < maxVisited;
-          const canNavigate = index <= maxVisited;
-          const isSkipped = skippedSteps.includes(index);
-          return (
-            <button
-              type="button"
-              key={step}
-              className={`inline-flex items-center gap-1.5 whitespace-nowrap bg-transparent px-2.5 py-2 text-xs transition-colors ${
+      {stepLabels.map((step, index) => {
+        const isCurrent = index === current;
+        const isCompleted = index < maxVisited;
+        const canNavigate = index <= maxVisited;
+        const isSkipped = skippedSteps.includes(index);
+        return (
+          <button
+            type="button"
+            key={step}
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap bg-transparent px-2.5 py-2 text-xs transition-colors ${
+              isSkipped
+                ? `font-bold ${STATUS_WARNING.text}`
+                : isCurrent
+                ? "font-bold text-foreground"
+                : isCompleted
+                  ? "text-foreground/80 hover:text-foreground"
+                  : canNavigate
+                    ? "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground/60 cursor-not-allowed"
+            }`}
+            onClick={() => canNavigate && onStepClick(index)}
+            disabled={!canNavigate}
+            aria-current={isCurrent ? "step" : undefined}
+          >
+            <span
+              className={`grid size-6 place-items-center rounded-full border text-[11px] transition-colors ${
                 isSkipped
-                  ? `font-bold ${STATUS_WARNING.text}`
+                  ? `${STATUS_WARNING.bgSolid} border-transparent text-white`
                   : isCurrent
-                  ? "font-bold text-foreground"
+                  ? "border-primary bg-primary text-primary-foreground"
                   : isCompleted
-                    ? "text-foreground/80 hover:text-foreground"
-                    : canNavigate
-                      ? "text-muted-foreground hover:text-foreground"
-                      : "text-muted-foreground/60 cursor-not-allowed"
-              }`}
-              onClick={() => canNavigate && onStepClick(index)}
-              disabled={!canNavigate}
-              aria-current={isCurrent ? "step" : undefined}
-            >
-              <span
-                className={`grid size-6 place-items-center rounded-full border text-[11px] transition-colors ${
-                  isSkipped
-                    ? `${STATUS_WARNING.bgSolid} border-transparent text-white`
-                    : isCurrent
                     ? "border-primary bg-primary text-primary-foreground"
-                    : isCompleted
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border"
-                }`}
-              >
-                {isSkipped ? (
-                  <TriangleAlert size={13} />
-                ) : isCompleted && !isCurrent ? (
-                  <Check size={14} />
-                ) : (
-                  index + 1
-                )}
-              </span>
-              {step}
-            </button>
-          );
-        })}
+                    : "border-border"
+              }`}
+            >
+              {isSkipped ? (
+                <TriangleAlert size={13} />
+              ) : isCompleted && !isCurrent ? (
+                <Check size={14} />
+              ) : (
+                index + 1
+              )}
+            </span>
+            {step}
+          </button>
+        );
+      })}
       </nav>
+      <div className="flex items-center gap-2 px-5 py-2 text-sm text-primary border-b md:px-8">
+        <span
+          className={`size-2 rounded-full ${saveStatus === t("appForm.statusBar.saving") ? "animate-pulse" : ""} ${saveStatus.includes("failed") ? "bg-destructive" : "bg-primary"}`}
+          aria-hidden="true"
+        />
+        {saveStatus === t("appForm.statusBar.savedSecurely")
+          ? t("appForm.statusBar.saved")
+          : saveStatus ||
+            (accessKey
+              ? t("appForm.statusBar.connected")
+              : t("appForm.statusBar.connecting"))}
+      </div>
     </>
   );
 }
@@ -686,10 +796,10 @@ function ApplicantStep({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-      <div className="col-span-full mb-4">
-        <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.applicantStep.heading")}</h3>
-        <p className="text-sm text-muted-foreground">{t("appForm.applicantStep.description")}</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+      <div className="col-span-full mb-1 sm:mb-4">
+        <h3 className="font-heading text-lg sm:text-2xl">{t("appForm.applicantStep.heading")}</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground">{t("appForm.applicantStep.description")}</p>
       </div>
 
       <Field>
@@ -1332,11 +1442,34 @@ function DeclarationStep({
 function ReviewStep({
   draft,
   onNavigateToStep,
+  pdfState,
+  pdfError,
+  pdfLocale,
+  onPdfLocaleChange,
+  onDownloadPdf,
 }: {
   draft: ApplicationDraft;
   onNavigateToStep: (step: number) => void;
+  pdfState: "idle" | "generating" | "downloaded" | "error";
+  pdfError: string;
+  pdfLocale: PdfLocale;
+  onPdfLocaleChange: (locale: PdfLocale) => void;
+  onDownloadPdf: () => void;
 }) {
   const { t } = useTranslation();
+  const [downloadingCategoryId, setDownloadingCategoryId] = useState<string | null>(null);
+  const downloadCategoryPdf = async (category: CategoryApplication) => {
+    setDownloadingCategoryId(category.id);
+    try {
+      await downloadApplicationPdf(
+        { ...draft, categories: [category] },
+        pdfLocale,
+        applicationCategoryPdfFilename(draft, category.categoryType, pdfLocale),
+      );
+    } finally {
+      setDownloadingCategoryId(null);
+    }
+  };
   const marksQuery = useQuery({
     queryKey: ["application-marks", draft.accessKey],
     queryFn: () => client.application.getMarks({ accessKey: draft.accessKey }),
@@ -1355,6 +1488,35 @@ function ReviewStep({
           t("appForm.reviewStep.fields.locationAddress"),
           draft.location.address || t("appForm.reviewStep.status.notCompleted"),
         ],
+        [
+          t("appForm.reviewStep.fields.latitude"),
+          draft.location.latitude != null ? String(draft.location.latitude) : t("appForm.reviewStep.status.notCompleted"),
+        ],
+        [
+          t("appForm.reviewStep.fields.longitude"),
+          draft.location.longitude != null ? String(draft.location.longitude) : t("appForm.reviewStep.status.notCompleted"),
+        ],
+        [
+          t("appForm.reviewStep.fields.locationSource"),
+          draft.location.source
+            ? draft.location.source.charAt(0).toUpperCase() + draft.location.source.slice(1)
+            : t("appForm.reviewStep.status.notSelected"),
+        ],
+        [
+          t("appForm.reviewStep.fields.accessKey"),
+          draft.accessKey || t("appForm.reviewStep.status.notCompleted"),
+        ],
+        [
+          t("appForm.reviewStep.fields.sessionCode"),
+          draft.sessionCode || t("appForm.reviewStep.status.notCompleted"),
+        ],
+        [
+          t("appForm.reviewStep.fields.lastSaved"),
+          draft.lastSavedAt || t("appForm.reviewStep.status.notCompleted"),
+        ],
+        ...(draft.submittedAt
+          ? [[t("appForm.reviewStep.fields.submittedAt"), draft.submittedAt] as [string, string]]
+          : []),
       ] as [string, string][],
     },
     {
@@ -1463,15 +1625,32 @@ function ReviewStep({
         ],
       ] as [string, string][],
     },
+    {
+      title: t("appForm.reviewStep.declaration"),
+      step: 5,
+      fields: [
+        [
+          t("appForm.reviewStep.fields.declarationConfirmed"),
+          draft.declaration.confirmed
+            ? t("appForm.reviewStep.status.yes")
+            : t("appForm.reviewStep.status.no"),
+        ],
+        [
+          t("appForm.reviewStep.fields.consentGiven"),
+          draft.declaration.consent
+            ? t("appForm.reviewStep.status.yes")
+            : t("appForm.reviewStep.status.no"),
+        ],
+      ] as [string, string][],
+    },
   ];
 
-  const categoryRows: [string, string][] =
-    draft.categories.length > 0
-      ? draft.categories.map((category): [string, string] => [
-          categoryLabels[category.categoryType],
-          categorySummary(category),
-        ])
-      : [[t("appForm.reviewStep.status.noneSelected"), ""]];
+  const categoryCards = draft.categories.map((category) => ({
+    id: category.id,
+    title: categoryLabels[category.categoryType],
+    rows: categoryFieldRows(category, t),
+    category,
+  }));
 
   return (
     <div className="">
@@ -1479,31 +1658,117 @@ function ReviewStep({
         <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.reviewStep.heading")}</h3>
         <p className="text-sm text-muted-foreground mt-1">{t("appForm.reviewStep.description")}</p>
       </div>
-      <div className="grid sm:grid-cols-2 gap-4 items-start">
-        {groupedSections.map((section) => (
-          <div key={section.title} className="rounded-xl border bg-card overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
-              <h4 className="text-sm font-medium text-foreground">{section.title}</h4>
-              <button
-                type="button"
-                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                onClick={() => onNavigateToStep(section.step)}
-              >
-                {t("appForm.reviewStep.edit")}
-              </button>
+      <div
+        className={`mb-5 flex items-start gap-3 rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`}
+      >
+        <Info size={18} className={`mt-0.5 shrink-0 ${STATUS_WARNING.text}`} />
+        <p className={`text-sm ${STATUS_WARNING.text}`}>{t("appForm.reviewStep.fieldsChangedNotice")}</p>
+      </div>
+      <TooltipProvider>
+        <div className="grid sm:grid-cols-2 gap-4 items-start">
+          {groupedSections.map((section) => (
+            <div key={section.title} className="rounded-xl border-2 border-primary/15 bg-card overflow-hidden shadow-sm">
+              <div className="flex items-center justify-between px-4 py-3 border-b bg-primary/5">
+                <h4 className="text-sm font-semibold text-foreground">{section.title}</h4>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  onClick={() => onNavigateToStep(section.step)}
+                >
+                  {t("appForm.reviewStep.edit")}
+                </button>
+              </div>
+              <div className="divide-y divide-primary/10">
+                {section.fields.map(([label, value]) => {
+                  const hasValue = value && value !== t("appForm.reviewStep.none") && value !== t("appForm.reviewStep.status.notCompleted") && value !== t("appForm.reviewStep.status.notSelected") && value !== t("appForm.reviewStep.status.notProvided");
+                  const displayValue = value || t("appForm.reviewStep.none");
+                  return (
+                    <div className="flex items-baseline justify-between gap-4 px-4 py-2.5" key={label}>
+                      <span className="text-xs text-muted-foreground shrink-0 font-medium">{label}</span>
+                      <Tooltip>
+                        <TooltipTrigger
+                          className={`text-sm font-semibold text-right truncate rounded-md px-2 py-0.5 ${
+                            hasValue
+                              ? "text-foreground bg-primary/10 border border-primary/20"
+                              : "text-muted-foreground italic"
+                          }`}
+                        >
+                          {displayValue}
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs whitespace-normal break-words text-left">
+                          {displayValue}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="divide-y">
-              {section.fields.map(([label, value]) => (
-                <div className="flex items-baseline justify-between gap-4 px-4 py-2.5" key={label}>
-                  <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-                  <span className="text-sm font-medium text-right text-foreground truncate">
-                    {value || t("appForm.reviewStep.none")}
-                  </span>
-                </div>
-              ))}
-            </div>
+          ))}
+        </div>
+      </TooltipProvider>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-primary/25 bg-primary/8 p-4">
+        <div className="grid gap-0.5 items-center">
+          <div className="flex items-center gap-2 text-primary">
+            <FileText size={17} />
+            <span className="text-sm font-semibold text-foreground">
+              {t("appForm.reviewStep.downloadPdf.title")}
+            </span>
           </div>
-        ))}
+          <span className="text-xs text-muted-foreground">
+            {t("appForm.reviewStep.downloadPdf.description")}
+          </span>
+          {pdfState === "error" && (
+            <span className={`text-xs ${STATUS_ERROR.text}`} role="alert">
+              {pdfError || t("appForm.submitted.pdf.errorTitle")}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-lg border bg-background p-0.5 text-xs font-medium">
+            {((["en", "si"] as const)).map((locale) => (
+              <button
+                key={locale}
+                type="button"
+                aria-pressed={pdfLocale === locale}
+                className={`rounded-md px-2.5 py-1.5 transition-colors ${
+                  pdfLocale === locale
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => onPdfLocaleChange(locale)}
+              >
+                {locale === "en" ? t("appForm.reviewStep.downloadPdf.english") : t("appForm.reviewStep.downloadPdf.sinhala")}
+              </button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant={pdfState === "downloaded" ? "outline" : "default"}
+            disabled={pdfState === "generating"}
+            aria-busy={pdfState === "generating"}
+            onClick={onDownloadPdf}
+          >
+            {pdfState === "generating" ? (
+              <>
+                <Spinner /> {t("appForm.submitted.pdf.generating")}
+              </>
+            ) : pdfState === "downloaded" ? (
+              <>
+                <Check size={16} /> {t("appForm.submitted.pdf.downloadAgain")}
+              </>
+            ) : pdfState === "error" ? (
+              <>
+                <RotateCcw size={16} /> {t("appForm.submitted.pdf.retry")}
+              </>
+            ) : (
+              <>
+                <Download size={16} /> {t("appForm.submitted.pdf.download")}
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <div className="mt-4">
@@ -1519,16 +1784,64 @@ function ReviewStep({
             {t("appForm.reviewStep.edit")}
           </button>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {categoryRows.map(([label, summary]) => (
-            <div key={label} className="rounded-xl border bg-card p-4">
-              <span className="text-xs font-medium text-foreground block mb-1">{label}</span>
-              {summary && (
-                <p className="text-xs text-muted-foreground leading-relaxed">{summary}</p>
-              )}
-            </div>
-          ))}
-        </div>
+        {categoryCards.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("appForm.reviewStep.status.noneSelected")}</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-4 items-start">
+            {categoryCards.map((card) => (
+              <div key={card.id} className="rounded-xl border-2 border-primary/15 bg-card overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b bg-primary/5">
+                  <h4 className="text-sm font-semibold text-foreground">{card.title}</h4>
+                  <button
+                    type="button"
+                    disabled={downloadingCategoryId === card.id}
+                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80 disabled:opacity-50"
+                    onClick={() => void downloadCategoryPdf(card.category)}
+                  >
+                    {downloadingCategoryId === card.id ? (
+                      <Spinner />
+                    ) : (
+                      <Download size={13} />
+                    )}
+                    {t("appForm.reviewStep.downloadCategoryPdf")}
+                  </button>
+                </div>
+                <TooltipProvider>
+                  <div className="divide-y divide-primary/10">
+                    {card.rows.map((group) => (
+                      <div key={group.heading || "_"} className="py-2">
+                        {group.heading && (
+                          <p className="px-4 pt-1.5 pb-1 text-[0.68rem] font-bold uppercase tracking-wider text-primary/70">
+                            {group.heading}
+                          </p>
+                        )}
+                        <div className="grid grid-cols-1 gap-x-4 px-4 sm:grid-cols-2">
+                          {group.rows.map((row) => (
+                            <div className="flex items-baseline justify-between gap-3 py-1.5" key={row.label}>
+                              <span className="text-xs text-muted-foreground shrink-0">{row.label}</span>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  className={`text-sm font-medium text-right truncate ${
+                                    row.missing ? STATUS_WARNING.text : "text-foreground"
+                                  }`}
+                                >
+                                  {row.value}
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs whitespace-normal break-words text-left">
+                                  {row.value}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </TooltipProvider>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {draft.submittedAt && (
@@ -1810,9 +2123,6 @@ export function ApplicationForm({
   // Blocks a second Continue click while the previous one is still saving to
   // the server, so the step transition genuinely waits for the save.
   const [isAdvancing, setIsAdvancing] = useState(false);
-  // Only consulted below `md`, where the identity cards are collapsed behind a
-  // toggle. From `md` up the grid is always shown and this is ignored.
-  const [identityOpen, setIdentityOpen] = useState(false);
   const [pendingSkipAdvance, setPendingSkipAdvance] = useState(false);
   /**
    * PDF receipt download. Explicit states rather than a bare boolean so the
@@ -1821,6 +2131,7 @@ export function ApplicationForm({
    */
   const [pdfState, setPdfState] = useState<"idle" | "generating" | "downloaded" | "error">("idle");
   const [pdfError, setPdfError] = useState("");
+  const [pdfLocale, setPdfLocale] = useState<PdfLocale>("en");
 
   const marksQuery = useQuery({
     queryKey: ["application-marks", draft.accessKey],
@@ -2022,8 +2333,9 @@ export function ApplicationForm({
         // The DB now has this exact state, so the local safety-net entry
         // (see draft-local-cache.ts) has nothing left to recover.
         if (currentDraft.accessKey) clearDraftLocally(currentDraft.accessKey);
-      } catch {
-        set({ saveStatus: t("appForm.statusBar.saveFailed") });
+      } catch (error) {
+        const reason = friendlyErrorMessage(error, t("appForm.statusBar.saveFailedUnknownReason"));
+        set({ saveStatus: t("appForm.statusBar.saveFailedReason", { reason }) });
       }
     });
     saveQueue.current = operation.catch(() => undefined);
@@ -2152,7 +2464,7 @@ export function ApplicationForm({
     setPdfState("generating");
     setPdfError("");
     try {
-      await downloadApplicationPdf(useApplicationStore.getState());
+      await downloadApplicationPdf(useApplicationStore.getState(), pdfLocale);
       setPdfState("downloaded");
     } catch (error) {
       setPdfState("error");
@@ -2179,6 +2491,7 @@ export function ApplicationForm({
     birthCertificateStatus: draft.birthCertificateStatus,
     applicant: draft.applicant,
     guardian: draft.guardian,
+    residence: draft.residence,
     categories: draft.categories,
     declaration: draft.declaration,
   });
@@ -2228,136 +2541,68 @@ export function ApplicationForm({
       <section className="mx-auto max-w-[1320px]">
         <div className="mb-9 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.38fr)]">
           <div className="min-w-0">
-            <h1 className="font-heading text-[clamp(2.35rem,5vw,4.5rem)] leading-[0.98] tracking-[-0.03em]">
+            <h1 className="font-heading text-[clamp(1.85rem,3.4vw,2.75rem)] leading-[1.05] tracking-[-0.02em]">
               {t("appForm.buttons.applicantInfo")}
             </h1>
-            <p className="mt-4 max-w-[48rem] text-[1.05rem] leading-relaxed text-muted-foreground">
+            <p className="mt-2 max-w-[48rem] text-[0.95rem] leading-relaxed text-muted-foreground">
               {t("appForm.buttons.applicantInfoDescription", { year: INTAKE_YEAR_DEFAULT })}
             </p>
             {(draft.sessionCode || draft.accessKey || draft.applicant.fullName) && (
-              <div className="mt-5 max-w-[1180px]">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between gap-2 rounded-[14px] border border-primary/25 bg-primary/5 p-4 text-left md:hidden"
-                  aria-expanded={identityOpen}
-                  onClick={() => setIdentityOpen((open) => !open)}
-                >
-                  <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                    {t("appForm.buttons.applicantInfoToggle")}
-                  </span>
-                  <ChevronDown
-                    size={18}
-                    className={`shrink-0 text-muted-foreground transition-transform ${identityOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-                <div
-                  className={`gap-4 md:mt-0 md:grid md:grid-cols-2 lg:grid-cols-3 ${identityOpen ? "mt-3 grid" : "hidden"}`}
-                >
+              <div className="mt-4 max-w-[48rem] rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
                   {draft.applicant.fullName && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
-                      <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                        {t("appForm.reviewStep.fields.fullName")}
-                      </span>
-                      <span className="block mt-1 font-bold tracking-wide text-[clamp(1rem,1.4vw,1.12rem)]">
-                        {draft.applicant.fullName}
-                      </span>
-                    </div>
+                    <span className="font-semibold text-foreground">{draft.applicant.fullName}</span>
                   )}
                   {draft.sessionCode && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                          {t("appForm.sessionCode.label")}
-                        </span>
-                        <button
-                          type="button"
-                          className="shrink-0 rounded-md px-1.5 py-1 text-primary text-[0.72rem] transition-colors hover:bg-primary/10"
-                          aria-label={t("appForm.sessionCode.copyAriaLabel")}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyWithFeedback("session", draft.sessionCode);
-                          }}
-                        >
-                          {draft.copiedField === "session" ? (
-                            <>
-                              <Check size={14} /> {t("appForm.sessionCode.copied")}
-                            </>
-                          ) : (
-                            <>
-                              <Copy size={14} /> {t("appForm.sessionCode.copy")}
-                            </>
-                          )}
-                        </button>
-                      </div>
-                      <code className="block mt-1 overflow-wrap-anywhere font-bold tracking-wide text-[clamp(0.98rem,1.3vw,1.1rem)]">
-                        {draft.sessionCode}
-                      </code>
-                      <span className="text-primary text-[0.78rem] font-semibold leading-relaxed">
-                        {t("appForm.sessionCode.hint")}
-                      </span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                      {t("appForm.sessionCode.label")}
+                      <code className="font-semibold text-foreground">{draft.sessionCode}</code>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-primary text-xs font-medium transition-colors hover:bg-primary/10"
+                        aria-label={t("appForm.sessionCode.copyAriaLabel")}
+                        onClick={() => copyWithFeedback("session", draft.sessionCode)}
+                      >
+                        {draft.copiedField === "session" ? (
+                          <>
+                            <Check size={12} /> {t("appForm.sessionCode.copied")}
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={12} /> {t("appForm.sessionCode.copy")}
+                          </>
+                        )}
+                      </button>
+                    </span>
                   )}
                   {draft.accessKey && (
-                    <div className="rounded-[14px] border border-primary/25 bg-primary/5 p-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-muted-foreground text-[0.76rem] font-bold tracking-wider uppercase">
-                          {t("appForm.accessKey.label")}
-                        </span>
-                        <button
-                          type="button"
-                          className="shrink-0 rounded-md px-1.5 py-1 text-primary text-[0.72rem] transition-colors hover:bg-primary/10"
-                          aria-label={t("appForm.accessKey.copyAriaLabel")}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyWithFeedback("key", draft.accessKey);
-                          }}
-                        >
-                          {draft.copiedField === "key" ? (
-                            <>
-                              <Check size={14} /> {t("appForm.accessKey.copied")}
-                            </>
-                          ) : (
-                            <>
-                              <Copy size={14} /> {t("appForm.accessKey.copy")}
-                            </>
-                          )}
-                        </button>
-                      </div>
-                      <code className="block mt-1 max-w-full break-all font-bold tracking-wide text-[clamp(0.98rem,1.3vw,1.1rem)]">
+                    <span className="inline-flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                      {t("appForm.accessKey.label")}
+                      <code className="max-w-[14rem] truncate font-semibold text-foreground">
                         {draft.accessKey}
                       </code>
-                      <span className="py-2 text-primary text-[0.78rem] font-semibold leading-relaxed">
-                        {t("appForm.accessKey.hint")}
-                      </span>
-                    </div>
+                      <button
+                        type="button"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-primary text-xs font-medium transition-colors hover:bg-primary/10"
+                        aria-label={t("appForm.accessKey.copyAriaLabel")}
+                        onClick={() => copyWithFeedback("key", draft.accessKey)}
+                      >
+                        {draft.copiedField === "key" ? (
+                          <>
+                            <Check size={12} /> {t("appForm.accessKey.copied")}
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={12} /> {t("appForm.accessKey.copy")}
+                          </>
+                        )}
+                      </button>
+                    </span>
                   )}
                 </div>
+                <p className="mt-1.5 text-primary text-xs leading-relaxed">{t("appForm.accessKey.hint")}</p>
               </div>
             )}
-          </div>
-          <div className="grid gap-3 rounded-2xl border border-primary/20 bg-card/85 p-5 shadow-[0_14px_32px_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
-            <div className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
-              <span>{t("appForm.statusBar.applicationStatus")}</span>
-              <ShieldCheck className="text-primary" size={17} />
-            </div>
-            <strong className="font-heading text-2xl leading-tight">
-              {t("appForm.statusBar.stepOf", { current: current + 1, total: steps.length })}
-            </strong>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {t("appForm.statusBar.keepGoing")}
-            </p>
-            <div className="flex items-center gap-2 border-t pt-3 text-sm text-primary">
-              <span
-                className={`size-2 rounded-full ${draft.saveStatus === t("appForm.statusBar.saving") ? "animate-pulse" : ""} ${draft.saveStatus.includes("failed") ? "bg-destructive" : "bg-primary"}`}
-                aria-hidden="true"
-              />
-              {draft.saveStatus === t("appForm.statusBar.savedSecurely")
-                ? t("appForm.statusBar.saved")
-                : draft.saveStatus ||
-                  (draft.accessKey
-                    ? t("appForm.statusBar.connected")
-                    : t("appForm.statusBar.connecting"))}
-            </div>
           </div>
         </div>
       </section>
@@ -2369,9 +2614,11 @@ export function ApplicationForm({
           steps={steps}
           skippedSteps={skippedSteps}
           onStepClick={(index) => draft.setStep(index)}
+          saveStatus={draft.saveStatus}
+          accessKey={draft.accessKey}
         />
 
-        <CardContent className="min-h-[440px] p-5 md:p-9">
+        <CardContent className="min-h-[440px] p-3 md:p-9">
           {current === 0 && (
             <LocationStepCard
               draft={draft}
@@ -2392,7 +2639,15 @@ export function ApplicationForm({
           {current === 4 && <CategoryStep />}
           {current === 5 && <DeclarationStep draft={draft} set={set} />}
           {current === 6 && (
-            <ReviewStep draft={draft} onNavigateToStep={(step) => draft.setStep(step)} />
+            <ReviewStep
+              draft={draft}
+              onNavigateToStep={(step) => draft.setStep(step)}
+              pdfState={pdfState}
+              pdfError={pdfError}
+              pdfLocale={pdfLocale}
+              onPdfLocaleChange={setPdfLocale}
+              onDownloadPdf={() => void runPdfDownload()}
+            />
           )}
         </CardContent>
 
@@ -2753,7 +3008,7 @@ export function ApplicationForm({
                       </div>
                       <p className="text-sm leading-relaxed text-muted-foreground">
                         {t("appForm.submitted.pdf.description", {
-                          filename: applicationPdfFilename(draft),
+                          filename: applicationPdfFilenameForLocale(draft, pdfLocale),
                         })}
                       </p>
                     </div>
@@ -2764,6 +3019,24 @@ export function ApplicationForm({
                       {pdfError || t("appForm.submitted.pdf.errorTitle")}
                     </p>
                   )}
+
+                  <div className="inline-flex w-fit rounded-lg border bg-muted/30 p-0.5 text-xs font-medium">
+                    {(("en si").split(" ") as PdfLocale[]).map((locale) => (
+                      <button
+                        key={locale}
+                        type="button"
+                        aria-pressed={pdfLocale === locale}
+                        className={`rounded-md px-2.5 py-1.5 transition-colors ${
+                          pdfLocale === locale
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        onClick={() => setPdfLocale(locale)}
+                      >
+                        {locale === "en" ? t("appForm.reviewStep.downloadPdf.english") : t("appForm.reviewStep.downloadPdf.sinhala")}
+                      </button>
+                    ))}
+                  </div>
 
                   <Button
                     type="button"
@@ -2864,11 +3137,19 @@ export function ApplicationForm({
                     }
                     onClick={next}
                   >
+                    {isAdvancing ? (
+                      <>
+                        <Spinner /> {t("appForm.statusBar.saving")}
+                      </>
+                    ) : (
+                      <>
                     {advancingWithSkip && <TriangleAlert size={16} />}
                     {advancingWithSkip
                       ? t("appForm.buttons.continueSkipped")
                       : t("appForm.buttons.continue")}{" "}
                     <ArrowRight size={17} />
+                      </>
+                    )}
                   </Button>
                 ) : (
                   <Button
@@ -2922,20 +3203,22 @@ export function ApplicationForm({
           })()}
 
         {collectionOnly && (
-          <CardFooter className="flex items-center gap-3 px-(--card-spacing) py-4 bg-primary/8 border-t border-primary/20">
-            <Clock3 size={18} />
-            <div className="grid gap-0.5 text-sm flex-1">
-              <strong>{t("appForm.buttons.formWindowClosed.title")}</strong>
-              <span className="text-muted-foreground">
-                {t("appForm.buttons.formWindowClosed.description", {
-                  opensAt: draft.submissionOpensAt
-                    ? new Date(draft.submissionOpensAt).toLocaleString()
-                    : t("appForm.buttons.formWindowClosed.notConfigured"),
-                  closesAt: draft.submissionClosesAt
-                    ? new Date(draft.submissionClosesAt).toLocaleString()
-                    : t("appForm.buttons.formWindowClosed.notConfigured"),
-                })}
-              </span>
+          <CardFooter className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-(--card-spacing) bg-primary/8 border-t border-primary/20">
+            <div className="flex items-start gap-3 flex-1">
+              <Clock3 size={18} className="shrink-0 mt-0.5" />
+              <div className="grid gap-0.5 text-sm flex-1">
+                <strong>{t("appForm.buttons.formWindowClosed.title")}</strong>
+                <span className="text-muted-foreground">
+                  {t("appForm.buttons.formWindowClosed.description", {
+                    opensAt: draft.submissionOpensAt
+                      ? new Date(draft.submissionOpensAt).toLocaleString()
+                      : t("appForm.buttons.formWindowClosed.notConfigured"),
+                    closesAt: draft.submissionClosesAt
+                      ? new Date(draft.submissionClosesAt).toLocaleString()
+                      : t("appForm.buttons.formWindowClosed.notConfigured"),
+                  })}
+                </span>
+              </div>
             </div>
             <AlertDialog
               open={draft.clearDraftDialogOpen}
@@ -3011,6 +3294,15 @@ export function ApplicationForm({
                   {t("appForm.buttons.submissionRequest.cancel")}
                 </Button>
               </div>
+              <a
+                href={buildSupportWhatsAppLink(draft.sessionCode)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-fit items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                <MessageCircle size={16} />
+                {t("appForm.buttons.submissionRequest.whatsapp")}
+              </a>
             </div>
           </div>
         )}

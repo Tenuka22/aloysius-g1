@@ -1,8 +1,7 @@
 import type { CategoryApplication, CategoryType, ScoringInputs } from "@/lib/g1/application-store";
 import {
   CATEGORY_MAX_MARKS,
-  ELECTORAL_REGISTER_START_YEAR,
-  ELECTORAL_REGISTER_END_YEAR,
+  electoralRegisterYears,
   MAIN_DOCUMENT_MAX_61,
   ADDITIONAL_DOC_MARKS_PER,
   ADDITIONAL_DOC_MAX_61,
@@ -112,9 +111,13 @@ export function yearsBetween(d1: string | undefined, d2: string | undefined): nu
   return Math.max(0, Math.abs(b.getTime() - a.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 }
 
-export function electoralYearsRegistered(regYear: number | undefined): number {
-  if (regYear == null || regYear < ELECTORAL_REGISTER_START_YEAR || regYear > ELECTORAL_REGISTER_END_YEAR) return 0;
-  return ELECTORAL_REGISTER_END_YEAR + 1 - regYear;
+/** Counts checked years that actually fall within the current scored window
+ * (see `electoralRegisterYears`); a year checked outside that window (e.g.
+ * a stale value from a previous intake cycle's window) never scores. */
+export function electoralYearsRegistered(checkedYears: number[] | undefined): number {
+  if (!checkedYears || checkedYears.length === 0) return 0;
+  const validYears = electoralRegisterYears();
+  return checkedYears.filter((year) => validYears.includes(year)).length;
 }
 
 export function deedAgeWeight(years: number | undefined): number {
@@ -147,6 +150,7 @@ export const OL_CEILINGS: Record<number, Record<string, number>> = {
   6: { S: 4, C: 8, B: 10, A: 0 },
   8: { S: 4, C: 8, B: 10, A: 0 },
   9: { S: 4, C: 6, B: 8, A: 10 },
+  10: { S: 4, C: 8, B: 0, A: 10 },
 };
 
 export const AL_CEILINGS: Record<number, Record<string, number>> = {
@@ -193,8 +197,8 @@ export const SIBLING_EXAM_MARKS: Record<string, number> = {
 };
 
 function electoralRegisterMarks61(inputs: ScoringInputs): number {
-  const mother = electoralYearsRegistered(inputs.electoralMotherSince);
-  const father = electoralYearsRegistered(inputs.electoralFatherSince);
+  const mother = electoralYearsRegistered(inputs.electoralMotherYears);
+  const father = electoralYearsRegistered(inputs.electoralFatherYears);
   return cap((mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_61, ELECTORAL_MAX_61);
 }
 
@@ -360,8 +364,8 @@ export function scoreCategory63(inputs: ScoringInputs): CategoryScore {
     SIBLING_COCURRICULAR_TOTAL_MAX,
   );
   const documentMarks = cap(MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0, MAIN_DOCUMENT_MAX_63);
-  const mother = electoralYearsRegistered(inputs.electoralMotherSince);
-  const father = electoralYearsRegistered(inputs.electoralFatherSince);
+  const mother = electoralYearsRegistered(inputs.electoralMotherYears);
+  const father = electoralYearsRegistered(inputs.electoralFatherYears);
   const electoralMarks = cap((mother + father) * ELECTORAL_MARKS_PER_PERSON_YEAR_63, ELECTORAL_MAX_63);
   const proximity = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_63, PROXIMITY_MAX_63);
 

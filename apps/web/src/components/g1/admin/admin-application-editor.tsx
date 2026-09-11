@@ -157,7 +157,7 @@ const DEGREE_LEVELS = ["none", "first-degree", "postgraduate", "doctorate", "cha
 
 type CategoryTextFieldKey = "mainDocumentType" | "documentOwnership" | "serviceLocationLevel" | "studentSocietiesRole" | "otherActivity" | "otherActivityName" | "highestDegree";
 type CategoryDateFieldKey = "deedTransferDate" | "serviceStartDate" | "previousWorkplaceStartDate" | "transferDate" | "abroadStartDate" | "abroadEndDate" | "alumniStartDate" | "alumniEndDate" | "pastPupilsMembershipStart" | "pastPupilsMembershipEnd";
-type CategoryNumberFieldKey = "electoralMotherSince" | "electoralFatherSince" | "schoolsRadiusKm" | "difficultServiceDistanceKm" | "difficultServiceExtraPeriods" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "sportsCount" | "siblingsCurrentlyStudyingCount" | "siblingPrefectCount";
+type CategoryNumberFieldKey = "schoolsRadiusKm" | "difficultServiceDistanceKm" | "difficultServiceExtraPeriods" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "sportsCount" | "siblingsCurrentlyStudyingCount" | "siblingPrefectCount";
 type CategoryBooleanFieldKey = "grade5ScholarshipPassed" | "pastPupilsLifeMember" | "pastPupilsCommitteeMember" | "pastPupilsExecutiveOffice" | "hasDiploma" | "sportsMeetContribution" | "shramadanaContribution" | "schoolProjectsContribution";
 
 const CATEGORY_TEXT_FIELDS: Array<[CategoryTextFieldKey, string]> = [
@@ -184,8 +184,6 @@ const CATEGORY_DATE_FIELDS: Array<[CategoryDateFieldKey, string]> = [
 ];
 
 const CATEGORY_NUMBER_FIELDS: Array<[CategoryNumberFieldKey, string]> = [
-  ["electoralMotherSince", "Electoral mother year"],
-  ["electoralFatherSince", "Electoral father year"],
   ["schoolsRadiusKm", "Schools radius km"],
   ["difficultServiceDistanceKm", "Difficult service distance km"],
   ["difficultServiceExtraPeriods", "Difficult service extra periods"],
@@ -224,8 +222,8 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["documentOwnership", "Document ownership"],
   ["deedTransferDate", "Deed transfer date"],
   ["additionalDocs", "Additional docs"],
-  ["electoralMotherSince", "Electoral mother year"],
-  ["electoralFatherSince", "Electoral father year"],
+  ["electoralMotherYears", "Electoral mother years"],
+  ["electoralFatherYears", "Electoral father years"],
   ["schoolsRadiusKm", "Schools radius km"],
   ["grade5ScholarshipPassed", "Grade 5 Scholarship passed"],
   ["alumniStartDate", "Alumni start date"],

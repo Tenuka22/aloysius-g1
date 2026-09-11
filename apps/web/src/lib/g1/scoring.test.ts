@@ -68,10 +68,10 @@ describe("scoreCategory61 – residence & proximity", () => {
   });
 
   it("awards 2.5 per registered electoral person-year capped at 25", () => {
-    expect(scoreCategory61({ electoralMotherSince: 2020, electoralFatherSince: 2020 }).breakdown[2]?.marks).toBe(25);
-    expect(scoreCategory61({ electoralMotherSince: 2020, electoralFatherSince: 2021 }).breakdown[2]?.marks).toBe(22.5);
-    expect(scoreCategory61({ electoralMotherSince: 2020, electoralFatherSince: undefined }).breakdown[2]?.marks).toBe(12.5);
-    expect(scoreCategory61({ electoralMotherSince: 2020, electoralFatherSince: 2020 }).breakdown[2]?.marks).toBe(25);
+    expect(scoreCategory61({ electoralMotherYears: [2021,2022,2023,2024,2025], electoralFatherYears: [2021,2022,2023,2024,2025] }).breakdown[2]?.marks).toBe(25);
+    expect(scoreCategory61({ electoralMotherYears: [2021,2022,2023,2024,2025], electoralFatherYears: [2022,2023,2024,2025] }).breakdown[2]?.marks).toBe(22.5);
+    expect(scoreCategory61({ electoralMotherYears: [2021,2022,2023,2024,2025], electoralFatherYears: undefined }).breakdown[2]?.marks).toBe(12.5);
+    expect(scoreCategory61({ electoralMotherYears: [2021,2022,2023,2024,2025], electoralFatherYears: [2021,2022,2023,2024,2025] }).breakdown[2]?.marks).toBe(25);
   });
 
   it("awards five marks per selected nearby school capped at fifty", () => {
@@ -86,8 +86,8 @@ describe("scoreCategory61 – residence & proximity", () => {
       mainDocumentType: "title-deed-applicant",
       deedTransferDate: "2017-01-01",
       additionalDocs: ["a", "b", "c", "d", "e"],
-      electoralMotherSince: 2020,
-      electoralFatherSince: 2020,
+      electoralMotherYears: [2021,2022,2023,2024,2025],
+      electoralFatherYears: [2021,2022,2023,2024,2025],
       schoolsWithinRadius: [],
     });
     expect(maximal.total).toBe(100);
@@ -117,14 +117,21 @@ describe("scoreCategory62 – alumni", () => {
     expect(scoreCategory62({ olSubjectCount: 9, olGradeS: 9 }).breakdown[2]?.marks).toBeCloseTo(4, 2);
   });
 
+  it("uses the ten-subject O/L table (B excluded, S/C/A only) where each grade row hits its printed ceiling exactly", () => {
+    expect(scoreCategory62({ olSubjectCount: 10, olGradeA: 10 }).breakdown[2]?.marks).toBe(10);
+    expect(scoreCategory62({ olSubjectCount: 10, olGradeC: 10 }).breakdown[2]?.marks).toBe(8);
+    expect(scoreCategory62({ olSubjectCount: 10, olGradeS: 10 }).breakdown[2]?.marks).toBeCloseTo(4, 2);
+    expect(scoreCategory62({ olSubjectCount: 10, olGradeB: 10 }).breakdown[2]?.marks).toBe(0);
+  });
+
   it("caps O/L marks at ten regardless of grade inflation", () => {
     expect(scoreCategory62({ olSubjectCount: 6, olGradeA: 6 }).breakdown[2]?.marks).toBe(0);
     expect(scoreCategory62({ olSubjectCount: 9, olGradeA: 30 }).breakdown[2]?.marks).toBe(10);
   });
 
-  it("does not count an electoral year outside the 2020–2024 window", () => {
-    expect(scoreCategory61({ electoralMotherSince: 2019, electoralFatherSince: 2025 }).breakdown[2]?.marks).toBe(0);
-    expect(scoreCategory63({ electoralMotherSince: 2019, electoralFatherSince: 2025 }).breakdown[5]?.marks).toBe(0);
+  it("does not count an electoral year outside the scored window", () => {
+    expect(scoreCategory61({ electoralMotherYears: [2019, 2020], electoralFatherYears: [2026] }).breakdown[2]?.marks).toBe(0);
+    expect(scoreCategory63({ electoralMotherYears: [2019, 2020], electoralFatherYears: [2026] }).breakdown[5]?.marks).toBe(0);
   });
 
   it("uses the three-subject A/L table where all A grades reach exactly twelve", () => {
@@ -209,8 +216,8 @@ describe("scoreCategory63 – siblings", () => {
   });
 
   it("awards two marks per electoral person-year capped at twenty", () => {
-    expect(scoreCategory63({ electoralMotherSince: 2020, electoralFatherSince: 2020 }).breakdown[5]?.marks).toBe(20);
-    expect(scoreCategory63({ electoralMotherSince: 2022 }).breakdown[5]?.marks).toBe(6);
+    expect(scoreCategory63({ electoralMotherYears: [2021,2022,2023,2024,2025], electoralFatherYears: [2021,2022,2023,2024,2025] }).breakdown[5]?.marks).toBe(20);
+    expect(scoreCategory63({ electoralMotherYears: [2022,2023,2024] }).breakdown[5]?.marks).toBe(6);
   });
 
   it("deducts three marks per nearby school from thirty", () => {
@@ -229,8 +236,8 @@ describe("scoreCategory63 – siblings", () => {
       siblingPraiseworthyAchievement: true,
       parentsSupportRendered: true,
       mainDocumentType: "title-deed-applicant-spouse",
-      electoralMotherSince: 2020,
-      electoralFatherSince: 2020,
+      electoralMotherYears: [2021,2022,2023,2024,2025],
+      electoralFatherYears: [2021,2022,2023,2024,2025],
       schoolsWithinRadius: [],
     });
     expect(maximal.total).toBeCloseTo(99.5, 2);
