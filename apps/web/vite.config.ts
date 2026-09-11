@@ -18,13 +18,24 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     tanstackStart(),
-    // Explicit "bun" preset (see TanStack Start's hosting docs): without it,
-    // the srvx server adapter baked into the build is auto-detected from
-    // whichever runtime happens to execute `vite build`, which is not
-    // reliably consistent across build environments. Pinning it keeps the
-    // Docker image's Bun-run server (see apps/web/Dockerfile) matched to a
-    // build that was actually compiled for Bun.
-    nitro({ preset: "bun" }),
+    // Deliberately the default "node-server" preset, not "bun": Nitro's own
+    // "bun" preset runtime (srvx's BunServer) never wires an `error` handler
+    // into Bun.serve() (see node_modules/nitro/dist/presets/bun/runtime/bun.mjs
+    // - `serve({ ..., fetch: _fetch, bun: {...} })` has no `error:` key).
+    // Without it, any exception thrown while generating/streaming a response
+    // - such as TanStack Router's Seroval serialization occasionally choking
+    // mid-stream - becomes a truly uncaught exception that crashes the whole
+    // Bun process (not just that one request), matching the observed
+    // repeated crash-restart loop in production. Bun's Node-compatible
+    // `http` module (used by the "node-server" preset) doesn't have this
+    // gap: a handler throwing mid-response aborts only that connection.
+    // Bun still runs the process (see apps/web/Dockerfile) - only the HTTP
+    // server implementation inside the build changes.
+    // Explicitly pinned (not left to auto-detect): the same `bun run build`
+    // command otherwise picks a different srvx adapter depending on the
+    // host OS (confirmed: node.mjs on Windows, bun.mjs on Linux for this
+    // exact command), so leaving it unset is not reliably deterministic.
+    nitro({ preset: "node-server" }),
     // react's vite plugin must come after start's vite plugin
     react(),
   ],

@@ -54,6 +54,18 @@ FROM oven/bun:${BUN_VERSION}-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# apps/web/vite.config.ts pins the Nitro "node-server" preset (per
+# https://tanstack.com/start/latest/docs/framework/react/guide/hosting#nodejs--docker)
+# specifically because Nitro's "bun" preset runtime never wires an `error`
+# handler into Bun.serve(), so any exception thrown while generating a
+# response - e.g. TanStack Router's Seroval serialization occasionally
+# choking mid-stream - becomes a truly uncaught exception that crashes the
+# whole process instead of failing just that one request. srvx's Node
+# adapter wraps every request in try/catch and always returns a clean error
+# response. Real Node.js is required to run this build correctly - it was
+# never built for Bun, so running it via `bun` throws "Bun is not defined".
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
+
 # Every workspace dependency, including drizzle-kit (packages/db's own
 # dependency that the migration step below shells out to) - reused as-is
 # from `deps` rather than reinstalled.
@@ -87,4 +99,4 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
 
 # Apply pending Drizzle migrations against the mounted SQLite file, then
 # serve. A failed migration exits non-zero and never starts the server.
-CMD ["sh", "-c", "cd packages/db && bun run db:migrate:deploy && cd /app && exec bun .output/server/index.mjs"]
+CMD ["sh", "-c", "cd packages/db && bun run db:migrate:deploy && cd /app && exec node .output/server/index.mjs"]
