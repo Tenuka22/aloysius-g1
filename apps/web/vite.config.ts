@@ -18,7 +18,13 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     tanstackStart(),
-    nitro(),
+    // Explicit "bun" preset (see TanStack Start's hosting docs): without it,
+    // the srvx server adapter baked into the build is auto-detected from
+    // whichever runtime happens to execute `vite build`, which is not
+    // reliably consistent across build environments. Pinning it keeps the
+    // Docker image's Bun-run server (see apps/web/Dockerfile) matched to a
+    // build that was actually compiled for Bun.
+    nitro({ preset: "bun" }),
     // react's vite plugin must come after start's vite plugin
     react(),
   ],
