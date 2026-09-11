@@ -38,6 +38,16 @@ const en = {
   "building.admissionsWindow.open": "Applications open now · closes {closesDate}",
   "building.admissionsWindow.upcoming": "Applications open {opensDate}",
   "building.admissionsWindow.closed": "Applications closed on {closesDate}",
+  "building.demoVideo.preview": "Watch preview",
+  "building.demoVideo.download": "Download demo video",
+  "building.demoVideo.dialogTitle": "Grade 1 application - walkthrough",
+  "building.demoVideo.dialogDescription": "A full walkthrough of the Grade 1 online application, from start to submission.",
+  "building.help.heading": "Need help or have a question?",
+  "building.help.general": "General",
+  "building.help.emergency": "Emergency",
+  "building.help.whatsapp": "Message us on WhatsApp",
+  "building.help.templateGeneral": "Hello, I'd like to request a callback about the Grade 1 admissions process.\n\nUrgency: Not urgent\nName: \nContact number: \nBest time to call: ",
+  "building.help.templateEmergency": "Hello, this is an EMERGENCY regarding the Grade 1 admissions process. Please call me back as soon as possible.\n\nUrgency: EMERGENCY\nName: \nContact number: ",
 
   // ─── routes/index.tsx ─────────────────────────────────────────
   "home.hero.badge": "G1 {year} intake",

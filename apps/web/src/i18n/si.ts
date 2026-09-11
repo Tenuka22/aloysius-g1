@@ -38,6 +38,16 @@ const si = {
   "building.admissionsWindow.open": "අයදුම්පත් බාරගැනීම දැන් විවෘතයි · {closesDate} දින වසා දමේ",
   "building.admissionsWindow.upcoming": "අයදුම්පත් බාරගැනීම {opensDate} දින විවෘත වේ",
   "building.admissionsWindow.closed": "අයදුම්පත් බාරගැනීම {closesDate} දින වසා ඇත",
+  "building.demoVideo.preview": "පෙරදසුන බලන්න",
+  "building.demoVideo.download": "ආදර්ශන වීඩියෝව බාගන්න",
+  "building.demoVideo.dialogTitle": "1 ශ්‍රේණිය අයදුම්පත - මාර්ගෝපදේශය",
+  "building.demoVideo.dialogDescription": "1 ශ්‍රේණියේ මාර්ගගත අයදුම්පත ආරම්භයේ සිට ඉදිරිපත් කිරීම දක්වා සම්පූර්ණ මාර්ගෝපදේශයකි.",
+  "building.help.heading": "උදව් අවශ්‍යද?",
+  "building.help.general": "සාමාන්‍ය",
+  "building.help.emergency": "හදිසි",
+  "building.help.whatsapp": "WhatsApp හරහා අප හා සම්බන්ධ වන්න",
+  "building.help.templateGeneral": "ආයුබෝවන්, 1 ශ්‍රේණියේ ඇතුළත් කිරීමේ ක්‍රියාවලිය සම්බන්ධයෙන් මට ඇමතුමක් අවශ්‍යයි.\n\nහදිසි බව: නැත\nනම: \nසම්බන්ධ කර ගැනීමේ අංකය: \nඇමතීමට සුදුසු වේලාව: ",
+  "building.help.templateEmergency": "ආයුබෝවන්, මෙය 1 ශ්‍රේණියේ ඇතුළත් කිරීමේ ක්‍රියාවලිය සම්බන්ධයෙන් හදිසි කාරණයකි. කරුණාකර හැකි ඉක්මනින් මට ඇමතුමක් ලබා දෙන්න.\n\nහදිසි බව: හදිසි (EMERGENCY)\nනම: \nසම්බන්ධ කර ගැනීමේ අංකය: ",
 
   // ─── routes/index.tsx ─────────────────────────────────────────
   "home.hero.badge": "{year} ශ්‍රේණිය 1 ඇතුළත් කිරීම",

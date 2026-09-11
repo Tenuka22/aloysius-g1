@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarClock, HardHat } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, CalendarClock, Download, HardHat, MessageCircle, Phone, PlayCircle, TriangleAlert } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { Eyebrow } from "@aloysius-admissions/ui/components/eyebrow";
 import { HeroVignette } from "@aloysius-admissions/ui/components/hero-vignette";
 import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
@@ -32,6 +34,23 @@ function useAdmissionsWindowText(locale: string) {
   return t("building.admissionsWindow.open", { closesDate: formatter.format(closesAt) });
 }
 
+// Served as a plain static file (see apps/web/public), not routed through a
+// server function - keeps the download a zero-compute CDN hit instead of an
+// invoked serverless function. Re-encoded from a 270MB screen capture down to
+// ~52MB (H.264 CRF 24 + faststart) specifically so it stays well under
+// GitHub's 100MB hard push limit and doesn't balloon Vercel bandwidth.
+const DEMO_VIDEO_SRC = "/g1-application-demo.mp4";
+const DEMO_VIDEO_DOWNLOAD_NAME = "St-Aloysius-G1-Application-Demo.mp4";
+// youtube-nocookie.com defers all YouTube cookies/tracking until playback
+// actually starts, and the iframe itself is only mounted once the dialog
+// opens (see `previewOpen` below) - so the placeholder page never makes a
+// single request to YouTube unless a visitor explicitly asks for the preview.
+const DEMO_VIDEO_YOUTUBE_ID = "LlxeQo4F30Q";
+
+// wa.me requires the bare international number (no "+", spaces, or dashes).
+const HELP_PHONE_DISPLAY = "+94 77 936 8304";
+const HELP_WHATSAPP_NUMBER = "94779368304";
+
 // Placeholder landing page for the school website while the real site is
 // being built. The Grade 1 admissions portal lives at /admissions and is
 // linked from here so the working part of the site stays reachable. Built as
@@ -40,6 +59,11 @@ function useAdmissionsWindowText(locale: string) {
 export function BuildingPage() {
   const { t, locale } = useTranslation();
   const admissionsWindowText = useAdmissionsWindowText(locale);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [isEmergency, setIsEmergency] = useState(false);
+  const whatsappHref = `https://wa.me/${HELP_WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    t(isEmergency ? "building.help.templateEmergency" : "building.help.templateGeneral"),
+  )}`;
 
   return (
     <div className="flex min-h-svh flex-col bg-primary text-primary-foreground" data-surface="school-home-building">
@@ -110,8 +134,105 @@ export function BuildingPage() {
               <ArrowRight size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
             </Button>
           </Link>
+
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 rounded-full border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              onClick={() => setPreviewOpen(true)}
+            >
+              <PlayCircle size={16} />
+              {t("building.demoVideo.preview")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 rounded-full border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              render={<a href={DEMO_VIDEO_SRC} download={DEMO_VIDEO_DOWNLOAD_NAME} />}
+              nativeButton={false}
+            >
+              <Download size={16} />
+              {t("building.demoVideo.download")}
+            </Button>
+          </div>
+
+          <div className="mt-2 flex w-full max-w-sm flex-col items-center gap-3 border-t border-primary-foreground/10 pt-6">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-primary-foreground/55">
+              {t("building.help.heading")}
+            </p>
+            <a
+              href={`tel:+${HELP_WHATSAPP_NUMBER}`}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:text-brand-gold"
+            >
+              <Phone size={14} className="text-brand-gold" />
+              {HELP_PHONE_DISPLAY}
+            </a>
+
+            <div className="flex flex-col items-center gap-2.5 sm:flex-row">
+              <div className="inline-flex rounded-full border border-primary-foreground/20 bg-primary-foreground/6 p-0.5 text-xs font-medium">
+                <button
+                  type="button"
+                  aria-pressed={!isEmergency}
+                  className={`rounded-full px-3 py-1.5 transition-colors ${
+                    !isEmergency
+                      ? "bg-primary-foreground text-primary"
+                      : "text-primary-foreground/70 hover:text-primary-foreground"
+                  }`}
+                  onClick={() => setIsEmergency(false)}
+                >
+                  {t("building.help.general")}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={isEmergency}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 transition-colors ${
+                    isEmergency
+                      ? "bg-destructive text-white"
+                      : "text-primary-foreground/70 hover:text-primary-foreground"
+                  }`}
+                  onClick={() => setIsEmergency(true)}
+                >
+                  <TriangleAlert size={12} />
+                  {t("building.help.emergency")}
+                </button>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2 rounded-full border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                render={<a href={whatsappHref} target="_blank" rel="noopener noreferrer" />}
+                nativeButton={false}
+              >
+                <MessageCircle size={16} />
+                {t("building.help.whatsapp")}
+              </Button>
+            </div>
+          </div>
         </div>
       </main>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent fullScreen className="w-[90svw] h-[90svh] max-w-none gap-0 p-0 overflow-hidden">
+          <DialogHeader className="shrink-0 p-6 pb-4">
+            <DialogTitle>{t("building.demoVideo.dialogTitle")}</DialogTitle>
+            <DialogDescription>{t("building.demoVideo.dialogDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 w-full bg-black">
+            {previewOpen && (
+              <iframe
+                className="h-full w-full"
+                src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_YOUTUBE_ID}?autoplay=1&rel=0`}
+                title={t("building.demoVideo.dialogTitle")}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
