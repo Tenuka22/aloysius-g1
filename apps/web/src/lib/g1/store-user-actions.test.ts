@@ -127,12 +127,19 @@ describe("Score consistency", () => {
     expect(scoreCategory(cat).total).toBeLessThanOrEqual(100);
   });
 
-  it("6.4 current difficult-service gives 25 flat", () => {
+  it("6.4 current difficult-service reaches the twenty-five cap after five years", () => {
     const cat: CategoryApplication = {
       id: "s5",
       categoryType: "6.4",
       locked: false,
-      scoringInputs: { serviceStartDate: "2016-09-01", difficultServiceType: "current" },
+      scoringInputs: {
+        contributionPath: "institution",
+        contributionSameSchool: true,
+        contributionServiceStartDate: "2010-01-01",
+        serviceStartDate: "2016-09-01",
+        difficultServiceType: "current",
+        difficultServiceStartDate: "2010-01-01",
+      },
     };
     const score = scoreCategory(cat);
     expect(score.breakdown.some((b) => b.label.includes("Difficult") && b.marks === 25)).toBe(true);

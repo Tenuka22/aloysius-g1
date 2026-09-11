@@ -4,6 +4,8 @@ import {
   type CategoryApplication,
   type CategoryType,
   type ScoringInputs,
+  type SocietyEntry,
+  type SportsEntry,
   useApplicationStore,
 } from "@/lib/g1/application-store";
 import {
@@ -12,10 +14,9 @@ import {
   CATEGORY_MAX_MARKS,
   CONTRIBUTION_MAX,
   DEGREE_MAX,
-  DIFFICULT_EXTRA_PERIOD_MARKS,
-  DIFFICULT_SERVICE_CURRENT_MARKS,
+  DIFFICULT_SERVICE_CURRENT_RATE,
   DIFFICULT_SERVICE_MAX,
-  DIFFICULT_SERVICE_PREVIOUS_BASE,
+  DIFFICULT_SERVICE_PREVIOUS_RATE,
   DIPLOMA_MARKS,
   electoralRegisterYears,
   ELECTORAL_MARKS_PER_PERSON_YEAR_63,
@@ -28,8 +29,13 @@ import {
   MAIN_DOCUMENT_MAX_61,
   MAIN_DOCUMENT_MAX_63,
   OTHER_ACTIVITIES_MAX,
-  PAST_PUPILS_LIFE_MEMBER_MARKS,
+  PAST_PUPILS_LIFE_MEMBER_MARKS_PER_YEAR,
+  PAST_PUPILS_LIFE_MEMBER_MAX,
   PAST_PUPILS_MEMBERSHIP_MAX,
+  PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR,
+  PAST_PUPILS_EXECUTIVE_MARKS,
+  PAST_PUPILS_EXECUTIVE_COUNT,
+  PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX,
   PAST_PUPILS_TOTAL_MAX,
   PAST_PUPILS_YEARLY_MARKS,
   PROXIMITY_MAX_61,
@@ -44,18 +50,23 @@ import {
   RESIDENCE_DISTANCE_MAX_64,
   RESIDENCE_DISTANCE_TIERS_64,
   SCHOOL_PROJECTS_MARKS,
-  SERVICE_LOCATION_MARKS,
-  SERVICE_LOCATION_MAX,
+  CONTRIBUTION_PATH1_SAME_SCHOOL_RATE,
+  CONTRIBUTION_PATH1_ELSEWHERE_RATE,
+  CONTRIBUTION_PATH1_SAME_SCHOOL_MAX,
+  CONTRIBUTION_PATH1_ELSEWHERE_MAX,
+  CONTRIBUTION_PATH2_RATE_PER_ITEM,
+  CONTRIBUTION_PATH2_ITEM_MAX,
+  SCHOOL_EDUCATION_CONTRIBUTION_MAX,
   SERVICE_PERIOD_MAX,
   SHRAMADANA_CONTRIBUTION,
   SIBLING_COCURRICULAR_TOTAL_MAX,
   SIBLING_EXAM_MAX,
-  SIBLING_MARKS_PER_SIBLING,
-  SIBLING_MULTIPLE_APPLYING_MARKS,
-  SIBLING_PRAISEWORTHY_MARKS,
-  SIBLING_PREFECT_MAX,
+  SIBLING_MARKS_PER_GRADE,
+  SIBLING_MULTIPLE_STUDYING_MARKS,
+  SIBLING_LEADERSHIP_MARKS,
+  SIBLING_SPORTS_MAX,
   SIBLING_STUDIED_HERE_MARKS,
-  SIBLING_STUDYING_MAX,
+  SIBLING_GRADES_MAX,
   SIBLING_SUPPORT_MARKS,
   SPORTS_MAX,
   SPORTS_MEET_CONTRIBUTION,
@@ -81,13 +92,16 @@ import {
   OL_CEILINGS,
   OTHER_ACTIVITY_MARKS,
   SIBLING_EXAM_MARKS,
-  SIBLING_PREFECT_LEVEL_MARKS,
+  SIBLING_SPORTS_LEVEL_MARKS,
   SPORTS_LEVEL_MARKS,
   STUDENT_SOCIETIES_ROLE_MARKS,
   abroadPeriodMarks,
   additionalDocsMarks61,
   deedAgeWeight,
-  difficultDistanceMarks,
+  contributionMarks64,
+  difficultServiceCurrentMarks,
+  difficultServicePreviousMarks,
+  difficultServiceDistanceMarks,
   documentMarks61,
   electoralMarks61,
   electoralYearsRegistered,
@@ -102,6 +116,7 @@ import {
   workplaceDistanceMarks,
   yearsBetween,
   yearsFromDate,
+  wholeYearsFromDate,
 } from "@/lib/g1/scoring";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -159,6 +174,7 @@ import {
   TableRow,
 } from "@aloysius-admissions/ui/components/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs";
+import { Textarea } from "@aloysius-admissions/ui/components/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -274,21 +290,6 @@ function getAlSubjectOptions(t: TFn) {
     ["3", t("category.alSubjectOptions.3")],
     ["4", t("category.alSubjectOptions.4")],
   ] as const;
-}
-
-function getSportsLevelOptions(t: TFn, marksMap: Record<string, number> = SPORTS_LEVEL_MARKS) {
-  return withMarks(
-    [
-      ["inter-house", t("category.sportsLevelOptions.interHouse")],
-      ["zonal", t("category.sportsLevelOptions.zonal")],
-      ["district", t("category.sportsLevelOptions.district")],
-      ["provincial", t("category.sportsLevelOptions.provincial")],
-      ["national", t("category.sportsLevelOptions.national")],
-      ["international", t("category.sportsLevelOptions.international")],
-    ] as const,
-    marksMap,
-    t,
-  );
 }
 
 function getLeadershipRoleOptions(t: TFn) {
@@ -672,16 +673,16 @@ function ElectoralYearCheckboxes({
           </TooltipProvider>
         )}
       </FieldLabel>
-      <div className="flex flex-wrap gap-3" id={id}>
+      <div className="flex flex-wrap gap-4" id={id}>
         {years.map((year) => (
           <label
             key={year}
             htmlFor={`${id}-${year}`}
-            className="flex items-center gap-1.5 text-sm cursor-pointer"
+            className="flex items-center gap-2 text-sm cursor-pointer"
       >
             <Checkbox
               id={`${id}-${year}`}
-              className="size-4"
+              className="size-5"
               checked={selected.includes(year)}
               onCheckedChange={() => toggle(year)}
             />
@@ -698,7 +699,8 @@ function RadioOption({
   value,
   label,
   marks,
-}: { id: string; value: string; label: string; marks?: number }) {
+  note,
+}: { id: string; value: string; label: string; marks?: number; note?: string }) {
   const { t } = useTranslation();
   return (
     <FieldLabel htmlFor={id} className="flex w-fit cursor-pointer items-center gap-2 font-normal">
@@ -707,6 +709,7 @@ function RadioOption({
       {marks != null && (
         <span className="text-xs text-muted-foreground">({markSuffix(t, marks)})</span>
       )}
+      {note != null && <span className="text-xs text-muted-foreground">({note})</span>}
     </FieldLabel>
   );
 }
@@ -777,6 +780,180 @@ function AdditionalDocsCheckboxGroup({
         ))}
       </div>
     </Field>
+  );
+}
+
+/** Checkbox matrix for up to 5 named sports, each with a checkbox per
+ * competition level - a sport can have more than one level checked (e.g.
+ * achieved at Zonal one year, National another), each contributing its own
+ * marks; the section-level cap still applies. */
+function SportsTable({
+  id,
+  entries,
+  columns,
+  onChange,
+  field = "sportsEntries",
+  rowCount = 5,
+  nameColumnLabel,
+  namePlaceholder,
+}: {
+  id: string;
+  entries: SportsEntry[];
+  columns: readonly (readonly [string, string, number])[];
+  onChange: (patch: Partial<ScoringInputs>) => void;
+  field?: "sportsEntries" | "siblingSportsEntries";
+  rowCount?: number;
+  nameColumnLabel: string;
+  namePlaceholder: (number: number) => string;
+}) {
+  const rowIndexes = Array.from({ length: rowCount }, (_, index) => index);
+  return (
+    <div className="overflow-x-auto">
+      <table className="table-fixed text-sm border-collapse">
+        <thead>
+          <tr>
+            <th className="w-32 text-left pb-1.5 pr-2 text-xs font-medium text-muted-foreground">
+              {nameColumnLabel}
+            </th>
+            {columns.map(([value, label, marks]) => (
+              <th key={value} className="w-16 pb-1.5 px-1 text-center text-[0.65rem] font-medium text-muted-foreground">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="block w-full truncate cursor-help">{label}</TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs whitespace-normal">
+                      {label}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <div className="font-normal opacity-70">({marks})</div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rowIndexes.map((index) => {
+            const entry = entries[index] ?? {};
+            const levels = entry.levels ?? [];
+            const updateRow = (patch: Partial<SportsEntry>) => {
+              const next = [...entries];
+              while (next.length <= index) next.push({});
+              next[index] = { ...next[index], ...patch };
+              onChange({ [field]: next } as Partial<ScoringInputs>);
+            };
+            return (
+              <tr key={index} className="border-t border-border/60">
+                <td className="py-1.5 pr-2">
+                  <Input
+                    id={`sports-name-${id}-${index}`}
+                    type="text"
+                    value={entry.name ?? ""}
+                    placeholder={namePlaceholder(index + 1)}
+                    onChange={(event) => updateRow({ name: event.target.value || undefined })}
+                    className="h-8 text-xs"
+                  />
+                </td>
+                {columns.map(([value]) => (
+                  <td key={value} className="text-center py-1.5 px-1">
+                    <Checkbox
+                      className="size-4"
+                      checked={levels.includes(value)}
+                      onCheckedChange={() =>
+                        updateRow({
+                          levels: levels.includes(value) ? levels.filter((v) => v !== value) : [...levels, value],
+                        })
+                      }
+                    />
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Checkbox matrix for up to 5 named school societies/clubs, each with a
+ * checkbox per role held - marks summed across every checked cell, capped
+ * at the section max. */
+function SocietiesTable({
+  id,
+  entries,
+  columns,
+  onChange,
+  t,
+}: {
+  id: string;
+  entries: SocietyEntry[];
+  columns: readonly (readonly [string, string, number])[];
+  onChange: (patch: Partial<ScoringInputs>) => void;
+  t: TFn;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="table-fixed text-sm border-collapse">
+        <thead>
+          <tr>
+            <th className="w-32 text-left pb-1.5 pr-2 text-xs font-medium text-muted-foreground">
+              {t("category.62.studentSocieties.nameColumnLabel")}
+            </th>
+            {columns.map(([value, label, marks]) => (
+              <th key={value} className="w-16 pb-1.5 px-1 text-center text-[0.65rem] font-medium text-muted-foreground">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="block w-full truncate cursor-help">{label}</TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs whitespace-normal">
+                      {label}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <div className="font-normal opacity-70">({marks})</div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {[0, 1, 2, 3, 4].map((index) => {
+            const entry = entries[index] ?? {};
+            const roles = entry.roles ?? [];
+            const updateRow = (patch: Partial<SocietyEntry>) => {
+              const next = [...entries];
+              while (next.length <= index) next.push({});
+              next[index] = { ...next[index], ...patch };
+              onChange({ studentSocietiesEntries: next });
+            };
+            return (
+              <tr key={index} className="border-t border-border/60">
+                <td className="py-1.5 pr-2">
+                  <Input
+                    id={`student-societies-name-${id}-${index}`}
+                    type="text"
+                    value={entry.name ?? ""}
+                    placeholder={t("category.62.studentSocieties.namePlaceholder", { number: index + 1 })}
+                    onChange={(event) => updateRow({ name: event.target.value || undefined })}
+                    className="h-8 text-xs"
+                  />
+                </td>
+                {columns.map(([value]) => (
+                  <td key={value} className="text-center py-1.5 px-1">
+                    <Checkbox
+                      className="size-4"
+                      checked={roles.includes(value)}
+                      onCheckedChange={() =>
+                        updateRow({
+                          roles: roles.includes(value) ? roles.filter((v) => v !== value) : [...roles, value],
+                        })
+                      }
+                    />
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -1108,11 +1285,16 @@ function GradeCounts({
         const remaining = totalCount - sumWithoutThis;
         const isThisOver = currentValue > remaining;
 
-        // The 10-subject O/L table's top grade is Distinction ("D"), not
-        // "A" - the underlying field stays olGradeA (matching the shared
-        // S/C/B/A scoring plumbing every other subject-count table uses),
-        // only the label shown to the applicant changes.
-        const displayGrade = prefix === "ol" && totalCount === 10 && grade === "A" ? "D" : grade;
+        // Each O/L subject-count table's top grade is Distinction ("D").
+        // The underlying field keys stay olGradeA/olGradeB (matching the
+        // shared S/C/B/A scoring plumbing every subject-count table uses) -
+        // only the label shown to the applicant changes: "A" is top for the
+        // 9 and 10-subject tables, "B" is top for the 6 and 8-subject ones.
+        const isTopOlGrade =
+          prefix === "ol" &&
+          ((totalCount === 10 && grade === "A") ||
+            ((totalCount === 6 || totalCount === 8) && grade === "B"));
+        const displayGrade = isTopOlGrade ? "D" : grade;
 
         return (
           <Field key={`${category.id}-${key}`}>
@@ -1168,25 +1350,43 @@ export function Category62Fields({
   const scholarshipMarks = inputs.grade5ScholarshipPassed ? GRADE5_SCHOLARSHIP_MARKS : 0;
 
   // Sports / co-curricular marks
-  const sportsBase = SPORTS_LEVEL_MARKS[inputs.sportsLevel ?? ""] ?? 0;
   const sportsMarks = Math.min(
-    sportsBase * (inputs.sportsCount ?? (sportsBase > 0 ? 1 : 0)),
+    (inputs.sportsEntries ?? []).reduce(
+      (sum, entry) => sum + (entry.levels ?? []).reduce((s, level) => s + (SPORTS_LEVEL_MARKS[level] ?? 0), 0),
+      0,
+    ),
     SPORTS_MAX,
   );
-  const leadershipMarks = LEADERSHIP_ROLE_MARKS[inputs.leadershipRole ?? ""] ?? 0;
-  const studentSocietiesMarks =
-    STUDENT_SOCIETIES_ROLE_MARKS[inputs.studentSocietiesRole ?? ""] ?? 0;
-  const otherActivityMarks = OTHER_ACTIVITY_MARKS[inputs.otherActivity ?? ""] ?? 0;
+  const leadershipMarks = Math.min(
+    (inputs.leadershipRoles ?? []).reduce((sum, role) => sum + (LEADERSHIP_ROLE_MARKS[role] ?? 0), 0),
+    LEADERSHIP_MAX,
+  );
+  const studentSocietiesMarks = Math.min(
+    (inputs.studentSocietiesEntries ?? []).reduce(
+      (sum, entry) => sum + (entry.roles ?? []).reduce((s, role) => s + (STUDENT_SOCIETIES_ROLE_MARKS[role] ?? 0), 0),
+      0,
+    ),
+    STUDENT_SOCIETIES_MAX,
+  );
+  const otherActivityMarks = Math.min(
+    (inputs.otherActivities ?? []).reduce((sum, activity) => sum + (OTHER_ACTIVITY_MARKS[activity] ?? 0), 0),
+    OTHER_ACTIVITIES_MAX,
+  );
 
   // Past Pupils' Association marks
   let pastPupilsMarks = 0;
-  if (inputs.pastPupilsLifeMember) pastPupilsMarks += PAST_PUPILS_LIFE_MEMBER_MARKS;
-  else if (inputs.pastPupilsMembershipStart && inputs.pastPupilsMembershipEnd) {
+  if (inputs.pastPupilsLifeMember) {
+    const years = yearsFromDate(inputs.pastPupilsLifeMemberStart);
+    pastPupilsMarks += Math.min(years * PAST_PUPILS_LIFE_MEMBER_MARKS_PER_YEAR, PAST_PUPILS_LIFE_MEMBER_MAX);
+  } else if (inputs.pastPupilsMembershipStart && inputs.pastPupilsMembershipEnd) {
     const years = yearsBetween(inputs.pastPupilsMembershipStart, inputs.pastPupilsMembershipEnd);
     pastPupilsMarks += Math.min(years * PAST_PUPILS_YEARLY_MARKS, PAST_PUPILS_MEMBERSHIP_MAX);
   }
-  if (inputs.pastPupilsCommitteeMember) pastPupilsMarks += 1;
-  if (inputs.pastPupilsExecutiveOffice) pastPupilsMarks += 3;
+  pastPupilsMarks += Math.min(
+    (inputs.pastPupilsCommitteeYears ?? 0) * PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR +
+      Math.min(inputs.pastPupilsExecutiveCount ?? 0, PAST_PUPILS_EXECUTIVE_COUNT) * PAST_PUPILS_EXECUTIVE_MARKS,
+    PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX,
+  );
   pastPupilsMarks = Math.min(pastPupilsMarks, PAST_PUPILS_TOTAL_MAX);
 
   // Degree marks
@@ -1195,18 +1395,29 @@ export function Category62Fields({
 
   // Contribution marks
   let contributionMarks = 0;
-  if (inputs.sportsMeetContribution) contributionMarks += SPORTS_MEET_CONTRIBUTION;
-  if (inputs.shramadanaContribution) contributionMarks += SHRAMADANA_CONTRIBUTION;
+  contributionMarks += (inputs.sportsMeetContribution ?? 0) * SPORTS_MEET_CONTRIBUTION;
+  contributionMarks += (inputs.shramadanaContribution ?? 0) * SHRAMADANA_CONTRIBUTION;
   contributionMarks = Math.min(contributionMarks, CONTRIBUTION_MAX);
   const projectMarks = inputs.schoolProjectsContribution ? SCHOOL_PROJECTS_MARKS : 0;
 
   const olSubjectOptions = getOlSubjectOptions(t);
   const alSubjectOptions = getAlSubjectOptions(t);
-  const sportsLevelOptions = getSportsLevelOptions(t);
   const leadershipRoleOptions = getLeadershipRoleOptions(t);
-  const studentSocietiesRoleOptions = getStudentSocietiesRoleOptions(t);
   const otherActivityOptions = getOtherActivityOptions(t);
   const degreeOptions = getDegreeOptions(t);
+  const sportsLevelColumns = [
+    ["inter-house", t("category.sportsLevelOptions.interHouse"), SPORTS_LEVEL_MARKS["inter-house"]],
+    ["zonal", t("category.sportsLevelOptions.zonal"), SPORTS_LEVEL_MARKS.zonal],
+    ["district", t("category.sportsLevelOptions.district"), SPORTS_LEVEL_MARKS.district],
+    ["provincial", t("category.sportsLevelOptions.provincial"), SPORTS_LEVEL_MARKS.provincial],
+    ["national", t("category.sportsLevelOptions.national"), SPORTS_LEVEL_MARKS.national],
+    ["international", t("category.sportsLevelOptions.international"), SPORTS_LEVEL_MARKS.international],
+  ] as const;
+  const studentSocietiesRoleColumns = [
+    ["committee-member", t("category.studentSocietiesRoleOptions.committeeMember"), STUDENT_SOCIETIES_ROLE_MARKS["committee-member"]],
+    ["vice-president", t("category.studentSocietiesRoleOptions.vicePresident"), STUDENT_SOCIETIES_ROLE_MARKS["vice-president"]],
+    ["president", t("category.studentSocietiesRoleOptions.president"), STUDENT_SOCIETIES_ROLE_MARKS.president],
+  ] as const;
 
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1 max-md:rounded-xl max-md:border max-md:border-border/70 max-md:bg-muted/10 max-md:p-3 max-md:gap-3">
@@ -1251,7 +1462,7 @@ export function Category62Fields({
       <Separator className="hidden col-span-2 max-md:block" />
 
       {/* Grade 5 Scholarship */}
-      <div className="col-span-2 grid content-start gap-2 sm:flex sm:items-center sm:justify-between sm:gap-4 max-md:col-span-1">
+      <div className="col-span-2 grid content-start gap-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{t("category.62.grade5Scholarship.label")}</span>
           <MarkBadge
@@ -1368,58 +1579,30 @@ export function Category62Fields({
       {/* Co-curricular Activities Group */}
       <div className="col-span-2 grid gap-3 rounded-xl border border-border/70 bg-muted/10 p-3 max-md:col-span-1 max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:rounded-none max-md:gap-0">
         <span className="hidden md:block text-xs font-medium text-muted-foreground uppercase tracking-wide">Co-curricular Activities</span>
-        <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-5 max-md:grid-cols-1">
+          <div className="grid gap-3">
           {/* Sports / co-curricular */}
           <div className="grid gap-1.5">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">{t("category.62.sports.label")}</span>
               <MarkBadge marks={sportsMarks} max={SPORTS_MAX} hint={t("category.62.sports.hint")} />
               <FlagButton
-                fieldKey="sportsLevel"
+                fieldKey="sportsEntries"
                 flaggedInputs={flaggedInputs}
                 onToggleInputFlag={onToggleInputFlag}
               />
             </div>
-            <StringSelect
-              id={`sports-level-${id}`}
-              label={t("category.62.sports.highestLevel")}
-              value={inputs.sportsLevel}
-              options={sportsLevelOptions}
-              placeholder={t("category.62.sports.highestLevelPlaceholder")}
-              onChange={(sportsLevel) => onChange({ sportsLevel })}
-            />
-            <NumberField
-              id={`sports-count-${id}`}
-              label={t("category.62.sports.achievements")}
-              value={inputs.sportsCount}
-              onChange={(sportsCount) => onChange({ sportsCount })}
+            <SportsTable
+              id={id}
+              entries={inputs.sportsEntries ?? []}
+              columns={sportsLevelColumns}
+              onChange={onChange}
+              nameColumnLabel={t("category.62.sports.nameColumnLabel")}
+              namePlaceholder={(number) => t("category.62.sports.namePlaceholder", { number })}
             />
           </div>
 
-          {/* Leadership role */}
-          <div className="grid gap-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">{t("category.62.leadership.label")}</span>
-              <MarkBadge
-                marks={leadershipMarks}
-                max={LEADERSHIP_MAX}
-                hint={t("category.62.leadership.hint")}
-              />
-              <FlagButton
-                fieldKey="leadershipRole"
-                flaggedInputs={flaggedInputs}
-                onToggleInputFlag={onToggleInputFlag}
-              />
-            </div>
-            <StringSelect
-              id={`leadership-role-${id}`}
-              label={t("category.62.leadership.highestRole")}
-              value={inputs.leadershipRole}
-              options={leadershipRoleOptions}
-              placeholder={t("category.62.leadership.highestRolePlaceholder")}
-              onChange={(leadershipRole) => onChange({ leadershipRole })}
-            />
-          </div>
+          <Separator />
 
           {/* Student Societies */}
           <div className="grid gap-1.5">
@@ -1431,20 +1614,64 @@ export function Category62Fields({
                 hint={t("category.62.studentSocieties.hint")}
               />
               <FlagButton
-                fieldKey="studentSocietiesRole"
+                fieldKey="studentSocietiesEntries"
                 flaggedInputs={flaggedInputs}
                 onToggleInputFlag={onToggleInputFlag}
               />
             </div>
-            <StringSelect
-              id={`student-societies-role-${id}`}
-              label={t("category.62.studentSocieties.highestRole")}
-              value={inputs.studentSocietiesRole}
-              options={studentSocietiesRoleOptions}
-              placeholder={t("category.62.studentSocieties.highestRolePlaceholder")}
-              onChange={(studentSocietiesRole) => onChange({ studentSocietiesRole })}
+            <SocietiesTable
+              id={id}
+              entries={inputs.studentSocietiesEntries ?? []}
+              columns={studentSocietiesRoleColumns}
+              onChange={onChange}
+              t={t}
             />
           </div>
+          </div>
+
+          <Separator orientation="vertical" className="max-md:hidden" />
+
+          <div className="grid gap-3">
+          {/* Leadership role */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold">{t("category.62.leadership.label")}</span>
+              <MarkBadge
+                marks={leadershipMarks}
+                max={LEADERSHIP_MAX}
+                hint={t("category.62.leadership.hint")}
+              />
+              <FlagButton
+                fieldKey="leadershipRoles"
+                flaggedInputs={flaggedInputs}
+                onToggleInputFlag={onToggleInputFlag}
+              />
+            </div>
+            <Field>
+              <FieldLabel>{t("category.62.leadership.rolesLabel")}</FieldLabel>
+              <div className="grid gap-2">
+                {leadershipRoleOptions.map(([role, roleLabel]) => (
+                  <label key={role} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      className="size-4"
+                      checked={(inputs.leadershipRoles ?? []).includes(role)}
+                      onCheckedChange={() => {
+                        const current = inputs.leadershipRoles ?? [];
+                        onChange({
+                          leadershipRoles: current.includes(role)
+                            ? current.filter((r) => r !== role)
+                            : [...current, role],
+                        });
+                      }}
+                    />
+                    {roleLabel}
+                  </label>
+                ))}
+              </div>
+            </Field>
+          </div>
+
+          <Separator />
 
           {/* Other Activities */}
           <div className="grid gap-1.5">
@@ -1456,20 +1683,34 @@ export function Category62Fields({
                 hint={t("category.62.otherActivities.hint")}
               />
               <FlagButton
-                fieldKey="otherActivity"
+                fieldKey="otherActivities"
                 flaggedInputs={flaggedInputs}
                 onToggleInputFlag={onToggleInputFlag}
               />
             </div>
-            <StringSelect
-              id={`other-activity-${id}`}
-              label={t("category.62.otherActivities.activityLabel")}
-              value={inputs.otherActivity}
-              options={otherActivityOptions}
-              placeholder={t("category.62.otherActivities.activityPlaceholder")}
-              onChange={(otherActivity) => onChange({ otherActivity })}
-            />
-            {inputs.otherActivity === "other" && (
+            <Field>
+              <FieldLabel>{t("category.62.otherActivities.activityLabel")}</FieldLabel>
+              <div className="grid gap-2">
+                {otherActivityOptions.map(([activity, activityLabel]) => (
+                  <label key={activity} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      className="size-4"
+                      checked={(inputs.otherActivities ?? []).includes(activity)}
+                      onCheckedChange={() => {
+                        const current = inputs.otherActivities ?? [];
+                        onChange({
+                          otherActivities: current.includes(activity)
+                            ? current.filter((a) => a !== activity)
+                            : [...current, activity],
+                        });
+                      }}
+                    />
+                    {activityLabel}
+                  </label>
+                ))}
+              </div>
+            </Field>
+            {(inputs.otherActivities ?? []).includes("other") && (
               <Field>
                 <FieldLabel htmlFor={`other-activity-name-${id}`}>
                   {t("category.62.otherActivities.specifyLabel")}
@@ -1483,6 +1724,7 @@ export function Category62Fields({
                 />
               </Field>
             )}
+          </div>
           </div>
         </div>
       </div>
@@ -1499,8 +1741,14 @@ export function Category62Fields({
             hint={(() => {
               const start = inputs.pastPupilsMembershipStart;
               const end = inputs.pastPupilsMembershipEnd;
-              const yrs = start && end ? yearsBetween(start, end).toFixed(1) : "0";
-              const yearMarks = (Number.parseFloat(yrs) * 0.5).toFixed(1);
+              const rate = inputs.pastPupilsLifeMember ? 1 : 0.5;
+              const rawYears = inputs.pastPupilsLifeMember
+                ? yearsFromDate(inputs.pastPupilsLifeMemberStart)
+                : start && end
+                  ? yearsBetween(start, end)
+                  : 0;
+              const yrs = rawYears.toFixed(1);
+              const yearMarks = (rawYears * rate).toFixed(1);
               return t("category.62.pastPupils.hint", { years: yrs, yearMarks });
             })()}
           />
@@ -1510,7 +1758,7 @@ export function Category62Fields({
             onToggleInputFlag={onToggleInputFlag}
           />
         </div>
-        <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+        <div className="grid gap-3">
           <label className="flex items-center gap-2 text-sm">
             <Checkbox
               className="size-4"
@@ -1519,44 +1767,48 @@ export function Category62Fields({
             />
             {t("category.62.pastPupils.lifeMembership")}
           </label>
-          <div className="col-span-2 grid grid-cols-2 gap-5 max-md:col-span-1 max-md:grid-cols-1">
+          {inputs.pastPupilsLifeMember ? (
             <DateField
-              id={`past-pupils-start-${id}`}
-              label={t("category.62.pastPupils.startDate.label")}
-              hint={t("category.62.pastPupils.startDate.hint")}
-              value={inputs.pastPupilsMembershipStart}
-              onChange={(pastPupilsMembershipStart) => onChange({ pastPupilsMembershipStart })}
-              maxDate={parseDateOrUndefined(inputs.pastPupilsMembershipEnd)}
+              id={`past-pupils-life-start-${id}`}
+              label={t("category.62.pastPupils.lifeMemberSince.label")}
+              hint={t("category.62.pastPupils.lifeMemberSince.hint")}
+              value={inputs.pastPupilsLifeMemberStart}
+              onChange={(pastPupilsLifeMemberStart) => onChange({ pastPupilsLifeMemberStart })}
+              maxDate={new Date()}
             />
-            <DateField
-              id={`past-pupils-end-${id}`}
-              label={t("category.62.pastPupils.endDate.label")}
-              hint={t("category.62.pastPupils.endDate.hint")}
-              value={inputs.pastPupilsMembershipEnd}
-              onChange={(pastPupilsMembershipEnd) => onChange({ pastPupilsMembershipEnd })}
-              minDate={parseDateOrUndefined(inputs.pastPupilsMembershipStart)}
+          ) : (
+            <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+              <DateField
+                id={`past-pupils-start-${id}`}
+                label={t("category.62.pastPupils.startDate.label")}
+                hint={t("category.62.pastPupils.startDate.hint")}
+                value={inputs.pastPupilsMembershipStart}
+                onChange={(pastPupilsMembershipStart) => onChange({ pastPupilsMembershipStart })}
+                maxDate={parseDateOrUndefined(inputs.pastPupilsMembershipEnd) ?? new Date()}
+              />
+              <DateField
+                id={`past-pupils-end-${id}`}
+                label={t("category.62.pastPupils.endDate.label")}
+                hint={t("category.62.pastPupils.endDate.hint")}
+                value={inputs.pastPupilsMembershipEnd}
+                onChange={(pastPupilsMembershipEnd) => onChange({ pastPupilsMembershipEnd })}
+                minDate={parseDateOrUndefined(inputs.pastPupilsMembershipStart)}
+                maxDate={new Date()}
+              />
+            </div>
+          )}
+          <NumberField
+            id={`past-pupils-committee-${id}`}
+            label={t("category.62.pastPupils.committeeMembership")}
+            value={inputs.pastPupilsCommitteeYears}
+            onChange={(pastPupilsCommitteeYears) => onChange({ pastPupilsCommitteeYears })}
             />
-          </div>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              className="size-4"
-              checked={inputs.pastPupilsCommitteeMember === true}
-              onCheckedChange={(checked) =>
-                onChange({ pastPupilsCommitteeMember: checked === true })
-              }
+          <NumberField
+            id={`past-pupils-executive-${id}`}
+            label={t("category.62.pastPupils.executiveOffice")}
+            value={inputs.pastPupilsExecutiveCount}
+            onChange={(pastPupilsExecutiveCount) => onChange({ pastPupilsExecutiveCount })}
             />
-            {t("category.62.pastPupils.committeeMembership")}
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              className="size-4"
-              checked={inputs.pastPupilsExecutiveOffice === true}
-              onCheckedChange={(checked) =>
-                onChange({ pastPupilsExecutiveOffice: checked === true })
-              }
-            />
-            {t("category.62.pastPupils.executiveOffice")}
-          </label>
         </div>
       </div>
 
@@ -1636,22 +1888,18 @@ export function Category62Fields({
               />
             </div>
             <div className="grid gap-2">
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  className="size-4"
-                  checked={inputs.sportsMeetContribution === true}
-                  onCheckedChange={(checked) => onChange({ sportsMeetContribution: checked === true })}
-                />
-                {t("category.62.contribution.sportsMeet")}
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  className="size-4"
-                  checked={inputs.shramadanaContribution === true}
-                  onCheckedChange={(checked) => onChange({ shramadanaContribution: checked === true })}
-                />
-                {t("category.62.contribution.shramadana")}
-              </label>
+              <NumberField
+                id={`sports-meet-contribution-${id}`}
+                label={t("category.62.contribution.sportsMeet")}
+                value={inputs.sportsMeetContribution}
+                onChange={(sportsMeetContribution) => onChange({ sportsMeetContribution })}
+              />
+              <NumberField
+                id={`shramadana-contribution-${id}`}
+                label={t("category.62.contribution.shramadana")}
+                value={inputs.shramadanaContribution}
+                onChange={(shramadanaContribution) => onChange({ shramadanaContribution })}
+              />
             </div>
           </div>
 
@@ -1680,6 +1928,16 @@ export function Category62Fields({
               />
               {t("category.62.schoolProjects.checkbox")}
             </label>
+            <Textarea
+              id={`school-projects-description-${id}`}
+              value={inputs.schoolProjectsDescription ?? ""}
+              disabled={inputs.schoolProjectsContribution !== true}
+              placeholder={t("category.62.schoolProjects.descriptionPlaceholder")}
+              onChange={(event) =>
+                onChange({ schoolProjectsDescription: event.target.value || undefined })
+              }
+              className="text-sm"
+            />
           </div>
         </div>
       </div>
@@ -1706,26 +1964,28 @@ export function Category63Fields({
   const _selectedSchoolIds = inputs.schoolsWithinRadius ?? [];
   const _hasCenter = Number.isFinite(centerLat) && Number.isFinite(centerLng);
   const siblingsMarks = Math.min(
-    (inputs.siblingsCurrentlyStudyingCount ?? 0) * SIBLING_MARKS_PER_SIBLING,
-    SIBLING_STUDYING_MAX,
+    (inputs.siblingGradesCompletedCount ?? 0) * SIBLING_MARKS_PER_GRADE,
+    SIBLING_GRADES_MAX,
   );
   const studiedHereMarks = inputs.siblingStudiedAtAppliedSchool ? SIBLING_STUDIED_HERE_MARKS : 0;
-  const multipleApplyingMarks = inputs.twoOrMoreSiblingsApplying
-    ? SIBLING_MULTIPLE_APPLYING_MARKS
+  const multipleStudyingMarks = inputs.twoOrMoreSiblingsStudyingOtherGrades
+    ? SIBLING_MULTIPLE_STUDYING_MARKS
     : 0;
   const prefectMarks = Math.min(
-    (SIBLING_PREFECT_LEVEL_MARKS[inputs.siblingPrefectLevel ?? ""] ?? 0) *
-      (inputs.siblingPrefectCount ?? 0),
-    SIBLING_PREFECT_MAX,
+    (inputs.siblingSportsEntries ?? []).reduce(
+      (sum, entry) => sum + (entry.levels ?? []).reduce((s, level) => s + (SIBLING_SPORTS_LEVEL_MARKS[level] ?? 0), 0),
+      0,
+    ),
+    SIBLING_SPORTS_MAX,
   );
   const examMarks = Math.min(
-    SIBLING_EXAM_MARKS[inputs.siblingExamAchievement ?? ""] ?? 0,
+    (inputs.siblingExamAchievements ?? []).reduce((sum, a) => sum + (SIBLING_EXAM_MARKS[a] ?? 0), 0),
     SIBLING_EXAM_MAX,
   );
-  const praiseworthyMarks = inputs.siblingPraiseworthyAchievement ? SIBLING_PRAISEWORTHY_MARKS : 0;
+  const leadershipMarks = inputs.siblingLeadershipAchievement ? SIBLING_LEADERSHIP_MARKS : 0;
   const supportMarks = inputs.parentsSupportRendered ? SIBLING_SUPPORT_MARKS : 0;
   const cocurricularTotal = Math.min(
-    prefectMarks + examMarks + praiseworthyMarks + supportMarks,
+    prefectMarks + examMarks + leadershipMarks + supportMarks,
     SIBLING_COCURRICULAR_TOTAL_MAX,
   );
   const documentMarks = Math.min(
@@ -1747,7 +2007,14 @@ export function Category63Fields({
   };
   const siblingDocumentOptions = getSiblingDocumentOptions(t);
   const siblingExamOptions = getSiblingExamOptions(t);
-  const siblingPrefectLevelOptions = getSportsLevelOptions(t, SIBLING_PREFECT_LEVEL_MARKS);
+  const siblingSportsLevelColumns = [
+    ["inter-house", t("category.sportsLevelOptions.interHouse"), SIBLING_SPORTS_LEVEL_MARKS["inter-house"]],
+    ["zonal", t("category.sportsLevelOptions.zonal"), SIBLING_SPORTS_LEVEL_MARKS.zonal],
+    ["district", t("category.sportsLevelOptions.district"), SIBLING_SPORTS_LEVEL_MARKS.district],
+    ["provincial", t("category.sportsLevelOptions.provincial"), SIBLING_SPORTS_LEVEL_MARKS.provincial],
+    ["national", t("category.sportsLevelOptions.national"), SIBLING_SPORTS_LEVEL_MARKS.national],
+    ["international", t("category.sportsLevelOptions.international"), SIBLING_SPORTS_LEVEL_MARKS.international],
+  ] as const;
 
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
@@ -1756,14 +2023,14 @@ export function Category63Fields({
           <span className="text-sm font-semibold">{t("category.63.siblingsStudying.label")}</span>
           <MarkBadge
             marks={siblingsMarks}
-            max={SIBLING_STUDYING_MAX}
+            max={SIBLING_GRADES_MAX}
             hint={t("category.63.siblingsStudying.hint", {
-              count: inputs.siblingsCurrentlyStudyingCount ?? 0,
+              count: inputs.siblingGradesCompletedCount ?? 0,
               marks: siblingsMarks,
             })}
           />
           <FlagButton
-            fieldKey="siblingsCurrentlyStudyingCount"
+            fieldKey="siblingGradesCompletedCount"
             flaggedInputs={flaggedInputs}
             onToggleInputFlag={onToggleInputFlag}
           />
@@ -1771,9 +2038,9 @@ export function Category63Fields({
         <NumberField
           id={`siblings-count-${id}`}
           label={t("category.63.siblingsStudying.countLabel")}
-          value={inputs.siblingsCurrentlyStudyingCount}
-          onChange={(siblingsCurrentlyStudyingCount) =>
-            onChange({ siblingsCurrentlyStudyingCount })
+          value={inputs.siblingGradesCompletedCount}
+          onChange={(siblingGradesCompletedCount) =>
+            onChange({ siblingGradesCompletedCount })
           }
         />
       </div>
@@ -1806,12 +2073,12 @@ export function Category63Fields({
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{t("category.63.multipleSiblings.label")}</span>
           <MarkBadge
-            marks={multipleApplyingMarks}
-            max={SIBLING_MULTIPLE_APPLYING_MARKS}
+            marks={multipleStudyingMarks}
+            max={SIBLING_MULTIPLE_STUDYING_MARKS}
             hint={t("category.63.multipleSiblings.hint")}
           />
           <FlagButton
-            fieldKey="twoOrMoreSiblingsApplying"
+            fieldKey="twoOrMoreSiblingsStudyingOtherGrades"
             flaggedInputs={flaggedInputs}
             onToggleInputFlag={onToggleInputFlag}
           />
@@ -1819,8 +2086,8 @@ export function Category63Fields({
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
             className="size-4"
-            checked={inputs.twoOrMoreSiblingsApplying === true}
-            onCheckedChange={(checked) => onChange({ twoOrMoreSiblingsApplying: checked === true })}
+            checked={inputs.twoOrMoreSiblingsStudyingOtherGrades === true}
+            onCheckedChange={(checked) => onChange({ twoOrMoreSiblingsStudyingOtherGrades: checked === true })}
           />
           {t("category.63.multipleSiblings.checkbox")}
         </label>
@@ -1834,52 +2101,83 @@ export function Category63Fields({
             hint={t("category.63.cocurricular.hint")}
           />
           <FlagButton
-            fieldKey="siblingPrefectLevel"
+            fieldKey="siblingSportsEntries"
             flaggedInputs={flaggedInputs}
             onToggleInputFlag={onToggleInputFlag}
           />
         </div>
-        <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-          <StringSelect
-            id={`sibling-prefect-level-${id}`}
-            label={t("category.63.cocurricular.prefectLevel")}
-            value={inputs.siblingPrefectLevel}
-            options={siblingPrefectLevelOptions}
-            placeholder={t("category.63.cocurricular.prefectLevelPlaceholder")}
-            onChange={(siblingPrefectLevel) => onChange({ siblingPrefectLevel })}
-          />
-          <NumberField
-            id={`sibling-prefect-count-${id}`}
-            label={t("category.63.cocurricular.achievements")}
-            value={inputs.siblingPrefectCount}
-            onChange={(siblingPrefectCount) => onChange({ siblingPrefectCount })}
-          />
-          <StringSelect
-            id={`sibling-exam-${id}`}
-            label={t("category.63.cocurricular.examAchievement")}
-            value={inputs.siblingExamAchievement}
-            options={siblingExamOptions}
-            placeholder={t("category.63.cocurricular.examAchievementPlaceholder")}
-            onChange={(siblingExamAchievement) => onChange({ siblingExamAchievement })}
-          />
+        <div className="grid gap-4">
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">{t("category.63.cocurricular.activitiesLabel")}</span>
+            <SportsTable
+              id={`sibling-${id}`}
+              entries={inputs.siblingSportsEntries ?? []}
+              columns={siblingSportsLevelColumns}
+              onChange={onChange}
+              field="siblingSportsEntries"
+              rowCount={3}
+              nameColumnLabel={t("category.63.cocurricular.activityNameLabel")}
+              namePlaceholder={(number) => t("category.63.cocurricular.activityNamePlaceholder", { number })}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">{t("category.63.cocurricular.examAchievement")}</span>
+            <div className="grid gap-1.5">
+              {siblingExamOptions.map(([value, label]) => {
+                const checkedValues = inputs.siblingExamAchievements ?? [];
+                return (
+                  <label key={value} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      className="size-4"
+                      checked={checkedValues.includes(value)}
+                      onCheckedChange={() =>
+                        onChange({
+                          siblingExamAchievements: checkedValues.includes(value)
+                            ? checkedValues.filter((v) => v !== value)
+                            : [...checkedValues, value],
+                        })
+                      }
+                    />
+                    {label}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox
               className="size-4"
-              checked={inputs.siblingPraiseworthyAchievement === true}
+              checked={inputs.siblingLeadershipAchievement === true}
               onCheckedChange={(checked) =>
-                onChange({ siblingPraiseworthyAchievement: checked === true })
+                onChange({ siblingLeadershipAchievement: checked === true })
               }
             />
-            {t("category.63.cocurricular.praiseworthy")}
+            {t("category.63.cocurricular.leadership")}
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              className="size-4"
-              checked={inputs.parentsSupportRendered === true}
-              onCheckedChange={(checked) => onChange({ parentsSupportRendered: checked === true })}
-            />
-            {t("category.63.cocurricular.parentSupport")}
-          </label>
+          <div className="grid gap-1.5">
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                className="size-4"
+                checked={inputs.parentsSupportRendered === true}
+                onCheckedChange={(checked) =>
+                  onChange({
+                    parentsSupportRendered: checked === true,
+                    ...(checked === true ? {} : { parentsSupportDescription: undefined }),
+                  })
+                }
+              />
+              {t("category.63.cocurricular.parentSupport")}
+            </label>
+            {inputs.parentsSupportRendered === true && (
+              <Textarea
+                id={`parent-support-description-${id}`}
+                value={inputs.parentsSupportDescription ?? ""}
+                placeholder={t("category.63.cocurricular.parentSupportPlaceholder")}
+                onChange={(event) => onChange({ parentsSupportDescription: event.target.value })}
+                className="text-sm"
+              />
+            )}
+          </div>
         </div>
       </div>
       <div className="grid gap-1.5">
@@ -1965,37 +2263,121 @@ export function Category64Fields({
 } & FlagProps) {
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
-  const serviceMarks = Math.min(yearsFromDate(inputs.serviceStartDate), SERVICE_PERIOD_MAX);
+  const id = category.id;
+
+  // 7.5.1 gates the rest of category 6.4: the circular gives marks for
+  // every section that follows "only to applicants who have earned marks"
+  // here, so a zero collapses the whole category to zero, not just this row.
+  const contributionMarks = contributionMarks64(inputs);
+  const gateOpen = contributionMarks > 0;
+
+  const serviceMarks = gateOpen ? Math.min(wholeYearsFromDate(inputs.serviceStartDate), SERVICE_PERIOD_MAX) : 0;
+
   let difficultMarks = 0;
-  if (inputs.difficultServiceType === "current") {
-    difficultMarks = DIFFICULT_SERVICE_CURRENT_MARKS;
-  } else if (inputs.difficultServiceType === "previous") {
-    const km = inputs.difficultServiceDistanceKm;
-    const distance = difficultDistanceMarks(km);
-    difficultMarks =
-      Math.max(DIFFICULT_SERVICE_PREVIOUS_BASE, distance) +
-      (inputs.difficultServiceExtraPeriods ?? 0) * DIFFICULT_EXTRA_PERIOD_MARKS;
+  if (gateOpen && inputs.difficultServiceType === "current") {
+    difficultMarks = difficultServiceCurrentMarks(inputs.difficultServiceStartDate);
+  } else if (gateOpen && inputs.difficultServiceType === "previous") {
+    const previousBranch = difficultServicePreviousMarks(
+      inputs.difficultServicePreviousStartDate,
+      inputs.difficultServicePreviousEndDate,
+    );
+    const distanceBranch = difficultServiceDistanceMarks(
+      inputs.difficultServicePreviousStartDate,
+      inputs.difficultServicePreviousEndDate,
+      inputs.difficultServiceDistanceKm,
+    );
+    difficultMarks = Math.max(previousBranch, distanceBranch);
   }
   difficultMarks = Math.min(difficultMarks, DIFFICULT_SERVICE_MAX);
-  const leaveMarks = Math.min(
-    (inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR,
-    UNUTILIZED_LEAVE_MAX,
-  );
-  const locationMap: Record<string, number> = SERVICE_LOCATION_MARKS;
-  const locationMarks = Math.min(
-    locationMap[inputs.serviceLocationLevel ?? ""] ?? 0,
-    SERVICE_LOCATION_MAX,
-  );
-  const resKm = inputs.residenceToSchoolKm;
-  const residenceDistance = tieredDistanceMarks(
-    resKm,
-    RESIDENCE_DISTANCE_TIERS_64,
-    RESIDENCE_DISTANCE_FALLBACK_64,
-  );
-  const workKm = inputs.workplaceToSchoolKm;
-  const workplaceDistance = workplaceDistanceMarks(workKm);
+
+  const leaveMarks =
+    gateOpen && inputs.contributionPath !== "university"
+      ? Math.min((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX)
+      : 0;
+  const residenceDistance = gateOpen
+    ? tieredDistanceMarks(inputs.residenceToSchoolKm, RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64)
+    : 0;
+  const workplaceDistance = gateOpen ? workplaceDistanceMarks(inputs.workplaceToSchoolKm) : 0;
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+      <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">{t("category.64.contribution.label")}</span>
+          <MarkBadge
+            marks={contributionMarks}
+            max={SCHOOL_EDUCATION_CONTRIBUTION_MAX}
+            hint={t("category.64.contribution.hint")}
+          />
+          <FlagButton
+            fieldKey="contributionPath"
+            flaggedInputs={flaggedInputs}
+            onToggleInputFlag={onToggleInputFlag}
+          />
+        </div>
+        <Field>
+          <FieldLabel>{t("category.64.contribution.pathLabel")}</FieldLabel>
+          <RadioGroup
+            value={inputs.contributionPath ?? "institution"}
+            onValueChange={(next) => onChange({ contributionPath: next as ScoringInputs["contributionPath"] })}
+            className="flex flex-wrap gap-x-6 gap-y-2"
+          >
+            <RadioOption
+              id={`contribution-path-institution-${id}`}
+              value="institution"
+              label={t("category.64.contribution.institutionPath")}
+            />
+            <RadioOption
+              id={`contribution-path-university-${id}`}
+              value="university"
+              label={t("category.64.contribution.universityPath")}
+            />
+          </RadioGroup>
+          {(inputs.contributionPath ?? "institution") === "institution" && (
+              <div className="grid grid-cols-2 gap-5 pt-3 max-md:grid-cols-1">
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    className="size-4"
+                    checked={inputs.contributionSameSchool === true}
+                    onCheckedChange={(checked) => onChange({ contributionSameSchool: checked === true })}
+                  />
+                  {t("category.64.contribution.sameSchool")}
+                </label>
+                <DateField
+                  id={`contribution-start-${id}`}
+                  label={t("category.64.contribution.serviceStartLabel")}
+                  hint={t("category.64.contribution.serviceStartHint")}
+                  value={inputs.contributionServiceStartDate}
+                  onChange={(contributionServiceStartDate) => onChange({ contributionServiceStartDate })}
+                />
+              </div>
+          )}
+          {inputs.contributionPath === "university" && (
+              <div className="grid grid-cols-3 gap-5 pt-3 max-md:grid-cols-1">
+                <YearsSelect
+                  id={`contribution-exam-${id}`}
+                  label={t("category.64.contribution.examYears")}
+                  value={inputs.contributionExamYears}
+                  onChange={(contributionExamYears) => onChange({ contributionExamYears })}
+                />
+                <YearsSelect
+                  id={`contribution-curriculum-${id}`}
+                  label={t("category.64.contribution.curriculumYears")}
+                  value={inputs.contributionCurriculumYears}
+                  onChange={(contributionCurriculumYears) => onChange({ contributionCurriculumYears })}
+                />
+                <YearsSelect
+                  id={`contribution-training-${id}`}
+                  label={t("category.64.contribution.trainingYears")}
+                  value={inputs.contributionTrainingYears}
+                  onChange={(contributionTrainingYears) => onChange({ contributionTrainingYears })}
+                />
+              </div>
+          )}
+        </Field>
+        {!gateOpen && (
+          <p className="text-xs text-amber-600 dark:text-amber-500">{t("category.64.contribution.gateWarning")}</p>
+        )}
+      </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{t("category.64.servicePeriod.label")}</span>
@@ -2003,7 +2385,7 @@ export function Category64Fields({
             marks={serviceMarks}
             max={SERVICE_PERIOD_MAX}
             hint={t("category.64.servicePeriod.hint", {
-              years: Math.floor(yearsFromDate(inputs.serviceStartDate)),
+              years: wholeYearsFromDate(inputs.serviceStartDate),
               marks: serviceMarks,
             })}
           />
@@ -2038,7 +2420,7 @@ export function Category64Fields({
         <Field>
           <FieldLabel>{t("category.64.difficultService.typeLabel")}</FieldLabel>
           <RadioGroup
-            value={inputs.difficultServiceType ?? ""}
+            value={inputs.difficultServiceType ?? "none"}
             onValueChange={(next) =>
               onChange({ difficultServiceType: next as ScoringInputs["difficultServiceType"] })
             }
@@ -2048,12 +2430,13 @@ export function Category64Fields({
               id={`dst-current-${category.id}`}
               value="current"
               label={t("category.64.difficultService.currentSchool")}
-              marks={DIFFICULT_SERVICE_CURRENT_MARKS}
+              note={t("category.64.difficultService.currentRateNote")}
             />
             <RadioOption
               id={`dst-previous-${category.id}`}
               value="previous"
               label={t("category.64.difficultService.previousSchool")}
+              note={t("category.64.difficultService.previousMarksNote")}
             />
             <RadioOption
               id={`dst-none-${category.id}`}
@@ -2062,25 +2445,66 @@ export function Category64Fields({
               marks={0}
             />
           </RadioGroup>
+          {inputs.difficultServiceType === "current" && (
+              <div className="pt-3">
+                <DateField
+                  id={`difficult-current-start-${category.id}`}
+                  label={t("category.64.difficultService.currentStartLabel")}
+                  hint={t("category.64.difficultService.currentStartHint")}
+                  value={inputs.difficultServiceStartDate}
+                  onChange={(difficultServiceStartDate) => onChange({ difficultServiceStartDate })}
+                />
+              </div>
+          )}
+          {inputs.difficultServiceType === "previous" && (
+              <div className="grid gap-4 pt-3">
+                <div className="grid gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("category.64.difficultService.previousBranchLabel")}
+                  </span>
+                  <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+                    <DateField
+                      id={`difficult-previous-start-${category.id}`}
+                      label={t("category.64.difficultService.previousStartLabel")}
+                      value={inputs.difficultServicePreviousStartDate}
+                      onChange={(difficultServicePreviousStartDate) => onChange({ difficultServicePreviousStartDate })}
+                    />
+                    <DateField
+                      id={`difficult-previous-end-${category.id}`}
+                      label={t("category.64.difficultService.previousEndLabel")}
+                      value={inputs.difficultServicePreviousEndDate}
+                      onChange={(difficultServicePreviousEndDate) => onChange({ difficultServicePreviousEndDate })}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("category.64.difficultService.distanceBranchLabel")}
+                  </span>
+                  <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
+                    <DateField
+                      id={`difficult-distance-start-${category.id}`}
+                      label={t("category.64.difficultService.distanceStartLabel")}
+                      value={inputs.difficultServiceDistanceStartDate}
+                      onChange={(difficultServiceDistanceStartDate) => onChange({ difficultServiceDistanceStartDate })}
+                    />
+                    <DateField
+                      id={`difficult-distance-end-${category.id}`}
+                      label={t("category.64.difficultService.distanceEndLabel")}
+                      value={inputs.difficultServiceDistanceEndDate}
+                      onChange={(difficultServiceDistanceEndDate) => onChange({ difficultServiceDistanceEndDate })}
+                    />
+                    <NumberField
+                      id={`difficult-distance-${category.id}`}
+                      label={t("category.64.difficultService.distanceKm")}
+                      value={inputs.difficultServiceDistanceKm}
+                      onChange={(difficultServiceDistanceKm) => onChange({ difficultServiceDistanceKm })}
+                    />
+                  </div>
+                </div>
+              </div>
+          )}
         </Field>
-        {inputs.difficultServiceType === "previous" && (
-          <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-            <NumberField
-              id={`difficult-distance-${category.id}`}
-              label={t("category.64.difficultService.distanceKm")}
-              value={inputs.difficultServiceDistanceKm}
-              onChange={(difficultServiceDistanceKm) => onChange({ difficultServiceDistanceKm })}
-            />
-            <NumberField
-              id={`difficult-periods-${category.id}`}
-              label={t("category.64.difficultService.extraPeriods")}
-              value={inputs.difficultServiceExtraPeriods}
-              onChange={(difficultServiceExtraPeriods) =>
-                onChange({ difficultServiceExtraPeriods })
-              }
-            />
-          </div>
-        )}
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2105,54 +2529,6 @@ export function Category64Fields({
           value={inputs.unutilizedLeaveYears}
           onChange={(unutilizedLeaveYears) => onChange({ unutilizedLeaveYears })}
         />
-      </div>
-      <div className="grid gap-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">{t("category.64.serviceLocation.label")}</span>
-          <MarkBadge
-            marks={locationMarks}
-            max={SERVICE_LOCATION_MAX}
-            hint={t("category.64.serviceLocation.hint")}
-          />
-          <FlagButton
-            fieldKey="serviceLocationLevel"
-            flaggedInputs={flaggedInputs}
-            onToggleInputFlag={onToggleInputFlag}
-          />
-        </div>
-        <Field>
-          <FieldLabel>{t("category.64.serviceLocation.levelLabel")}</FieldLabel>
-          <RadioGroup
-            value={inputs.serviceLocationLevel ?? ""}
-            onValueChange={(next) => onChange({ serviceLocationLevel: String(next) })}
-            className="flex flex-wrap gap-x-6 gap-y-2"
-          >
-            <RadioOption
-              id={`sll-same-school-${category.id}`}
-              value="same-school"
-              label={t("category.64.serviceLocation.sameSchool")}
-              marks={SERVICE_LOCATION_MARKS["same-school"]}
-            />
-            <RadioOption
-              id={`sll-zone-${category.id}`}
-              value="zone"
-              label={t("category.64.serviceLocation.zone")}
-              marks={SERVICE_LOCATION_MARKS.zone}
-            />
-            <RadioOption
-              id={`sll-province-${category.id}`}
-              value="province"
-              label={t("category.64.serviceLocation.province")}
-              marks={SERVICE_LOCATION_MARKS.province}
-            />
-            <RadioOption
-              id={`sll-education-institution-${category.id}`}
-              value="education-institution"
-              label={t("category.64.serviceLocation.educationInstitution")}
-              marks={SERVICE_LOCATION_MARKS["education-institution"]}
-            />
-          </RadioGroup>
-        </Field>
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2219,7 +2595,7 @@ export function Category65Fields({
   const hasCenter = Number.isFinite(centerLat) && Number.isFinite(centerLng);
   const km = inputs.previousWorkplaceDistanceKm;
   const distanceMarks = transferDistanceMarks(km);
-  const periodMarks = Math.min(yearsFromDate(inputs.serviceStartDate), TRANSFER_SERVICE_PERIOD_MAX);
+  const periodMarks = Math.min(wholeYearsFromDate(inputs.serviceStartDate), TRANSFER_SERVICE_PERIOD_MAX);
   const prevYears = yearsFromDate(inputs.previousWorkplaceStartDate);
   const previousPeriodMarks = previousPeriodMarksFn(prevYears);
   const elapsed = yearsFromDate(inputs.transferDate);
@@ -2261,7 +2637,7 @@ export function Category65Fields({
             marks={periodMarks}
             max={TRANSFER_SERVICE_PERIOD_MAX}
             hint={t("category.65.servicePeriod.hint", {
-              years: Math.floor(yearsFromDate(inputs.serviceStartDate)),
+              years: wholeYearsFromDate(inputs.serviceStartDate),
               marks: periodMarks,
             })}
           />
@@ -2473,16 +2849,10 @@ export function Category66Fields({
             className="flex flex-wrap gap-x-6 gap-y-2"
           >
             <RadioOption
-              id={`ep-board-${category.id}`}
-              value="board"
-              label={t("category.66.employmentPurpose.board")}
-              marks={EMPLOYMENT_PURPOSE_MARKS.board}
-            />
-            <RadioOption
-              id={`ep-personal-${category.id}`}
-              value="personal"
-              label={t("category.66.employmentPurpose.personal")}
-              marks={EMPLOYMENT_PURPOSE_MARKS.personal}
+              id={`ep-diplomatic-${category.id}`}
+              value="diplomatic"
+              label={t("category.66.employmentPurpose.diplomatic")}
+              marks={EMPLOYMENT_PURPOSE_MARKS.diplomatic}
             />
             <RadioOption
               id={`ep-government-${category.id}`}
@@ -2495,6 +2865,12 @@ export function Category66Fields({
               value="education"
               label={t("category.66.employmentPurpose.education")}
               marks={EMPLOYMENT_PURPOSE_MARKS.education}
+            />
+            <RadioOption
+              id={`ep-employment-${category.id}`}
+              value="employment"
+              label={t("category.66.employmentPurpose.employment")}
+              marks={EMPLOYMENT_PURPOSE_MARKS.employment}
             />
           </RadioGroup>
         </Field>

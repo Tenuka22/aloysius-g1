@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   applyLocationChange,
+  type ScoringInputs,
 } from "./application-store";
 import {
   scoreCategory,
@@ -146,18 +147,51 @@ describe("scoreCategory62 – alumni", () => {
     expect(scoreCategory62({ olSubjectCount: undefined, alSubjectCount: undefined }).breakdown[3]?.marks).toBe(0);
   });
 
-  it("multiplies sports level by achievement count capped at ten", () => {
-    expect(scoreCategory62({ sportsLevel: "international", sportsCount: 1 }).breakdown[4]?.marks).toBe(5);
-    expect(scoreCategory62({ sportsLevel: "inter-house", sportsCount: 4 }).breakdown[4]?.marks).toBe(2);
-    expect(scoreCategory62({ sportsLevel: "national", sportsCount: 3 }).breakdown[4]?.marks).toBe(10);
-    expect(scoreCategory62({ sportsLevel: "zonal" }).breakdown[4]?.marks).toBe(1);
-    expect(scoreCategory62({ sportsLevel: "district", sportsCount: 0 }).breakdown[4]?.marks).toBe(0);
+  it("sums marks across every checked level in every sports entry, capped at ten", () => {
+    expect(scoreCategory62({ sportsEntries: [{ name: "Athletics", levels: ["international"] }] }).breakdown[4]?.marks).toBe(5);
+    expect(
+      scoreCategory62({
+        sportsEntries: [
+          { name: "Athletics", levels: ["national", "zonal"] },
+          { name: "Swimming", levels: ["district"] },
+        ],
+      }).breakdown[4]?.marks,
+    ).toBeCloseTo(4.75 + 1 + 2, 2);
+    expect(
+      scoreCategory62({
+        sportsEntries: [{ levels: ["national"] }, { levels: ["national"] }, { levels: ["national"] }],
+      }).breakdown[4]?.marks,
+    ).toBe(10);
+    expect(scoreCategory62({ sportsEntries: [{ name: "Chess" }] }).breakdown[4]?.marks).toBe(0);
+    expect(scoreCategory62({}).breakdown[4]?.marks).toBe(0);
   });
 
-  it("awards leadership marks by role capped at five", () => {
-    expect(scoreCategory62({ leadershipRole: "head-prefect" }).breakdown[5]?.marks).toBe(5);
-    expect(scoreCategory62({ leadershipRole: "prefect-primary" }).breakdown[5]?.marks).toBe(1);
-    expect(scoreCategory62({ leadershipRole: "first-team-captain" }).breakdown[5]?.marks).toBe(2);
+  it("sums leadership marks across every checked role capped at five", () => {
+    expect(scoreCategory62({ leadershipRoles: ["head-prefect"] }).breakdown[5]?.marks).toBe(5);
+    expect(scoreCategory62({ leadershipRoles: ["prefect-primary"] }).breakdown[5]?.marks).toBe(1);
+    expect(scoreCategory62({ leadershipRoles: ["prefect-primary", "first-team-captain"] }).breakdown[5]?.marks).toBe(3);
+    expect(scoreCategory62({ leadershipRoles: ["head-prefect", "deputy-head-prefect"] }).breakdown[5]?.marks).toBe(5);
+  });
+
+  it("sums student societies marks across every checked role in every entry, capped at five", () => {
+    expect(
+      scoreCategory62({ studentSocietiesEntries: [{ name: "Debate Club", roles: ["president"] }] }).breakdown[6]
+        ?.marks,
+    ).toBe(1);
+    expect(
+      scoreCategory62({
+        studentSocietiesEntries: [
+          { name: "Debate Club", roles: ["president"] },
+          { name: "Chess Club", roles: ["vice-president"] },
+          { name: "Art Club", roles: ["committee-member"] },
+        ],
+      }).breakdown[6]?.marks,
+    ).toBeCloseTo(1 + 0.75 + 0.5, 2);
+    expect(
+      scoreCategory62({
+        studentSocietiesEntries: Array.from({ length: 5 }, () => ({ roles: ["president" as const] })),
+      }).breakdown[6]?.marks,
+    ).toBe(5);
   });
 
   it("sums to the documented attainable maximum of sixty-six from collected inputs", () => {
@@ -169,42 +203,46 @@ describe("scoreCategory62 – alumni", () => {
       olGradeA: 9,
       alSubjectCount: 3,
       alGradeA: 3,
-      sportsLevel: "international",
-      sportsCount: 2,
-      leadershipRole: "head-prefect",
+      sportsEntries: [{ levels: ["international"] }, { levels: ["international"] }],
+      leadershipRoles: ["head-prefect"],
     });
     expect(maximal.total).toBeCloseTo(66, 2);
   });});
 
-describe("scoreCategory63 – siblings", () => {
-  it("awards two marks per sibling currently studying capped at twenty", () => {
-    expect(scoreCategory63({ siblingsCurrentlyStudyingCount: 3 }).breakdown[0]?.marks).toBe(6);
-    expect(scoreCategory63({ siblingsCurrentlyStudyingCount: 10 }).breakdown[0]?.marks).toBe(20);
-    expect(scoreCategory63({ siblingsCurrentlyStudyingCount: 12 }).breakdown[0]?.marks).toBe(20);
+describe("scoreCategory63 \u2013 siblings", () => {
+  it("awards two marks per grade completed by the sibling capped at twenty", () => {
+    expect(scoreCategory63({ siblingGradesCompletedCount: 3 }).breakdown[0]?.marks).toBe(6);
+    expect(scoreCategory63({ siblingGradesCompletedCount: 10 }).breakdown[0]?.marks).toBe(20);
+    expect(scoreCategory63({ siblingGradesCompletedCount: 12 }).breakdown[0]?.marks).toBe(20);
   });
 
   it("awards five each for same-school sibling study and multiple applications", () => {
     expect(scoreCategory63({ siblingStudiedAtAppliedSchool: true }).breakdown[1]?.marks).toBe(5);
-    expect(scoreCategory63({ twoOrMoreSiblingsApplying: true }).breakdown[2]?.marks).toBe(5);
+    expect(scoreCategory63({ twoOrMoreSiblingsStudyingOtherGrades: true }).breakdown[2]?.marks).toBe(5);
   });
 
   it("combines sibling co-curricular blocks capped at ten", () => {
     const base: ScoringInputs = {
-      siblingPrefectLevel: "international",
-      siblingPrefectCount: 1,
-      siblingExamAchievement: "al",
-      siblingPraiseworthyAchievement: true,
+      siblingSportsEntries: [{ levels: ["international"] }],
+      siblingExamAchievements: ["al"],
+      siblingLeadershipAchievement: true,
       parentsSupportRendered: true,
     };
     expect(scoreCategory63(base).breakdown[3]?.marks).toBeCloseTo(9.5, 2);
     expect(
-      scoreCategory63({ ...base, siblingPrefectLevel: "national", parentsSupportRendered: false }).breakdown[3]?.marks,
+      scoreCategory63({ ...base, siblingSportsEntries: [{ levels: ["national"] }], parentsSupportRendered: false }).breakdown[3]?.marks,
     ).toBeCloseTo(5.25, 2);
   });
 
   it("caps prefect skills at two even across many achievements", () => {
     expect(
-      scoreCategory63({ siblingPrefectLevel: "international", siblingPrefectCount: 5 }).breakdown[3]?.marks,
+      scoreCategory63({
+        siblingSportsEntries: [
+          { levels: ["international"] },
+          { levels: ["international"] },
+          { levels: ["international"] },
+        ],
+      }).breakdown[3]?.marks,
     ).toBeLessThanOrEqual(10);
   });
 
@@ -227,13 +265,12 @@ describe("scoreCategory63 – siblings", () => {
 
   it("reaches the attainable maximum of ninety-nine and a half (exam block tops at 1.5)", () => {
     const maximal = scoreCategory63({
-      siblingsCurrentlyStudyingCount: 10,
+      siblingGradesCompletedCount: 10,
       siblingStudiedAtAppliedSchool: true,
-      twoOrMoreSiblingsApplying: true,
-      siblingPrefectLevel: "international",
-      siblingPrefectCount: 1,
-      siblingExamAchievement: "al",
-      siblingPraiseworthyAchievement: true,
+      twoOrMoreSiblingsStudyingOtherGrades: true,
+      siblingSportsEntries: [{ levels: ["international"] }],
+      siblingExamAchievements: ["al"],
+      siblingLeadershipAchievement: true,
       parentsSupportRendered: true,
       mainDocumentType: "title-deed-applicant-spouse",
       electoralMotherYears: [2021,2022,2023,2024,2025],
@@ -244,83 +281,197 @@ describe("scoreCategory63 – siblings", () => {
   });
 });
 
-describe("scoreCategory64 – service & distance", () => {
-  it("awards one mark per service year capped at twenty", () => {
-    expect(scoreCategory64({ serviceStartDate: "2019-09-01" }).breakdown[0]?.marks).toBe(7);
-    expect(scoreCategory64({ serviceStartDate: "2001-01-01" }).breakdown[0]?.marks).toBe(20);
+describe("scoreCategory64 – education sector", () => {
+  // 7.5.1 gates the rest of the category: a valid, non-zero contribution
+  // must be present for any other row to award marks. These bases give a
+  // deliberately small, easy-to-subtract contribution score.
+  const institutionBase: ScoringInputs = {
+    contributionPath: "institution",
+    contributionSameSchool: true,
+    contributionServiceStartDate: "2023-09-01", // 3 whole years before "now"
+  };
+  const universityBase: ScoringInputs = {
+    contributionPath: "university",
+    contributionExamYears: 1,
+  };
+
+  describe("7.5.1 contribution (Path I - institution service)", () => {
+    it("pays the higher same-school rate per whole year, capped at ten", () => {
+      expect(
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: true, contributionServiceStartDate: "2023-09-01" }).breakdown[0]?.marks,
+      ).toBe(6); // 2/yr * 3 years
+      expect(
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: true, contributionServiceStartDate: "2018-09-01" }).breakdown[0]?.marks,
+      ).toBe(10); // 8 years capped at 5 * 2/yr
+    });
+
+    it("pays the lower elsewhere rate per whole year, capped at seven and a half", () => {
+      expect(
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: false, contributionServiceStartDate: "2023-09-01" }).breakdown[0]?.marks,
+      ).toBe(4.5); // 1.5/yr * 3 years
+      expect(
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: false, contributionServiceStartDate: "2010-09-01" }).breakdown[0]?.marks,
+      ).toBe(7.5); // capped at 5 years * 1.5/yr
+    });
+
+    it("awards half of one year's rate for under a year at the current station", () => {
+      expect(
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: true, contributionServiceStartDate: "2026-03-01" }).breakdown[0]?.marks,
+      ).toBe(1); // half of 2
+      expect(
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: false, contributionServiceStartDate: "2026-03-01" }).breakdown[0]?.marks,
+      ).toBe(0.75); // half of 1.5
+    });
+
+    it("scores zero with no service start date", () => {
+      expect(scoreCategory64({ contributionPath: "institution", contributionSameSchool: true }).breakdown[0]?.marks).toBe(0);
+    });
   });
 
-  it("awards flat twenty-five for current difficult service", () => {
-    expect(scoreCategory64({ difficultServiceType: "current" }).breakdown[1]?.marks).toBe(25);
+  describe("7.5.1 contribution (Path II - UGC university staff)", () => {
+    it("sums three sub-items at 0.5 marks per year, each capped at two and a half", () => {
+      expect(
+        scoreCategory64({
+          contributionPath: "university",
+          contributionExamYears: 2,
+          contributionCurriculumYears: 3,
+          contributionTrainingYears: 6,
+        }).breakdown[0]?.marks,
+      ).toBe(5); // 1 + 1.5 + 2.5(capped from 3)
+    });
+
+    it("scores zero with no sub-items entered", () => {
+      expect(scoreCategory64({ contributionPath: "university" }).breakdown[0]?.marks).toBe(0);
+    });
   });
 
-  it("takes the higher of previous-service and distance branches", () => {
-    expect(
-      scoreCategory64({ difficultServiceType: "previous", difficultServiceDistanceKm: 200 }).breakdown[1]?.marks,
-    ).toBe(15);
-    expect(
-      scoreCategory64({
-        difficultServiceType: "previous",
-        difficultServiceExtraPeriods: 4,
-        difficultServiceDistanceKm: 90,
-      }).breakdown[1]?.marks,
-    ).toBe(17);
+  it("zeroes the entire category when contribution is zero, regardless of other inputs", () => {
+    const maximal = scoreCategory64({
+      serviceStartDate: "2001-01-01",
+      difficultServiceType: "current",
+      difficultServiceStartDate: "2020-09-01",
+      unutilizedLeaveYears: 5,
+      residenceToSchoolKm: 0.5,
+      workplaceToSchoolKm: 150,
+    });
+    expect(maximal.breakdown.every((row) => row.marks === 0)).toBe(true);
+    expect(maximal.total).toBe(0);
   });
 
-  it("adds half a mark per extra six-month period beyond the first year", () => {
-    expect(
-      scoreCategory64({ difficultServiceType: "previous", difficultServiceExtraPeriods: 2 }).breakdown[1]?.marks,
-    ).toBe(16);
+  it("awards one mark per whole completed service year, capped at twenty, only when gated open", () => {
+    expect(scoreCategory64({ ...institutionBase, serviceStartDate: "2019-09-01" }).breakdown[1]?.marks).toBe(7);
+    expect(scoreCategory64({ ...institutionBase, serviceStartDate: "2001-01-01" }).breakdown[1]?.marks).toBe(20);
+    expect(scoreCategory64({ serviceStartDate: "2001-01-01" }).breakdown[1]?.marks).toBe(0);
   });
 
-  it("keeps branch I as the floor and lets distance raise it only above fifteen", () => {
-    expect(scoreCategory64({ difficultServiceType: "previous", difficultServiceDistanceKm: 160 }).breakdown[1]?.marks).toBe(15);
-    expect(scoreCategory64({ difficultServiceType: "previous", difficultServiceDistanceKm: 120 }).breakdown[1]?.marks).toBe(15);
-    expect(scoreCategory64({ difficultServiceType: "previous", difficultServiceDistanceKm: 80 }).breakdown[1]?.marks).toBe(15);
-    expect(scoreCategory64({ difficultServiceType: "previous", difficultServiceDistanceKm: 50 }).breakdown[1]?.marks).toBe(15);
+  describe("7.5.3 difficult service", () => {
+    it("pays five marks per full year currently served, capped at twenty-five", () => {
+      expect(
+        scoreCategory64({ ...institutionBase, difficultServiceType: "current", difficultServiceStartDate: "2025-09-01" }).breakdown[2]?.marks,
+      ).toBe(5);
+      expect(
+        scoreCategory64({ ...institutionBase, difficultServiceType: "current", difficultServiceStartDate: "2021-09-01" }).breakdown[2]?.marks,
+      ).toBe(25);
+    });
+
+    it("adds a one-off half-rate bonus once a full year carries a six-month-or-more remainder", () => {
+      expect(
+        scoreCategory64({ ...institutionBase, difficultServiceType: "current", difficultServiceStartDate: "2025-02-01" }).breakdown[2]?.marks,
+      ).toBe(7.5); // 1 year 7 months: 5 + 2.5
+      expect(
+        scoreCategory64({ ...institutionBase, difficultServiceType: "current", difficultServiceStartDate: "2025-06-01" }).breakdown[2]?.marks,
+      ).toBe(5); // 1 year 3 months: remainder under six months, no bonus
+    });
+
+    it("pays three marks per full year previously served at a classified difficult station, capped at fifteen", () => {
+      expect(
+        scoreCategory64({
+          ...institutionBase,
+          difficultServiceType: "previous",
+          difficultServicePreviousStartDate: "2020-09-01",
+          difficultServicePreviousEndDate: "2023-09-01",
+        }).breakdown[2]?.marks,
+      ).toBe(9);
+      expect(
+        scoreCategory64({
+          ...institutionBase,
+          difficultServiceType: "previous",
+          difficultServicePreviousStartDate: "2015-09-01",
+          difficultServicePreviousEndDate: "2023-09-01",
+        }).breakdown[2]?.marks,
+      ).toBe(15); // 8 years capped at 5 * 3/yr
+    });
+
+    it("scores the distance-tier branch independently of the classified-difficult branch", () => {
+      expect(
+        scoreCategory64({
+          ...institutionBase,
+          difficultServiceType: "previous",
+          difficultServiceDistanceStartDate: "2020-09-01",
+          difficultServiceDistanceEndDate: "2023-09-01",
+          difficultServiceDistanceKm: 200,
+        }).breakdown[2]?.marks,
+      ).toBe(9); // 3 years * 3/yr (150km+ tier) with no classified-difficult dates entered
+      expect(
+        scoreCategory64({
+          ...institutionBase,
+          difficultServiceType: "previous",
+          difficultServiceDistanceStartDate: "2019-09-01",
+          difficultServiceDistanceEndDate: "2023-09-01",
+          difficultServiceDistanceKm: 120,
+        }).breakdown[2]?.marks,
+      ).toBe(8); // 4 years * 2/yr (100-150km tier)
+    });
+
+    it("takes the higher of the two independently-dated branches", () => {
+      expect(
+        scoreCategory64({
+          ...institutionBase,
+          difficultServiceType: "previous",
+          difficultServicePreviousStartDate: "2024-09-01",
+          difficultServicePreviousEndDate: "2026-09-01", // 2 years -> 3*2=6
+          difficultServiceDistanceStartDate: "2021-09-01",
+          difficultServiceDistanceEndDate: "2026-09-01", // 5 years -> 3*5=15
+          difficultServiceDistanceKm: 160,
+        }).breakdown[2]?.marks,
+      ).toBe(15);
+    });
   });
 
-  it("stacks extra-period bonuses on the higher branch capped at twenty-five", () => {
-    expect(
-      scoreCategory64({
-        difficultServiceType: "previous",
-        difficultServiceExtraPeriods: 20,
-        difficultServiceDistanceKm: 160,
-      }).breakdown[1]?.marks,
-    ).toBe(25);
-    expect(
-      scoreCategory64({ difficultServiceType: "previous", difficultServiceExtraPeriods: 30 }).breakdown[1]?.marks,
-    ).toBe(25);
+  it("restricts unutilized leave to the institution path, never the university path", () => {
+    expect(scoreCategory64({ ...institutionBase, unutilizedLeaveYears: 3 }).breakdown[3]?.marks).toBe(6);
+    expect(scoreCategory64({ ...institutionBase, unutilizedLeaveYears: 6 }).breakdown[3]?.marks).toBe(10);
+    expect(scoreCategory64({ ...universityBase, unutilizedLeaveYears: 6 }).breakdown[3]?.marks).toBe(0);
   });
 
-  it("awards two marks per unutilized-leave year capped at ten", () => {
-    expect(scoreCategory64({ unutilizedLeaveYears: 3 }).breakdown[2]?.marks).toBe(6);
-    expect(scoreCategory64({ unutilizedLeaveYears: 6 }).breakdown[2]?.marks).toBe(10);
+  it("bands residence distance downward with distance, only when gated open", () => {
+    expect(scoreCategory64({ ...institutionBase, residenceToSchoolKm: 0.5 }).breakdown[4]?.marks).toBe(10);
+    expect(scoreCategory64({ ...institutionBase, residenceToSchoolKm: 2 }).breakdown[4]?.marks).toBe(8);
+    expect(scoreCategory64({ ...institutionBase, residenceToSchoolKm: 4.9 }).breakdown[4]?.marks).toBe(6);
+    expect(scoreCategory64({ ...institutionBase, residenceToSchoolKm: 12 }).breakdown[4]?.marks).toBe(4);
+    expect(scoreCategory64({ residenceToSchoolKm: 0.5 }).breakdown[4]?.marks).toBe(0);
   });
 
-  it("maps service location levels including fractional zone value", () => {
-    expect(scoreCategory64({ serviceLocationLevel: "same-school" }).breakdown[3]?.marks).toBe(10);
-    expect(scoreCategory64({ serviceLocationLevel: "zone" }).breakdown[3]?.marks).toBe(7.5);
-    expect(scoreCategory64({ serviceLocationLevel: "province" }).breakdown[3]?.marks).toBe(5);
-    expect(scoreCategory64({ serviceLocationLevel: "education-institution" }).breakdown[3]?.marks).toBe(2.5);
+  it("bands workplace distance with a floor of five inside twenty kilometres, only when gated open", () => {
+    expect(scoreCategory64({ ...institutionBase, workplaceToSchoolKm: 150 }).breakdown[5]?.marks).toBe(25);
+    expect(scoreCategory64({ ...institutionBase, workplaceToSchoolKm: 45 }).breakdown[5]?.marks).toBe(15);
+    expect(scoreCategory64({ ...institutionBase, workplaceToSchoolKm: 3 }).breakdown[5]?.marks).toBe(5);
+    expect(scoreCategory64({ workplaceToSchoolKm: 150 }).breakdown[5]?.marks).toBe(0);
   });
 
-  it("bands residence distance downward with distance", () => {
-    expect(scoreCategory64({ residenceToSchoolKm: 0.5 }).breakdown[4]?.marks).toBe(10);
-    expect(scoreCategory64({ residenceToSchoolKm: 1 }).breakdown[4]?.marks).toBe(10);
-    expect(scoreCategory64({ residenceToSchoolKm: 2 }).breakdown[4]?.marks).toBe(8);
-    expect(scoreCategory64({ residenceToSchoolKm: 4.9 }).breakdown[4]?.marks).toBe(6);
-    expect(scoreCategory64({ residenceToSchoolKm: 12 }).breakdown[4]?.marks).toBe(4);
-    expect(scoreCategory64({ residenceToSchoolKm: undefined }).breakdown[4]?.marks).toBe(0);
-  });
-
-  it("bands workplace distance with a floor of five inside twenty kilometres", () => {
-    expect(scoreCategory64({ workplaceToSchoolKm: 150 }).breakdown[5]?.marks).toBe(25);
-    expect(scoreCategory64({ workplaceToSchoolKm: 85 }).breakdown[5]?.marks).toBe(20);
-    expect(scoreCategory64({ workplaceToSchoolKm: 45 }).breakdown[5]?.marks).toBe(15);
-    expect(scoreCategory64({ workplaceToSchoolKm: 25 }).breakdown[5]?.marks).toBe(10);
-    expect(scoreCategory64({ workplaceToSchoolKm: 3 }).breakdown[5]?.marks).toBe(5);
-    expect(scoreCategory64({ workplaceToSchoolKm: undefined }).breakdown[5]?.marks).toBe(0);
+  it("reaches the documented attainable maximum of one hundred", () => {
+    const maximal = scoreCategory64({
+      contributionPath: "institution",
+      contributionSameSchool: true,
+      contributionServiceStartDate: "2010-09-01",
+      serviceStartDate: "2001-01-01",
+      difficultServiceType: "current",
+      difficultServiceStartDate: "2015-09-01",
+      unutilizedLeaveYears: 5,
+      residenceToSchoolKm: 0.5,
+      workplaceToSchoolKm: 150,
+    });
+    expect(maximal.total).toBe(100);
   });
 });
 
@@ -390,10 +541,10 @@ describe("scoreCategory66 – foreign employment", () => {
   });
 
   it("maps employment purposes to their distinct weights", () => {
-    expect(scoreCategory66({ employmentPurpose: "board" }).breakdown[1]?.marks).toBe(40);
-    expect(scoreCategory66({ employmentPurpose: "personal" }).breakdown[1]?.marks).toBe(30);
-    expect(scoreCategory66({ employmentPurpose: "government" }).breakdown[1]?.marks).toBe(25);
-    expect(scoreCategory66({ employmentPurpose: "education" }).breakdown[1]?.marks).toBe(20);
+    expect(scoreCategory66({ employmentPurpose: "diplomatic" }).breakdown[1]?.marks).toBe(40);
+    expect(scoreCategory66({ employmentPurpose: "government" }).breakdown[1]?.marks).toBe(40);
+    expect(scoreCategory66({ employmentPurpose: "education" }).breakdown[1]?.marks).toBe(30);
+    expect(scoreCategory66({ employmentPurpose: "employment" }).breakdown[1]?.marks).toBe(25);
   });
 
   it("deducts three and a half marks per nearby school from thirty-five", () => {
@@ -406,7 +557,7 @@ describe("scoreCategory66 – foreign employment", () => {
     const maximal = scoreCategory66({
       abroadStartDate: "2022-09-01",
       abroadEndDate: "2026-09-01",
-      employmentPurpose: "board",
+      employmentPurpose: "diplomatic",
       schoolsWithinRadius: [],
     });
     expect(maximal.total).toBe(100);

@@ -60,7 +60,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   "6.1": "6.1 - Residence Verification & Proximity",
   "6.2": "6.2 - Alumni",
   "6.3": "6.3 - Siblings",
-  "6.4": "6.4 - Period of Service & Distance",
+  "6.4": "6.4 - Education Sector / Teaching Staff",
   "6.5": "6.5 - Transfer Applications",
   "6.6": "6.6 - Foreign Employment",
 };

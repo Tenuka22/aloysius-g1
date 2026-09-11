@@ -21,6 +21,7 @@ import {
   defaultSubmissionWindow,
   draftSchema,
   extractBirthCertificateNumber,
+  extractGuardianNic,
   hashKey,
   isAdmissionsAvailable,
   isSubmissionLocked,
@@ -339,13 +340,25 @@ export const g1Router = {
       .input(
         z.object({
           birthCertificateNumber: z.string().trim().min(1),
+          guardianNic: z.string().trim().optional(),
+          intakeYear: z.string().default("2027"),
           excludeAccessKey: z.string().trim().optional(),
         }),
       )
       .handler(async ({ input }) => {
         const birthCertificateNumber = input.birthCertificateNumber.trim().toUpperCase();
+        const guardianNic = input.guardianNic?.trim().toUpperCase() ?? "";
+        // A duplicate is only a real conflict when the same guardian NIC is
+        // also submitting the same child's birth certificate again - siblings
+        // (twins included) share a guardian NIC but each has their own birth
+        // certificate, so NIC alone or birth certificate alone must never block.
+        // Scoped to the current intake year too - a family whose application
+        // wasn't admitted last cycle must always be able to apply again in a
+        // later intake for the same child.
+        if (!guardianNic) return { exists: false };
         const conditions = [
           eq(g1Applications.birthCertificateNumber, birthCertificateNumber),
+          eq(g1Applications.intakeYear, input.intakeYear),
           isNotNull(g1Applications.submittedAt),
         ];
         if (input.excludeAccessKey) {
@@ -353,11 +366,14 @@ export const g1Router = {
           conditions.push(ne(g1Applications.accessKeyHash, excludeHash));
         }
         const row = await db
-          .select({ id: g1Applications.id })
+          .select({ id: g1Applications.id, data: g1Applications.data })
           .from(g1Applications)
           .where(and(...conditions))
-          .get();
-        return { exists: Boolean(row) };
+          .all();
+        const match = row.find(
+          (candidate) => extractGuardianNic(candidate.data as Record<string, unknown>) === guardianNic,
+        );
+        return { exists: Boolean(match) };
       }),
     requestAccess: publicProcedure
       .input(
@@ -441,12 +457,11 @@ export const g1Router = {
           guardianRow =
             candidates.find(
               (candidate) =>
-                String((candidate.data as { guardian?: { nic?: string } }).guardian?.nic ?? "")
-                  .trim()
-                  .toUpperCase() === normalizedNic,
+                extractGuardianNic(candidate.data as Record<string, unknown>) === normalizedNic,
             ) ?? null;
           row = guardianRow;
         } else if (keyRow && input.guardianNic) {
+          const normalizedNic = input.guardianNic.trim().toUpperCase();
           const candidates = await db
             .select({
               id: g1Applications.id,
@@ -458,9 +473,7 @@ export const g1Router = {
           guardianRow =
             candidates.find(
               (candidate) =>
-                String((candidate.data as { guardian?: { nic?: string } }).guardian?.nic ?? "")
-                  .trim()
-                  .toUpperCase() === input.guardianNic?.trim().toUpperCase(),
+                extractGuardianNic(candidate.data as Record<string, unknown>) === normalizedNic,
             ) ?? null;
           if (guardianRow && guardianRow.id !== keyRow.id)
             throw new ORPCError("BAD_REQUEST", {
@@ -591,6 +604,7 @@ export const g1Router = {
           id: g1Applications.id,
           intakeYear: g1Applications.intakeYear,
           birthCertificateNumber: g1Applications.birthCertificateNumber,
+          data: g1Applications.data,
         })
         .from(g1Applications)
         .where(eq(g1Applications.accessKeyHash, hashKey(input.accessKey)))
@@ -605,19 +619,32 @@ export const g1Router = {
       // application actually becomes submitted, not on every autosave tick
       // (see application.update): a number that merely matches another
       // still-in-progress draft is not a conflict, only one that matches an
-      // already-submitted application is.
-      if (row.birthCertificateNumber) {
+      // already-submitted application is. The conflict must also share the
+      // same guardian NIC - siblings (twins included) share a guardian but
+      // each has their own birth certificate, and must always be able to
+      // submit separate applications, so birth certificate or NIC matching
+      // alone is never enough to block. Scoped to the same intake year too -
+      // a family whose application wasn't admitted in an earlier intake must
+      // always be able to apply again in a later one for the same child.
+      const guardianNic = extractGuardianNic(row.data as Record<string, unknown>);
+      if (row.birthCertificateNumber && guardianNic) {
         const duplicate = await db
-          .select({ id: g1Applications.id })
+          .select({ id: g1Applications.id, data: g1Applications.data })
           .from(g1Applications)
           .where(
             and(
               eq(g1Applications.birthCertificateNumber, row.birthCertificateNumber),
+              eq(g1Applications.intakeYear, row.intakeYear),
               isNotNull(g1Applications.submittedAt),
             ),
           )
-          .get();
-        if (duplicate && duplicate.id !== row.id)
+          .all();
+        const conflict = duplicate.find(
+          (candidate) =>
+            candidate.id !== row.id &&
+            extractGuardianNic(candidate.data as Record<string, unknown>) === guardianNic,
+        );
+        if (conflict)
           throw new ORPCError("CONFLICT", {
             message:
               "An application with this birth certificate number has already been submitted. Please check the number and try again.",

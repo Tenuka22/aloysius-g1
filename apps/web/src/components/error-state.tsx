@@ -1,5 +1,6 @@
 "use client";
 
+import { isChunkLoadError } from "@/lib/chunk-reload";
 import { STATUS_ERROR } from "@/lib/color-classes";
 import { useTranslation } from "@/lib/i18n";
 import { Button } from "@aloysius-admissions/ui/components/button";
@@ -22,7 +23,14 @@ export function ErrorState({ error, reset }: ErrorStateProps) {
   const { t } = useTranslation();
 
   const handleRetry = () => {
-    if (reset) {
+    // A stale-chunk failure means the JS file itself is gone from the
+    // server (superseded by a newer deploy) - re-rendering via `reset()`
+    // retries the exact same broken import and fails again. Only a full
+    // navigation, which re-fetches index.html and its current chunk
+    // manifest, can recover.
+    if (isChunkLoadError(error)) {
+      window.location.reload();
+    } else if (reset) {
       reset();
     } else {
       window.location.reload();

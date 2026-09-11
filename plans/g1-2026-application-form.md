@@ -38,7 +38,7 @@ User sees checkboxes for six marking scheme categories. Any combination may be s
 | 6.1 | Residence Verification & Proximity | 100 |
 | 6.2 | Alumni | 100 |
 | 6.3 | Siblings | 100 |
-| 6.4 | Period of Service & Distance | 100 |
+| 6.4 | Education Sector / Teaching Staff | 100 |
 | 6.5 | Transfer Applications | 100 |
 | 6.6 | Foreign Employment & Proximity | 100 |
 
@@ -171,9 +171,11 @@ CategoryApplication = {
     mainDocumentType?, documentOwnership?, yearsRegistered?,
     additionalDocs?: string[], electoralMotherYears?, electoralFatherYears?,
     schoolsWithinRadius?: string[], schoolsRadiusKm?,
-    periodOfServiceYears?, difficultServiceType?: "current"|"previous"|"none",
-    difficultServiceDistanceKm?, difficultServiceExtraPeriods?,
-    unutilizedLeaveYears?, serviceLocationLevel?,
+    contributionPath?: "institution"|"university", contributionSameSchool?, contributionServiceStartDate?,
+    contributionExamYears?, contributionCurriculumYears?, contributionTrainingYears?,
+    serviceStartDate?, difficultServiceType?: "current"|"previous"|"none",
+    difficultServiceStartDate?, difficultServicePreviousStartDate?, difficultServicePreviousEndDate?,
+    difficultServiceDistanceKm?, unutilizedLeaveYears?,
     residenceToSchoolKm?, workplaceToSchoolKm?,
     previousWorkplaceDistanceKm?, previousWorkplacePeriodYears?, transferElapsedYears?,
     periodAbroadYears?, employmentPurpose?: "board"|"personal"|"government"|"education"
@@ -396,8 +398,8 @@ The admin panel includes a separate appeals queue for applicants who cannot safe
 
 ### Implemented duplicate birth-certificate and lost-key recovery
 
-- Pre-create checks against existing birth-certificate numbers among submitted applications only.
-- Matching submitted-application numbers surface an existing-application notice instead of a second record.
+- Live checks against existing birth-certificate numbers among submitted applications only, and only once the guardian NIC is also known - matching birth certificate number alone, or matching guardian NIC alone, is never treated as a conflict (siblings, twins included, share a guardian NIC but each has their own birth certificate and must always be able to submit separately). Scoped to the same intake year, so a family whose child wasn't admitted in an earlier intake can always apply again in a later one.
+- Matching birth certificate number *and* guardian NIC on a submitted application surfaces an existing-application notice instead of a second record.
 - Key holders reopen profiles via the verified access-key route.
 - Keyless users submit recovery requests with name and contact email.
 - Admins review requests, generate replacements once, or dismiss.
@@ -415,7 +417,7 @@ The admin panel includes a separate appeals queue for applicants who cannot safe
 
 ## Duplicate birth certificate and record removal
 
-- Matching birth certificate numbers in submitted applications block second submissions.
+- Matching birth certificate number *and* guardian NIC together on a submitted application in the *same intake year* block second submissions - the same family resubmitting for the same child within one admission cycle, not merely a shared birth certificate number, a shared guardian across siblings, or a reapplication in a later intake year.
 - Existing keys or QR codes only open/edit the existing application.
 - Removal goes through a separate school-review request with name and contact email; never automatic deletion or key recovery.
 - Admins review, contact users, and delete only after confirming legal and operational appropriateness, then mark resolved.

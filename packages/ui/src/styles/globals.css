@@ -240,36 +240,3 @@
     background-attachment: local, local, scroll, scroll;
   }
 }
-
-/* Sinhala heading/display faces.
-   ---------------------------------------------------------------------------
-   DELIBERATELY UNLAYERED - do not move these inside @layer base.
-
-   Two separate things had to be true for this to work, and getting either
-   wrong makes the override silently do nothing:
-
-   1. `@theme inline` bakes font stacks as LITERAL values into the compiled
-      utility (`.font-heading { font-family: 'Playfair Display Variable', ... }`),
-      so redeclaring --font-heading / --font-display under html[lang="si"] is
-      dead code - the variable is never read at runtime. font-family has to be
-      overridden on the class selector itself.
-
-   2. Tailwind declares `@layer theme, base, components, utilities`, and
-      .font-heading/.font-display are emitted into `utilities`. Cascade layers
-      beat specificity: ANY rule in `utilities` wins over ANY rule in `base`,
-      even `html[lang="si"] .font-display` (0,2,0) vs `.font-display` (0,1,0).
-      Putting these in @layer base looks correct and does nothing.
-
-   Unlayered styles outrank every layered style, so declaring them here is what
-   actually makes them apply.
-
-   Playfair Display has no Sinhala glyphs, so without this the Sinhala locale
-   fell back to the same plain sans as body text. Abhaya Libre is a real
-   Sinhala serif with thick/thin stroke contrast, matching Playfair's editorial
-   role on the English side. Only weight 400 is imported, so headings are
-   pinned to 400 rather than inheriting the html[lang="si"] body 500 bump. */
-html[lang="si"] .font-heading,
-html[lang="si"] .font-display {
-  font-family: 'Abhaya Libre', 'Noto Sans Sinhala Variable', serif;
-  font-weight: 400;
-}

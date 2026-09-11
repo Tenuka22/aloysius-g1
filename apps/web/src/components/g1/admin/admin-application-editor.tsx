@@ -116,15 +116,15 @@ const CATEGORY_LABELS: Record<CategoryType, string> = {
   "6.1": "6.1 - Residence Verification & Proximity",
   "6.2": "6.2 - Alumni",
   "6.3": "6.3 - Siblings",
-  "6.4": "6.4 - Period of Service & Distance",
+  "6.4": "6.4 - Education Sector / Teaching Staff",
   "6.5": "6.5 - Transfer Applications",
   "6.6": "6.6 - Foreign Employment",
 };
 
 const DIFFICULT_SERVICE_TYPES = ["current", "previous", "none"] as const;
-const EMPLOYMENT_PURPOSES = ["board", "personal", "government", "education"] as const;
+const EMPLOYMENT_PURPOSES = ["diplomatic", "government", "education", "employment"] as const;
 const SPORTS_LEVELS = ["none", "inter-house", "zonal", "district", "provincial", "national", "international"] as const;
-const SIBLING_EXAM_ACHIEVEMENTS = ["none", "scholarship", "ol", "al"] as const;
+
 const LEADERSHIP_ROLES = [
   "none",
   "prefect-primary",
@@ -155,19 +155,17 @@ const OTHER_ACTIVITIES = [
 ] as const;
 const DEGREE_LEVELS = ["none", "first-degree", "postgraduate", "doctorate", "chartered-professional"] as const;
 
-type CategoryTextFieldKey = "mainDocumentType" | "documentOwnership" | "serviceLocationLevel" | "studentSocietiesRole" | "otherActivity" | "otherActivityName" | "highestDegree";
-type CategoryDateFieldKey = "deedTransferDate" | "serviceStartDate" | "previousWorkplaceStartDate" | "transferDate" | "abroadStartDate" | "abroadEndDate" | "alumniStartDate" | "alumniEndDate" | "pastPupilsMembershipStart" | "pastPupilsMembershipEnd";
-type CategoryNumberFieldKey = "schoolsRadiusKm" | "difficultServiceDistanceKm" | "difficultServiceExtraPeriods" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "sportsCount" | "siblingsCurrentlyStudyingCount" | "siblingPrefectCount";
-type CategoryBooleanFieldKey = "grade5ScholarshipPassed" | "pastPupilsLifeMember" | "pastPupilsCommitteeMember" | "pastPupilsExecutiveOffice" | "hasDiploma" | "sportsMeetContribution" | "shramadanaContribution" | "schoolProjectsContribution";
+type CategoryTextFieldKey = "mainDocumentType" | "documentOwnership" | "otherActivityName" | "highestDegree" | "schoolProjectsDescription";
+type CategoryDateFieldKey = "deedTransferDate" | "serviceStartDate" | "previousWorkplaceStartDate" | "transferDate" | "abroadStartDate" | "abroadEndDate" | "alumniStartDate" | "alumniEndDate" | "pastPupilsLifeMemberStart" | "pastPupilsMembershipStart" | "pastPupilsMembershipEnd" | "contributionServiceStartDate" | "difficultServiceStartDate" | "difficultServicePreviousStartDate" | "difficultServicePreviousEndDate" | "difficultServiceDistanceStartDate" | "difficultServiceDistanceEndDate";
+type CategoryNumberFieldKey = "schoolsRadiusKm" | "difficultServiceDistanceKm" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "siblingGradesCompletedCount" | "pastPupilsCommitteeYears" | "pastPupilsExecutiveCount" | "sportsMeetContribution" | "shramadanaContribution" | "contributionExamYears" | "contributionCurriculumYears" | "contributionTrainingYears";
+type CategoryBooleanFieldKey = "grade5ScholarshipPassed" | "pastPupilsLifeMember" | "hasDiploma" | "schoolProjectsContribution" | "contributionSameSchool";
 
 const CATEGORY_TEXT_FIELDS: Array<[CategoryTextFieldKey, string]> = [
   ["mainDocumentType", "Main document type"],
   ["documentOwnership", "Document ownership"],
-  ["serviceLocationLevel", "Service location level"],
-  ["studentSocietiesRole", "Student societies role"],
-  ["otherActivity", "Other activity"],
   ["otherActivityName", "Other activity name"],
   ["highestDegree", "Highest degree"],
+  ["schoolProjectsDescription", "School projects description"],
 ];
 
 const CATEGORY_DATE_FIELDS: Array<[CategoryDateFieldKey, string]> = [
@@ -179,14 +177,20 @@ const CATEGORY_DATE_FIELDS: Array<[CategoryDateFieldKey, string]> = [
   ["abroadEndDate", "Abroad end date"],
   ["alumniStartDate", "Alumni start date"],
   ["alumniEndDate", "Alumni end date"],
+  ["pastPupilsLifeMemberStart", "Past Pupils life member since"],
   ["pastPupilsMembershipStart", "Past Pupils membership start date"],
   ["pastPupilsMembershipEnd", "Past Pupils membership end date"],
+  ["contributionServiceStartDate", "Contribution: institution service start date"],
+  ["difficultServiceStartDate", "Difficult service: current station start date"],
+  ["difficultServicePreviousStartDate", "Difficult service: previous station start date"],
+  ["difficultServicePreviousEndDate", "Difficult service: previous station end date"],
+  ["difficultServiceDistanceStartDate", "Difficult service: distance-branch start date"],
+  ["difficultServiceDistanceEndDate", "Difficult service: distance-branch end date"],
 ];
 
 const CATEGORY_NUMBER_FIELDS: Array<[CategoryNumberFieldKey, string]> = [
   ["schoolsRadiusKm", "Schools radius km"],
   ["difficultServiceDistanceKm", "Difficult service distance km"],
-  ["difficultServiceExtraPeriods", "Difficult service extra periods"],
   ["unutilizedLeaveYears", "Unutilized leave years"],
   ["residenceToSchoolKm", "Residence to school km"],
   ["workplaceToSchoolKm", "Workplace to school km"],
@@ -201,20 +205,22 @@ const CATEGORY_NUMBER_FIELDS: Array<[CategoryNumberFieldKey, string]> = [
   ["alGradeC", "A/L C passes"],
   ["alGradeB", "A/L B passes"],
   ["alGradeA", "A/L A passes"],
-  ["sportsCount", "Sports achievements count"],
-  ["siblingsCurrentlyStudyingCount", "Siblings currently studying"],
-  ["siblingPrefectCount", "Sibling prefect achievement count"],
+  ["siblingGradesCompletedCount", "Grades completed by sibling"],
+  ["pastPupilsCommitteeYears", "Past Pupils committee years/terms"],
+  ["pastPupilsExecutiveCount", "Past Pupils executive office posts"],
+  ["sportsMeetContribution", "Sports Meet contribution (times)"],
+  ["shramadanaContribution", "Shramadana contribution (times)"],
+  ["contributionExamYears", "Contribution: national exam years"],
+  ["contributionCurriculumYears", "Contribution: curriculum development years"],
+  ["contributionTrainingYears", "Contribution: teacher-training years"],
 ];
 
 const CATEGORY_BOOLEAN_FIELDS: Array<[CategoryBooleanFieldKey, string]> = [
   ["grade5ScholarshipPassed", "Grade 5 Scholarship passed"],
   ["pastPupilsLifeMember", "Past Pupils life member"],
-  ["pastPupilsCommitteeMember", "Past Pupils committee member"],
-  ["pastPupilsExecutiveOffice", "Past Pupils executive office"],
   ["hasDiploma", "Has Diploma / Higher Diploma"],
-  ["sportsMeetContribution", "Sports Meet contribution"],
-  ["shramadanaContribution", "Shramadana contribution"],
   ["schoolProjectsContribution", "School Projects contribution"],
+  ["contributionSameSchool", "Contribution: same school as applied to"],
 ];
 
 const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
@@ -238,36 +244,46 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["alGradeC", "A/L C passes"],
   ["alGradeB", "A/L B passes"],
   ["alGradeA", "A/L A passes"],
-  ["sportsLevel", "Sports level"],
-  ["sportsCount", "Sports achievements count"],
-  ["leadershipRole", "Leadership role"],
-  ["studentSocietiesRole", "Student societies role"],
-  ["otherActivity", "Other activity"],
+  ["sportsEntries", "Sports entries"],
+  ["leadershipRoles", "Leadership roles"],
+  ["studentSocietiesEntries", "Student societies entries"],
+  ["otherActivities", "Other activities"],
   ["otherActivityName", "Other activity name"],
   ["pastPupilsLifeMember", "Past Pupils life member"],
+  ["pastPupilsLifeMemberStart", "Past Pupils life member since"],
   ["pastPupilsMembershipStart", "Past Pupils membership start date"],
   ["pastPupilsMembershipEnd", "Past Pupils membership end date"],
-  ["pastPupilsCommitteeMember", "Past Pupils committee member"],
-  ["pastPupilsExecutiveOffice", "Past Pupils executive office"],
+  ["pastPupilsCommitteeYears", "Past Pupils committee years/terms"],
+  ["pastPupilsExecutiveCount", "Past Pupils executive office posts"],
   ["highestDegree", "Highest degree"],
   ["hasDiploma", "Has Diploma / Higher Diploma"],
   ["sportsMeetContribution", "Sports Meet contribution"],
   ["shramadanaContribution", "Shramadana contribution"],
   ["schoolProjectsContribution", "School Projects contribution"],
-  ["siblingsCurrentlyStudyingCount", "Siblings currently studying"],
+  ["schoolProjectsDescription", "School projects description"],
+  ["siblingGradesCompletedCount", "Grades completed by sibling"],
   ["siblingStudiedAtAppliedSchool", "Sibling studied at applied school"],
-  ["twoOrMoreSiblingsApplying", "Two or more siblings applying"],
-  ["siblingPrefectLevel", "Sibling prefect level"],
-  ["siblingPrefectCount", "Sibling prefect achievement count"],
-  ["siblingExamAchievement", "Sibling exam achievement"],
-  ["siblingPraiseworthyAchievement", "Sibling praiseworthy achievement"],
+  ["twoOrMoreSiblingsStudyingOtherGrades", "Two or more siblings studying other grades"],
+  ["siblingSportsEntries", "Sibling co-curricular / sports entries"],
+  ["siblingExamAchievements", "Sibling exam achievements"],
+  ["siblingLeadershipAchievement", "Sibling leadership achievement"],
   ["parentsSupportRendered", "Parent support rendered"],
+  ["parentsSupportDescription", "Parent support description"],
+  ["contributionPath", "Contribution path (institution | university)"],
+  ["contributionSameSchool", "Contribution: same school as applied to"],
+  ["contributionServiceStartDate", "Contribution: institution service start date"],
+  ["contributionExamYears", "Contribution: national exam years"],
+  ["contributionCurriculumYears", "Contribution: curriculum development years"],
+  ["contributionTrainingYears", "Contribution: teacher-training years"],
   ["serviceStartDate", "Service start date"],
   ["difficultServiceType", "Difficult service type"],
+  ["difficultServiceStartDate", "Difficult service: current station start date"],
+  ["difficultServicePreviousStartDate", "Difficult service: previous station start date"],
+  ["difficultServicePreviousEndDate", "Difficult service: previous station end date"],
+  ["difficultServiceDistanceStartDate", "Difficult service: distance-branch start date"],
+  ["difficultServiceDistanceEndDate", "Difficult service: distance-branch end date"],
   ["difficultServiceDistanceKm", "Difficult service distance km"],
-  ["difficultServiceExtraPeriods", "Difficult service extra periods"],
   ["unutilizedLeaveYears", "Unutilized leave years"],
-  ["serviceLocationLevel", "Service location level"],
   ["residenceToSchoolKm", "Residence to school km"],
   ["workplaceToSchoolKm", "Workplace to school km"],
   ["previousWorkplaceDistanceKm", "Previous workplace distance km"],
@@ -340,6 +356,24 @@ function Value({ label, value, hint, type = "text" }: { label: string; value: un
 function formatScoringValue(key: string, raw: unknown): string {
   if (raw == null) return "";
   if (typeof raw === "boolean") return raw ? "Yes" : "No";
+  if (key === "sportsEntries" && Array.isArray(raw)) {
+    // Guarded by the key check above - this is the one field that ever
+    // holds an array of { name?, levels? } sport entries.
+    const entries = raw as { name?: string; levels?: string[] }[];
+    const filled = entries.filter((entry) => (entry.levels ?? []).length > 0);
+    return filled.length === 0 ? "" : filled.map((entry) => {
+      const levels = (entry.levels ?? []).join("/");
+      return entry.name ? `${entry.name} (${levels})` : levels;
+    }).join(", ");
+  }
+  if (key === "studentSocietiesEntries" && Array.isArray(raw)) {
+    const entries = raw as { name?: string; roles?: string[] }[];
+    const filled = entries.filter((entry) => (entry.roles ?? []).length > 0);
+    return filled.length === 0 ? "" : filled.map((entry) => {
+      const roles = (entry.roles ?? []).join("/");
+      return entry.name ? `${entry.name} (${roles})` : roles;
+    }).join(", ");
+  }
   if (Array.isArray(raw)) {
     if (key === "schoolsWithinRadius") return `${raw.length} school${raw.length === 1 ? "" : "s"} selected`;
     return raw.map((v) => typeof v === "string" ? v.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : String(v)).join(", ");

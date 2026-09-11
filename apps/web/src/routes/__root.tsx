@@ -13,6 +13,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { multiSessionPlugin } from "@/lib/auth/multi-session-plugin";
 import { authClient } from "@/lib/auth-client";
+import { clearChunkReloadGuard } from "@/lib/chunk-reload";
 import { refreshSchoolCoordinateOverrides } from "@/lib/g1/school-coordinates";
 import { link, orpc } from "@/utils/orpc";
 import { ErrorState } from "@/components/error-state";
@@ -79,6 +80,12 @@ function RootComponent() {
   // would leak across concurrent requests if it ran during server rendering.
   useEffect(() => {
     void refreshSchoolCoordinateOverrides();
+  }, []);
+  // Reaching this render means the app booted past whatever chunk load a
+  // prior `vite:preloadError` reload was recovering from - drop the guard so
+  // a genuinely new failure later in this session gets one fresh retry too.
+  useEffect(() => {
+    clearChunkReloadGuard();
   }, []);
   return (
     <RootDocument>

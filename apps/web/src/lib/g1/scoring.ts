@@ -21,15 +21,14 @@ import {
   LEADERSHIP_MAX,
   STUDENT_SOCIETIES_MAX,
   OTHER_ACTIVITIES_MAX,
-  PAST_PUPILS_LIFE_MEMBER_MARKS,
+  PAST_PUPILS_LIFE_MEMBER_MARKS_PER_YEAR,
+  PAST_PUPILS_LIFE_MEMBER_MAX,
   PAST_PUPILS_YEARLY_MARKS,
   PAST_PUPILS_MEMBERSHIP_MAX,
   PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR,
-  PAST_PUPILS_COMMITTEE_MAX_YEARS,
-  PAST_PUPILS_COMMITTEE_MAX,
   PAST_PUPILS_EXECUTIVE_MARKS,
   PAST_PUPILS_EXECUTIVE_COUNT,
-  PAST_PUPILS_EXECUTIVE_MAX,
+  PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX,
   PAST_PUPILS_TOTAL_MAX,
   DEGREE_MAX,
   DIPLOMA_MARKS,
@@ -37,13 +36,13 @@ import {
   SHRAMADANA_CONTRIBUTION,
   CONTRIBUTION_MAX,
   SCHOOL_PROJECTS_MARKS,
-  SIBLING_MARKS_PER_SIBLING,
-  SIBLING_STUDYING_MAX,
+  SIBLING_MARKS_PER_GRADE,
+  SIBLING_GRADES_MAX,
   SIBLING_STUDIED_HERE_MARKS,
-  SIBLING_MULTIPLE_APPLYING_MARKS,
-  SIBLING_PREFECT_MAX,
+  SIBLING_MULTIPLE_STUDYING_MARKS,
+  SIBLING_SPORTS_MAX,
   SIBLING_EXAM_MAX,
-  SIBLING_PRAISEWORTHY_MARKS,
+  SIBLING_LEADERSHIP_MARKS,
   SIBLING_SUPPORT_MARKS,
   SIBLING_COCURRICULAR_TOTAL_MAX,
   MAIN_DOCUMENT_MAX_63,
@@ -52,15 +51,22 @@ import {
   PROXIMITY_PER_SCHOOL_63,
   PROXIMITY_MAX_63,
   SERVICE_PERIOD_MAX,
-  DIFFICULT_SERVICE_CURRENT_MARKS,
-  DIFFICULT_SERVICE_PREVIOUS_BASE,
+  DIFFICULT_SERVICE_CURRENT_RATE,
+  DIFFICULT_SERVICE_PREVIOUS_RATE,
+  DIFFICULT_SERVICE_YEARS_CAP,
+  DIFFICULT_SERVICE_BONUS_MIN_MONTHS,
   DIFFICULT_SERVICE_MAX,
-  DIFFICULT_DISTANCE_TIERS,
-  DIFFICULT_EXTRA_PERIOD_MARKS,
+  DIFFICULT_DISTANCE_RATE_TIERS,
   UNUTILIZED_LEAVE_MARKS_PER_YEAR,
   UNUTILIZED_LEAVE_MAX,
-  SERVICE_LOCATION_MARKS,
-  SERVICE_LOCATION_MAX,
+  CONTRIBUTION_PATH1_SAME_SCHOOL_RATE,
+  CONTRIBUTION_PATH1_ELSEWHERE_RATE,
+  CONTRIBUTION_PATH1_YEARS_CAP,
+  CONTRIBUTION_PATH1_SAME_SCHOOL_MAX,
+  CONTRIBUTION_PATH1_ELSEWHERE_MAX,
+  CONTRIBUTION_PATH2_RATE_PER_ITEM,
+  CONTRIBUTION_PATH2_ITEM_MAX,
+  SCHOOL_EDUCATION_CONTRIBUTION_MAX,
   RESIDENCE_DISTANCE_TIERS_64,
   RESIDENCE_DISTANCE_FALLBACK_64,
   RESIDENCE_DISTANCE_MAX_64,
@@ -103,12 +109,58 @@ export function yearsFromDate(dateStr: string | undefined): number {
   return round2(Math.max(0, (now.getTime() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000)));
 }
 
+/** Whole completed years elapsed since `dateStr` - deliberately computed
+ * from calendar anniversary arithmetic (year difference, minus one if this
+ * year's month/day anniversary hasn't occurred yet), not a fixed
+ * 365.25-day divisor. A fixed divisor gets both edge cases wrong: an exact
+ * non-leap 1-year span is 365 days - slightly *under* 365.25, so dividing
+ * and flooring wrongly yields 0; a date one day short of a boundary can
+ * average up to the boundary via intermediate rounding and wrongly yield
+ * one year too many. Used for "1 mark per completed year" scoring (period
+ * of service in 6.4 and 6.5), where the circular never awards a fractional
+ * part-year of credit. */
+export function wholeYearsFromDate(dateStr: string | undefined): number {
+  if (!dateStr) return 0;
+  const start = new Date(dateStr);
+  if (Number.isNaN(start.getTime())) return 0;
+  const now = new Date();
+  if (start.getTime() > now.getTime()) return 0;
+  let years = now.getUTCFullYear() - start.getUTCFullYear();
+  const startMonthDay = start.getUTCMonth() * 100 + start.getUTCDate();
+  const nowMonthDay = now.getUTCMonth() * 100 + now.getUTCDate();
+  if (nowMonthDay < startMonthDay) years -= 1;
+  return Math.max(0, years);
+}
+
 export function yearsBetween(d1: string | undefined, d2: string | undefined): number {
   if (!d1 || !d2) return 0;
   const a = new Date(d1);
   const b = new Date(d2);
   if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 0;
   return Math.max(0, Math.abs(b.getTime() - a.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+}
+
+/** Whole years and the remaining months of the period from `startDate` to
+ * `endDate` (defaults to now) - calendar-based month arithmetic (not a
+ * fixed-day divisor), consistent with `wholeYearsFromDate` above. Used for
+ * difficult-service scoring (circular 7.5.3), which pays a per-year rate
+ * plus a one-off bonus once a completed year has a 6-month-or-more
+ * remainder. */
+export function yearsAndMonthsBetween(
+  startDate: string | undefined,
+  endDate?: string,
+): { years: number; remainderMonths: number } {
+  if (!startDate) return { years: 0, remainderMonths: 0 };
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : new Date();
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start.getTime() > end.getTime()) {
+    return { years: 0, remainderMonths: 0 };
+  }
+  let totalMonths =
+    (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth());
+  if (end.getUTCDate() < start.getUTCDate()) totalMonths -= 1;
+  totalMonths = Math.max(0, totalMonths);
+  return { years: Math.floor(totalMonths / 12), remainderMonths: totalMonths % 12 };
 }
 
 /** Counts checked years that actually fall within the current scored window
@@ -181,7 +233,7 @@ export const LEADERSHIP_ROLE_MARKS: Record<string, number> = {
   "first-team-captain": 2,
 };
 
-export const SIBLING_PREFECT_LEVEL_MARKS: Record<string, number> = {
+export const SIBLING_SPORTS_LEVEL_MARKS: Record<string, number> = {
   "inter-house": 0.25,
   zonal: 0.5,
   district: 1,
@@ -302,28 +354,49 @@ export function scoreCategory62(inputs: ScoringInputs): CategoryScore {
 
   const educationalMarks = cap(scholarshipMarks + olMarks + alMarks, EDUCATIONAL_TOTAL_MAX);
 
-  const sportsBase = SPORTS_LEVEL_MARKS[inputs.sportsLevel ?? ""] ?? 0;
-  const sportsMarks = cap(sportsBase * (inputs.sportsCount ?? (sportsBase > 0 ? 1 : 0)), SPORTS_MAX);
-  const leadershipMarks = cap(LEADERSHIP_ROLE_MARKS[inputs.leadershipRole ?? ""] ?? 0, LEADERSHIP_MAX);
-  const studentSocietiesMarks = cap(STUDENT_SOCIETIES_ROLE_MARKS[inputs.studentSocietiesRole ?? ""] ?? 0, STUDENT_SOCIETIES_MAX);
-  const otherActivityMarks = cap(OTHER_ACTIVITY_MARKS[inputs.otherActivity ?? ""] ?? 0, OTHER_ACTIVITIES_MAX);
+  const sportsMarks = cap(
+    (inputs.sportsEntries ?? []).reduce(
+      (sum, entry) => sum + (entry.levels ?? []).reduce((s, level) => s + (SPORTS_LEVEL_MARKS[level] ?? 0), 0),
+      0,
+    ),
+    SPORTS_MAX,
+  );
+  const leadershipMarks = cap(
+    (inputs.leadershipRoles ?? []).reduce((sum, role) => sum + (LEADERSHIP_ROLE_MARKS[role] ?? 0), 0),
+    LEADERSHIP_MAX,
+  );
+  const studentSocietiesMarks = cap(
+    (inputs.studentSocietiesEntries ?? []).reduce(
+      (sum, entry) => sum + (entry.roles ?? []).reduce((s, role) => s + (STUDENT_SOCIETIES_ROLE_MARKS[role] ?? 0), 0),
+      0,
+    ),
+    STUDENT_SOCIETIES_MAX,
+  );
+  const otherActivityMarks = cap(
+    (inputs.otherActivities ?? []).reduce((sum, activity) => sum + (OTHER_ACTIVITY_MARKS[activity] ?? 0), 0),
+    OTHER_ACTIVITIES_MAX,
+  );
 
   let pastPupilsMarks = 0;
-  if (inputs.pastPupilsLifeMember) pastPupilsMarks += PAST_PUPILS_LIFE_MEMBER_MARKS;
-  else if (inputs.pastPupilsMembershipStart && inputs.pastPupilsMembershipEnd) {
+  if (inputs.pastPupilsLifeMember) {
+    const years = yearsFromDate(inputs.pastPupilsLifeMemberStart);
+    pastPupilsMarks += cap(years * PAST_PUPILS_LIFE_MEMBER_MARKS_PER_YEAR, PAST_PUPILS_LIFE_MEMBER_MAX);
+  } else if (inputs.pastPupilsMembershipStart && inputs.pastPupilsMembershipEnd) {
     const years = yearsBetween(inputs.pastPupilsMembershipStart, inputs.pastPupilsMembershipEnd);
     pastPupilsMarks += cap(years * PAST_PUPILS_YEARLY_MARKS, PAST_PUPILS_MEMBERSHIP_MAX);
   }
-  if (inputs.pastPupilsCommitteeMember) pastPupilsMarks += cap(PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR * PAST_PUPILS_COMMITTEE_MAX_YEARS, PAST_PUPILS_COMMITTEE_MAX);
-  if (inputs.pastPupilsExecutiveOffice) pastPupilsMarks += cap(PAST_PUPILS_EXECUTIVE_MARKS * PAST_PUPILS_EXECUTIVE_COUNT, PAST_PUPILS_EXECUTIVE_MAX);
+  const committeeExecutiveMarks =
+    (inputs.pastPupilsCommitteeYears ?? 0) * PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR +
+    Math.min(inputs.pastPupilsExecutiveCount ?? 0, PAST_PUPILS_EXECUTIVE_COUNT) * PAST_PUPILS_EXECUTIVE_MARKS;
+  pastPupilsMarks += cap(committeeExecutiveMarks, PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX);
   pastPupilsMarks = cap(pastPupilsMarks, PAST_PUPILS_TOTAL_MAX);
 
   const degreeMarks = cap(DEGREE_MARKS[inputs.highestDegree ?? ""] ?? 0, DEGREE_MAX);
   const diplomaMarks = inputs.hasDiploma ? DIPLOMA_MARKS : 0;
 
   let contributionMarks = 0;
-  if (inputs.sportsMeetContribution) contributionMarks += SPORTS_MEET_CONTRIBUTION;
-  if (inputs.shramadanaContribution) contributionMarks += SHRAMADANA_CONTRIBUTION;
+  contributionMarks += (inputs.sportsMeetContribution ?? 0) * SPORTS_MEET_CONTRIBUTION;
+  contributionMarks += (inputs.shramadanaContribution ?? 0) * SHRAMADANA_CONTRIBUTION;
   contributionMarks = cap(contributionMarks, CONTRIBUTION_MAX);
 
   const projectMarks = inputs.schoolProjectsContribution ? SCHOOL_PROJECTS_MARKS : 0;
@@ -348,19 +421,24 @@ export function scoreCategory62(inputs: ScoringInputs): CategoryScore {
 }
 
 export function scoreCategory63(inputs: ScoringInputs): CategoryScore {
-  const siblingsMarks = cap((inputs.siblingsCurrentlyStudyingCount ?? 0) * SIBLING_MARKS_PER_SIBLING, SIBLING_STUDYING_MAX);
+  const gradesCompletedMarks = cap((inputs.siblingGradesCompletedCount ?? 0) * SIBLING_MARKS_PER_GRADE, SIBLING_GRADES_MAX);
   const studiedHereMarks = inputs.siblingStudiedAtAppliedSchool ? SIBLING_STUDIED_HERE_MARKS : 0;
-  const multipleApplyingMarks = inputs.twoOrMoreSiblingsApplying ? SIBLING_MULTIPLE_APPLYING_MARKS : 0;
-  const prefectMarks = cap(
-    (SIBLING_PREFECT_LEVEL_MARKS[inputs.siblingPrefectLevel ?? ""] ?? 0) *
-      (inputs.siblingPrefectCount ?? 0),
-    SIBLING_PREFECT_MAX,
+  const studyingOtherGradesMarks = inputs.twoOrMoreSiblingsStudyingOtherGrades ? SIBLING_MULTIPLE_STUDYING_MARKS : 0;
+  const sportsMarks = cap(
+    (inputs.siblingSportsEntries ?? []).reduce(
+      (sum, entry) => sum + (entry.levels ?? []).reduce((s, level) => s + (SIBLING_SPORTS_LEVEL_MARKS[level] ?? 0), 0),
+      0,
+    ),
+    SIBLING_SPORTS_MAX,
   );
-  const examMarks = cap(SIBLING_EXAM_MARKS[inputs.siblingExamAchievement ?? ""] ?? 0, SIBLING_EXAM_MAX);
-  const praiseworthyMarks = inputs.siblingPraiseworthyAchievement ? SIBLING_PRAISEWORTHY_MARKS : 0;
+  const examMarks = cap(
+    (inputs.siblingExamAchievements ?? []).reduce((sum, achievement) => sum + (SIBLING_EXAM_MARKS[achievement] ?? 0), 0),
+    SIBLING_EXAM_MAX,
+  );
+  const leadershipMarks = inputs.siblingLeadershipAchievement ? SIBLING_LEADERSHIP_MARKS : 0;
   const supportMarks = inputs.parentsSupportRendered ? SIBLING_SUPPORT_MARKS : 0;
   const cocurricularTotal = cap(
-    prefectMarks + examMarks + praiseworthyMarks + supportMarks,
+    sportsMarks + examMarks + leadershipMarks + supportMarks,
     SIBLING_COCURRICULAR_TOTAL_MAX,
   );
   const documentMarks = cap(MAIN_DOCUMENT_MARKS_63[inputs.mainDocumentType ?? ""] ?? 0, MAIN_DOCUMENT_MAX_63);
@@ -370,9 +448,9 @@ export function scoreCategory63(inputs: ScoringInputs): CategoryScore {
   const proximity = proximityMarks(inputs, PROXIMITY_PER_SCHOOL_63, PROXIMITY_MAX_63);
 
   const rows: ScoreRow[] = [
-    { label: "Siblings currently studying", marks: siblingsMarks, max: SIBLING_STUDYING_MAX },
+    { label: "Grades completed by sibling", marks: gradesCompletedMarks, max: SIBLING_GRADES_MAX },
     { label: "Sibling studied at applied school", marks: studiedHereMarks, max: SIBLING_STUDIED_HERE_MARKS },
-    { label: "Two or more siblings applying", marks: multipleApplyingMarks, max: SIBLING_MULTIPLE_APPLYING_MARKS },
+    { label: "Two or more siblings studying other grades", marks: studyingOtherGradesMarks, max: SIBLING_MULTIPLE_STUDYING_MARKS },
     { label: "Sibling co-curricular & prefect", marks: cocurricularTotal, max: SIBLING_COCURRICULAR_TOTAL_MAX },
     { label: "Residence document", marks: documentMarks, max: MAIN_DOCUMENT_MAX_63 },
     { label: "Electoral register", marks: electoralMarks, max: ELECTORAL_MAX_63 },
@@ -390,10 +468,75 @@ export function tieredDistanceMarks(km: number | undefined, tiers: Array<[number
   return fallback;
 }
 
-export function difficultDistanceMarks(km: number | undefined): number {
+/** 7.5.3.1/7.5.3.2 shared shape: `rate` marks per full year up to
+ * `DIFFICULT_SERVICE_YEARS_CAP` years, plus a one-off half-rate bonus once
+ * a completed year carries a 6-month-or-more remainder (7.5.3.3) - never
+ * awarded for less than one full year of service. */
+function rateTimesYearsWithBonus(
+  years: number,
+  remainderMonths: number,
+  rate: number,
+  branchMax: number,
+): number {
+  let marks = Math.min(years, DIFFICULT_SERVICE_YEARS_CAP) * rate;
+  if (years >= 1 && remainderMonths >= DIFFICULT_SERVICE_BONUS_MIN_MONTHS) marks += rate / 2;
+  return cap(marks, branchMax);
+}
+
+/** 7.5.3.1: currently serving in a difficult station - 5 marks per full
+ * year of continuous current-station difficult service, capped at 25. */
+export function difficultServiceCurrentMarks(startDate: string | undefined): number {
+  const { years, remainderMonths } = yearsAndMonthsBetween(startDate);
+  return rateTimesYearsWithBonus(years, remainderMonths, DIFFICULT_SERVICE_CURRENT_RATE, DIFFICULT_SERVICE_MAX);
+}
+
+/** 7.5.3.2.i: previously served in a difficult station - 3 marks per full
+ * year of that past period, capped at 15. */
+export function difficultServicePreviousMarks(startDate: string | undefined, endDate: string | undefined): number {
+  const { years, remainderMonths } = yearsAndMonthsBetween(startDate, endDate);
+  return rateTimesYearsWithBonus(years, remainderMonths, DIFFICULT_SERVICE_PREVIOUS_RATE, 15);
+}
+
+/** 7.5.3.2.ii: alternative to the previous-service rate above - when the
+ * permanent residence is 75km+ from the officer's original (first
+ * appointment) station, marks accrue per full year served at that station
+ * at a rate set by the qualifying distance tier. The higher of this and
+ * `difficultServicePreviousMarks` applies (see `scoreCategory64`). */
+export function difficultServiceDistanceMarks(
+  startDate: string | undefined,
+  endDate: string | undefined,
+  km: number | undefined,
+): number {
   if (km == null) return 0;
-  for (const [minKm, marks] of DIFFICULT_DISTANCE_TIERS) {
-    if (km >= minKm) return marks;
+  const tier = DIFFICULT_DISTANCE_RATE_TIERS.find(([minKm]) => km >= minKm);
+  if (!tier) return 0;
+  const [, ratePerYear, tierCap] = tier;
+  const { years, remainderMonths } = yearsAndMonthsBetween(startDate, endDate);
+  return rateTimesYearsWithBonus(years, remainderMonths, ratePerYear, tierCap);
+}
+
+/** 7.5.1 - an eligibility gate for the rest of category 6.4 (see
+ * `scoreCategory64`), not just a standalone line item. Path I pays a
+ * per-year rate for CURRENT-station service (higher rate if that station
+ * is the very school being applied to), with a half-rate award for under
+ * a year of current-station service. Path II sums three UGC-university
+ * sub-items, each its own per-year rate capped independently. */
+export function contributionMarks64(inputs: ScoringInputs): number {
+  if (inputs.contributionPath === "institution") {
+    const sameSchool = inputs.contributionSameSchool === true;
+    const rate = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_RATE : CONTRIBUTION_PATH1_ELSEWHERE_RATE;
+    const branchMax = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_MAX : CONTRIBUTION_PATH1_ELSEWHERE_MAX;
+    const totalYears = yearsFromDate(inputs.contributionServiceStartDate);
+    if (totalYears <= 0) return 0;
+    const wholeYears = wholeYearsFromDate(inputs.contributionServiceStartDate);
+    if (wholeYears < 1) return cap(rate / 2, branchMax);
+    return cap(Math.min(wholeYears, CONTRIBUTION_PATH1_YEARS_CAP) * rate, branchMax);
+  }
+  if (inputs.contributionPath === "university") {
+    const examMarks = cap((inputs.contributionExamYears ?? 0) * CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX);
+    const curriculumMarks = cap((inputs.contributionCurriculumYears ?? 0) * CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX);
+    const trainingMarks = cap((inputs.contributionTrainingYears ?? 0) * CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX);
+    return cap(examMarks + curriculumMarks + trainingMarks, SCHOOL_EDUCATION_CONTRIBUTION_MAX);
   }
   return 0;
 }
@@ -429,28 +572,52 @@ export function transferElapsedMarks(elapsed: number): number {
 }
 
 export function scoreCategory64(inputs: ScoringInputs): CategoryScore {
-  const serviceMarks = cap(yearsFromDate(inputs.serviceStartDate), SERVICE_PERIOD_MAX);
+  // 7.5.1 is an eligibility gate, not just another line item: the circular
+  // states marks for every section that follows are given "only to
+  // applicants who have earned marks" here - scoring zero on contribution
+  // must zero the rest of the category, not merely this row.
+  const contributionMarks = contributionMarks64(inputs);
+  const gateOpen = contributionMarks > 0;
+
+  // Whole completed years, matching every other "(rate x count)" formula in
+  // the circular - a continuous fractional year (e.g. 1.03) never appears
+  // in the official scheme.
+  const serviceMarks = gateOpen ? cap(wholeYearsFromDate(inputs.serviceStartDate), SERVICE_PERIOD_MAX) : 0;
 
   let difficultMarks = 0;
-  if (inputs.difficultServiceType === "current") {
-    difficultMarks = DIFFICULT_SERVICE_CURRENT_MARKS;
-  } else if (inputs.difficultServiceType === "previous") {
-    const distance = difficultDistanceMarks(inputs.difficultServiceDistanceKm);
-    const higherBranch = Math.max(DIFFICULT_SERVICE_PREVIOUS_BASE, distance);
-    difficultMarks = higherBranch + (inputs.difficultServiceExtraPeriods ?? 0) * DIFFICULT_EXTRA_PERIOD_MARKS;
+  if (gateOpen && inputs.difficultServiceType === "current") {
+    difficultMarks = difficultServiceCurrentMarks(inputs.difficultServiceStartDate);
+  } else if (gateOpen && inputs.difficultServiceType === "previous") {
+    const previousBranch = difficultServicePreviousMarks(
+      inputs.difficultServicePreviousStartDate,
+      inputs.difficultServicePreviousEndDate,
+    );
+    const distanceBranch = difficultServiceDistanceMarks(
+      inputs.difficultServiceDistanceStartDate,
+      inputs.difficultServiceDistanceEndDate,
+      inputs.difficultServiceDistanceKm,
+    );
+    difficultMarks = Math.max(previousBranch, distanceBranch);
   }
   difficultMarks = cap(difficultMarks, DIFFICULT_SERVICE_MAX);
 
-  const leaveMarks = cap((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX);
-  const locationMarks = cap(SERVICE_LOCATION_MARKS[inputs.serviceLocationLevel ?? ""] ?? 0, SERVICE_LOCATION_MAX);
-  const residenceDistance = tieredDistanceMarks(inputs.residenceToSchoolKm, RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64);
-  const workplaceDistance = workplaceDistanceMarks(inputs.workplaceToSchoolKm);
+  // 7.5.4 restricts unutilized-leave marks to officers qualifying under
+  // 7.5.1 Path I (institution service) - UGC university staff (Path II)
+  // never earn this row even when the overall gate is open.
+  const leaveMarks =
+    gateOpen && inputs.contributionPath !== "university"
+      ? cap((inputs.unutilizedLeaveYears ?? 0) * UNUTILIZED_LEAVE_MARKS_PER_YEAR, UNUTILIZED_LEAVE_MAX)
+      : 0;
+  const residenceDistance = gateOpen
+    ? tieredDistanceMarks(inputs.residenceToSchoolKm, RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64)
+    : 0;
+  const workplaceDistance = gateOpen ? workplaceDistanceMarks(inputs.workplaceToSchoolKm) : 0;
 
   const rows: ScoreRow[] = [
+    { label: "Contribution to school education", marks: contributionMarks, max: SCHOOL_EDUCATION_CONTRIBUTION_MAX },
     { label: "Period of service", marks: serviceMarks, max: SERVICE_PERIOD_MAX },
     { label: "Difficult service", marks: difficultMarks, max: DIFFICULT_SERVICE_MAX },
     { label: "Unutilized leave", marks: leaveMarks, max: UNUTILIZED_LEAVE_MAX },
-    { label: "Service location", marks: locationMarks, max: SERVICE_LOCATION_MAX },
     { label: "Residence to school", marks: residenceDistance, max: RESIDENCE_DISTANCE_MAX_64 },
     { label: "Workplace to school", marks: workplaceDistance, max: WORKPLACE_DISTANCE_MAX },
   ];
@@ -461,7 +628,7 @@ export function scoreCategory64(inputs: ScoringInputs): CategoryScore {
 export function scoreCategory65(inputs: ScoringInputs): CategoryScore {
   const distanceMarks = transferDistanceMarks(inputs.previousWorkplaceDistanceKm);
 
-  const periodMarks = cap(yearsFromDate(inputs.serviceStartDate), TRANSFER_SERVICE_PERIOD_MAX);
+  const periodMarks = cap(wholeYearsFromDate(inputs.serviceStartDate), TRANSFER_SERVICE_PERIOD_MAX);
 
   const prevYears = yearsFromDate(inputs.previousWorkplaceStartDate);
   const prevPeriodMarks = previousPeriodMarks(prevYears);

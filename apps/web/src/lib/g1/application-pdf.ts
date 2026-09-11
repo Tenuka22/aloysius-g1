@@ -29,7 +29,7 @@ const CATEGORY_LABELS_EN: Record<CategoryType, string> = {
   "6.1": "Residence Verification & Proximity",
   "6.2": "Alumni",
   "6.3": "Siblings",
-  "6.4": "Period of Service & Distance",
+  "6.4": "Education Sector / Teaching Staff",
   "6.5": "Transfer Applications",
   "6.6": "Foreign Employment",
 };
@@ -40,7 +40,7 @@ const CATEGORY_LABELS_SI: Record<CategoryType, string> = {
   "6.1": "පදිංචිය සහ ආසන්නතාවය",
   "6.2": "ආදි ශිෂ්‍ය",
   "6.3": "සහෝදර/සහෝදරියන්",
-  "6.4": "සේවා කාලය සහ දුර",
+  "6.4": "අධ්‍යාපන අංශය",
   "6.5": "ස්ථාන මාරුවීම්",
   "6.6": "විදේශ රැකියා",
 };

@@ -45,6 +45,15 @@ export const extractBirthCertificateNumber = (data: Record<string, unknown>): st
   return "";
 };
 
+export const extractGuardianNic = (data: Record<string, unknown>): string => {
+  if (typeof data.guardian === "object" && data.guardian !== null && "nic" in data.guardian) {
+    return String((data.guardian as { nic?: unknown }).nic ?? "")
+      .trim()
+      .toUpperCase();
+  }
+  return "";
+};
+
 export type ApplicationData = {
   applicant?: {
     fullName?: string;
@@ -54,7 +63,7 @@ export type ApplicationData = {
     dateOfBirth?: string;
     birthCertificateNumber?: string;
   };
-  guardian?: { email?: string };
+  guardian?: { email?: string; nic?: string };
   location?: { latitude?: number | null; longitude?: number | null };
 };
 

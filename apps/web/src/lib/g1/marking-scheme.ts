@@ -94,8 +94,14 @@ export const STUDENT_SOCIETIES_MAX = 5;
 /** Other activities maximum marks. */
 export const OTHER_ACTIVITIES_MAX = 5;
 
-/** Past Pupils' Association - life membership marks. */
-export const PAST_PUPILS_LIFE_MEMBER_MARKS = 10;
+/** Past Pupils' Association - life membership marks per year (1 mark/year,
+ * up to 10 years = 10 max - not a flat award for merely being a life
+ * member; the circular scores the years held, same as regular membership
+ * below but at double the rate). */
+export const PAST_PUPILS_LIFE_MEMBER_MARKS_PER_YEAR = 1;
+
+/** Past Pupils' Association - life membership years cap. */
+export const PAST_PUPILS_LIFE_MEMBER_MAX = 10;
 
 /** Past Pupils' Association - marks per year of membership. */
 export const PAST_PUPILS_YEARLY_MARKS = 0.5;
@@ -106,23 +112,24 @@ export const PAST_PUPILS_MEMBERSHIP_MAX = 10;
 /** Past Pupils' Association - committee membership marks per year. */
 export const PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR = 0.25;
 
-/** Past Pupils' Association - committee max years counted. */
-export const PAST_PUPILS_COMMITTEE_MAX_YEARS = 4;
-
-/** Past Pupils' Association - committee total cap. */
-export const PAST_PUPILS_COMMITTEE_MAX = 3;
-
-/** Past Pupils' Association - executive office marks. */
+/** Past Pupils' Association - executive office marks per post. */
 export const PAST_PUPILS_EXECUTIVE_MARKS = 1.5;
 
-/** Past Pupils' Association - executive office count. */
+/** Past Pupils' Association - executive office post-count input cap ("up to
+ * 2 posts" per the circular). */
 export const PAST_PUPILS_EXECUTIVE_COUNT = 2;
 
-/** Past Pupils' Association - executive office total cap. */
-export const PAST_PUPILS_EXECUTIVE_MAX = 3;
+/** Past Pupils' Association - committee membership and executive office
+ * share one combined "Max 03 Marks" ceiling (the circular's Executive
+ * Committee Membership bullet states its own Max 03 Marks; Office Bearer
+ * Post has no separate cap of its own, so both draw from this one pool -
+ * added on top of the membership marks below, not swallowed by them). */
+export const PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX = 3;
 
-/** Past Pupils' Association - total cap. */
-export const PAST_PUPILS_TOTAL_MAX = 10;
+/** Past Pupils' Association - total cap: membership (life or yearly, max
+ * 10) plus committee/executive (max 3), added rather than merged into one
+ * shared 10-mark pool. */
+export const PAST_PUPILS_TOTAL_MAX = 13;
 
 /** University degree maximum marks. */
 export const DEGREE_MAX = 5;
@@ -140,34 +147,38 @@ export const SHRAMADANA_CONTRIBUTION = 0.5;
 export const CONTRIBUTION_MAX = 2;
 
 /** Contribution to school projects marks. */
-export const SCHOOL_PROJECTS_MARKS = 5;
+export const SCHOOL_PROJECTS_MARKS = 4;
 
 // ── 6.3 - Siblings ───────────────────────────────────────────────────────────
 
-/** Siblings currently studying: 2 marks per sibling, max 10 siblings → 20. */
-export const SIBLING_MARKS_PER_SIBLING = 2;
-export const SIBLING_MAX_SIBLINGS = 10;
-export const SIBLING_STUDYING_MAX = 20;
+/** Grades completed by the sibling at this school: 2 marks per grade, up
+ * to 10 grades = 20 marks. Scored for one sibling only, per the circular -
+ * not a count of how many siblings are currently studying. */
+export const SIBLING_MARKS_PER_GRADE = 2;
+export const SIBLING_MAX_GRADES = 10;
+export const SIBLING_GRADES_MAX = 20;
 
 /** Sibling studied at applied school marks. */
 export const SIBLING_STUDIED_HERE_MARKS = 5;
 
-/** Two or more siblings applying marks. */
-export const SIBLING_MULTIPLE_APPLYING_MARKS = 5;
+/** Two or more siblings currently studying in other grades of this school. */
+export const SIBLING_MULTIPLE_STUDYING_MARKS = 5;
 
-/** Sibling co-curricular - prefect marks cap. */
-export const SIBLING_PREFECT_MAX = 2;
+/** Sibling co-curricular / subject-related skills & sports competitions cap. */
+export const SIBLING_SPORTS_MAX = 2;
 
 /** Sibling co-curricular - exam marks cap. */
 export const SIBLING_EXAM_MAX = 2;
 
-/** Sibling co-curricular - praiseworthy achievement marks. */
-export const SIBLING_PRAISEWORTHY_MARKS = 2;
+/** Sibling leadership (Prefect / Student Leader / Scout) marks. */
+export const SIBLING_LEADERSHIP_MARKS = 2;
 
-/** Sibling co-curricular - support rendered marks. */
+/** Cooperation shown by parents marks. */
 export const SIBLING_SUPPORT_MARKS = 4;
 
-/** Sibling co-curricular total cap. */
+/** Combined cap for (d) academic/co-curricular achievements (max 6: skills 2
+ * + exam 2 + leadership 2) and (e) parent cooperation (max 4) - equivalent
+ * to capping each separately since neither sub-item can exceed its own cap. */
 export const SIBLING_COCURRICULAR_TOTAL_MAX = 10;
 
 /** 6.3 residence document maximum marks. */
@@ -181,45 +192,81 @@ export const ELECTORAL_MAX_63 = 20;
 export const PROXIMITY_PER_SCHOOL_63 = 3;
 export const PROXIMITY_MAX_63 = 30;
 
-// ── 6.4 - Period of Service & Distance ───────────────────────────────────────
+// ── 6.4 - Education Sector / Teaching Staff ───────────────────────────────────────
 
 /** Period of service maximum marks. */
 export const SERVICE_PERIOD_MAX = 20;
 
-/** Difficult service - currently working marks. */
-export const DIFFICULT_SERVICE_CURRENT_MARKS = 25;
+/** Difficult service - currently serving: 5 marks per full year, capped at
+ * 5 years (circular 7.5.3.1) - not a flat award for merely being posted to
+ * a difficult station. */
+export const DIFFICULT_SERVICE_CURRENT_RATE = 5;
 
-/** Difficult service - previously worked base marks. */
-export const DIFFICULT_SERVICE_PREVIOUS_BASE = 15;
+/** Difficult service - previously served: 3 marks per full year (circular
+ * 7.5.3.2.i), compared against the distance-tier alternative below and the
+ * higher of the two applies. */
+export const DIFFICULT_SERVICE_PREVIOUS_RATE = 3;
 
-/** Difficult service maximum marks. */
+/** Years cap shared by the current/previous difficult-service rates above
+ * (5 years × rate reaches each branch's own ceiling). */
+export const DIFFICULT_SERVICE_YEARS_CAP = 5;
+
+/** Difficult service maximum marks (7.5.3 overall ceiling). */
 export const DIFFICULT_SERVICE_MAX = 25;
 
-/** Difficult service distance tiers: [minKm, marks]. */
-export const DIFFICULT_DISTANCE_TIERS: Array<[number, number]> = [
-  [150, 15],
-  [100, 10],
-  [75, 5],
+/** Difficult service - alternative distance-based rate (circular
+ * 7.5.3.2.ii): when permanent residence is 75km+ from the officer's
+ * original (first-appointment) station, marks accrue per full year served
+ * at that station at the qualifying distance, at a rate set by the
+ * distance tier, each tier capped at rate × 5 years. [minKm, ratePerYear, tierCapMarks]. */
+export const DIFFICULT_DISTANCE_RATE_TIERS: Array<[number, number, number]> = [
+  [150, 3, 15],
+  [100, 2, 10],
+  [75, 1, 5],
 ];
 
-/** Difficult service extra period (6 months) marks. */
-export const DIFFICULT_EXTRA_PERIOD_MARKS = 0.5;
+/** Difficult service - 7.5.3.3 bonus: once a full year of difficult-service
+ * (current or previous/distance branch) is completed, a 6-months-or-more
+ * remainder earns half of that branch's per-year rate, as a one-off
+ * addition (not per additional 6-month block). */
+export const DIFFICULT_SERVICE_BONUS_MIN_MONTHS = 6;
 
 /** Unutilized leave: 2 marks per year, max 5 years → 10. */
 export const UNUTILIZED_LEAVE_MARKS_PER_YEAR = 2;
 export const UNUTILIZED_LEAVE_MAX_YEARS = 5;
 export const UNUTILIZED_LEAVE_MAX = 10;
 
-/** Service location marks. */
-export const SERVICE_LOCATION_MARKS: Record<string, number> = {
-  "same-school": 10,
-  zone: 7.5,
-  province: 5,
-  "education-institution": 2.5,
-};
+/** Contribution to school education (circular 7.5.1) - an ELIGIBILITY GATE
+ * for the rest of category 6.4: the circular states marks for every
+ * section that follows (7.5.2-7.5.6) are given "only to applicants who
+ * have earned marks" under 7.5.1. A zero here must zero the whole category,
+ * not just this row - see `scoreCategory64`.
+ *
+ * Path I - service at an institution directly affecting school education,
+ * for the CURRENT station only: 2 marks/year if that station is the very
+ * school being applied to, else 1.5 marks/year elsewhere (another school,
+ * zonal/provincial education office, the Ministry, Dept. of Examinations,
+ * Educational Publications Dept., NIE, a National College of Education, or
+ * a Teacher Centre), each capped at 5 years. Under 1 year at the current
+ * station earns half of one year's rate instead of the per-year formula. */
+export const CONTRIBUTION_PATH1_SAME_SCHOOL_RATE = 2;
+export const CONTRIBUTION_PATH1_ELSEWHERE_RATE = 1.5;
+export const CONTRIBUTION_PATH1_YEARS_CAP = 5;
+export const CONTRIBUTION_PATH1_SAME_SCHOOL_MAX = 10;
+export const CONTRIBUTION_PATH1_ELSEWHERE_MAX = 7.5;
 
-/** Service location maximum marks. */
-export const SERVICE_LOCATION_MAX = 10;
+/** Path II - national-level contribution, for University Grants Commission
+ * state-university academic staff only: three independent sub-items (Dept.
+ * of Examinations national school exams, NIE curriculum development,
+ * Ministry/NIE national teacher-training programmes), each 0.5 marks/year
+ * for up to 5 years (max 2.5 each), summed - naturally capped under the
+ * overall 7.5.1 ceiling below since 2.5×3 = 7.5. */
+export const CONTRIBUTION_PATH2_RATE_PER_ITEM = 0.5;
+export const CONTRIBUTION_PATH2_YEARS_CAP = 5;
+export const CONTRIBUTION_PATH2_ITEM_MAX = 2.5;
+
+/** Overall 7.5.1 ceiling shared by both paths. */
+export const SCHOOL_EDUCATION_CONTRIBUTION_MAX = 10;
 
 /** 6.4 residence distance tiers: [maxKm, marks]. */
 export const RESIDENCE_DISTANCE_TIERS_64: Array<[number, number]> = [
@@ -304,12 +351,15 @@ export const ABROAD_PERIOD_TIERS: Array<[number, number]> = [
 /** Abroad period maximum marks. */
 export const ABROAD_PERIOD_MAX = 25;
 
-/** Employment purpose marks. */
+/** Employment purpose marks (circular section 7.7.2, "Reason for Foreign
+ * Stay"): diplomatic-service duties and Sri Lankan government requirements
+ * both max out the section at 40; education travel is 30; private
+ * employment (minimum 2 years abroad) is 25. */
 export const EMPLOYMENT_PURPOSE_MARKS: Record<string, number> = {
-  board: 40,
-  personal: 30,
-  government: 25,
-  education: 20,
+  diplomatic: 40,
+  government: 40,
+  education: 30,
+  employment: 25,
 };
 
 /** Employment purpose maximum marks. */

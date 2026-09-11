@@ -20,6 +20,7 @@ import { useSavedApplicationsStore } from "@/lib/g1/saved-applications-store";
 import { useHomeUiStore } from "@/lib/g1/home-ui-store";
 import { AccessRecoveryDialog } from "@/components/g1/application/access-recovery-dialog";
 import Header from "@/components/header";
+import Footer from "@/components/footer";
 import { useTranslation } from "@/lib/i18n";
 
 // retry disabled and error toasts suppressed since a stale/removed saved key is an
@@ -296,6 +297,7 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
           </DialogContent>
         </Dialog>
       </main>
+      <Footer />
     </div>
   );
 }

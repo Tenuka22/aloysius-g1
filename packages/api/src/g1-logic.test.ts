@@ -7,6 +7,7 @@ import {
   createSessionCode,
   defaultSubmissionWindow,
   extractBirthCertificateNumber,
+  extractGuardianNic,
   hashKey,
   isAdmissionsAvailable,
   isSubmissionLocked,
@@ -127,6 +128,14 @@ describe("extractBirthCertificateNumber", () => {
     expect(extractBirthCertificateNumber({ applicant: { birthCertificateNumber: "  abc123  " } })).toBe("ABC123"));
   it("returns empty when no applicant section", () => expect(extractBirthCertificateNumber({})).toBe(""));
   it("returns the raw value when not a string", () => expect(extractBirthCertificateNumber({ applicant: { birthCertificateNumber: 42 } })).toBe("42"));
+});
+
+describe("extractGuardianNic", () => {
+  it("normalizes a present NIC to uppercase", () =>
+    expect(extractGuardianNic({ guardian: { nic: "  901234567v  " } })).toBe("901234567V"));
+  it("returns empty when no guardian section", () => expect(extractGuardianNic({})).toBe(""));
+  it("returns empty when guardian has no nic field", () => expect(extractGuardianNic({ guardian: {} })).toBe(""));
+  it("returns the raw value when not a string", () => expect(extractGuardianNic({ guardian: { nic: 12345 } })).toBe("12345"));
 });
 
 describe("applicationValidationErrors – every branch", () => {

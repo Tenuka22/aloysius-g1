@@ -3,6 +3,7 @@ import { createRouter, stringifySearchWith } from "@tanstack/react-router";
 
 import Loader from "./components/loader";
 import { NotFoundState } from "./components/not-found-state";
+import { installChunkReloadGuard } from "./lib/chunk-reload";
 import { routeTree } from "./routeTree.gen";
 import { createQueryClient, orpc } from "./utils/orpc";
 
@@ -24,6 +25,8 @@ const plainStringifySearch = stringifySearchWith(
 );
 
 export function getRouter() {
+  installChunkReloadGuard();
+
   // A fresh QueryClient per router instance - never the shared module-level
   // singleton from utils/orpc.ts. The server process is long-running and
   // handles many concurrent requests from different users; a shared

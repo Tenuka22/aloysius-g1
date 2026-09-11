@@ -163,6 +163,36 @@ describe("scoringInputsSchema", () => {
     expect(scoringInputsSchema.safeParse({ difficultServiceType: "future" }).success).toBe(false));
   it("rejects an employment purpose outside the enum", () =>
     expect(scoringInputsSchema.safeParse({ employmentPurpose: "charity" }).success).toBe(false));
+  it("accepts every current employment purpose", () => {
+    for (const employmentPurpose of ["diplomatic", "government", "education", "employment"]) {
+      expect(scoringInputsSchema.safeParse({ employmentPurpose }).success).toBe(true);
+    }
+  });
+  it("rejects the retired employment purpose values", () => {
+    for (const employmentPurpose of ["board", "personal"]) {
+      expect(scoringInputsSchema.safeParse({ employmentPurpose }).success).toBe(false);
+    }
+  });
+  it("accepts every O/L subject count the form offers, including ten", () => {
+    for (const olSubjectCount of [6, 8, 9, 10]) {
+      expect(scoringInputsSchema.safeParse({ olSubjectCount }).success).toBe(true);
+    }
+  });
+  it("rejects an O/L subject count the form never offers", () =>
+    expect(scoringInputsSchema.safeParse({ olSubjectCount: 7 }).success).toBe(false));
+  it("accepts both 7.5.1 contribution paths", () => {
+    for (const contributionPath of ["institution", "university"]) {
+      expect(scoringInputsSchema.safeParse({ contributionPath }).success).toBe(true);
+    }
+  });
+  it("accepts the past pupils committee/executive counts and life-membership fields", () =>
+    expect(
+      scoringInputsSchema.safeParse({
+        pastPupilsLifeMember: true,
+        pastPupilsCommitteeYears: 6,
+        pastPupilsExecutiveCount: 2,
+      }).success,
+    ).toBe(true));
   it("rejects a non-positive schools radius", () =>
     expect(scoringInputsSchema.safeParse({ schoolsRadiusKm: 0 }).success).toBe(false));
   it("rejects a non-numeric schools radius", () =>

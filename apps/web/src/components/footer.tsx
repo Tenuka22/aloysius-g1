@@ -32,7 +32,8 @@ export default function Footer() {
             </div>
             <div className="flex flex-col gap-1.5">
               <span className="font-medium text-foreground">{t("footer.developers.heading")}</span>
-              <span className="text-muted-foreground">{t("footer.developers.name")}</span>
+              <span className="text-muted-foreground">{t("footer.developers.name1")}</span>
+              <span className="text-muted-foreground">{t("footer.developers.name2")}</span>
             </div>
           </div>
         </div>

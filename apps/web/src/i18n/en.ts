@@ -23,7 +23,8 @@ const en = {
   "footer.school.name": "St. Aloysius' College",
   "footer.school.location": "Galle, Sri Lanka",
   "footer.developers.heading": "Developers",
-  "footer.developers.name": "Team CS Development",
+  "footer.developers.name1": "Tenuka Omaljith",
+  "footer.developers.name2": "Avishka Madushan",
   "footer.copyright": "© {year} Team CS Development. All rights reserved.",
 
   // ─── building-page.tsx ────────────────────────────────────────
@@ -399,7 +400,7 @@ const en = {
   "appForm.categoryLabels.6_1": "6.1 - Residence Verification & Proximity",
   "appForm.categoryLabels.6_2": "6.2 - Alumni",
   "appForm.categoryLabels.6_3": "6.3 - Siblings",
-  "appForm.categoryLabels.6_4": "6.4 - Period of Service & Distance",
+  "appForm.categoryLabels.6_4": "6.4 - Education Sector / Teaching Staff",
   "appForm.categoryLabels.6_5": "6.5 - Transfer Applications",
   "appForm.categoryLabels.6_6": "6.6 - Foreign Employment",
   "appForm.stepIndicator.stepOf": "Step {current} of {total}",
@@ -684,8 +685,8 @@ const en = {
   "appForm.buttons.back": "Back",
   "appForm.buttons.continue": "Continue",
   "appForm.buttons.continueSkipped": "Continue without it",
-  "appForm.buttons.collectionOnly": "Submission opens 9 Sep 2026",
-  "appForm.buttons.collectionOnlyAriaLabel": "Update application - submission opens 9 Sep 2026",
+  "appForm.buttons.collectionOnly": "Submission opens {date}",
+  "appForm.buttons.collectionOnlyAriaLabel": "Update application - submission opens {date}",
   "appForm.buttons.updateApplication": "Update application",
   "appForm.buttons.submitApplication": "Submit application",
   "appForm.buttons.confirmInfo": "Confirm that the information is correct",
@@ -729,7 +730,7 @@ const en = {
   "category.tabLabels.6_1": "Residence & Proximity",
   "category.tabLabels.6_2": "Alumni",
   "category.tabLabels.6_3": "Siblings",
-  "category.tabLabels.6_4": "Service & Distance",
+  "category.tabLabels.6_4": "Education Sector",
   "category.tabLabels.6_5": "Transfer",
   "category.tabLabels.6_6": "Foreign Employment",
   "category.meta.6_1.description":
@@ -739,7 +740,7 @@ const en = {
   "category.meta.6_3.description":
     "Sibling study history, achievements, residence evidence, and proximity.",
   "category.meta.6_4.description":
-    "Government service period, difficult service, leave, and service distances.",
+    "Teaching service period, difficult station service, leave, and school distances.",
   "category.meta.6_5.description":
     "Transfer distance, service history, recency, leave, and school proximity.",
   "category.meta.6_6.description":
@@ -902,7 +903,7 @@ const en = {
   "category.62.grade5Scholarship.checkbox": "Passed Grade 5 Scholarship Examination",
   "category.62.olResult.label": "G.C.E. (O/L) result",
   "category.62.olResult.hint":
-    "Marks per subject by grade:\n\u2022 S: varies by subject count\n\u2022 C: varies by subject count\n\u2022 B: 6 or 8 subjects only\n\u2022 A: 9 or 10 subjects only\n\nMax 10 marks",
+    "Marks per subject by grade:\n• S: varies by subject count\n• C: varies by subject count\n• B: 9 subjects only\n• A: 9 subjects only\n• D: 6, 8, or 10 subjects only (highest grade)\n\nMax 10 marks",
   "category.62.olResult.subjectCount": "Number of subjects",
   "category.62.olResult.subjectCountPlaceholder": "Select O/L subject count",
   "category.62.alResult.label": "G.C.E. (A/L) result",
@@ -913,9 +914,8 @@ const en = {
   "category.62.sports.label": "Sports / co-curricular",
   "category.62.sports.hint":
     "Marks per achievement by level:\n• Inter-House: 0.5\n• Zonal: 1\n• District: 2\n• Provincial: 3\n• National: 4.75\n• International: 5\n\nMultiply by count, max 10",
-  "category.62.sports.highestLevel": "Highest level",
-  "category.62.sports.highestLevelPlaceholder": "Select highest level",
-  "category.62.sports.achievements": "Achievements at that level",
+  "category.62.sports.nameColumnLabel": "Sport",
+  "category.62.sports.namePlaceholder": "Sport {number} name",
   "category.62.leadership.label": "Leadership role",
   "category.62.leadership.hint":
     "Marks by role:\n• Primary Student Prefect: 1\n• Junior Student Prefect: 1.5\n• Senior Student Prefect: 3\n• Deputy Head Prefect: 4\n• Head Prefect: 5\n• First Team Vice-Captain: 1.5\n• First Team Captain: 2\n\nMax 5 marks",
@@ -924,8 +924,8 @@ const en = {
   "category.62.studentSocieties.label": "Student Societies",
   "category.62.studentSocieties.hint":
     "Marks by role:\n• Committee Member: 0.5\n• Vice President / Vice Secretary / Vice Treasurer: 0.75\n• President / Secretary / Treasurer: 1\n\nMax 5 marks",
-  "category.62.studentSocieties.highestRole": "Highest role held",
-  "category.62.studentSocieties.highestRolePlaceholder": "Select society role",
+  "category.62.studentSocieties.nameColumnLabel": "Society",
+  "category.62.studentSocieties.namePlaceholder": "Society {number} name",
   "category.62.otherActivities.label": "Other Activities",
   "category.62.otherActivities.hint":
     "Marks by activity:\n• Junior Band Leader: 2\n• Junior Band Member: 1\n• Senior Band Leader: 2\n• Senior Band Member: 1\n• Scout Leader: 2\n• Scout Member: 1\n• Cub Scout: 1\n• Cadet Team Leader: 2\n• Cadet Team Member: 1\n• Debating Team Leader: 2\n• Debating Team Member: 1\n• St. John Ambulance Leader: 2\n• St. John Ambulance Member: 1\n• Other: 1\n\nMax 5 marks",
@@ -935,18 +935,20 @@ const en = {
   "category.62.otherActivities.specifyPlaceholder": "Enter activity name",
   "category.62.pastPupils.label": "Past Pupils' Association",
   "category.62.pastPupils.hint":
-    "Life Membership: +10 marks\nOR Membership period: 0.5 × {years} yrs = {yearMarks} marks (max 10)\n\nCommittee Membership: +1 mark (0.25 × 4 yrs, max 3)\nExecutive Office Post: +3 marks (1.5 × 2, max 3)\n\nMax total: 10 marks",
+    "Life Membership: 1 mark/year, max 10 yrs\nOR Membership period: 0.5 marks/year, max 20 yrs (capped at 10 marks)\n\nCurrent: {years} yrs = {yearMarks} marks\n\nCommittee Membership: 0.25 marks/year or term served\nExecutive Office Post: 1.5 marks/post, up to 2 posts\n(Committee + Executive combined, max 3 marks)\n\nMax total: 13 marks",
   "category.62.pastPupils.lifeMembership": "Life Membership",
+  "category.62.pastPupils.lifeMemberSince.label": "Life member since",
+  "category.62.pastPupils.lifeMemberSince.hint": "When did the parent become a life member of the Past Pupils' Association? 1 mark per year, up to 10 years.",
   "category.62.pastPupils.startDate.label": "Membership start date",
   "category.62.pastPupils.startDate.hint": "When did the parent join the Past Pupils' Association?",
   "category.62.pastPupils.endDate.label": "Membership end date",
   "category.62.pastPupils.endDate.hint":
     "When did the parent's membership end (or current date if still a member)?",
-  "category.62.pastPupils.committeeMembership": "Committee Membership",
-  "category.62.pastPupils.executiveOffice": "Executive Office Post",
+  "category.62.pastPupils.committeeMembership": "Committee membership - years/terms served",
+  "category.62.pastPupils.executiveOffice": "Executive office posts held (up to 2)",
   "category.62.degrees.label": "University Degrees (UGC)",
   "category.62.degrees.hint":
-    "Marks by qualification:\n• First degree (UGC approved): 3\n• Postgraduate Degree: 4\n• Doctorate (Ph.D.): 5\n• Chartered Professional / NVQ 7: 3\n\nMax 5 marks",
+    "Marks by qualification:\n\u2022 First degree (UGC approved): 3\n\u2022 Postgraduate Degree: 4\n\u2022 Doctorate (Ph.D.): 5\n\u2022 Chartered Professional / NVQ 7: 3\n\nMax 5 marks",
   "category.62.degrees.highestQualification": "Highest qualification",
   "category.62.degrees.highestQualificationPlaceholder": "Select highest degree",
   "category.62.diploma.label": "Diploma / Higher Diploma",
@@ -955,37 +957,39 @@ const en = {
   "category.62.diploma.checkbox": "Diploma / Higher Diploma / NVQ 5, 6 (more than 2 years)",
   "category.62.contribution.label": "Contribution to School Activities",
   "category.62.contribution.hint":
-    "Sports Meet: 0.5 marks\nShramadana (Community Service): 0.5 marks\n\nMax 2 marks",
-  "category.62.contribution.sportsMeet": "Sports Meet",
-  "category.62.contribution.shramadana": "Shramadana (Community Service)",
+    "0.5 marks per occasion, for each of:\n\u2022 Sports Meet\n\u2022 Shramadana (Community Service)\n\nMax 2 marks combined",
+  "category.62.contribution.sportsMeet": "Sports Meet (times contributed)",
+  "category.62.contribution.shramadana": "Shramadana / Community Service (times contributed)",
   "category.62.schoolProjects.label": "Contribution to School Projects",
   "category.62.schoolProjects.hint":
-    "Contributed to school projects:\n5 marks\n\nOtherwise: 0 marks",
+    "Contributed to school projects:\n4 marks\n\nOtherwise: 0 marks",
   "category.62.schoolProjects.checkbox": "Contributed to school projects",
+  "category.62.schoolProjects.descriptionPlaceholder": "Describe the school project(s) you contributed to",
   // Category 6.3 fields
-  "category.63.siblingsStudying.label": "Siblings currently studying",
+  "category.63.siblingsStudying.label": "Grades completed by sibling",
   "category.63.siblingsStudying.hint":
-    "2 marks per sibling, max 10.\n\nCurrent: {count} sibling(s) = {marks} marks",
-  "category.63.siblingsStudying.countLabel": "Number of siblings",
-  "category.63.studiedHere.label": "Sibling studied at applied school",
-  "category.63.studiedHere.hint": "If sibling studied at {school}:\n5 marks\n\nOtherwise: 0 marks",
-  "category.63.studiedHere.checkbox": "Applying to the school where the sibling studied",
-  "category.63.multipleSiblings.label": "Two or more siblings applying",
+    "2 marks per grade completed at this school, max 10 grades.\n\nCurrent: {count} grade(s) = {marks} marks",
+  "category.63.siblingsStudying.countLabel": "Grades completed",
+  "category.63.studiedHere.label": "Sibling admitted to Grade 1 here",
+  "category.63.studiedHere.hint":
+    "If the sibling was admitted to Grade 1 and is currently studying at {school}:\n5 marks\n\nOtherwise: 0 marks",
+  "category.63.studiedHere.checkbox":
+    "The sibling was admitted to Grade 1 and has been studying at this school since",
+  "category.63.multipleSiblings.label": "Two or more siblings studying",
   "category.63.multipleSiblings.hint":
-    "If 2+ siblings applying to same school:\n5 marks\n\nOtherwise: 0 marks",
+    "If 2+ siblings currently studying in other grades of this school:\n5 marks\n\nOtherwise: 0 marks",
   "category.63.multipleSiblings.checkbox":
-    "Two or more siblings applying to other grades of the same school",
-  "category.63.cocurricular.label": "Sibling co-curricular & prefect",
+    "Two or more siblings currently studying in other grades of this school",
+  "category.63.cocurricular.label": "Sibling co-curricular achievements",
   "category.63.cocurricular.hint":
-    "Prefect skill: 0.25 - 2 per achievement\nExam: 0.5 (scholarship) / 1 (O/L) / 1.5 (A/L)\nPraiseworthy: 2\nParent support: 4\n\nMax 10 marks",
-  "category.63.cocurricular.prefectLevel": "Sibling prefect skill level",
-  "category.63.cocurricular.prefectLevelPlaceholder": "Select highest level",
-  "category.63.cocurricular.achievements": "Achievements at that level",
+    "Co-curricular/sports skills: 0.25 - 2 per activity (table)\nExam: Scholarship 0.5 + O/L 1 + A/L 1.5, summed, max 2\nLeadership: 2\nParent cooperation: 4\n\nMax 10 marks",
+  "category.63.cocurricular.activitiesLabel": "Co-curricular / sports skills",
+  "category.63.cocurricular.activityNameLabel": "Activity",
+  "category.63.cocurricular.activityNamePlaceholder": "Activity {number} name",
   "category.63.cocurricular.examAchievement": "Sibling examination achievement",
-  "category.63.cocurricular.examAchievementPlaceholder": "Select achievement",
-  "category.63.cocurricular.praiseworthy":
-    "Praiseworthy achievement (Prefect / Student Leader / Band Leader)",
-  "category.63.cocurricular.parentSupport": "Support rendered by parents",
+  "category.63.cocurricular.leadership": "Leadership (Prefect / Student Leader / Scout)",
+  "category.63.cocurricular.parentSupport": "Cooperation shown by parents",
+  "category.63.cocurricular.parentSupportPlaceholder": "Describe how the parents supported the school (optional)",
   "category.63.residenceDocument.label": "Residence document",
   "category.63.residenceDocument.hint":
     "Document marks (max 10):\n• Title deed - applicant/spouse: 10\n• Title deed - parents: 6\n• Feeder electoral 5yr: 6\n• Lease deed: 4\n• Municipal/DS/Rent Act: 4\n• Other documents: 2",
@@ -1001,32 +1005,52 @@ const en = {
   "category.63.nearbySchools.hint":
     "Max 30 marks.\nDeduct 3 per school within radius\n(excluding {school}).\n\nNo other schools = 30 marks\n10 schools = 0 marks",
   // Category 6.4 fields
+  "category.64.contribution.label": "Contribution to school education",
+  "category.64.contribution.hint":
+    "Institution service (current station only): 2/year if it's the school being applied to (max 10), else 1.5/year (max 7.5). Under 1 year: half of one year's rate.\nUniversity staff: 0.5/year each for exams, curriculum, and training involvement (max 2.5 each).\n\nMax 10 marks. Earning zero here means the rest of this category (period of service, difficult service, leave, distances) also scores zero.",
+  "category.64.contribution.pathLabel": "Type of contribution",
+  "category.64.contribution.institutionPath": "Service at a qualifying institution",
+  "category.64.contribution.universityPath": "National-level contribution (university staff)",
+  "category.64.contribution.sameSchool": "This is the very school being applied to",
+  "category.64.contribution.serviceStartLabel": "Date started at this station",
+  "category.64.contribution.serviceStartHint":
+    "2 marks/year if this is the school being applied to (max 10), else 1.5 marks/year elsewhere (max 7.5). Under 1 year earns half of one year's rate.",
+  "category.64.contribution.examYears": "Years involved with national exams (Dept. of Examinations)",
+  "category.64.contribution.curriculumYears": "Years involved with NIE curriculum development",
+  "category.64.contribution.trainingYears": "Years involved with national teacher-training programmes",
+  "category.64.contribution.gateWarning":
+    "You must earn marks here before the rest of this category (period of service, difficult service, leave, and distances) can count.",
   "category.64.servicePeriod.label": "Period of service",
   "category.64.servicePeriod.hint":
     "1 mark per year of service, max 20.\n\nCurrent: {years} years = {marks} marks",
-  "category.64.servicePeriod.dateLabel": "Date of first appointment",
-  "category.64.servicePeriod.dateHint": "When did the parent start their teaching service?",
+  "category.64.servicePeriod.dateLabel": "Date became a permanent employee",
+  "category.64.servicePeriod.dateHint":
+    "When did the parent become a permanent employee of a qualifying education-sector institution?",
   "category.64.difficultService.label": "Difficult service",
   "category.64.difficultService.hint":
-    "Current school: 25 marks\nPrevious school: max(15, distance bonus) + extra periods\n\nDistance bonus:\n• 150+ km: 15\n• 100 - 150 km: 10\n• 75 - 100 km: 5\n\n+0.5 per extra period of 6 months",
+    "Currently serving: 5 marks/year, max 25.\nPreviously served: higher of 3 marks/year (max 15) or a distance-tier rate for years at the original station (150+km: 3/yr max 15, 100-150km: 2/yr max 10, 75-100km: 1/yr max 5).\n\nOnce a full year is complete, a 6+ month remainder adds a one-off half-rate bonus.",
   "category.64.difficultService.typeLabel": "Type of difficult service",
-  "category.64.difficultService.currentSchool": "Current school",
-  "category.64.difficultService.previousSchool": "Previous school",
-  "category.64.difficultService.none": "None",
-  "category.64.difficultService.distanceKm": "Distance to previous difficult service school (km)",
-  "category.64.difficultService.extraPeriods": "Extra periods served (count)",
+  "category.64.difficultService.currentSchool": "Currently serving in a difficult station",
+  "category.64.difficultService.currentRateNote": "5/year, max 25",
+  "category.64.difficultService.previousSchool": "Previously served in a difficult station",
+  "category.64.difficultService.previousMarksNote": "higher of 3/year or distance tier",
+  "category.64.difficultService.none": "Not applicable",
+  "category.64.difficultService.previousBranchLabel":
+    "If officially classified as a difficult station (3 marks/year, max 15)",
+  "category.64.difficultService.distanceBranchLabel":
+    "OR if the first-appointment station was 75km+ from permanent residence, even if not officially classified as difficult",
+  "category.64.difficultService.distanceStartLabel": "Date started at first-appointment station",
+  "category.64.difficultService.distanceEndLabel": "Date service there ended",
+  "category.64.difficultService.currentStartLabel": "Date started at this difficult station",
+  "category.64.difficultService.currentStartHint":
+    "5 marks per full year of continuous service here, max 25, plus a one-off bonus for a 6+ month remainder past a full year.",
+  "category.64.difficultService.previousStartLabel": "Date started at that difficult station",
+  "category.64.difficultService.previousEndLabel": "Date service there ended",
+  "category.64.difficultService.distanceKm": "Distance from first appointment to permanent residence (km)",
   "category.64.unutilizedLeave.label": "Unutilized leave",
   "category.64.unutilizedLeave.hint":
-    "2 marks per year of unutilized leave, max 5 years.\n\nCurrent: {years} years = {marks} marks",
-  "category.64.unutilizedLeave.yearsLabel": "Years",
-  "category.64.serviceLocation.label": "Service location",
-  "category.64.serviceLocation.hint":
-    "Same school: 10\nZone: 7.5\nProvince: 5\nEducation institution: 2.5",
-  "category.64.serviceLocation.levelLabel": "Service location level",
-  "category.64.serviceLocation.sameSchool": "Same school",
-  "category.64.serviceLocation.zone": "Zone",
-  "category.64.serviceLocation.province": "Province",
-  "category.64.serviceLocation.educationInstitution": "Education institution",
+    "2 marks per qualifying year (more than 20 days of leave unutilized that year), max 5 years = 10 marks.\n\nCurrent: {years} qualifying year(s) = {marks} marks",
+  "category.64.unutilizedLeave.yearsLabel": "Years with 20+ days of unused leave (not the number of days)",
   "category.64.residenceToSchool.label": "Residence to school",
   "category.64.residenceToSchool.hint": "Within 1 km: 10\n1 - 3 km: 8\n3 - 5 km: 6\n>5 km: 4",
   "category.64.residenceToSchool.distanceLabel": "Distance (km)",
@@ -1035,20 +1059,20 @@ const en = {
     "100+ km: 25\n70 - 100 km: 20\n40 - 70 km: 15\n20 - 40 km: 10\n<20 km: 5",
   "category.64.workplaceToSchool.distanceLabel": "Distance (km)",
   // Category 6.5 fields
-  "category.65.prevWorkplaceDistance.label": "Previous workplace distance",
+  "category.65.prevWorkplaceDistance.label": "Current to previous workplace distance",
   "category.65.prevWorkplaceDistance.hint":
-    ">150 km: 35\n100 - 150 km: 28\n50 - 100 km: 21\n<50 km: 0\n\nMust be ≥50 km",
+    ">150 km: 35\n100 - 150 km: 28\n50 - 100 km: 21\n<50 km: 0\n\nMust be ≥ 50 km",
   "category.65.prevWorkplaceDistance.distanceLabel": "Distance (km)",
-  "category.65.servicePeriod.label": "Period of service",
+  "category.65.servicePeriod.label": "Current period of service",
   "category.65.servicePeriod.hint":
     "1 mark per year, max 10.\n\nCurrent: {years} years = {marks} marks",
   "category.65.servicePeriod.dateLabel": "Date of first appointment",
-  "category.65.servicePeriod.dateHint": "When did the parent start their teaching service?",
+  "category.65.servicePeriod.dateHint": "When did the parent start their government / public service?",
   "category.65.prevWorkplacePeriod.label": "Period at previous workplace",
   "category.65.prevWorkplacePeriod.hint": "3+ years: 10\n2 - 3 years: 8\n1 - 2 years: 5\n<1 year: 0",
   "category.65.prevWorkplacePeriod.dateLabel": "Date started at previous workplace",
   "category.65.prevWorkplacePeriod.dateHint":
-    "When did the parent start working at the previous school?",
+    "When did the parent start working at the previous workplace?",
   "category.65.timeSinceTransfer.label": "Time since transfer",
   "category.65.timeSinceTransfer.hint":
     "Within 1 year: 5\n1 - 2 years: 4\n2 - 3 years: 3\n3 - 4 years: 2\n4 - 5 years: 1\n>5 years: 0",
@@ -1056,8 +1080,8 @@ const en = {
   "category.65.timeSinceTransfer.dateHint": "When was the transfer received?",
   "category.65.unutilizedLeave.label": "Unutilized leave",
   "category.65.unutilizedLeave.hint":
-    "2 marks per year, max 5 years.\n\nCurrent: {years} years = {marks} marks",
-  "category.65.unutilizedLeave.yearsLabel": "Years",
+    "2 marks per qualifying year (more than 20 days of leave unutilized that year), max 5 years = 10 marks.\n\nCurrent: {years} qualifying year(s) = {marks} marks",
+  "category.65.unutilizedLeave.yearsLabel": "Years with 20+ days of unused leave (not the number of days)",
   "category.65.nearbySchools.hint":
     "Max 30 marks.\nDeduct 3 per school within radius\n(excluding {school}).\n\nNo other schools = 30 marks\n10 schools = 0 marks",
   // Category 6.6 fields
@@ -1070,12 +1094,12 @@ const en = {
   "category.66.periodAbroad.dateReturnedHint": "When did the parent return?",
   "category.66.employmentPurpose.label": "Employment purpose",
   "category.66.employmentPurpose.hint":
-    "Board duties: 40\nPersonal: 30\nGovernment: 25\nEducation: 20\n\nMin 2 years abroad",
+    "Diplomatic service duties: 40\nSri Lankan government requirement: 40\nEducation / professional development: 30\nPrivate employment (min 2 years abroad): 25",
   "category.66.employmentPurpose.purposeLabel": "Purpose of foreign employment",
-  "category.66.employmentPurpose.board": "Board",
-  "category.66.employmentPurpose.personal": "Personal",
+  "category.66.employmentPurpose.diplomatic": "Diplomatic service duties",
   "category.66.employmentPurpose.government": "Government",
   "category.66.employmentPurpose.education": "Education",
+  "category.66.employmentPurpose.employment": "Private employment",
   "category.66.nearbySchools.hint":
     "Max 35 marks.\nDeduct 3.5 per school within radius\n(excluding {school}).\n\nNo other schools = 35 marks\n10 schools = 0 marks",
 

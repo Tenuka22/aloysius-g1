@@ -11,25 +11,28 @@ import {
   YEARS_EDUCATED_MAX, YEARS_EDUCATED_MARKS_PER_YEAR, GRADE5_SCHOLARSHIP_MARKS,
   OL_MAX_MARKS, AL_MAX_MARKS, EDUCATIONAL_TOTAL_MAX,
   SPORTS_MAX, LEADERSHIP_MAX, STUDENT_SOCIETIES_MAX, OTHER_ACTIVITIES_MAX,
-  PAST_PUPILS_TOTAL_MAX, PAST_PUPILS_LIFE_MEMBER_MARKS, PAST_PUPILS_YEARLY_MARKS, PAST_PUPILS_MEMBERSHIP_MAX,
-  PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR, PAST_PUPILS_COMMITTEE_MAX, PAST_PUPILS_EXECUTIVE_MARKS, PAST_PUPILS_EXECUTIVE_MAX,
+  PAST_PUPILS_TOTAL_MAX, PAST_PUPILS_LIFE_MEMBER_MARKS_PER_YEAR, PAST_PUPILS_LIFE_MEMBER_MAX, PAST_PUPILS_YEARLY_MARKS, PAST_PUPILS_MEMBERSHIP_MAX,
+  PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR, PAST_PUPILS_EXECUTIVE_MARKS, PAST_PUPILS_EXECUTIVE_COUNT, PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX,
   DEGREE_MAX, DIPLOMA_MARKS, CONTRIBUTION_MAX, SCHOOL_PROJECTS_MARKS,
-  SIBLING_STUDYING_MAX, SIBLING_MARKS_PER_SIBLING, SIBLING_STUDIED_HERE_MARKS, SIBLING_MULTIPLE_APPLYING_MARKS,
-  SIBLING_COCURRICULAR_TOTAL_MAX, SIBLING_PREFECT_MAX, SIBLING_EXAM_MAX, SIBLING_PRAISEWORTHY_MARKS, SIBLING_SUPPORT_MARKS,
+  SIBLING_GRADES_MAX, SIBLING_MARKS_PER_GRADE, SIBLING_STUDIED_HERE_MARKS, SIBLING_MULTIPLE_STUDYING_MARKS,
+  SIBLING_COCURRICULAR_TOTAL_MAX, SIBLING_SPORTS_MAX, SIBLING_EXAM_MAX, SIBLING_LEADERSHIP_MARKS, SIBLING_SUPPORT_MARKS,
   MAIN_DOCUMENT_MAX_63, ELECTORAL_MAX_63, ELECTORAL_MARKS_PER_PERSON_YEAR_63, PROXIMITY_MAX_63, PROXIMITY_PER_SCHOOL_63,
-  SERVICE_PERIOD_MAX, DIFFICULT_SERVICE_MAX, DIFFICULT_SERVICE_CURRENT_MARKS, DIFFICULT_SERVICE_PREVIOUS_BASE,
-  UNUTILIZED_LEAVE_MAX, UNUTILIZED_LEAVE_MARKS_PER_YEAR, SERVICE_LOCATION_MAX,
+  SERVICE_PERIOD_MAX, DIFFICULT_SERVICE_MAX,
+  DIFFICULT_SERVICE_CURRENT_RATE, DIFFICULT_SERVICE_PREVIOUS_RATE,
+  UNUTILIZED_LEAVE_MAX, UNUTILIZED_LEAVE_MARKS_PER_YEAR,
+  CONTRIBUTION_PATH1_SAME_SCHOOL_RATE, CONTRIBUTION_PATH1_SAME_SCHOOL_MAX, CONTRIBUTION_PATH1_ELSEWHERE_RATE, CONTRIBUTION_PATH1_ELSEWHERE_MAX,
+  CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX, SCHOOL_EDUCATION_CONTRIBUTION_MAX,
   RESIDENCE_DISTANCE_MAX_64, RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64,
   WORKPLACE_DISTANCE_MAX, WORKPLACE_DISTANCE_TIERS, WORKPLACE_DISTANCE_FALLBACK,
   TRANSFER_DISTANCE_MAX, TRANSFER_DISTANCE_TIERS, TRANSFER_SERVICE_PERIOD_MAX,
   TRANSFER_PREVIOUS_PERIOD_MAX, TRANSFER_PREVIOUS_PERIOD_TIERS,
   TRANSFER_ELAPSED_MAX, TRANSFER_ELAPSED_TIERS,
   PROXIMITY_MAX_65, PROXIMITY_PER_SCHOOL_65,
-  ABROAD_PERIOD_MAX, ABROAD_PERIOD_TIERS, EMPLOYMENT_PURPOSE_MAX,
+  ABROAD_PERIOD_MAX, ABROAD_PERIOD_TIERS, EMPLOYMENT_PURPOSE_MAX, EMPLOYMENT_PURPOSE_MARKS,
   PROXIMITY_MAX_66, PROXIMITY_PER_SCHOOL_66,
   DEED_AGE_WEIGHTS,
 } from "@/lib/g1/marking-scheme";
-import { SPORTS_LEVEL_MARKS, LEADERSHIP_ROLE_MARKS, STUDENT_SOCIETIES_ROLE_MARKS, OTHER_ACTIVITY_MARKS, OL_CEILINGS, AL_CEILINGS, DEGREE_MARKS, SIBLING_PREFECT_LEVEL_MARKS, SIBLING_EXAM_MARKS } from "@/lib/g1/scoring";
+import { SPORTS_LEVEL_MARKS, LEADERSHIP_ROLE_MARKS, STUDENT_SOCIETIES_ROLE_MARKS, OTHER_ACTIVITY_MARKS, OL_CEILINGS, AL_CEILINGS, DEGREE_MARKS, SIBLING_SPORTS_LEVEL_MARKS, SIBLING_EXAM_MARKS } from "@/lib/g1/scoring";
 
 export const Route = createFileRoute("/_auth/g1/admin/mark-allocation")({
   component: MarkAllocationPage,
@@ -121,9 +124,9 @@ const categories: Array<{
         heading: "Past Pupils' Association",
         max: PAST_PUPILS_TOTAL_MAX,
         rows: [
-          { label: "Life membership or yearly", formula: "Life=10 or 0.5/yr", max: PAST_PUPILS_MEMBERSHIP_MAX },
-          { label: "Committee membership", formula: `${PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR}/yr × 4yrs`, max: PAST_PUPILS_COMMITTEE_MAX },
-          { label: "Executive office", formula: `${PAST_PUPILS_EXECUTIVE_MARKS} × 2 posts`, max: PAST_PUPILS_EXECUTIVE_MAX },
+          { label: "Life membership or yearly", formula: `Life ${PAST_PUPILS_LIFE_MEMBER_MARKS_PER_YEAR}/yr (max ${PAST_PUPILS_LIFE_MEMBER_MAX}) or regular ${PAST_PUPILS_YEARLY_MARKS}/yr (max ${PAST_PUPILS_MEMBERSHIP_MAX})`, max: PAST_PUPILS_LIFE_MEMBER_MAX },
+          { label: "Committee membership", formula: `${PAST_PUPILS_COMMITTEE_MARKS_PER_YEAR}/yr, entered years/terms`, max: PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX },
+          { label: "Executive office", formula: `${PAST_PUPILS_EXECUTIVE_MARKS}/post, up to ${PAST_PUPILS_EXECUTIVE_COUNT} posts (combined with committee, max ${PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX})`, max: PAST_PUPILS_COMMITTEE_EXECUTIVE_MAX },
         ],
       },
       {
@@ -132,8 +135,8 @@ const categories: Array<{
         rows: [
           { label: "University degree", formula: "Degree 3 / Postgrad 4 / PhD 5", max: DEGREE_MAX },
           { label: "Diploma / NVQ 5-6", formula: "2 marks", max: DIPLOMA_MARKS },
-          { label: "School activities", formula: "Sports meet 0.5 + Shramadana 0.5", max: CONTRIBUTION_MAX },
-          { label: "School projects", formula: "5 marks", max: SCHOOL_PROJECTS_MARKS },
+          { label: "School activities", formula: "0.5/occasion, Sports meet + Shramadana combined", max: CONTRIBUTION_MAX },
+          { label: "School projects", formula: "4 marks", max: SCHOOL_PROJECTS_MARKS },
         ],
       },
     ],
@@ -146,12 +149,12 @@ const categories: Array<{
     sections: [
       {
         heading: "Sibling criteria",
-        max: SIBLING_STUDYING_MAX + SIBLING_STUDIED_HERE_MARKS + SIBLING_MULTIPLE_APPLYING_MARKS + SIBLING_COCURRICULAR_TOTAL_MAX,
+        max: SIBLING_GRADES_MAX + SIBLING_STUDIED_HERE_MARKS + SIBLING_MULTIPLE_STUDYING_MARKS + SIBLING_COCURRICULAR_TOTAL_MAX,
         rows: [
-          { label: "Currently studying", formula: `${SIBLING_MARKS_PER_SIBLING}/sibling, max 10`, max: SIBLING_STUDYING_MAX },
+          { label: "Grades completed by sibling", formula: `${SIBLING_MARKS_PER_GRADE}/grade, max 10 grades`, max: SIBLING_GRADES_MAX },
           { label: "Studied at applied school", formula: "5 marks", max: SIBLING_STUDIED_HERE_MARKS },
-          { label: "Two or more applying", formula: "5 marks", max: SIBLING_MULTIPLE_APPLYING_MARKS },
-          { label: "Co-curricular & prefect", formula: "Prefect + exams + praiseworthy + support", max: SIBLING_COCURRICULAR_TOTAL_MAX, tiers: "Prefect 0.25 - 2 | Scholarship 0.5, OL 1, AL 1.5 | Praiseworthy 2 | Support 4" },
+          { label: "Two or more studying other grades", formula: "5 marks", max: SIBLING_MULTIPLE_STUDYING_MARKS },
+          { label: "Co-curricular achievements", formula: "Sports/skills + exams + leadership + parent cooperation", max: SIBLING_COCURRICULAR_TOTAL_MAX, tiers: "Sports/skills 0.25 - 2 | Scholarship 0.5, OL 1, AL 1.5 (sum, max 2) | Leadership 2 | Parent cooperation 4" },
         ],
       },
       {
@@ -167,19 +170,24 @@ const categories: Array<{
   },
   {
     id: "6.4",
-    title: "6.4 - Period of Service & Distance",
-    subtitle: "Government servants stationed away",
+    title: "6.4 - Education Sector / Teaching Staff",
+    subtitle: "Teachers and other education-sector staff",
     totalMax: CATEGORY_MAX_MARKS,
     sections: [
       {
         heading: "Service",
-        max: SERVICE_PERIOD_MAX + DIFFICULT_SERVICE_MAX + UNUTILIZED_LEAVE_MAX + SERVICE_LOCATION_MAX,
+        max: SCHOOL_EDUCATION_CONTRIBUTION_MAX + SERVICE_PERIOD_MAX + DIFFICULT_SERVICE_MAX + UNUTILIZED_LEAVE_MAX,
         rows: [
-          { label: "Period of service", formula: "1 mark/year", max: SERVICE_PERIOD_MAX },
-          { label: "Difficult service (current)", formula: "25 marks", max: DIFFICULT_SERVICE_CURRENT_MARKS },
-          { label: "Difficult service (previous)", formula: "Base 15 or distance tier", max: DIFFICULT_SERVICE_MAX, tiers: "≥150km: 15 | ≥100km: 10 | ≥75km: 5 + 0.5/extra period" },
-          { label: "Unutilized leave", formula: `${UNUTILIZED_LEAVE_MARKS_PER_YEAR}/yr, max 5`, max: UNUTILIZED_LEAVE_MAX },
-          { label: "Service location", formula: "Level-based", max: SERVICE_LOCATION_MAX, tiers: "Same school 10 | Zone 7.5 | Province 5 | Education inst 2.5" },
+          {
+            label: "Contribution to school education (GATES the rest of this category)",
+            formula: "Institution: rate/yr at current station | University: 3 sub-items",
+            max: SCHOOL_EDUCATION_CONTRIBUTION_MAX,
+            tiers: `Same school ${CONTRIBUTION_PATH1_SAME_SCHOOL_RATE}/yr (max ${CONTRIBUTION_PATH1_SAME_SCHOOL_MAX}) | Elsewhere ${CONTRIBUTION_PATH1_ELSEWHERE_RATE}/yr (max ${CONTRIBUTION_PATH1_ELSEWHERE_MAX}) | <1yr: half rate | University: exams/curriculum/training ${CONTRIBUTION_PATH2_RATE_PER_ITEM}/yr each (max ${CONTRIBUTION_PATH2_ITEM_MAX} each)`,
+          },
+          { label: "Period of service", formula: "1 mark/completed year (zero if contribution above is zero)", max: SERVICE_PERIOD_MAX },
+          { label: "Difficult service (current)", formula: `${DIFFICULT_SERVICE_CURRENT_RATE}/yr, max 25`, max: DIFFICULT_SERVICE_MAX },
+          { label: "Difficult service (previous)", formula: `${DIFFICULT_SERVICE_PREVIOUS_RATE}/yr (max 15) or distance-tier rate/yr, higher applies`, max: DIFFICULT_SERVICE_MAX, tiers: "≥150km: 3/yr max 15 | ≥100km: 2/yr max 10 | ≥75km: 1/yr max 5 | +6mo remainder: half rate once" },
+          { label: "Unutilized leave", formula: `${UNUTILIZED_LEAVE_MARKS_PER_YEAR}/qualifying yr (>20 days), max 5`, max: UNUTILIZED_LEAVE_MAX },
         ],
       },
       {
@@ -195,7 +203,7 @@ const categories: Array<{
   {
     id: "6.5",
     title: "6.5 - Transfer Applications",
-    subtitle: "Teachers transferring from distant stations",
+    subtitle: "Government / public officers transferring from distant stations",
     totalMax: CATEGORY_MAX_MARKS,
     sections: [
       {
@@ -203,7 +211,7 @@ const categories: Array<{
         max: TRANSFER_DISTANCE_MAX + TRANSFER_SERVICE_PERIOD_MAX + TRANSFER_PREVIOUS_PERIOD_MAX + TRANSFER_ELAPSED_MAX,
         rows: [
           { label: "Previous-to-new distance", formula: "Tiered by km", max: TRANSFER_DISTANCE_MAX, tiers: ">150km: 35 | >100km: 28 | >50km: 21" },
-          { label: "Period of service", formula: "1 mark/year", max: TRANSFER_SERVICE_PERIOD_MAX },
+          { label: "Current period of service", formula: "1 mark/completed year", max: TRANSFER_SERVICE_PERIOD_MAX },
           { label: "Period at previous workplace", formula: "Tiered by years", max: TRANSFER_PREVIOUS_PERIOD_MAX, tiers: "≥3yrs: 10 | ≥2yrs: 8 | ≥1yr: 5" },
           { label: "Time since transfer", formula: "Tiered by years", max: TRANSFER_ELAPSED_MAX, tiers: "≤1yr: 5 | ≤2yrs: 4 | ≤3yrs: 3 | ≤4yrs: 2 | ≤5yrs: 1" },
         ],
@@ -213,7 +221,7 @@ const categories: Array<{
         max: PROXIMITY_MAX_65 + UNUTILIZED_LEAVE_MAX,
         rows: [
           { label: "Proximity", formula: `${PROXIMITY_PER_SCHOOL_65}/school`, max: PROXIMITY_MAX_65 },
-          { label: "Unutilized leave", formula: `${UNUTILIZED_LEAVE_MARKS_PER_YEAR}/yr`, max: UNUTILIZED_LEAVE_MAX },
+          { label: "Unutilized leave", formula: `${UNUTILIZED_LEAVE_MARKS_PER_YEAR}/qualifying yr (>20 days), max 5`, max: UNUTILIZED_LEAVE_MAX },
         ],
       },
     ],
@@ -229,7 +237,7 @@ const categories: Array<{
         max: ABROAD_PERIOD_MAX + EMPLOYMENT_PURPOSE_MAX + PROXIMITY_MAX_66,
         rows: [
           { label: "Period abroad with child", formula: "Tiered by years", max: ABROAD_PERIOD_MAX, tiers: "≥3yrs: 25 | ≥2yrs: 15 | ≥1yr: 10" },
-          { label: "Employment purpose", formula: "Category-based", max: EMPLOYMENT_PURPOSE_MAX, tiers: "Board duties 40 | Personal 30 | Government 25 | Education 20" },
+          { label: "Employment purpose", formula: "Category-based", max: EMPLOYMENT_PURPOSE_MAX, tiers: `Diplomatic service ${EMPLOYMENT_PURPOSE_MARKS.diplomatic} | Government requirement ${EMPLOYMENT_PURPOSE_MARKS.government} | Education ${EMPLOYMENT_PURPOSE_MARKS.education} | Employment (min 2 yrs) ${EMPLOYMENT_PURPOSE_MARKS.employment}` },
           { label: "Proximity", formula: `${PROXIMITY_PER_SCHOOL_66}/school`, max: PROXIMITY_MAX_66 },
         ],
       },

@@ -22,6 +22,9 @@ export type FieldStatus = (typeof FIELD_STATUSES)[number];
 export const CATEGORY_TYPES = ["6.1", "6.2", "6.3", "6.4", "6.5", "6.6"] as const;
 export type CategoryType = (typeof CATEGORY_TYPES)[number];
 
+export type SportsEntry = { name?: string; levels?: string[] };
+export type SocietyEntry = { name?: string; roles?: string[] };
+
 export type ScoringInputs = {
   mainDocumentType?: string;
   documentOwnership?: string;
@@ -33,10 +36,19 @@ export type ScoringInputs = {
   schoolsRadiusKm?: number;
   serviceStartDate?: string;
   difficultServiceType?: "current" | "previous" | "none";
+  difficultServiceStartDate?: string;
+  difficultServicePreviousStartDate?: string;
+  difficultServicePreviousEndDate?: string;
+  difficultServiceDistanceStartDate?: string;
+  difficultServiceDistanceEndDate?: string;
   difficultServiceDistanceKm?: number;
-  difficultServiceExtraPeriods?: number;
   unutilizedLeaveYears?: number;
-  serviceLocationLevel?: string;
+  contributionPath?: "institution" | "university";
+  contributionSameSchool?: boolean;
+  contributionServiceStartDate?: string;
+  contributionExamYears?: number;
+  contributionCurriculumYears?: number;
+  contributionTrainingYears?: number;
   residenceToSchoolKm?: number;
   workplaceToSchoolKm?: number;
   previousWorkplaceDistanceKm?: number;
@@ -44,7 +56,7 @@ export type ScoringInputs = {
   transferDate?: string;
   abroadStartDate?: string;
   abroadEndDate?: string;
-  employmentPurpose?: "board" | "personal" | "government" | "education";
+  employmentPurpose?: "diplomatic" | "government" | "education" | "employment";
   alumniStartDate?: string;
   alumniEndDate?: string;
   grade5ScholarshipPassed?: boolean;
@@ -58,30 +70,31 @@ export type ScoringInputs = {
   alGradeC?: number;
   alGradeB?: number;
   alGradeA?: number;
-  sportsLevel?: string;
-  sportsCount?: number;
-  leadershipRole?: string;
-  studentSocietiesRole?: string;
-  otherActivity?: string;
+  sportsEntries?: SportsEntry[];
+  leadershipRoles?: string[];
+  studentSocietiesEntries?: SocietyEntry[];
+  otherActivities?: string[];
   otherActivityName?: string;
   pastPupilsLifeMember?: boolean;
+  pastPupilsLifeMemberStart?: string;
   pastPupilsMembershipStart?: string;
   pastPupilsMembershipEnd?: string;
-  pastPupilsCommitteeMember?: boolean;
-  pastPupilsExecutiveOffice?: boolean;
+  pastPupilsCommitteeYears?: number;
+  pastPupilsExecutiveCount?: number;
   highestDegree?: string;
   hasDiploma?: boolean;
-  sportsMeetContribution?: boolean;
-  shramadanaContribution?: boolean;
+  sportsMeetContribution?: number;
+  shramadanaContribution?: number;
   schoolProjectsContribution?: boolean;
-  siblingsCurrentlyStudyingCount?: number;
+  schoolProjectsDescription?: string;
+  siblingGradesCompletedCount?: number;
   siblingStudiedAtAppliedSchool?: boolean;
-  twoOrMoreSiblingsApplying?: boolean;
-  siblingPrefectLevel?: string;
-  siblingPrefectCount?: number;
-  siblingExamAchievement?: string;
-  siblingPraiseworthyAchievement?: boolean;
+  twoOrMoreSiblingsStudyingOtherGrades?: boolean;
+  siblingSportsEntries?: SportsEntry[];
+  siblingExamAchievements?: string[];
+  siblingLeadershipAchievement?: boolean;
   parentsSupportRendered?: boolean;
+  parentsSupportDescription?: string;
 };
 
 export type CategoryApplication = {

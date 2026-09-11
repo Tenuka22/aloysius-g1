@@ -426,6 +426,7 @@ describe("Indicative marks notice", () => {
     setStore({
       currentStep: 4,
       location: { ...emptyDraft.location, latitude: 7.29, longitude: 80.63 },
+      selectedLocation: { ...emptyDraft.selectedLocation, latitude: 7.29, longitude: 80.63 },
       categories: [
         {
           id: "cat-int-1",

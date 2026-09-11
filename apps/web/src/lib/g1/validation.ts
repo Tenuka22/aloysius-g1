@@ -58,10 +58,19 @@ export const scoringInputsSchema = z.object({
   schoolsRadiusKm: z.coerce.number().positive("School radius must be greater than zero").optional(),
   serviceStartDate: z.string().optional(),
   difficultServiceType: z.enum(["current", "previous", "none"]).optional(),
+  difficultServiceStartDate: z.string().optional(),
+  difficultServicePreviousStartDate: z.string().optional(),
+  difficultServicePreviousEndDate: z.string().optional(),
+  difficultServiceDistanceStartDate: z.string().optional(),
+  difficultServiceDistanceEndDate: z.string().optional(),
   difficultServiceDistanceKm: z.coerce.number().optional(),
-  difficultServiceExtraPeriods: z.coerce.number().optional(),
   unutilizedLeaveYears: z.coerce.number().optional(),
-  serviceLocationLevel: z.string().optional(),
+  contributionPath: z.enum(["institution", "university"]).optional(),
+  contributionSameSchool: z.boolean().optional(),
+  contributionServiceStartDate: z.string().optional(),
+  contributionExamYears: z.coerce.number().optional(),
+  contributionCurriculumYears: z.coerce.number().optional(),
+  contributionTrainingYears: z.coerce.number().optional(),
   residenceToSchoolKm: z.coerce.number().optional(),
   workplaceToSchoolKm: z.coerce.number().optional(),
   previousWorkplaceDistanceKm: z.coerce.number().optional(),
@@ -69,11 +78,11 @@ export const scoringInputsSchema = z.object({
   transferDate: z.string().optional(),
   abroadStartDate: z.string().optional(),
   abroadEndDate: z.string().optional(),
-  employmentPurpose: z.enum(["board", "personal", "government", "education"]).optional(),
+  employmentPurpose: z.enum(["diplomatic", "government", "education", "employment"]).optional(),
   alumniStartDate: z.string().optional(),
   alumniEndDate: z.string().optional(),
   grade5ScholarshipPassed: z.boolean().optional(),
-  olSubjectCount: z.union([z.literal(6), z.literal(8), z.literal(9)]).optional(),
+  olSubjectCount: z.union([z.literal(6), z.literal(8), z.literal(9), z.literal(10)]).optional(),
   olGradeS: z.coerce.number().optional(),
   olGradeC: z.coerce.number().optional(),
   olGradeB: z.coerce.number().optional(),
@@ -83,28 +92,83 @@ export const scoringInputsSchema = z.object({
   alGradeC: z.coerce.number().optional(),
   alGradeB: z.coerce.number().optional(),
   alGradeA: z.coerce.number().optional(),
-  sportsLevel: z.enum(["none", "inter-house", "zonal", "district", "provincial", "national", "international"]).optional(),
-  sportsCount: z.coerce.number().optional(),
-  leadershipRole: z
-    .enum([
-      "none",
-      "prefect-primary",
-      "prefect-junior",
-      "prefect-senior",
-      "deputy-head-prefect",
-      "head-prefect",
-      "first-team-vice-captain",
-      "first-team-captain",
-    ])
+  sportsEntries: z
+    .array(
+      z.object({
+        name: z.string().optional(),
+        levels: z.array(z.enum(["inter-house", "zonal", "district", "provincial", "national", "international"])).optional(),
+      }),
+    )
     .optional(),
-  siblingsCurrentlyStudyingCount: z.coerce.number().optional(),
+  leadershipRoles: z
+    .array(
+      z.enum([
+        "prefect-primary",
+        "prefect-junior",
+        "prefect-senior",
+        "deputy-head-prefect",
+        "head-prefect",
+        "first-team-vice-captain",
+        "first-team-captain",
+      ]),
+    )
+    .optional(),
+  studentSocietiesEntries: z
+    .array(
+      z.object({
+        name: z.string().optional(),
+        roles: z.array(z.enum(["committee-member", "vice-president", "president"])).optional(),
+      }),
+    )
+    .optional(),
+  otherActivities: z
+    .array(
+      z.enum([
+      "junior-band-leader",
+      "junior-band-member",
+      "senior-band-leader",
+      "senior-band-member",
+      "scout-leader",
+      "scout-member",
+      "cub-scout",
+      "cadet-team-leader",
+      "cadet-team-member",
+      "debating-team-leader",
+      "debating-team-member",
+      "st-john-ambulance-leader",
+      "st-john-ambulance-member",
+      "other",
+      ]),
+    )
+    .optional(),
+  otherActivityName: z.string().optional(),
+  pastPupilsLifeMember: z.boolean().optional(),
+  pastPupilsLifeMemberStart: z.string().optional(),
+  pastPupilsMembershipStart: z.string().optional(),
+  pastPupilsMembershipEnd: z.string().optional(),
+  pastPupilsCommitteeYears: z.coerce.number().optional(),
+  pastPupilsExecutiveCount: z.coerce.number().optional(),
+  highestDegree: z.enum(["none", "first-degree", "postgraduate", "doctorate", "chartered-professional"]).optional(),
+  hasDiploma: z.boolean().optional(),
+  sportsMeetContribution: z.coerce.number().optional(),
+  shramadanaContribution: z.coerce.number().optional(),
+  schoolProjectsContribution: z.boolean().optional(),
+  schoolProjectsDescription: z.string().optional(),
+  siblingGradesCompletedCount: z.coerce.number().optional(),
   siblingStudiedAtAppliedSchool: z.boolean().optional(),
-  twoOrMoreSiblingsApplying: z.boolean().optional(),
-  siblingPrefectLevel: z.enum(["none", "inter-house", "zonal", "district", "provincial", "national", "international"]).optional(),
-  siblingPrefectCount: z.coerce.number().optional(),
-  siblingExamAchievement: z.enum(["none", "scholarship", "ol", "al"]).optional(),
-  siblingPraiseworthyAchievement: z.boolean().optional(),
+  twoOrMoreSiblingsStudyingOtherGrades: z.boolean().optional(),
+  siblingSportsEntries: z
+    .array(
+      z.object({
+        name: z.string().optional(),
+        levels: z.array(z.enum(["inter-house", "zonal", "district", "provincial", "national", "international"])).optional(),
+      }),
+    )
+    .optional(),
+  siblingExamAchievements: z.array(z.enum(["scholarship", "ol", "al"])).optional(),
+  siblingLeadershipAchievement: z.boolean().optional(),
   parentsSupportRendered: z.boolean().optional(),
+  parentsSupportDescription: z.string().optional(),
 });
 
 export const categoryApplicationSchema = z.object({

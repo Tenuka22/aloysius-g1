@@ -25,6 +25,8 @@ import {
   type CategoryApplication,
   type CategoryType,
   type ScoringInputs,
+  type SocietyEntry,
+  type SportsEntry,
   applyLocationChange,
   emptyDraft,
   normalizeDraft,
@@ -198,6 +200,33 @@ function humanizeCategoryFieldKey(key: string): string {
 }
 
 function humanizeCategoryFieldValue(key: string, value: unknown): string {
+  if ((key === "sportsEntries" || key === "siblingSportsEntries") && Array.isArray(value)) {
+    // `sportsEntries`/`siblingSportsEntries` are the only fields the caller
+    // ever passes an array of sport-entry objects for; every other array
+    // field is string[]/number[], handled by the generic branch below.
+    const sportsEntries = value as SportsEntry[];
+    const filled = sportsEntries.filter((entry) => (entry.levels ?? []).length > 0);
+    if (filled.length === 0) return "None";
+    return filled
+      .map((entry) => {
+        const levels = (entry.levels ?? []).join("/");
+        return entry.name ? `${entry.name} (${levels})` : levels;
+      })
+      .join(", ");
+  }
+  if (key === "studentSocietiesEntries" && Array.isArray(value)) {
+    // Same guard pattern as sportsEntries above - the one field holding an
+    // array of { name?, roles? } society entries.
+    const societyEntries = value as SocietyEntry[];
+    const filled = societyEntries.filter((entry) => (entry.roles ?? []).length > 0);
+    if (filled.length === 0) return "None";
+    return filled
+      .map((entry) => {
+        const roles = (entry.roles ?? []).join("/");
+        return entry.name ? `${entry.name} (${roles})` : roles;
+      })
+      .join(", ");
+  }
   if (Array.isArray(value)) {
     if (value.length === 0) return "None";
     if (/year/i.test(key)) return value.join(", ");
@@ -237,35 +266,37 @@ const CATEGORY_SCORING_GROUPS: Record<CategoryType, CategoryFieldGroup[]> = {
     { heading: "G.C.E. (A/L)", fields: ["alSubjectCount", "alGradeS", "alGradeC", "alGradeB", "alGradeA"] },
     {
       heading: "Extra-curricular",
-      fields: ["sportsLevel", "sportsCount", "leadershipRole", "studentSocietiesRole", "otherActivity", "otherActivityName"],
+      fields: ["sportsEntries", "leadershipRoles", "studentSocietiesEntries", "otherActivities", "otherActivityName"],
     },
     {
       heading: "Past Pupils' Association",
       fields: [
         "pastPupilsLifeMember",
+        "pastPupilsLifeMemberStart",
         "pastPupilsMembershipStart",
         "pastPupilsMembershipEnd",
-        "pastPupilsCommitteeMember",
-        "pastPupilsExecutiveOffice",
+        "pastPupilsCommitteeYears",
+        "pastPupilsExecutiveCount",
       ],
     },
     { heading: "Academic qualifications", fields: ["highestDegree", "hasDiploma"] },
     {
       heading: "School contributions",
-      fields: ["sportsMeetContribution", "shramadanaContribution", "schoolProjectsContribution"],
+      fields: ["sportsMeetContribution", "shramadanaContribution", "schoolProjectsContribution", "schoolProjectsDescription"],
     },
   ],
   "6.3": [
     {
       heading: "Siblings",
       fields: [
-        "siblingsCurrentlyStudyingCount",
+        "siblingGradesCompletedCount",
         "siblingStudiedAtAppliedSchool",
-        "twoOrMoreSiblingsApplying",
-        "siblingPrefectLevel",
-        "siblingPrefectCount",
-        "siblingExamAchievement",
-        "siblingPraiseworthyAchievement",
+        "twoOrMoreSiblingsStudyingOtherGrades",
+        "siblingSportsEntries",
+        "siblingExamAchievements",
+        "siblingLeadershipAchievement",
+        "parentsSupportRendered",
+        "parentsSupportDescription",
       ],
     },
     { heading: "Residence document", fields: ["mainDocumentType", "deedTransferDate", "additionalDocs"] },
@@ -276,12 +307,21 @@ const CATEGORY_SCORING_GROUPS: Record<CategoryType, CategoryFieldGroup[]> = {
     {
       heading: "Service period",
       fields: [
+        "contributionPath",
+        "contributionSameSchool",
+        "contributionServiceStartDate",
+        "contributionExamYears",
+        "contributionCurriculumYears",
+        "contributionTrainingYears",
         "serviceStartDate",
         "difficultServiceType",
+        "difficultServiceStartDate",
+        "difficultServicePreviousStartDate",
+        "difficultServicePreviousEndDate",
+        "difficultServiceDistanceStartDate",
+        "difficultServiceDistanceEndDate",
         "difficultServiceDistanceKm",
-        "difficultServiceExtraPeriods",
         "unutilizedLeaveYears",
-        "serviceLocationLevel",
       ],
     },
     { heading: "Distance", fields: ["residenceToSchoolKm", "workplaceToSchoolKm"] },
@@ -305,6 +345,20 @@ function fieldHasValue(value: unknown): boolean {
   return true;
 }
 
+/** `sportsEntries` slots are padded with empty `{}` objects up to whatever
+ * index the applicant last edited (see category-step.tsx's per-row
+ * `updateEntry`), so a plain `length > 0` check would treat an
+ * all-still-empty array as "provided". Only a slot with a level actually
+ * selected counts. */
+function sportsEntriesHasValue(value: SportsEntry[] | undefined): boolean {
+  return (value ?? []).some((entry) => (entry.levels ?? []).length > 0);
+}
+
+/** Same padding concern as `sportsEntriesHasValue`, for `studentSocietiesEntries`. */
+function societiesEntriesHasValue(value: SocietyEntry[] | undefined): boolean {
+  return (value ?? []).some((entry) => (entry.roles ?? []).length > 0);
+}
+
 /** Grouped rows for every field the category step asks for (see
  * `CATEGORY_SCORING_GROUPS`) - filled fields show their value, unfilled ones
  * show as missing so nothing the applicant hasn't gotten to yet goes
@@ -322,7 +376,19 @@ function categoryFieldRows(
     heading: group.heading,
     rows: group.fields.map((key) => {
       const value = inputs[key];
-      const missing = !fieldHasValue(value);
+      let missing: boolean;
+      if (key === "sportsEntries" || key === "siblingSportsEntries") {
+        // `sportsEntries`/`siblingSportsEntries` guarantee `value` is this field's own
+        // declared type; the union-indexed access above can't narrow that
+        // automatically across the branch comparison.
+        const sportsEntries = value as SportsEntry[] | undefined;
+        missing = !sportsEntriesHasValue(sportsEntries);
+      } else if (key === "studentSocietiesEntries") {
+        const societyEntries = value as SocietyEntry[] | undefined;
+        missing = !societiesEntriesHasValue(societyEntries);
+      } else {
+        missing = !fieldHasValue(value);
+      }
       return {
         label: humanizeCategoryFieldKey(key),
         value: missing ? t("appForm.reviewStep.status.notProvided") : humanizeCategoryFieldValue(key, value),
@@ -474,6 +540,8 @@ function BirthCertificateField({
     try {
       const result = await client.application.checkBirthCertificate({
         birthCertificateNumber: number,
+        guardianNic: draft.guardian.nic || undefined,
+        intakeYear: INTAKE_YEAR_DEFAULT,
         excludeAccessKey: draft.accessKey || undefined,
       });
       if (reveal) set({ duplicateBirthCertificate: result.exists, bcDialogOpen: result.exists });
@@ -490,6 +558,7 @@ function BirthCertificateField({
   };
 
   const watchedValue = String(draft.applicant.birthCertificateNumber ?? "");
+  const watchedGuardianNic = String(draft.guardian.nic ?? "");
   useEffect(() => {
     scheduleCheck(watchedValue);
     const watcher = window.setInterval(() => void check(watchedValue, false), 3000);
@@ -497,7 +566,7 @@ function BirthCertificateField({
       window.clearInterval(watcher);
       if (checkTimer.current) window.clearTimeout(checkTimer.current);
     };
-  }, [watchedValue]);
+  }, [watchedValue, watchedGuardianNic]);
 
   const requestRemoval = async (birthCertificateNumber: string) => {
     try {
@@ -1678,12 +1747,12 @@ function ReviewStep({
                   {t("appForm.reviewStep.edit")}
                 </button>
               </div>
-              <div className="divide-y divide-primary/10">
+              <div className="grid grid-cols-1 gap-x-4 px-4 sm:grid-cols-2">
                 {section.fields.map(([label, value]) => {
                   const hasValue = value && value !== t("appForm.reviewStep.none") && value !== t("appForm.reviewStep.status.notCompleted") && value !== t("appForm.reviewStep.status.notSelected") && value !== t("appForm.reviewStep.status.notProvided");
                   const displayValue = value || t("appForm.reviewStep.none");
                   return (
-                    <div className="flex items-baseline justify-between gap-4 px-4 py-2.5" key={label}>
+                    <div className="flex items-baseline justify-between gap-3 py-1.5" key={label}>
                       <span className="text-xs text-muted-foreground shrink-0 font-medium">{label}</span>
                       <Tooltip>
                         <TooltipTrigger
@@ -1792,10 +1861,12 @@ function ReviewStep({
               <div key={card.id} className="rounded-xl border-2 border-primary/15 bg-card overflow-hidden shadow-sm">
                 <div className="flex items-center justify-between gap-3 px-4 py-3 border-b bg-primary/5">
                   <h4 className="text-sm font-semibold text-foreground">{card.title}</h4>
-                  <button
+                  <Button
                     type="button"
+                    variant="default"
+                    size="xs"
                     disabled={downloadingCategoryId === card.id}
-                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80 disabled:opacity-50"
+                    className="shrink-0"
                     onClick={() => void downloadCategoryPdf(card.category)}
                   >
                     {downloadingCategoryId === card.id ? (
@@ -1804,7 +1875,7 @@ function ReviewStep({
                       <Download size={13} />
                     )}
                     {t("appForm.reviewStep.downloadCategoryPdf")}
-                  </button>
+                  </Button>
                 </div>
                 <TooltipProvider>
                   <div className="divide-y divide-primary/10">
@@ -3160,14 +3231,21 @@ export function ApplicationForm({
                       !draft.declaration.consent
                     }
                     aria-label={
-                      collectionOnly ? t("appForm.buttons.collectionOnlyAriaLabel") : undefined
+                      collectionOnly
+                        ? t("appForm.buttons.collectionOnlyAriaLabel", {
+                            date: draft.submissionOpensAt ? format(new Date(draft.submissionOpensAt), "d MMM yyyy") : "",
+                          })
+                        : undefined
                     }
                     className="shadow-md shadow-primary/15"
                     onClick={() => void submitApplication()}
                   >
                     {collectionOnly ? (
                       <>
-                        <Clock3 size={17} /> {t("appForm.buttons.collectionOnly")}
+                        <Clock3 size={17} />{" "}
+                        {t("appForm.buttons.collectionOnly", {
+                          date: draft.submissionOpensAt ? format(new Date(draft.submissionOpensAt), "d MMM yyyy") : "",
+                        })}
                       </>
                     ) : draft.submittedAt ? (
                       t("appForm.buttons.updateApplication")

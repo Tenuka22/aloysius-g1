@@ -61,7 +61,7 @@ const CATEGORY_META: Record<string, { description: string; maxMarks: number }> =
   "6.1": { description: "Residence documents, electoral registration, and home-to-school proximity.", maxMarks: CATEGORY_MAX_MARKS },
   "6.2": { description: "The parent's education, achievements, association service, and school contributions.", maxMarks: CATEGORY_MAX_MARKS },
   "6.3": { description: "Sibling study history, achievements, residence evidence, and proximity.", maxMarks: CATEGORY_MAX_MARKS },
-  "6.4": { description: "Government service period, difficult service, leave, and service distances.", maxMarks: CATEGORY_MAX_MARKS },
+  "6.4": { description: "Teaching service period, difficult station service, leave, and service distances.", maxMarks: CATEGORY_MAX_MARKS },
   "6.5": { description: "Transfer distance, service history, recency, leave, and school proximity.", maxMarks: CATEGORY_MAX_MARKS },
   "6.6": { description: "Continuous foreign employment, purpose, and home-to-school proximity.", maxMarks: CATEGORY_MAX_MARKS },
 };

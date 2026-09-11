@@ -188,6 +188,7 @@ const validCategories: typeof emptyDraft.categories = [
 const fullValidDraft = {
   ...emptyDraft,
   location: { ...emptyDraft.location, latitude: 7.29, longitude: 80.63, address: "Colombo, Sri Lanka" },
+  selectedLocation: { ...emptyDraft.selectedLocation, latitude: 7.29, longitude: 80.63, address: "Colombo, Sri Lanka" },
   applicant: validApplicant,
   guardian: validGuardian,
   residence: validResidence,
@@ -543,7 +544,7 @@ describe("ApplicationForm – submit flow", () => {
     setStore({ ...fullValidDraft, currentStep: 6, lastSavedAt: new Date().toISOString() });
     setActiveKey(MOCK_ACCESS_KEY);
     await renderReview();
-    await screen.findByText(MOCK_ACCESS_KEY);
+    await screen.findAllByText(MOCK_ACCESS_KEY);
     await userEvent.click(screen.getByRole("button", { name: /(submit|update) application/i }));
     expect(await screen.findByText("Application submitted successfully.")).toBeInTheDocument();
   });
@@ -561,7 +562,7 @@ describe("ApplicationForm – submit a restored application", () => {
     });
     const user = userEvent.setup();
     renderWithClient(<ApplicationForm />);
-    await screen.findByText(MOCK_ACCESS_KEY);
+    await screen.findAllByText(MOCK_ACCESS_KEY);
     await user.click(screen.getByRole("button", { name: /(submit|update) application/i }));
     expect(await screen.findByText("Application submitted successfully.")).toBeInTheDocument();
     expect(screen.getAllByText(MOCK_ACCESS_KEY).length).toBeGreaterThan(0);
