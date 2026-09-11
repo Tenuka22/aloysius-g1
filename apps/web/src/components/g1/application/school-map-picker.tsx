@@ -92,7 +92,7 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
       </ClientOnly>
 
       <p className="text-sm text-muted-foreground" role="status">
-        Radius: {Number.isFinite(radiusKm) ? radiusKm.toFixed(1) : "—"} km (home to {highlightSchool?.en ?? "applied school"}) · {withinRadius.length} within · {justOutside.length} near boundary
+        Radius: {Number.isFinite(radiusKm) ? radiusKm.toFixed(1) : " - "} km (home to {highlightSchool?.en ?? "applied school"}) · {withinRadius.length} within · {justOutside.length} near boundary
         {readOnly && <> · automatically calculated, cannot be edited</>}
       </p>
 

@@ -484,7 +484,7 @@ describe("ApplicationForm – step 6 (review)", () => {
   it("renders a Categories summary with indicative marks", async () => {
     setStore({ ...fullValidDraft, currentStep: 6 });
     await renderReview();
-    expect(screen.getByText("6.1 \u2013 Residence Verification & Proximity")).toBeInTheDocument();
+    expect(screen.getByText("6.1 - Residence Verification & Proximity")).toBeInTheDocument();
     expect(screen.getByText("Main Document Type")).toBeInTheDocument();
     expect(screen.getByText("title-deed-applicant")).toBeInTheDocument();
     expect(screen.getByText("Schools Within Radius")).toBeInTheDocument();
@@ -996,11 +996,11 @@ describe("ApplicationForm – skip stickiness and outstanding detection", () => 
       const user = userEvent.setup();
       setStore({ currentStep: 1, applicant: { ...validApplicant, birthCertificateNumber: "" }, birthCertificateStatus: "skipped" });
       await renderForm();
-      expect(screen.getByText("Already skipped — enter the number below or continue without it.")).toBeInTheDocument();
+      expect(screen.getByText("Already skipped - enter the number below or continue without it.")).toBeInTheDocument();
       const birthCertInput = screen.getByPlaceholderText(/enter birth certificate number/i);
       await user.type(birthCertInput, "ABC999");
       expect(useApplicationStore.getState().birthCertificateStatus).toBe("skipped");
-      expect(screen.getByText("Previously skipped — you can update or remove this field.")).toBeInTheDocument();
+      expect(screen.getByText("Previously skipped - you can update or remove this field.")).toBeInTheDocument();
   });
 
     it("location map-click after skip stays sticky", async () => {
@@ -1045,7 +1045,7 @@ describe("ApplicationForm – skip stickiness and outstanding detection", () => 
       await renderForm();
       expect(screen.queryByTestId("location-step")).not.toBeInTheDocument();
       expect(screen.queryByPlaceholderText(/enter birth certificate number/i)).not.toBeInTheDocument();
-      expect(screen.queryByText("You skipped some details earlier — complete them before submitting.")).not.toBeInTheDocument();
+      expect(screen.queryByText("You skipped some details earlier - complete them before submitting.")).not.toBeInTheDocument();
     });
 
     it("stepper flags a silently-cleared field even without an explicit skip", async () => {

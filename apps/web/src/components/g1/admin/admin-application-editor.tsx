@@ -113,12 +113,12 @@ const SECTION_FIELD_TYPES: Record<string, Record<string, FieldType>> = {
 };
 
 const CATEGORY_LABELS: Record<CategoryType, string> = {
-  "6.1": "6.1 – Residence Verification & Proximity",
-  "6.2": "6.2 – Alumni",
-  "6.3": "6.3 – Siblings",
-  "6.4": "6.4 – Period of Service & Distance",
-  "6.5": "6.5 – Transfer Applications",
-  "6.6": "6.6 – Foreign Employment",
+  "6.1": "6.1 - Residence Verification & Proximity",
+  "6.2": "6.2 - Alumni",
+  "6.3": "6.3 - Siblings",
+  "6.4": "6.4 - Period of Service & Distance",
+  "6.5": "6.5 - Transfer Applications",
+  "6.6": "6.6 - Foreign Employment",
 };
 
 const DIFFICULT_SERVICE_TYPES = ["current", "previous", "none"] as const;
@@ -808,7 +808,7 @@ function AdminCategoryEditor({ category, onPatch, onRemove }: { category: Catego
   return (
     <div className="grid gap-3 p-4 border rounded-[10px]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h4 className="min-w-0 font-semibold">{CATEGORY_LABELS[category.categoryType]} – <span className="font-mono">{score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}/{CATEGORY_MAX_MARKS}</span></h4>
+        <h4 className="min-w-0 font-semibold">{CATEGORY_LABELS[category.categoryType]} - <span className="font-mono">{score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}/{CATEGORY_MAX_MARKS}</span></h4>
         <Button variant="secondary" size="sm" className="shrink-0 whitespace-normal" onClick={onRemove}><X size={16} /> Remove</Button>
       </div>
       {renderFields()}

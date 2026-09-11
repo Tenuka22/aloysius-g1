@@ -73,7 +73,7 @@ const categories: Array<{
         heading: "C) Electoral register",
         max: ELECTORAL_MAX_61,
         rows: [
-          { label: "Mother & father registration (2020–2024)", formula: `${ELECTORAL_MARKS_PER_PERSON_YEAR_61} marks/person-year`, max: ELECTORAL_MAX_61 },
+          { label: "Mother & father registration (2020 - 2024)", formula: `${ELECTORAL_MARKS_PER_PERSON_YEAR_61} marks/person-year`, max: ELECTORAL_MAX_61 },
         ],
       },
       {
@@ -151,7 +151,7 @@ const categories: Array<{
           { label: "Currently studying", formula: `${SIBLING_MARKS_PER_SIBLING}/sibling, max 10`, max: SIBLING_STUDYING_MAX },
           { label: "Studied at applied school", formula: "5 marks", max: SIBLING_STUDIED_HERE_MARKS },
           { label: "Two or more applying", formula: "5 marks", max: SIBLING_MULTIPLE_APPLYING_MARKS },
-          { label: "Co-curricular & prefect", formula: "Prefect + exams + praiseworthy + support", max: SIBLING_COCURRICULAR_TOTAL_MAX, tiers: "Prefect 0.25–2 | Scholarship 0.5, OL 1, AL 1.5 | Praiseworthy 2 | Support 4" },
+          { label: "Co-curricular & prefect", formula: "Prefect + exams + praiseworthy + support", max: SIBLING_COCURRICULAR_TOTAL_MAX, tiers: "Prefect 0.25 - 2 | Scholarship 0.5, OL 1, AL 1.5 | Praiseworthy 2 | Support 4" },
         ],
       },
       {

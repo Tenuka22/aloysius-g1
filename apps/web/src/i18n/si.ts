@@ -68,7 +68,7 @@ const si = {
   "home.saved.loadError": "දත්ත සමුදායෙන් යාවත්කාලීන කිරීමට නොහැකි විය",
   "error.boundary.title": "දෝෂයක් සිදු විය",
   "error.boundary.description":
-    "මෙම පිටුව පෙන්වීමට නොහැකි විය. ඔබගේ සුරැකූ ප්‍රගතිය ආරක්ෂිතයි — නැවත උත්සාහ කරන්න, නැතහොත් පැනලයට ආපසු යන්න.",
+    "මෙම පිටුව පෙන්වීමට නොහැකි විය. ඔබගේ සුරැකූ ප්‍රගතිය ආරක්ෂිතයි - නැවත උත්සාහ කරන්න, නැතහොත් පැනලයට ආපසු යන්න.",
   "error.boundary.retry": "නැවත උත්සාහ කරන්න",
   "error.boundary.home": "පැනලයට ආපසු යන්න",
   "error.boundary.details": "තාක්ෂණික විස්තර",
@@ -299,7 +299,7 @@ const si = {
   "subAdminOverview.badge": "උප-පරිපාලක කාර්ය අවකාශය",
   "subAdminOverview.title": "ඉල්ලීම් හසුරුවන්නා",
   "subAdminOverview.description":
-    "ප්‍රවේශ සහ ඉවත් කිරීමේ ඉල්ලීම් පරීක්ෂා කර ක්‍රියාත්මක කරන්න. ඔබට පෙනෙන්නේ තහවුරු කිරීමේ අංක පමණි – සම්පූර්ණ අයදුම්පත් දත්ත පරිපාලකයින්ට පමණක් සීමා වේ.",
+    "ප්‍රවේශ සහ ඉවත් කිරීමේ ඉල්ලීම් පරීක්ෂා කර ක්‍රියාත්මක කරන්න. ඔබට පෙනෙන්නේ තහවුරු කිරීමේ අංක පමණි - සම්පූර්ණ අයදුම්පත් දත්ත පරිපාලකයින්ට පමණක් සීමා වේ.",
   "subAdminOverview.forgotKey.title": "අමතක වූ සංකේත ඉල්ලීම්",
   "subAdminOverview.forgotKey.description":
     "ප්‍රවේශ සංකේතය නැතිවූ දෙමාපියන්. තහවුරු කිරීමෙන් පසු නව සංකේතයක් හෝ QR සංකේතයක් සාදන්න.",
@@ -328,9 +328,9 @@ const si = {
     "{number} උප්පැන්න සහතික අංකය සඳහා නව ප්‍රවේශ සංකේතයක් සෑදෙනු ඇත. දෙමාපියන්ට Scan කර අයදුම්පතට ප්‍රවේශ වීමට QR සංකේතය පෙන්වන්න.",
   "subAdminForgot.confirm.cancel": "අවසාන කරන්න",
   "subAdminForgot.confirm.generate": "සංකේතය සාදන්න",
-  "subAdminForgot.generated.oneTimeDisplay": "එක් වරක් පමණක් පෙන්වයි – QR සංකේතය දෙමාපියන්ට පෙන්වන්න",
+  "subAdminForgot.generated.oneTimeDisplay": "එක් වරක් පමණක් පෙන්වයි - QR සංකේතය දෙමාපියන්ට පෙන්වන්න",
   "subAdminForgot.generated.showQr": "QR සංකේතය පෙන්වන්න",
-  "subAdminForgot.toast.keyGenerated": "නව සංකේතය සාදන ලදී – QR සංකේතය දෙමාපියන්ට පෙන්වන්න",
+  "subAdminForgot.toast.keyGenerated": "නව සංකේතය සාදන ලදී - QR සංකේතය දෙමාපියන්ට පෙන්වන්න",
   "subAdminForgot.toast.generateError": "සංකේතය සෑදීමට නොහැකි විය",
   "subAdminForgot.toast.dismissed": "ඉල්ලීම ඉවත් කරන ලදී",
   "subAdminForgot.toast.dismissError": "ඉල්ලීම ඉවත් කිරීමට නොහැකි විය",
@@ -375,12 +375,12 @@ const si = {
   "appForm.steps.categories": "වර්ගීකරණයන්",
   "appForm.steps.declaration": "ප්‍රකාශනය",
   "appForm.steps.review": "සලකා බැලීම",
-  "appForm.categoryLabels.6_1": "6.1 – පදිංචිය තහවුරු කිරීම සහ ආසන්නතාවය",
-  "appForm.categoryLabels.6_2": "6.2 – ආදි ශිෂ්‍ය",
-  "appForm.categoryLabels.6_3": "6.3 – සහෝදර/සහෝදරියන්",
-  "appForm.categoryLabels.6_4": "6.4 – සේවා කාලය සහ පරතරය/දුර",
-  "appForm.categoryLabels.6_5": "6.5 – ස්ථාන මාරුවීම් අයදුම්පත්",
-  "appForm.categoryLabels.6_6": "6.6 – විදේශ රැකියා",
+  "appForm.categoryLabels.6_1": "6.1 - පදිංචිය තහවුරු කිරීම සහ ආසන්නතාවය",
+  "appForm.categoryLabels.6_2": "6.2 - ආදි ශිෂ්‍ය",
+  "appForm.categoryLabels.6_3": "6.3 - සහෝදර/සහෝදරියන්",
+  "appForm.categoryLabels.6_4": "6.4 - සේවා කාලය සහ පරතරය/දුර",
+  "appForm.categoryLabels.6_5": "6.5 - ස්ථාන මාරුවීම් අයදුම්පත්",
+  "appForm.categoryLabels.6_6": "6.6 - විදේශ රැකියා",
   "appForm.stepIndicator.stepOf": "පියවර {total} න් {current} වන පියවර",
   "appForm.stepIndicator.percentComplete": "{percent}% ක් සම්පූර්ණයි",
   "appForm.stepIndicator.ariaLabel": "පෝරමයේ පියවර",
@@ -718,7 +718,7 @@ const si = {
     "ඔබගේ අයදුම්පතට අදාළ වන වක්‍රලේඛ වර්ගීකරණයන් පමණක් තෝරන්න. සෑම වර්ගීකරණයක් සඳහාම ලකුණු 100 කින් වෙන වෙනම ලකුණු හිමි වන අතර, වෙනස් සටහන් අවශ්‍ය වන විට එකම වර්ගීකරණය එකකට වඩා වැඩි වාර ගණනක් එක් කළ හැක.",
   "category.sectionHeading.categoriesSelected": "වර්ගීකරණයන් {count} ක් තෝරාගෙන ඇත",
   "category.sectionHeading.markingCategoryBadge": "ලකුණු දීමේ වර්ගීකරණය",
-  "category.sectionHeading.entryNumber": " – සටහන {number}",
+  "category.sectionHeading.entryNumber": " - සටහන {number}",
   "category.sectionHeading.locked": "අගුලු දමා ඇත",
   "category.sectionHeading.indicativeScore": "දැනට ලැබෙන දර්ශක ලකුණු",
   "category.buttons.lock": "අගුලු ලන්න",
@@ -731,7 +731,7 @@ const si = {
   "category.buttons.addCategory": "+ {category} එක් කරන්න",
   "category.noEntries.title": "තවම සටහන් නැත",
   "category.noEntries.description": "මෙම කාණ්ඩය සඳහා අවශ්‍ය ලේඛන ලැබුණු පසු සටහනක් එක් කරන්න.",
-  "category.exampleMarks.heading": "ලකුණු සාරාංශය – {category}",
+  "category.exampleMarks.heading": "ලකුණු සාරාංශය - {category}",
   "category.exampleMarks.indicativeTotal": "දර්ශක එකතුව",
   "category.exampleMarks.disclaimer":
     "මෙය ඔබගේ පිළිතුරු මත පදනම්ව ගණනය කරන ලද මූලික තක්සේරුවකි. සම්මුඛ පරීක්ෂණ මණ්ඩලය මඟින් ඔබගේ මුල් ලේඛන පරීක්ෂා කර සම්මුඛ පරීක්ෂණයේදී මෙම ලකුණු වෙනස් කළ හැක.",
@@ -746,8 +746,8 @@ const si = {
   "category.nearbySchools.noLocationHint":
     "මෙම වර්ගීකරණය සඳහා අසල පිහිටි පාසල් තේරීමට පළමුව ස්ථානීය පියවර සම්පූර්ණ කරන්න.",
   "category.noHomeLocation": "සිතියම ප්‍ර his दर्शනය සඳහා නිවසේ පිහිටීම ලබාගත නොහැක.",
-  "category.mainDocumentOptions.titleDeedApplicant": "ඔප්පුව – අයදුම්කරුගේ නමට",
-  "category.mainDocumentOptions.titleDeedParents": "ඔප්පුව – දෙමාපියන්ගේ නමට",
+  "category.mainDocumentOptions.titleDeedApplicant": "ඔප්පුව - අයදුම්කරුගේ නමට",
+  "category.mainDocumentOptions.titleDeedParents": "ඔප්පුව - දෙමාපියන්ගේ නමට",
   "category.mainDocumentOptions.feederElectoral5yrs":
     "පෝෂක ප්‍රදේශයේ ඡන්ද හිමි නාමලේඛනය / උප්පැන්න සහතිකය (අවම වසර 5)",
   "category.mainDocumentOptions.leaseDeed": "බදු ඔප්පුව",
@@ -805,8 +805,8 @@ const si = {
   "category.siblingExamOptions.scholarship": "5 ශ්‍රේණිය ශිෂ්‍යත්වය සමත් (0.5)",
   "category.siblingExamOptions.ol": "අ.පො.ස. (සා/පෙළ) සුදුසුකම් ලබා ඇත (1)",
   "category.siblingExamOptions.al": "අ.පො.ස. (උ/පෙළ) සුදුසුකම් ලබා ඇත (1.5)",
-  "category.siblingDocumentOptions.titleDeedApplicantSpouse": "ඔප්පුව – අයදුම්කරු / කලත්‍රයාගේ නමට",
-  "category.siblingDocumentOptions.titleDeedParents": "ඔප්පුව – දෙමාපියන්ගේ නමට",
+  "category.siblingDocumentOptions.titleDeedApplicantSpouse": "ඔප්පුව - අයදුම්කරු / කලත්‍රයාගේ නමට",
+  "category.siblingDocumentOptions.titleDeedParents": "ඔප්පුව - දෙමාපියන්ගේ නමට",
   "category.siblingDocumentOptions.feederElectoral5yrs":
     "පෝෂක ප්‍රදේශයේ ඡන්ද හිමි නාමලේඛනය / උප්පැන්න සහතිකය (අවම වසර 5)",
   "category.siblingDocumentOptions.leaseDeed": "බදු ඔප්පුව",
@@ -828,7 +828,7 @@ const si = {
   // Category 6.1 fields
   "category.61.mainDocument.label": "ප්‍රධාන පදිංචි ලේඛනය",
   "category.61.mainDocument.hint":
-    "ලේඛන ලකුණු (උපරිම 20):\n• ඔප්පුව – අයදුම්කරුගේ නමට: 20\n• ඔප්පුව – දෙමාපියන්ගේ නමට: 16\n• පෝෂක ප්‍රදේශයේ ඡන්ද ලේඛනය (වසර 5): 15\n• බදු ඔප්පුව: 10\n• නගර සභා/ප්‍රාදේශීය ලේකම් සහතිකය: 5\n• වෙනත් ලේඛන: 4\n\nඔප්පුවේ කාලසීමා ගුණකය:\n• වසර 5 හෝ ඊට වැඩි = 100%\n• වසර 4 = 80%\n• වසර 3 = 60%\n• වසර 2 = 40%\n• වසර 1 = 20%\n• මාස 6 = 10%\n• මාස 6 ට අඩු = 5%",
+    "ලේඛන ලකුණු (උපරිම 20):\n• ඔප්පුව - අයදුම්කරුගේ නමට: 20\n• ඔප්පුව - දෙමාපියන්ගේ නමට: 16\n• පෝෂක ප්‍රදේශයේ ඡන්ද ලේඛනය (වසර 5): 15\n• බදු ඔප්පුව: 10\n• නගර සභා/ප්‍රාදේශීය ලේකම් සහතිකය: 5\n• වෙනත් ලේඛන: 4\n\nඔප්පුවේ කාලසීමා ගුණකය:\n• වසර 5 හෝ ඊට වැඩි = 100%\n• වසර 4 = 80%\n• වසර 3 = 60%\n• වසර 2 = 40%\n• වසර 1 = 20%\n• මාස 6 = 10%\n• මාස 6 ට අඩු = 5%",
   "category.61.documentRegistrationDate": "ලේඛනය ලියාපදිංචි කළ දිනය",
   "category.61.deedTransferDate.label": "ඔප්පුව පැවරූ / ලේඛනය ලියාපදිංචි කළ දිනය",
   "category.61.deedTransferDate.hint":
@@ -836,14 +836,14 @@ const si = {
   "category.61.supportingDocs.label": "අතිරේක සාක්ෂි ලේඛන",
   "category.61.supportingDocs.hint":
     "එක් ලේඛනයකට ලකුණු 1 බැගින්, උපරිම 5 යි.\n\nපිළිගන්නා ලේඛන:\n• ජාතික හැඳුනුම්පත (NIC)\n• රියදුරු බලපත්‍රය\n• ස්ථාවර දුරකථන බිල්පත\n• විවාහ සහතිකය\n• ජීවිත රක්ෂණ ඔප්පුව\n• පාසල් අස්වීමේ සහතිකය\n• දරුවාගේ උප්පැන්න සහතිකය\n• වාහන ලියාපදිංචි සහතිකය\n• බැංකු පොත",
-  "category.61.electoralMother.label": "ඡන්ද හිමි නාමලේඛනය – මව",
+  "category.61.electoralMother.label": "ඡන්ද හිමි නාමලේඛනය - මව",
   "category.61.electoralMother.yearLabel": "මව ලියාපදිංචි වූ වර්ෂ",
   "category.61.electoralMother.hint":
-    "සලකුණු කළ එක් වසරකට ලකුණු 2.5 ({startYear}–{endYear}). පියා සමඟ එකතුව, උපරිම 25.",
-  "category.61.electoralFather.label": "ඡන්ද හිමි නාමලේඛනය – පියා",
+    "සලකුණු කළ එක් වසරකට ලකුණු 2.5 ({startYear} - {endYear}). පියා සමඟ එකතුව, උපරිම 25.",
+  "category.61.electoralFather.label": "ඡන්ද හිමි නාමලේඛනය - පියා",
   "category.61.electoralFather.yearLabel": "පියා ලියාපදිංචි වූ වර්ෂ",
   "category.61.electoralFather.hint":
-    "සලකුණු කළ එක් වසරකට ලකුණු 2.5 ({startYear}–{endYear}). මව සමඟ එකතුව, උපරිම 25.",
+    "සලකුණු කළ එක් වසරකට ලකුණු 2.5 ({startYear} - {endYear}). මව සමඟ එකතුව, උපරිම 25.",
   "category.61.electoralTotal": "ඡන්ද හිමි නාමලේඛන එකතුව",
   "category.61.electoralTotal.hint":
     "එක් අයෙකුගේ වසරකට ලකුණු 2.5 යි.\n\nමව + පියා එකතුව,\nඑක් අයෙකුට උපරිම වසර 5 බැගින් = ලකුණු 25 යි.\n\nඋදාහරණ: දෙදෙනාම වසර 5 බැගින් නම් = 25",
@@ -937,7 +937,7 @@ const si = {
     "එකම පාසලේ වෙනත් ශ්‍රේණි සඳහා සහෝදර/සහෝදරියන් දෙදෙනෙකු හෝ ඊට වැඩි ගණනක් අයදුම් කරයි",
   "category.63.cocurricular.label": "සහෝදර/සහෝදරියන්ගේ සහපෙළ ක්‍රියාකාරකම් සහ ශිෂ්‍ය නායක තනතුරු",
   "category.63.cocurricular.hint":
-    "ශිෂ්‍ය නායක දක්ෂතා: එකකට 0.25–2 දක්වා\nවිභාග: 0.5 (ශිෂ්‍යත්වය) / 1 (සා/පෙළ) / 1.5 (උ/පෙළ)\nප්‍රශංසනීය දක්ෂතා: 2\nදෙමාපිය සහය: 4\n\nඋපරිම ලකුණු 10 යි",
+    "ශිෂ්‍ය නායක දක්ෂතා: එකකට 0.25 - 2 දක්වා\nවිභාග: 0.5 (ශිෂ්‍යත්වය) / 1 (සා/පෙළ) / 1.5 (උ/පෙළ)\nප්‍රශංසනීය දක්ෂතා: 2\nදෙමාපිය සහය: 4\n\nඋපරිම ලකුණු 10 යි",
   "category.63.cocurricular.prefectLevel": "සහෝදර/සහෝදරියන්ගේ ශිෂ්‍ය නායක දක්ෂතා මට්ටම",
   "category.63.cocurricular.prefectLevelPlaceholder": "ඉහළම මට්ටම තෝරන්න",
   "category.63.cocurricular.achievements": "එම මට්ටමේ ජයග්‍රහණ සංඛ්‍යාව",
@@ -947,13 +947,13 @@ const si = {
   "category.63.cocurricular.parentSupport": "දෙමාපියන් විසින් ලබා දුන් සහයෝගය",
   "category.63.residenceDocument.label": "පදිංචි ලේඛනය",
   "category.63.residenceDocument.hint":
-    "ලේඛන ලකුණු (උපරිම 10):\n• ඔප්පුව – අයදුම්කරු/කලත්‍රයාගේ නමට: 10\n• ඔප්පුව – දෙමාපියන්ගේ නමට: 6\n• පෝෂක ප්‍රදේශයේ ඡන්ද ලේඛනය (වසර 5): 6\n• බදු ඔප්පුව: 4\n• නගර සභා/ප්‍රාදේශීය ලේකම්/ගෙවල් කුලී පනත සහතිකය: 4\n• වෙනත් ලේඛන: 2",
+    "ලේඛන ලකුණු (උපරිම 10):\n• ඔප්පුව - අයදුම්කරු/කලත්‍රයාගේ නමට: 10\n• ඔප්පුව - දෙමාපියන්ගේ නමට: 6\n• පෝෂක ප්‍රදේශයේ ඡන්ද ලේඛනය (වසර 5): 6\n• බදු ඔප්පුව: 4\n• නගර සභා/ප්‍රාදේශීය ලේකම්/ගෙවල් කුලී පනත සහතිකය: 4\n• වෙනත් ලේඛන: 2",
   "category.63.electoralMother.yearLabel": "මව ලියාපදිංචි වූ වර්ෂ",
   "category.63.electoralMother.hint":
-    "සලකුණු කළ එක් වසරකට ලකුණු 2 ({startYear}–{endYear}). පියා සමඟ එකතුව, උපරිම 20.",
+    "සලකුණු කළ එක් වසරකට ලකුණු 2 ({startYear} - {endYear}). පියා සමඟ එකතුව, උපරිම 20.",
   "category.63.electoralFather.yearLabel": "පියා ලියාපදිංචි වූ වර්ෂ",
   "category.63.electoralFather.hint":
-    "සලකුණු කළ එක් වසරකට ලකුණු 2 ({startYear}–{endYear}). මව සමඟ එකතුව, උපරිම 20.",
+    "සලකුණු කළ එක් වසරකට ලකුණු 2 ({startYear} - {endYear}). මව සමඟ එකතුව, උපරිම 20.",
   "category.63.electoralTotal": "ඡන්ද හිමි නාමලේඛන එකතුව",
   "category.63.electoralTotal.hint":
     "එක් අයෙකුගේ වසරකට ලකුණු 2 යි.\n\nමව + පියා එකතුව,\nඑක් අයෙකුට උපරිම වසර 5 බැගින් = ලකුණු 20 යි.\n\nඋදාහරණ: දෙදෙනාම වසර 5 බැගින් නම් = 20",
@@ -967,7 +967,7 @@ const si = {
   "category.64.servicePeriod.dateHint": "දෙමාපියන් ගුරු සේවය ආරම්භ කළේ කවදාද?",
   "category.64.difficultService.label": "අභියෝගාත්මක / දුෂ්කර සේවය",
   "category.64.difficultService.hint":
-    "වත්මන් පාසල: ලකුණු 25\nපෙර පාසල: max(15, දුර බෝනස්) + අමතර කාල සීමා\n\nදුර බෝනස් ලකුණු:\n• කි.මී. 150+: 15\n• කි.මී. 100–150: 10\n• කි.මී. 75–100: 5\n\nමාස 6 ක අමතර කාල සීමාවකට ලකුණු +0.5 බැගින්",
+    "වත්මන් පාසල: ලකුණු 25\nපෙර පාසල: max(15, දුර බෝනස්) + අමතර කාල සීමා\n\nදුර බෝනස් ලකුණු:\n• කි.මී. 150+: 15\n• කි.මී. 100 - 150: 10\n• කි.මී. 75 - 100: 5\n\nමාස 6 ක අමතර කාල සීමාවකට ලකුණු +0.5 බැගින්",
   "category.64.difficultService.typeLabel": "දුෂ්කර සේවා වර්ගය",
   "category.64.difficultService.currentSchool": "වත්මන් පාසල",
   "category.64.difficultService.previousSchool": "පෙර පාසල",
@@ -986,16 +986,16 @@ const si = {
   "category.64.serviceLocation.province": "පළාත",
   "category.64.serviceLocation.educationInstitution": "අධ්‍යාපන ආයතනය",
   "category.64.residenceToSchool.label": "නිවසේ සිට පාසලට ඇති දුර",
-  "category.64.residenceToSchool.hint": "කි.මී. 1 ඇතුළත: 10\nකි.මී. 1–3: 8\nකි.මී. 3–5: 6\nකි.මී. >5: 4",
+  "category.64.residenceToSchool.hint": "කි.මී. 1 ඇතුළත: 10\nකි.මී. 1 - 3: 8\nකි.මී. 3 - 5: 6\nකි.මී. >5: 4",
   "category.64.residenceToSchool.distanceLabel": "දුර (කි.මී.)",
   "category.64.workplaceToSchool.label": "සේවා ස්ථානයේ සිට පාසලට ඇති දුර",
   "category.64.workplaceToSchool.hint":
-    "කි.මී. 100+: 25\nකි.මී. 70–100: 20\nකි.මී. 40–70: 15\nකි.මී. 20–40: 10\nකි.මී. <20: 5",
+    "කි.මී. 100+: 25\nකි.මී. 70 - 100: 20\nකි.මී. 40 - 70: 15\nකි.මී. 20 - 40: 10\nකි.මී. <20: 5",
   "category.64.workplaceToSchool.distanceLabel": "දුර (කි.මී.)",
   // Category 6.5 fields
   "category.65.prevWorkplaceDistance.label": "පෙර සේවා ස්ථානයට ඇති දුර",
   "category.65.prevWorkplaceDistance.hint":
-    "කි.මී. >150: 35\nකි.මී. 100–150: 28\nකි.මී. 50–100: 21\nකි.මී. <50: 0\n\nඅවම වශයෙන් කි.මී. ≥50 විය යුතුය",
+    "කි.මී. >150: 35\nකි.මී. 100 - 150: 28\nකි.මී. 50 - 100: 21\nකි.මී. <50: 0\n\nඅවම වශයෙන් කි.මී. ≥50 විය යුතුය",
   "category.65.prevWorkplaceDistance.distanceLabel": "දුර (කි.මී.)",
   "category.65.servicePeriod.label": "සේවා කාල සීමාව",
   "category.65.servicePeriod.hint":
@@ -1003,12 +1003,12 @@ const si = {
   "category.65.servicePeriod.dateLabel": "පළමු පත්වීම් දිනය",
   "category.65.servicePeriod.dateHint": "දෙමාපියන් ගුරු සේවය ආරම්භ කළේ කවදාද?",
   "category.65.prevWorkplacePeriod.label": "පෙර සේවා ස්ථානයේ සේවා කාලය",
-  "category.65.prevWorkplacePeriod.hint": "වසර 3+: 10\nවසර 2–3: 8\nවසර 1–2: 5\nවසර <1: 0",
+  "category.65.prevWorkplacePeriod.hint": "වසර 3+: 10\nවසර 2 - 3: 8\nවසර 1 - 2: 5\nවසර <1: 0",
   "category.65.prevWorkplacePeriod.dateLabel": "පෙර සේවා ස්ථානයේ සේවය ආරම්භ කළ දිනය",
   "category.65.prevWorkplacePeriod.dateHint": "දෙමාපියන් පෙර පාසලේ සේවය ආරම්භ කළේ කවදාද?",
   "category.65.timeSinceTransfer.label": "ස්ථාන මාරුවීමේ සිට ගතවූ කාලය",
   "category.65.timeSinceTransfer.hint":
-    "වසර 1 ක් ඇතුළත: 5\nවසර 1–2: 4\nවසර 2–3: 3\nවසර 3–4: 2\nවසර 4–5: 1\nවසර >5: 0",
+    "වසර 1 ක් ඇතුළත: 5\nවසර 1 - 2: 4\nවසර 2 - 3: 3\nවසර 3 - 4: 2\nවසර 4 - 5: 1\nවසර >5: 0",
   "category.65.timeSinceTransfer.dateLabel": "ස්ථාන මාරුවූ දිනය",
   "category.65.timeSinceTransfer.dateHint": "ස්ථාන මාරුවීම ලැබුණේ කවදාද?",
   "category.65.unutilizedLeave.label": "භාවිත නොකළ නිවාඩු",
@@ -1020,7 +1020,7 @@ const si = {
   // Category 6.6 fields
   "category.66.periodAbroad.label": "දරුවා සමඟ විදේශ ගතව සිටි කාලය",
   "category.66.periodAbroad.hint":
-    "නිරන්තර වසර 3+: 25\nවසර 2–3: 15\nවසර 1–2: 10\nවසර <1: 0\n\n2024.07–2025.06 කාලය ඇතුළත විය යුතුය",
+    "නිරන්තර වසර 3+: 25\nවසර 2 - 3: 15\nවසර 1 - 2: 10\nවසර <1: 0\n\n2024.07 - 2025.06 කාලය ඇතුළත විය යුතුය",
   "category.66.periodAbroad.dateLeft": "ශ්‍රී ලංකාවෙන් පිටවූ දිනය",
   "category.66.periodAbroad.dateLeftHint": "දෙමාපියන් විදේශ රැකියාව සඳහා පිටත්ව ගියේ කවදාද?",
   "category.66.periodAbroad.dateReturned": "නැවත ශ්‍රී ලංකාවට පැමිණි දිනය",

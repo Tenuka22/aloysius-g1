@@ -916,7 +916,7 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
         </div>
 
         <div className="grid gap-2 border-t pt-5">
-          <p className="text-sm font-medium">Example marks – {CATEGORY_LABELS[category.categoryType]}</p>
+          <p className="text-sm font-medium">Example marks - {CATEGORY_LABELS[category.categoryType]}</p>
           <div className="grid gap-1">
             {editedAutoScore.breakdown.map((row) => (
               <div key={row.label} className="flex items-baseline justify-between gap-3 text-sm">

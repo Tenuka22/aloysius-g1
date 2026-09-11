@@ -55,13 +55,13 @@ describe("buildApplicationSections", () => {
     expect(value("Date of birth")).toBe("01 Jun 2021");
   });
 
-  it("renders an em-dash for missing values rather than an empty cell", () => {
+  it("renders a dash for missing values rather than an empty cell", () => {
     const sections = buildApplicationSections(emptyDraft);
     const rows = sections.flatMap((section) => section.rows);
     const blank = rows.filter((row) => row.value === "");
 
     expect(blank).toHaveLength(0);
-    expect(rows.some((row) => row.value === "—")).toBe(true);
+    expect(rows.some((row) => row.value === "-")).toBe(true);
   });
 
   it("includes a section per selected marking category", () => {
@@ -74,8 +74,8 @@ describe("buildApplicationSections", () => {
     };
     const headings = buildApplicationSections(withCategories).map((s) => s.heading);
 
-    expect(headings).toContain("Category 6.1 — Residence Verification & Proximity");
-    expect(headings).toContain("Category 6.3 — Siblings");
+    expect(headings).toContain("Category 6.1 - Residence Verification & Proximity");
+    expect(headings).toContain("Category 6.3 - Siblings");
   });
 
   it("always ends with the declaration so the record is self-contained", () => {

@@ -85,7 +85,7 @@ const PDF_TEXT: Record<
   en: {
     collegeName: "Saint Aloysius' College",
     collegeLocation: "Galle, Sri Lanka",
-    sheetTitle: (year) => `Grade 1 Admission — ${year} Intake · Marking scheme verification sheet`,
+    sheetTitle: (year) => `Grade 1 Admission - ${year} Intake · Marking scheme verification sheet`,
     applicationNo: "Application no.",
     dateSubmitted: "Date submitted",
     childName: "Child's name",
@@ -116,7 +116,7 @@ const PDF_TEXT: Record<
     collegeName: "ඇලෝසියස් විද්‍යාලය, ගාල්ල",
     collegeLocation: "ශ්‍රී ලංකාව",
     sheetTitle: (year) =>
-      `1 ශ්‍රේණිය ප්‍රවේශය — ${year} වාර්ෂිකය · ලකුණු දීමේ පටිපාටිය තහවුරු කිරීමේ පත්‍රිකාව`,
+      `1 ශ්‍රේණිය ප්‍රවේශය - ${year} වාර්ෂිකය · ලකුණු දීමේ පටිපාටිය තහවුරු කිරීමේ පත්‍රිකාව`,
     applicationNo: "අයදුම්පත් අංකය",
     dateSubmitted: "යොමු කළ දිනය",
     childName: "දරුවාගේ නම",
@@ -207,23 +207,23 @@ export function applicationCategoryPdfFilename(
 }
 
 function formatDate(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "—";
+  if (Number.isNaN(parsed.getTime())) return "-";
   return parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function formatDateTime(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "—";
+  if (Number.isNaN(parsed.getTime())) return "-";
   return `${formatDate(value)} ${parsed.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 function orDash(value: string | number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "-";
   const text = String(value).trim();
-  return text === "" ? "—" : text;
+  return text === "" ? "-" : text;
 }
 
 type Row = { label: string; value: string };
@@ -235,7 +235,7 @@ export function buildApplicationSections(draft: ApplicationDraft): Section[] {
   const coordinates =
     Number.isFinite(location.latitude) && Number.isFinite(location.longitude)
       ? `${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}`
-      : "—";
+      : "-";
 
   const sections: Section[] = [
     {
@@ -308,7 +308,7 @@ export function buildApplicationSections(draft: ApplicationDraft): Section[] {
 
     sections.push({
       heading:
-        `Category ${category.categoryType} \u2014 ${CATEGORY_LABELS_EN[category.categoryType] ?? ""}`.trim(),
+        `Category ${category.categoryType} - ${CATEGORY_LABELS_EN[category.categoryType] ?? ""}`.trim(),
       rows: inputs.length > 0 ? inputs : [{ label: "Details", value: "No details recorded" }],
     });
   }
@@ -397,7 +397,7 @@ function buildMarkLinesForLocale(draft: ApplicationDraft, locale: PdfLocale): Ma
     const score = scoreCategory(category);
     lines.push({
       kind: "category",
-      label: `${category.categoryType} \u2014 ${categoryLabels[category.categoryType] ?? ""}`.trim(),
+      label: `${category.categoryType} - ${categoryLabels[category.categoryType] ?? ""}`.trim(),
       max: score.breakdown.reduce((sum, row) => sum + row.max, 0),
       declared: score.total,
     });
@@ -456,7 +456,7 @@ function renderUnicodeToImage(
  *
  * The source art is 960x1330. Embedding it as-is makes jsPDF store several
  * megabytes of bitmap for a 20 mm shield, so it is redrawn at print size
- * (300 dpi) first — that alone is the difference between a ~5 MB and a ~200 kB
+ * (300 dpi) first - that alone is the difference between a ~5 MB and a ~200 kB
  * sheet. */
 async function loadCrest(): Promise<string | null> {
   if (typeof document === "undefined") return null;
@@ -830,7 +830,7 @@ export async function buildApplicationPdf(
 
   const lines = buildMarkLinesForLocale(draft, locale);
   if (lines.length === 0) {
-    drawRow([text.noCategoriesSelected, "—", "", "", "", ""], markColumns);
+    drawRow([text.noCategoriesSelected, "-", "", "", "", ""], markColumns);
   }
   for (const line of lines) {
     if (line.kind === "category") {
@@ -891,7 +891,7 @@ export async function buildApplicationPdf(
     doc.setTextColor(130);
     const footer = text.generatedFooter(
       formatDateTime(new Date().toISOString()),
-      draft.sessionCode || "—",
+      draft.sessionCode || "-",
       page,
       pageCount,
     );

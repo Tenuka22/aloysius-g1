@@ -438,7 +438,7 @@ describe("Indicative marks notice", () => {
     renderApplication();
     await screen.findByRole("button", { name: /continue/i });
 
-    expect(screen.getByText("Marks summary – 6.1 – Residence Verification & Proximity")).toBeInTheDocument();
+    expect(screen.getByText("Marks summary - 6.1 - Residence Verification & Proximity")).toBeInTheDocument();
     expect(screen.getByText("Indicative total")).toBeInTheDocument();
     expect(screen.getByText(/baseline estimate/)).toBeInTheDocument();
     expect(screen.getByText(/interview panel/)).toBeInTheDocument();

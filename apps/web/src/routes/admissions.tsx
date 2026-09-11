@@ -13,7 +13,7 @@ function G1AdmissionsRouteComponent() {
 export const Route = createFileRoute("/admissions")({
   head: () => ({
     meta: [
-      { title: "St. Aloysius' College — Grade 1 Admissions" },
+      { title: "St. Aloysius' College - Grade 1 Admissions" },
       {
         name: "description",
         content: "Online admissions portal for Grade 1 applications to St. Aloysius' College, Galle.",

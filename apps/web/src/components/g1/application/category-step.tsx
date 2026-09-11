@@ -227,7 +227,7 @@ function withMarks(
   t: TFn,
 ) {
   return options.map(
-    ([value, label]) => [value, `${label} \u2014 ${markSuffix(t, marksMap[value] ?? 0)}`] as const,
+    ([value, label]) => [value, `${label} - ${markSuffix(t, marksMap[value] ?? 0)}`] as const,
   );
 }
 

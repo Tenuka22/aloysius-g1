@@ -69,7 +69,7 @@ const en = {
   "home.saved.loadError": "Could not refresh from the database",
   "error.boundary.title": "Something went wrong",
   "error.boundary.description":
-    "This page could not be displayed. Your saved progress is safe \u2014 try again, or return to the dashboard.",
+    "This page could not be displayed. Your saved progress is safe - try again, or return to the dashboard.",
   "error.boundary.retry": "Try again",
   "error.boundary.home": "Back to dashboard",
   "error.boundary.details": "Technical details",
@@ -313,7 +313,7 @@ const en = {
   "subAdminOverview.badge": "Sub-admin workspace",
   "subAdminOverview.title": "Request handler",
   "subAdminOverview.description":
-    "Review and process access and removal requests. You can only see verification numbers – full application data is restricted to administrators.",
+    "Review and process access and removal requests. You can only see verification numbers - full application data is restricted to administrators.",
   "subAdminOverview.forgotKey.title": "Forgot key requests",
   "subAdminOverview.forgotKey.description":
     "Parents who lost their access key. Generate a new key or QR code after verification.",
@@ -344,9 +344,9 @@ const en = {
     "A new access key will be generated for birth certificate {number}. Show the QR code to the parent so they can scan it and access the application.",
   "subAdminForgot.confirm.cancel": "Cancel",
   "subAdminForgot.confirm.generate": "Generate key",
-  "subAdminForgot.generated.oneTimeDisplay": "One-time display – show QR to parent",
+  "subAdminForgot.generated.oneTimeDisplay": "One-time display - show QR to parent",
   "subAdminForgot.generated.showQr": "Show QR code",
-  "subAdminForgot.toast.keyGenerated": "New key generated – show the QR to the parent",
+  "subAdminForgot.toast.keyGenerated": "New key generated - show the QR to the parent",
   "subAdminForgot.toast.generateError": "Could not generate key",
   "subAdminForgot.toast.dismissed": "Request dismissed",
   "subAdminForgot.toast.dismissError": "Could not dismiss request",
@@ -395,12 +395,12 @@ const en = {
   "appForm.steps.categories": "Categories",
   "appForm.steps.declaration": "Declaration",
   "appForm.steps.review": "Review",
-  "appForm.categoryLabels.6_1": "6.1 – Residence Verification & Proximity",
-  "appForm.categoryLabels.6_2": "6.2 – Alumni",
-  "appForm.categoryLabels.6_3": "6.3 – Siblings",
-  "appForm.categoryLabels.6_4": "6.4 – Period of Service & Distance",
-  "appForm.categoryLabels.6_5": "6.5 – Transfer Applications",
-  "appForm.categoryLabels.6_6": "6.6 – Foreign Employment",
+  "appForm.categoryLabels.6_1": "6.1 - Residence Verification & Proximity",
+  "appForm.categoryLabels.6_2": "6.2 - Alumni",
+  "appForm.categoryLabels.6_3": "6.3 - Siblings",
+  "appForm.categoryLabels.6_4": "6.4 - Period of Service & Distance",
+  "appForm.categoryLabels.6_5": "6.5 - Transfer Applications",
+  "appForm.categoryLabels.6_6": "6.6 - Foreign Employment",
   "appForm.stepIndicator.stepOf": "Step {current} of {total}",
   "appForm.stepIndicator.percentComplete": "{percent}% complete",
   "appForm.stepIndicator.ariaLabel": "Form steps",
@@ -411,11 +411,11 @@ const en = {
   "appForm.birthCert.skipHint":
     "Don't have the birth certificate number yet? You can skip it for now and add it before you submit.",
   "appForm.birthCert.skipButton": "Skip for now",
-  "appForm.birthCert.skippedNotice": "Skipped \u2014 you'll need to add this before submitting.",
+  "appForm.birthCert.skippedNotice": "Skipped - you'll need to add this before submitting.",
   "appForm.birthCert.alreadySkippedNotice":
-    "Already skipped \u2014 enter the number below or continue without it.",
+    "Already skipped - enter the number below or continue without it.",
   "appForm.birthCert.skippedPreviouslyNotice":
-    "Previously skipped \u2014 you can update or remove this field.",
+    "Previously skipped - you can update or remove this field.",
   "appForm.birthCert.duplicateLink": "View existing application options",
   "appForm.birthCert.duplicateTitle": "Existing application found",
   "appForm.birthCert.duplicateDescription":
@@ -437,9 +437,9 @@ const en = {
   "appForm.locationStep.skipHint":
     "Don't know the location yet? You can skip it for now and add it before you submit.",
   "appForm.locationStep.skipButton": "Skip for now",
-  "appForm.locationStep.skippedNotice": "Skipped \u2014 you'll need to add this before submitting.",
+  "appForm.locationStep.skippedNotice": "Skipped - you'll need to add this before submitting.",
   "appForm.locationStep.alreadySkippedNotice":
-    "Already skipped \u2014 select a location below or continue without it.",
+    "Already skipped - select a location below or continue without it.",
   "appForm.applicantStep.heading": "Tell us about the child",
   "appForm.applicantStep.description": "Use the name shown on the child's birth certificate.",
   "appForm.applicantStep.fullNameEn": "Full name in English",
@@ -470,7 +470,7 @@ const en = {
   "appForm.applicantStep.dateOfBirth": "Date of birth",
   "appForm.applicantStep.dateOfBirthRuleAria": "Age requirement for this intake",
   "appForm.applicantStep.dateOfBirthDescription":
-    "The child must be exactly five years old on 31 January 2027 \u2014 born between {earliest} and {latest}.",
+    "The child must be exactly five years old on 31 January 2027 - born between {earliest} and {latest}.",
   "appForm.applicantStep.dateOfBirthCurrentAge": "Current age: {years} years, {months} months.",
   "appForm.applicantStep.dateOfBirthCutoffAge":
     "Age on {date} (admission cutoff): {years} years, {months} months.",
@@ -523,7 +523,7 @@ const en = {
   "appForm.declarationStep.description":
     "This is a collection draft. Nothing will be submitted while collection mode is active.",
   "appForm.declarationStep.completeSkippedHeading":
-    "You skipped some details earlier \u2014 complete them before submitting.",
+    "You skipped some details earlier - complete them before submitting.",
   "appForm.declarationStep.confirmAccuracy":
     "I confirm that the information I provide is accurate to the best of my knowledge.",
   "appForm.declarationStep.consentProcessing":
@@ -751,7 +751,7 @@ const en = {
     "Choose only the circular categories that describe your application. Each category is scored separately out of 100, and you can add a category more than once when the scheme asks for separate records.",
   "category.sectionHeading.categoriesSelected": "{count} {plural} selected",
   "category.sectionHeading.markingCategoryBadge": "Marking category",
-  "category.sectionHeading.entryNumber": " – entry {number}",
+  "category.sectionHeading.entryNumber": " - entry {number}",
   "category.sectionHeading.locked": "Locked",
   "category.sectionHeading.indicativeScore": "Indicative score",
   "category.buttons.lock": "Lock",
@@ -767,7 +767,7 @@ const en = {
   "category.mapRequired.notice":
     "This category needs your home location for proximity scoring. Set it in the Location step before adding this category.",
   "category.mapRequired.configureLink": "Go to Location step",
-  "category.exampleMarks.heading": "Marks summary – {category}",
+  "category.exampleMarks.heading": "Marks summary - {category}",
   "category.exampleMarks.indicativeTotal": "Indicative total",
   "category.exampleMarks.disclaimer":
     "This is a baseline estimate calculated from your answers. The interview panel checks your original documents and may adjust these marks at the interview.",
@@ -782,8 +782,8 @@ const en = {
   "category.nearbySchools.noLocationHint":
     "Complete the location step to choose nearby schools for this category.",
   "category.noHomeLocation": "No home location available for map display.",
-  "category.mainDocumentOptions.titleDeedApplicant": "Title deed – applicant",
-  "category.mainDocumentOptions.titleDeedParents": "Title deed – parents",
+  "category.mainDocumentOptions.titleDeedApplicant": "Title deed - applicant",
+  "category.mainDocumentOptions.titleDeedParents": "Title deed - parents",
   "category.mainDocumentOptions.feederElectoral5yrs":
     "Feeder-area electoral register / birth certificate (min 5 years)",
   "category.mainDocumentOptions.leaseDeed": "Lease deed",
@@ -843,8 +843,8 @@ const en = {
   "category.siblingExamOptions.scholarship": "Grade 5 Scholarship passed (0.5)",
   "category.siblingExamOptions.ol": "G.C.E. (O/L) qualified (1)",
   "category.siblingExamOptions.al": "G.C.E. (A/L) qualified (1.5)",
-  "category.siblingDocumentOptions.titleDeedApplicantSpouse": "Title deed – applicant / spouse",
-  "category.siblingDocumentOptions.titleDeedParents": "Title deed – parents",
+  "category.siblingDocumentOptions.titleDeedApplicantSpouse": "Title deed - applicant / spouse",
+  "category.siblingDocumentOptions.titleDeedParents": "Title deed - parents",
   "category.siblingDocumentOptions.feederElectoral5yrs":
     "Feeder-area electoral register / birth certificate (min 5 years)",
   "category.siblingDocumentOptions.leaseDeed": "Lease deed",
@@ -866,7 +866,7 @@ const en = {
   // Category 6.1 fields
   "category.61.mainDocument.label": "Main residence document",
   "category.61.mainDocument.hint":
-    "Document marks (max 20):\n• Title deed – applicant: 20\n• Title deed – parents: 16\n• Feeder electoral 5yr: 15\n• Lease deed: 10\n• Municipal/DS certificate: 5\n• Other documents: 4\n\nDeed age multiplier:\n• 5+ years = 100%\n• 4 years = 80%\n• 3 years = 60%\n• 2 years = 40%\n• 1 year = 20%\n• 6 months = 10%\n• <6 months = 5%",
+    "Document marks (max 20):\n• Title deed - applicant: 20\n• Title deed - parents: 16\n• Feeder electoral 5yr: 15\n• Lease deed: 10\n• Municipal/DS certificate: 5\n• Other documents: 4\n\nDeed age multiplier:\n• 5+ years = 100%\n• 4 years = 80%\n• 3 years = 60%\n• 2 years = 40%\n• 1 year = 20%\n• 6 months = 10%\n• <6 months = 5%",
   "category.61.documentRegistrationDate": "Document registration date",
   "category.61.deedTransferDate.label": "Date of deed transfer / document registration",
   "category.61.deedTransferDate.hint":
@@ -874,14 +874,14 @@ const en = {
   "category.61.supportingDocs.label": "Supporting documents",
   "category.61.supportingDocs.hint":
     "1 mark per document, max 5.\n\nAccepted documents:\n• NIC\n• Driving licence\n• Landline bill\n• Marriage certificate\n• Life insurance policy\n• School leaving certificate\n• Child birth certificate\n• Vehicle registration\n• Bank passbook",
-  "category.61.electoralMother.label": "Electoral register \u2013 mother",
+  "category.61.electoralMother.label": "Electoral register - mother",
   "category.61.electoralMother.yearLabel": "Mother's registered years",
   "category.61.electoralMother.hint":
-    "2.5 marks per checked year ({startYear}\u2013{endYear}). Combined with father, max 25 marks.",
-  "category.61.electoralFather.label": "Electoral register \u2013 father",
+    "2.5 marks per checked year ({startYear} - {endYear}). Combined with father, max 25 marks.",
+  "category.61.electoralFather.label": "Electoral register - father",
   "category.61.electoralFather.yearLabel": "Father's registered years",
   "category.61.electoralFather.hint":
-    "2.5 marks per checked year ({startYear}\u2013{endYear}). Combined with mother, max 25 marks.",
+    "2.5 marks per checked year ({startYear} - {endYear}). Combined with mother, max 25 marks.",
   "category.61.electoralTotal": "Electoral register total",
   "category.61.electoralTotal.hint":
     "2.5 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 25 marks.\n\nExample: Both 5 years = 25",
@@ -976,7 +976,7 @@ const en = {
     "Two or more siblings applying to other grades of the same school",
   "category.63.cocurricular.label": "Sibling co-curricular & prefect",
   "category.63.cocurricular.hint":
-    "Prefect skill: 0.25–2 per achievement\nExam: 0.5 (scholarship) / 1 (O/L) / 1.5 (A/L)\nPraiseworthy: 2\nParent support: 4\n\nMax 10 marks",
+    "Prefect skill: 0.25 - 2 per achievement\nExam: 0.5 (scholarship) / 1 (O/L) / 1.5 (A/L)\nPraiseworthy: 2\nParent support: 4\n\nMax 10 marks",
   "category.63.cocurricular.prefectLevel": "Sibling prefect skill level",
   "category.63.cocurricular.prefectLevelPlaceholder": "Select highest level",
   "category.63.cocurricular.achievements": "Achievements at that level",
@@ -987,13 +987,13 @@ const en = {
   "category.63.cocurricular.parentSupport": "Support rendered by parents",
   "category.63.residenceDocument.label": "Residence document",
   "category.63.residenceDocument.hint":
-    "Document marks (max 10):\n• Title deed – applicant/spouse: 10\n• Title deed – parents: 6\n• Feeder electoral 5yr: 6\n• Lease deed: 4\n• Municipal/DS/Rent Act: 4\n• Other documents: 2",
+    "Document marks (max 10):\n• Title deed - applicant/spouse: 10\n• Title deed - parents: 6\n• Feeder electoral 5yr: 6\n• Lease deed: 4\n• Municipal/DS/Rent Act: 4\n• Other documents: 2",
   "category.63.electoralMother.yearLabel": "Mother's registered years",
   "category.63.electoralMother.hint":
-    "2 marks per checked year ({startYear}\u2013{endYear}). Combined with father, max 20 marks.",
+    "2 marks per checked year ({startYear} - {endYear}). Combined with father, max 20 marks.",
   "category.63.electoralFather.yearLabel": "Father's registered years",
   "category.63.electoralFather.hint":
-    "2 marks per checked year ({startYear}\u2013{endYear}). Combined with mother, max 20 marks.",
+    "2 marks per checked year ({startYear} - {endYear}). Combined with mother, max 20 marks.",
   "category.63.electoralTotal": "Electoral register total",
   "category.63.electoralTotal.hint":
     "2 marks per person-year.\n\nMother + father combined,\nmax 5 years each = 20 marks.\n\nExample: Both 5 years = 20",
@@ -1007,7 +1007,7 @@ const en = {
   "category.64.servicePeriod.dateHint": "When did the parent start their teaching service?",
   "category.64.difficultService.label": "Difficult service",
   "category.64.difficultService.hint":
-    "Current school: 25 marks\nPrevious school: max(15, distance bonus) + extra periods\n\nDistance bonus:\n• 150+ km: 15\n• 100–150 km: 10\n• 75–100 km: 5\n\n+0.5 per extra period of 6 months",
+    "Current school: 25 marks\nPrevious school: max(15, distance bonus) + extra periods\n\nDistance bonus:\n• 150+ km: 15\n• 100 - 150 km: 10\n• 75 - 100 km: 5\n\n+0.5 per extra period of 6 months",
   "category.64.difficultService.typeLabel": "Type of difficult service",
   "category.64.difficultService.currentSchool": "Current school",
   "category.64.difficultService.previousSchool": "Previous school",
@@ -1027,16 +1027,16 @@ const en = {
   "category.64.serviceLocation.province": "Province",
   "category.64.serviceLocation.educationInstitution": "Education institution",
   "category.64.residenceToSchool.label": "Residence to school",
-  "category.64.residenceToSchool.hint": "Within 1 km: 10\n1–3 km: 8\n3–5 km: 6\n>5 km: 4",
+  "category.64.residenceToSchool.hint": "Within 1 km: 10\n1 - 3 km: 8\n3 - 5 km: 6\n>5 km: 4",
   "category.64.residenceToSchool.distanceLabel": "Distance (km)",
   "category.64.workplaceToSchool.label": "Workplace to school",
   "category.64.workplaceToSchool.hint":
-    "100+ km: 25\n70–100 km: 20\n40–70 km: 15\n20–40 km: 10\n<20 km: 5",
+    "100+ km: 25\n70 - 100 km: 20\n40 - 70 km: 15\n20 - 40 km: 10\n<20 km: 5",
   "category.64.workplaceToSchool.distanceLabel": "Distance (km)",
   // Category 6.5 fields
   "category.65.prevWorkplaceDistance.label": "Previous workplace distance",
   "category.65.prevWorkplaceDistance.hint":
-    ">150 km: 35\n100–150 km: 28\n50–100 km: 21\n<50 km: 0\n\nMust be ≥50 km",
+    ">150 km: 35\n100 - 150 km: 28\n50 - 100 km: 21\n<50 km: 0\n\nMust be ≥50 km",
   "category.65.prevWorkplaceDistance.distanceLabel": "Distance (km)",
   "category.65.servicePeriod.label": "Period of service",
   "category.65.servicePeriod.hint":
@@ -1044,13 +1044,13 @@ const en = {
   "category.65.servicePeriod.dateLabel": "Date of first appointment",
   "category.65.servicePeriod.dateHint": "When did the parent start their teaching service?",
   "category.65.prevWorkplacePeriod.label": "Period at previous workplace",
-  "category.65.prevWorkplacePeriod.hint": "3+ years: 10\n2–3 years: 8\n1–2 years: 5\n<1 year: 0",
+  "category.65.prevWorkplacePeriod.hint": "3+ years: 10\n2 - 3 years: 8\n1 - 2 years: 5\n<1 year: 0",
   "category.65.prevWorkplacePeriod.dateLabel": "Date started at previous workplace",
   "category.65.prevWorkplacePeriod.dateHint":
     "When did the parent start working at the previous school?",
   "category.65.timeSinceTransfer.label": "Time since transfer",
   "category.65.timeSinceTransfer.hint":
-    "Within 1 year: 5\n1–2 years: 4\n2–3 years: 3\n3–4 years: 2\n4–5 years: 1\n>5 years: 0",
+    "Within 1 year: 5\n1 - 2 years: 4\n2 - 3 years: 3\n3 - 4 years: 2\n4 - 5 years: 1\n>5 years: 0",
   "category.65.timeSinceTransfer.dateLabel": "Date of transfer",
   "category.65.timeSinceTransfer.dateHint": "When was the transfer received?",
   "category.65.unutilizedLeave.label": "Unutilized leave",
@@ -1062,7 +1062,7 @@ const en = {
   // Category 6.6 fields
   "category.66.periodAbroad.label": "Period abroad with child",
   "category.66.periodAbroad.hint":
-    "Continuous 3+ years: 25\n2–3 years: 15\n1–2 years: 10\n<1 year: 0\n\nMust be 2024.07–2025.06",
+    "Continuous 3+ years: 25\n2 - 3 years: 15\n1 - 2 years: 10\n<1 year: 0\n\nMust be 2024.07 - 2025.06",
   "category.66.periodAbroad.dateLeft": "Date left Sri Lanka",
   "category.66.periodAbroad.dateLeftHint": "When did the parent leave for foreign employment?",
   "category.66.periodAbroad.dateReturned": "Date returned to Sri Lanka",

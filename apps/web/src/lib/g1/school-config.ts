@@ -83,7 +83,7 @@ export const SUPPORT_CONTACT = {
  * something this app can fill in on their behalf.
  */
 export function buildSupportWhatsAppLink(sessionCode: string): string {
-  const code = sessionCode.trim() || "\u2014";
+  const code = sessionCode.trim() || "-";
   const message =
     `I've an issue [describe your issue here] for the submission ${code} and I would like to be able ` +
     "to fix it before the submission - could you allocate some time for me or something?";
