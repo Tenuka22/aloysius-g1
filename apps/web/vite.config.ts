@@ -35,7 +35,12 @@ export default defineConfig({
     // command otherwise picks a different srvx adapter depending on the
     // host OS (confirmed: node.mjs on Windows, bun.mjs on Linux for this
     // exact command), so leaving it unset is not reliably deterministic.
-    nitro({ preset: "node-server" }),
+    //
+    // Vercel's own build (apps/web/package.json's "vercel-build" script, which
+    // Vercel always runs with process.env.VERCEL set) needs Nitro's "vercel"
+    // preset instead - a plain build's serverless-function output, not this
+    // long-running HTTP server shape - so the pin only applies outside Vercel.
+    nitro({ preset: process.env.VERCEL ? "vercel" : "node-server" }),
     // react's vite plugin must come after start's vite plugin
     react(),
   ],
