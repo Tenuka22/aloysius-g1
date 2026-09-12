@@ -109,8 +109,11 @@ Two marks per year the applicant received education at the school, up to thirtee
 
 ### 6.2.7 Contribution to School Activities (Maximum Marks 02)
 
-- Sports Meet – Marks: 0.5
-- Shramadana (Community Service) – Marks: 0.5
+- Carnivals (circular's "Sports Meet") – Marks: 0.5 each
+- Shramadana (Community Service) – Marks: 0.5 each
+- Other (free-text, up to 4 applicant-named entries) – Marks: 0.5 each
+
+> All three buckets share the same 0.5-per-occasion rate and the same 2-mark ceiling; "Other" lets an applicant record a contribution that doesn't fit the two named categories without losing marks for it.
 
 ### 6.2.8 Contribution to School Projects (Maximum Marks 05)
 
@@ -190,7 +193,7 @@ Applies to teachers and other education-sector staff (circular section 7.5). Sec
 
 > The circular states marks for every section that follows (7.5.2 - 7.5.6) are given "only to applicants who have earned marks" here. Scoring zero on this section zeroes the entire rest of the category, not just this row.
 
-**Path I - service at an institution directly affecting school education** (current station only):
+**Path I - service at an institution directly affecting school education** (up to two independently-dated periods, e.g. the current station plus an earlier one before a transfer, summed under the shared 10-mark ceiling):
 
 | Current station | Rate | Cap |
 |---|---|---|

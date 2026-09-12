@@ -24,6 +24,7 @@ export type CategoryType = (typeof CATEGORY_TYPES)[number];
 
 export type SportsEntry = { name?: string; levels?: string[] };
 export type SocietyEntry = { name?: string; roles?: string[] };
+export type OtherContributionEntry = { count?: number; description?: string };
 
 export type ScoringInputs = {
   mainDocumentType?: string;
@@ -46,6 +47,11 @@ export type ScoringInputs = {
   contributionPath?: "institution" | "university";
   contributionSameSchool?: boolean;
   contributionServiceStartDate?: string;
+  contributionServiceEndDate?: string;
+  contributionSecondPeriodEnabled?: boolean;
+  contributionSecondSameSchool?: boolean;
+  contributionSecondServiceStartDate?: string;
+  contributionSecondServiceEndDate?: string;
   contributionExamYears?: number;
   contributionCurriculumYears?: number;
   contributionTrainingYears?: number;
@@ -83,8 +89,9 @@ export type ScoringInputs = {
   pastPupilsExecutiveCount?: number;
   highestDegree?: string;
   hasDiploma?: boolean;
-  sportsMeetContribution?: number;
+  carnivalContribution?: number;
   shramadanaContribution?: number;
+  otherContributionEntries?: OtherContributionEntry[];
   schoolProjectsContribution?: boolean;
   schoolProjectsDescription?: string;
   siblingGradesCompletedCount?: number;

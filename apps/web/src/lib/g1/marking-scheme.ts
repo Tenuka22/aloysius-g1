@@ -137,8 +137,9 @@ export const DEGREE_MAX = 5;
 /** Diploma / Higher Diploma marks. */
 export const DIPLOMA_MARKS = 2;
 
-/** Sports Meet contribution marks. */
-export const SPORTS_MEET_CONTRIBUTION = 0.5;
+/** Carnival contribution marks - also the per-occasion rate for the
+ * free-text "other" school-contribution entries below. */
+export const CARNIVAL_CONTRIBUTION = 0.5;
 
 /** Shramadana (Community Service) contribution marks. */
 export const SHRAMADANA_CONTRIBUTION = 0.5;
@@ -243,12 +244,15 @@ export const UNUTILIZED_LEAVE_MAX = 10;
  * not just this row - see `scoreCategory64`.
  *
  * Path I - service at an institution directly affecting school education,
- * for the CURRENT station only: 2 marks/year if that station is the very
- * school being applied to, else 1.5 marks/year elsewhere (another school,
- * zonal/provincial education office, the Ministry, Dept. of Examinations,
- * Educational Publications Dept., NIE, a National College of Education, or
- * a Teacher Centre), each capped at 5 years. Under 1 year at the current
- * station earns half of one year's rate instead of the per-year formula. */
+ * summed across up to two independently-dated periods (e.g. the current
+ * station plus an earlier one, before a transfer): 2 marks/year for a
+ * period at the very school being applied to, else 1.5 marks/year
+ * elsewhere (another school, zonal/provincial education office, the
+ * Ministry, Dept. of Examinations, Educational Publications Dept., NIE, a
+ * National College of Education, or a Teacher Centre), each period capped
+ * at 5 years. A period under 1 year earns half of one year's rate instead
+ * of the per-year formula. The two periods' marks are summed and capped
+ * at the shared 10-mark ceiling below. */
 export const CONTRIBUTION_PATH1_SAME_SCHOOL_RATE = 2;
 export const CONTRIBUTION_PATH1_ELSEWHERE_RATE = 1.5;
 export const CONTRIBUTION_PATH1_YEARS_CAP = 5;

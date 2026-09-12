@@ -834,6 +834,8 @@ const en = {
   "category.studentSocietiesRoleOptions.vicePresident":
     "Vice President / Vice Secretary / Vice Treasurer",
   "category.studentSocietiesRoleOptions.president": "President / Secretary / Treasurer",
+  "category.studentSocietiesRoleOptions.vicePresidentShort": "VP / VS / VT",
+  "category.studentSocietiesRoleOptions.presidentShort": "Pres / Sec / Treas",
   "category.otherActivityOptions.juniorBandLeader": "Junior Band Leader",
   "category.otherActivityOptions.juniorBandMember": "Junior Band Member",
   "category.otherActivityOptions.seniorBandLeader": "Senior Band Leader",
@@ -967,9 +969,13 @@ const en = {
   "category.62.diploma.checkbox": "Diploma / Higher Diploma / NVQ 5, 6 (more than 2 years)",
   "category.62.contribution.label": "Contribution to School Activities",
   "category.62.contribution.hint":
-    "0.5 marks per occasion, for each of:\n\u2022 Sports Meet\n\u2022 Shramadana (Community Service)\n\nMax 2 marks combined",
-  "category.62.contribution.sportsMeet": "Sports Meet (times contributed)",
+    "0.5 marks per occasion, for each of:\n\u2022 Carnivals\n\u2022 Shramadana (Community Service)\n\u2022 Other (describe below)\n\nMax 2 marks combined",
+  "category.62.contribution.carnivals": "Carnivals (times contributed)",
   "category.62.contribution.shramadana": "Shramadana / Community Service (times contributed)",
+  "category.62.contribution.otherLabel": "Other (times contributed, and what it was)",
+  "category.62.contribution.otherCountLabel": "Other contribution {row} - times contributed",
+  "category.62.contribution.otherDescriptionLabel": "Other contribution {row} - description",
+  "category.62.contribution.otherDescriptionPlaceholder": "e.g. Prize-giving assistance",
   "category.62.schoolProjects.label": "Contribution to School Projects",
   "category.62.schoolProjects.hint":
     "Contributed to school projects:\n4 marks\n\nOtherwise: 0 marks",
@@ -1017,7 +1023,7 @@ const en = {
   // Category 6.4 fields
   "category.64.contribution.label": "Contribution to school education",
   "category.64.contribution.hint":
-    "Institution service (current station only): 2/year if it's the school being applied to (max 10), else 1.5/year (max 7.5). Under 1 year: half of one year's rate.\nUniversity staff: 0.5/year each for exams, curriculum, and training involvement (max 2.5 each).\n\nMax 10 marks. Earning zero here means the rest of this category (period of service, difficult service, leave, distances) also scores zero.",
+    "Institution service: 2/year if it's the school being applied to (max 10), else 1.5/year (max 7.5). Under 1 year: half of one year's rate. Up to two periods (e.g. this station plus an earlier one) can be added together.\nUniversity staff: 0.5/year each for exams, curriculum, and training involvement (max 2.5 each).\n\nMax 10 marks. Earning zero here means the rest of this category (period of service, difficult service, leave, distances) also scores zero.",
   "category.64.contribution.pathLabel": "Type of contribution",
   "category.64.contribution.institutionPath": "Service at a qualifying institution",
   "category.64.contribution.universityPath": "National-level contribution (university staff)",
@@ -1025,6 +1031,11 @@ const en = {
   "category.64.contribution.serviceStartLabel": "Date started at this station",
   "category.64.contribution.serviceStartHint":
     "2 marks/year if this is the school being applied to (max 10), else 1.5 marks/year elsewhere (max 7.5). Under 1 year earns half of one year's rate.",
+  "category.64.contribution.serviceEndLabel": "Date ended at this station",
+  "category.64.contribution.serviceEndHint": "Leave blank if still serving at this station.",
+  "category.64.contribution.addSecondPeriod":
+    "Add another period of institution service (e.g. an earlier station, before transferring here)",
+  "category.64.contribution.secondPeriodLabel": "Second period of service",
   "category.64.contribution.examYears": "Years involved with national exams (Dept. of Examinations)",
   "category.64.contribution.curriculumYears": "Years involved with NIE curriculum development",
   "category.64.contribution.trainingYears": "Years involved with national teacher-training programmes",
@@ -1038,7 +1049,11 @@ const en = {
     "When did the parent become a permanent employee of a qualifying education-sector institution?",
   "category.64.difficultService.label": "Difficult service",
   "category.64.difficultService.hint":
-    "Currently serving: 5 marks/year, max 25.\nPreviously served: higher of 3 marks/year (max 15) or a distance-tier rate for years at the original station (150+km: 3/yr max 15, 100-150km: 2/yr max 10, 75-100km: 1/yr max 5).\n\nOnce a full year is complete, a 6+ month remainder adds a one-off half-rate bonus.",
+    "Currently serving: 5 marks/year, max 25.\nPreviously served: higher of two rates - see the live breakdown below - max 15.\n\nOnce a full year is complete, a 6+ month remainder adds a one-off half-rate bonus.",
+  "category.64.difficultService.breakdownOfficial": "Officially difficult station: {years} yrs \u00d7 {rate}/yr",
+  "category.64.difficultService.breakdownDistance": "Distance tier ({km}km \u2192 {rate}/yr): {years} yrs",
+  "category.64.difficultService.breakdownDistanceNoKm": "Distance tier: enter a distance to compute",
+  "category.64.difficultService.breakdownApplied": "Applied (higher of the two)",
   "category.64.difficultService.typeLabel": "Type of difficult service",
   "category.64.difficultService.currentSchool": "Currently serving in a difficult station",
   "category.64.difficultService.currentRateNote": "5/year, max 25",

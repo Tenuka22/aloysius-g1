@@ -68,6 +68,11 @@ export const scoringInputsSchema = z.object({
   contributionPath: z.enum(["institution", "university"]).optional(),
   contributionSameSchool: z.boolean().optional(),
   contributionServiceStartDate: z.string().optional(),
+  contributionServiceEndDate: z.string().optional(),
+  contributionSecondPeriodEnabled: z.boolean().optional(),
+  contributionSecondSameSchool: z.boolean().optional(),
+  contributionSecondServiceStartDate: z.string().optional(),
+  contributionSecondServiceEndDate: z.string().optional(),
   contributionExamYears: z.coerce.number().optional(),
   contributionCurriculumYears: z.coerce.number().optional(),
   contributionTrainingYears: z.coerce.number().optional(),
@@ -150,8 +155,16 @@ export const scoringInputsSchema = z.object({
   pastPupilsExecutiveCount: z.coerce.number().optional(),
   highestDegree: z.enum(["none", "first-degree", "postgraduate", "doctorate", "chartered-professional"]).optional(),
   hasDiploma: z.boolean().optional(),
-  sportsMeetContribution: z.coerce.number().optional(),
+  carnivalContribution: z.coerce.number().optional(),
   shramadanaContribution: z.coerce.number().optional(),
+  otherContributionEntries: z
+    .array(
+      z.object({
+        count: z.coerce.number().optional(),
+        description: z.string().optional(),
+      }),
+    )
+    .optional(),
   schoolProjectsContribution: z.boolean().optional(),
   schoolProjectsDescription: z.string().optional(),
   siblingGradesCompletedCount: z.coerce.number().optional(),

@@ -796,6 +796,8 @@ const si = {
   "category.studentSocietiesRoleOptions.committeeMember": "කාරක සභා සාමාජික",
   "category.studentSocietiesRoleOptions.vicePresident": "උප සභාපති / උප ලේකම් / උප භාණ්ඩාගාරික",
   "category.studentSocietiesRoleOptions.president": "සභාපති / ලේකම් / භාණ්ඩාගාරික",
+  "category.studentSocietiesRoleOptions.vicePresidentShort": "උප සභාපති",
+  "category.studentSocietiesRoleOptions.presidentShort": "සභාපති",
   "category.otherActivityOptions.juniorBandLeader": "කනිෂ්ඨ පෙරදිග/අපරදිග තූර්ය වාදක කණ්ඩායම් නායක",
   "category.otherActivityOptions.juniorBandMember": "කනිෂ්ඨ තූර්ය වාදක කණ්ඩායම් සාමාජික",
   "category.otherActivityOptions.seniorBandLeader": "ජ්‍යෙෂ්ඨ තූර්ය වාදක කණ්ඩායම් නායක",
@@ -928,9 +930,13 @@ const si = {
   "category.62.diploma.checkbox": "ඩිප්ලෝමා / උසස් ඩිප්ලෝමා / NVQ 5, 6 (වසර 2 කට වැඩි)",
   "category.62.contribution.label": "පාසල් ක්‍රියාකාරකම් සඳහා දැක්වූ දායකත්වය",
   "category.62.contribution.hint":
-    "එක් වතාවක් සඳහා ලකුණු 0.5 බැගින්:\n• නිවාසාන්තර ක්‍රීඩා උළෙල\n• ශ්‍රමදාන (සමාජ සේවය)\n\nඑකතුව උපරිම ලකුණු 2 යි",
-  "category.62.contribution.sportsMeet": "නිවාසාන්තර ක්‍රීඩා උළෙල (දායක වූ වාර ගණන)",
+    "එක් වතාවක් සඳහා ලකුණු 0.5 බැගින්:\n• කාර්නිවල්\n• ශ්‍රමදාන (සමාජ සේවය)\n• වෙනත් (පහත විස්තර කරන්න)\n\nඑකතුව උපරිම ලකුණු 2 යි",
+  "category.62.contribution.carnivals": "කාර්නිවල් (දායක වූ වාර ගණන)",
   "category.62.contribution.shramadana": "ශ්‍රමදාන / සමාජ සේවය (දායක වූ වාර ගණන)",
+  "category.62.contribution.otherLabel": "වෙනත් (දායක වූ වාර ගණන සහ එය කුමක්දැයි)",
+  "category.62.contribution.otherCountLabel": "වෙනත් දායකත්වය {row} - දායක වූ වාර ගණන",
+  "category.62.contribution.otherDescriptionLabel": "වෙනත් දායකත්වය {row} - විස්තරය",
+  "category.62.contribution.otherDescriptionPlaceholder": "උදා: ත්‍යාග ප්‍රදානෝත්සවයට සහාය",
   "category.62.schoolProjects.label": "පාසල් ව්‍යාපෘති සඳහා දැක්වූ දායකත්වය",
   "category.62.schoolProjects.hint": "පාසල් ව්‍යාපෘති සඳහා දායක වී ඇත:\nලකුණු 4\n\nනැතහොත්: ලකුණු 0",
   "category.62.schoolProjects.checkbox": "පාසල් ව්‍යාපෘති සඳහා දායක වී ඇත",
@@ -976,7 +982,7 @@ const si = {
   // Category 6.4 fields
   "category.64.contribution.label": "පාසල් අධ්‍යාපනයට දායකත්වය",
   "category.64.contribution.hint":
-    "ආයතන සේවය (වත්මන් ස්ථානය පමණි): අයදුම් කරන පාසල නම් වසරකට 2 (උපරිම 10), නැතහොත් වෙනත් තැනක නම් වසරකට 1.5 (උපරිම 7.5). වසරකට අඩු නම් එක් වසරක අනුපාතයෙන් අඩක්.\nවිශ්ව විද්‍යාල කාර්ය මණ්ඩලය: විභාග, විෂය නිර්දේශ, පුහුණු වැඩසටහන් සඳහා එක් එක් වසරකට 0.5 බැගින් (එකකට උපරිම 2.5).\n\nඋපරිම ලකුණු 10 යි. මෙතැනින් ලකුණු ශුන්‍ය නම්, මෙම ගණයේ ඉතිරි කොටස්ද (සේවා කාලය, දුෂ්කර සේවය, නිවාඩු, දුර) ශුන්‍ය වේ.",
+    "ආයතන සේවය: අයදුම් කරන පාසල නම් වසරකට 2 (උපරිම 10), නැතහොත් වෙනත් තැනක නම් වසරකට 1.5 (උපරිම 7.5). වසරකට අඩු නම් එක් වසරක අනුපාතයෙන් අඩක්. සේවා කාල දෙකක් (මෙම ස්ථානය සහ පෙර ස්ථානයක්) එකට එකතු කළ හැක.\nවිශ්ව විද්‍යාල කාර්ය මණ්ඩලය: විභාග, විෂය නිර්දේශ, පුහුණු වැඩසටහන් සඳහා එක් එක් වසරකට 0.5 බැගින් (එකකට උපරිම 2.5).\n\nඋපරිම ලකුණු 10 යි. මෙතැනින් ලකුණු ශුන්‍ය නම්, මෙම ගණයේ ඉතිරි කොටස්ද (සේවා කාලය, දුෂ්කර සේවය, නිවාඩු, දුර) ශුන්‍ය වේ.",
   "category.64.contribution.pathLabel": "දායකත්ව වර්ගය",
   "category.64.contribution.institutionPath": "සුදුසුකම් ලත් ආයතනයක සේවය",
   "category.64.contribution.universityPath": "ජාතික මට්ටමේ දායකත්වය (විශ්ව විද්‍යාල කාර්ය මණ්ඩලය)",
@@ -984,6 +990,11 @@ const si = {
   "category.64.contribution.serviceStartLabel": "මෙම ස්ථානයේ සේවය ආරම්භ කළ දිනය",
   "category.64.contribution.serviceStartHint":
     "අයදුම් කරන පාසලම නම් වසරකට ලකුණු 2 (උපරිම 10), නැතහොත් වෙනත් තැනක නම් වසරකට ලකුණු 1.5 (උපරිම 7.5). වසරකට අඩු සේවා කාලයකට එක් වසරක අනුපාතයෙන් අඩක් හිමි වේ.",
+  "category.64.contribution.serviceEndLabel": "මෙම ස්ථානයේ සේවය අවසන් කළ දිනය",
+  "category.64.contribution.serviceEndHint": "මෙම ස්ථානයේ දැනටමත් සේවය කරනේ නම් රික්ත තබන්න.",
+  "category.64.contribution.addSecondPeriod":
+    "ආයතන සේවයේ තව සේවා කාලයක් එකතු කරන්න (උදා: මෙපරින් පෙර ස්ථානයක්)",
+  "category.64.contribution.secondPeriodLabel": "දෙවෙනි සේවා කාලය",
   "category.64.contribution.examYears": "ජාතික විභාග (විභාග දෙපාර්තමේන්තුව) සම්බන්ධතාවයේ වසර ගණන",
   "category.64.contribution.curriculumYears": "ජාතික අධ්‍යාපන ආයතනයේ විෂය නිර්දේශ සකස් කිරීමේ වසර ගණන",
   "category.64.contribution.trainingYears": "ජාතික මට්ටමේ ගුරු පුහුණු වැඩසටහන් සම්බන්ධතාවයේ වසර ගණන",
@@ -996,7 +1007,11 @@ const si = {
   "category.64.servicePeriod.dateHint": "දෙමාපියන් සුදුසුකම් ලත් අධ්‍යාපන ආයතනයක ස්ථිර සේවකයෙකු වූයේ කවදාද?",
   "category.64.difficultService.label": "අභියෝගාත්මක / දුෂ්කර සේවය",
   "category.64.difficultService.hint":
-    "දැනට සේවය කරයි: වසරකට ලකුණු 5, උපරිම 25.\nපෙර සේවය කර ඇත: වසරකට ලකුණු 3 (උපරිම 15) හෝ මුල් පත්වීමේ ස්ථානයේ දුර අනුව අනුපාතය (කි.මී.150+: 3/වසර උපරිම 15, කි.මී.100-150: 2/වසර උපරිම 10, කි.මී.75-100: 1/වසර උපරිම 5) අතරින් වැඩි අගය.\n\nපූර්ණ වසරක් සම්පූර්ණ වූ පසු, මාස 6ක් හෝ ඊට වැඩි ඉතිරි කාලයකට එක් වරක් අර්ධ අනුපාතයක් හිමි වේ.",
+    "දැනට සේවය කරයි: වසරකට ලකුණු 5, උපරිම 25.\nපෙර සේවය කර ඇත: රේට් දෙකෙන් වැඩි අගය - පහත සජීවී විස්තරය බලන්න - උපරිම 15.\n\nපූර්ණ වසරක් සම්පූර්ණ වූ පසු, මාස 6ක් හෝ ඊට වැඩි ඉතිරි කාලයකට එක් වරක් අර්ධ අනුපාතයක් හිමි වේ.",
+  "category.64.difficultService.breakdownOfficial": "නිල වශයෙන් දුෂ්කර ස්ථානය: වසර {years} × {rate}/වසර",
+  "category.64.difficultService.breakdownDistance": "දුර මට්ටම (කි.මී.{km} → {rate}/වසර): වසර {years}",
+  "category.64.difficultService.breakdownDistanceNoKm": "දුර මට්ටම: ගණනය කිරීමට දුර ඇතුළත් කරන්න",
+  "category.64.difficultService.breakdownApplied": "අදාළ වන්නේ (දෙකෙන් වැඩි අගය)",
   "category.64.difficultService.typeLabel": "දුෂ්කර සේවා වර්ගය",
   "category.64.difficultService.currentSchool": "දුෂ්කර ස්ථානයක දැනට සේවය කරයි",
   "category.64.difficultService.currentRateNote": "වසරකට 5, උපරිම 25",

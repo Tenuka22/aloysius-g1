@@ -4,6 +4,7 @@ import {
   type CategoryApplication,
   type CategoryType,
   type ScoringInputs,
+  type OtherContributionEntry,
   type SocietyEntry,
   type SportsEntry,
   useApplicationStore,
@@ -14,6 +15,7 @@ import {
   CATEGORY_MAX_MARKS,
   CONTRIBUTION_MAX,
   DEGREE_MAX,
+  DIFFICULT_DISTANCE_RATE_TIERS,
   DIFFICULT_SERVICE_CURRENT_RATE,
   DIFFICULT_SERVICE_MAX,
   DIFFICULT_SERVICE_PREVIOUS_RATE,
@@ -69,7 +71,7 @@ import {
   SIBLING_GRADES_MAX,
   SIBLING_SUPPORT_MARKS,
   SPORTS_MAX,
-  SPORTS_MEET_CONTRIBUTION,
+  CARNIVAL_CONTRIBUTION,
   STUDENT_SOCIETIES_MAX,
   TRANSFER_DISTANCE_MAX,
   TRANSFER_ELAPSED_MAX,
@@ -116,6 +118,7 @@ import {
   workplaceDistanceMarks,
   yearsBetween,
   yearsFromDate,
+  yearsAndMonthsBetween,
   wholeYearsFromDate,
 } from "@/lib/g1/scoring";
 import { useTranslation } from "@/lib/i18n";
@@ -184,7 +187,7 @@ import {
 import { cn } from "@aloysius-admissions/ui/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { Flag, MapPin, Plus } from "lucide-react";
+import { Flag, MapPin, Plus, X as XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { DropdownProps } from "react-day-picker";
 import { SchoolMapPicker } from "./school-map-picker";
@@ -540,6 +543,7 @@ function CalendarDatePicker({
   const effectiveMaxDate = maxDate ?? new Date(now.getFullYear() + 5, 11, 31);
 
   return (
+    <div className="relative w-full">
     <Popover
       open={open}
       onOpenChange={(isOpen, details) => {
@@ -553,17 +557,14 @@ function CalendarDatePicker({
         setOpen(isOpen);
       }}
     >
-      <PopoverTrigger asChild>
-        <button
-          id={id}
-          type="button"
-          className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1"
-        >
-          <span className={parsedDate ? "" : "text-muted-foreground"}>
-            {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
-          </span>
-          <CalendarIcon className="size-4 opacity-50" />
-        </button>
+      <PopoverTrigger
+        id={id}
+        className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1"
+      >
+        <span className={parsedDate ? "" : "text-muted-foreground"}>
+          {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
+        </span>
+        {!parsedDate && <CalendarIcon className="size-4 opacity-50" />}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
@@ -591,6 +592,20 @@ function CalendarDatePicker({
         />
       </PopoverContent>
     </Popover>
+    {parsedDate && (
+      <button
+        type="button"
+        aria-label="Clear date"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={(event) => {
+          event.stopPropagation();
+          onChange(undefined);
+        }}
+      >
+        <XIcon className="size-3.5" />
+      </button>
+    )}
+    </div>
   );
 }
 
@@ -853,16 +868,18 @@ function SportsTable({
                   />
                 </td>
                 {columns.map(([value]) => (
-                  <td key={value} className="text-center py-1.5 px-1">
-                    <Checkbox
-                      className="size-4"
-                      checked={levels.includes(value)}
-                      onCheckedChange={() =>
-                        updateRow({
-                          levels: levels.includes(value) ? levels.filter((v) => v !== value) : [...levels, value],
-                        })
-                      }
-                    />
+                  <td key={value} className="py-1.5 px-1">
+                    <div className="flex justify-center">
+                      <Checkbox
+                        className="size-4"
+                        checked={levels.includes(value)}
+                        onCheckedChange={() =>
+                          updateRow({
+                            levels: levels.includes(value) ? levels.filter((v) => v !== value) : [...levels, value],
+                          })
+                        }
+                      />
+                    </div>
                   </td>
                 ))}
               </tr>
@@ -886,7 +903,7 @@ function SocietiesTable({
 }: {
   id: string;
   entries: SocietyEntry[];
-  columns: readonly (readonly [string, string, number])[];
+  columns: readonly (readonly [string, string, number, string?])[];
   onChange: (patch: Partial<ScoringInputs>) => void;
   t: TFn;
 }) {
@@ -898,13 +915,13 @@ function SocietiesTable({
             <th className="w-32 text-left pb-1.5 pr-2 text-xs font-medium text-muted-foreground">
               {t("category.62.studentSocieties.nameColumnLabel")}
             </th>
-            {columns.map(([value, label, marks]) => (
+            {columns.map(([value, label, marks, fullLabel]) => (
               <th key={value} className="w-16 pb-1.5 px-1 text-center text-[0.65rem] font-medium text-muted-foreground">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger className="block w-full truncate cursor-help">{label}</TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs whitespace-normal">
-                      {label}
+                      {fullLabel ?? label}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -936,16 +953,18 @@ function SocietiesTable({
                   />
                 </td>
                 {columns.map(([value]) => (
-                  <td key={value} className="text-center py-1.5 px-1">
-                    <Checkbox
-                      className="size-4"
-                      checked={roles.includes(value)}
-                      onCheckedChange={() =>
-                        updateRow({
-                          roles: roles.includes(value) ? roles.filter((v) => v !== value) : [...roles, value],
-                        })
-                      }
-                    />
+                  <td key={value} className="py-1.5 px-1">
+                    <div className="flex justify-center">
+                      <Checkbox
+                        className="size-4"
+                        checked={roles.includes(value)}
+                        onCheckedChange={() =>
+                          updateRow({
+                            roles: roles.includes(value) ? roles.filter((v) => v !== value) : [...roles, value],
+                          })
+                        }
+                      />
+                    </div>
                   </td>
                 ))}
               </tr>
@@ -1333,6 +1352,61 @@ function GradeCounts({
   );
 }
 
+/** Up to 4 free-text "other" school-contribution entries (e.g. a carnival
+ * stall, prize-giving assistance) - each entry pairs a times-contributed
+ * count with a description of what it was, at the same per-occasion rate
+ * as Carnivals/Shramadana, under the shared section cap. */
+function OtherContributionRows({
+  id,
+  entries,
+  onChange,
+  rowCount = 4,
+}: {
+  id: string;
+  entries: OtherContributionEntry[];
+  onChange: (patch: Partial<ScoringInputs>) => void;
+  rowCount?: number;
+}) {
+  const { t } = useTranslation();
+  const rowIndexes = Array.from({ length: rowCount }, (_, index) => index);
+  return (
+    <div className="grid gap-2">
+      {rowIndexes.map((index) => {
+        const entry = entries[index] ?? {};
+        const updateRow = (patch: Partial<OtherContributionEntry>) => {
+          const next = [...entries];
+          while (next.length <= index) next.push({});
+          next[index] = { ...next[index], ...patch };
+          onChange({ otherContributionEntries: next });
+        };
+        return (
+          <div key={index} className="flex items-center gap-2">
+            <Input
+              id={`other-contribution-count-${id}-${index}`}
+              type="number"
+              min={0}
+              step="1"
+              value={entry.count ?? ""}
+              placeholder="0"
+              className="w-16 shrink-0"
+              onChange={(event) => updateRow({ count: parseNumber(event.target.value) })}
+              aria-label={t("category.62.contribution.otherCountLabel", { row: index + 1 })}
+            />
+            <Input
+              id={`other-contribution-description-${id}-${index}`}
+              type="text"
+              value={entry.description ?? ""}
+              placeholder={t("category.62.contribution.otherDescriptionPlaceholder")}
+              onChange={(event) => updateRow({ description: event.target.value || undefined })}
+              aria-label={t("category.62.contribution.otherDescriptionLabel", { row: index + 1 })}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Category62Fields({
   category,
   onChange,
@@ -1395,8 +1469,13 @@ export function Category62Fields({
 
   // Contribution marks
   let contributionMarks = 0;
-  contributionMarks += (inputs.sportsMeetContribution ?? 0) * SPORTS_MEET_CONTRIBUTION;
+  contributionMarks += (inputs.carnivalContribution ?? 0) * CARNIVAL_CONTRIBUTION;
   contributionMarks += (inputs.shramadanaContribution ?? 0) * SHRAMADANA_CONTRIBUTION;
+  const otherContributionCount = (inputs.otherContributionEntries ?? []).reduce(
+    (sum, entry) => sum + (entry.count ?? 0),
+    0,
+  );
+  contributionMarks += otherContributionCount * CARNIVAL_CONTRIBUTION;
   contributionMarks = Math.min(contributionMarks, CONTRIBUTION_MAX);
   const projectMarks = inputs.schoolProjectsContribution ? SCHOOL_PROJECTS_MARKS : 0;
 
@@ -1415,8 +1494,18 @@ export function Category62Fields({
   ] as const;
   const studentSocietiesRoleColumns = [
     ["committee-member", t("category.studentSocietiesRoleOptions.committeeMember"), STUDENT_SOCIETIES_ROLE_MARKS["committee-member"]],
-    ["vice-president", t("category.studentSocietiesRoleOptions.vicePresident"), STUDENT_SOCIETIES_ROLE_MARKS["vice-president"]],
-    ["president", t("category.studentSocietiesRoleOptions.president"), STUDENT_SOCIETIES_ROLE_MARKS.president],
+    [
+      "vice-president",
+      t("category.studentSocietiesRoleOptions.vicePresidentShort"),
+      STUDENT_SOCIETIES_ROLE_MARKS["vice-president"],
+      t("category.studentSocietiesRoleOptions.vicePresident"),
+    ],
+    [
+      "president",
+      t("category.studentSocietiesRoleOptions.presidentShort"),
+      STUDENT_SOCIETIES_ROLE_MARKS.president,
+      t("category.studentSocietiesRoleOptions.president"),
+    ],
   ] as const;
 
   return (
@@ -1882,17 +1971,17 @@ export function Category62Fields({
                 hint={t("category.62.contribution.hint")}
               />
               <FlagButton
-                fieldKey="sportsMeetContribution"
+                fieldKey="carnivalContribution"
                 flaggedInputs={flaggedInputs}
                 onToggleInputFlag={onToggleInputFlag}
               />
             </div>
             <div className="grid gap-2">
               <NumberField
-                id={`sports-meet-contribution-${id}`}
-                label={t("category.62.contribution.sportsMeet")}
-                value={inputs.sportsMeetContribution}
-                onChange={(sportsMeetContribution) => onChange({ sportsMeetContribution })}
+                id={`carnival-contribution-${id}`}
+                label={t("category.62.contribution.carnivals")}
+                value={inputs.carnivalContribution}
+                onChange={(carnivalContribution) => onChange({ carnivalContribution })}
               />
               <NumberField
                 id={`shramadana-contribution-${id}`}
@@ -1900,6 +1989,16 @@ export function Category62Fields({
                 value={inputs.shramadanaContribution}
                 onChange={(shramadanaContribution) => onChange({ shramadanaContribution })}
               />
+              <div className="grid gap-1">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t("category.62.contribution.otherLabel")}
+                </span>
+                <OtherContributionRows
+                  id={id}
+                  entries={inputs.otherContributionEntries ?? []}
+                  onChange={onChange}
+                />
+              </div>
             </div>
           </div>
 
@@ -2252,6 +2351,56 @@ export function Category63Fields({
   );
 }
 
+/** Live, always-visible computation of the two 7.5.3.2 rates - officially
+ * classified difficult station vs. distance tier - shown side by side with
+ * the years and rate behind each number, so the applicant can see exactly
+ * why the higher-of-the-two marks landed where they did instead of having
+ * to reverse-engineer a single badge number from a dense tooltip. */
+function DifficultServiceBreakdown({
+  previousStartDate,
+  previousEndDate,
+  distanceStartDate,
+  distanceEndDate,
+  distanceKm,
+}: {
+  previousStartDate: string | undefined;
+  previousEndDate: string | undefined;
+  distanceStartDate: string | undefined;
+  distanceEndDate: string | undefined;
+  distanceKm: number | undefined;
+}) {
+  const { t } = useTranslation();
+  const previousMarks = difficultServicePreviousMarks(previousStartDate, previousEndDate);
+  const distanceMarks = difficultServiceDistanceMarks(distanceStartDate, distanceEndDate, distanceKm);
+  const { years: previousYears } = yearsAndMonthsBetween(previousStartDate, previousEndDate);
+  const { years: distanceYears } = yearsAndMonthsBetween(distanceStartDate, distanceEndDate);
+  const tier = distanceKm != null ? DIFFICULT_DISTANCE_RATE_TIERS.find(([minKm]) => distanceKm >= minKm) : undefined;
+  const appliedMarks = Math.min(Math.max(previousMarks, distanceMarks), DIFFICULT_SERVICE_MAX);
+  const previousApplies = appliedMarks > 0 && previousMarks >= distanceMarks;
+  const distanceApplies = appliedMarks > 0 && distanceMarks > previousMarks;
+  return (
+    <div className="grid gap-1 rounded-lg border bg-muted/30 p-2.5 text-xs">
+      <div className={`flex items-center justify-between gap-3 ${previousApplies ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+        <span>{t("category.64.difficultService.breakdownOfficial", { years: previousYears, rate: DIFFICULT_SERVICE_PREVIOUS_RATE })}</span>
+        <span className="shrink-0 tabular-nums">{markSuffix(t, previousMarks)}</span>
+      </div>
+      <div className={`flex items-center justify-between gap-3 ${distanceApplies ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+        <span>
+          {tier
+            ? t("category.64.difficultService.breakdownDistance", { km: distanceKm ?? 0, rate: tier[1], years: distanceYears })
+            : t("category.64.difficultService.breakdownDistanceNoKm")}
+        </span>
+        <span className="shrink-0 tabular-nums">{markSuffix(t, distanceMarks)}</span>
+      </div>
+      <Separator className="my-0.5" />
+      <div className="flex items-center justify-between gap-3 font-semibold text-foreground">
+        <span>{t("category.64.difficultService.breakdownApplied")}</span>
+        <span className="shrink-0 tabular-nums">{markSuffix(t, appliedMarks)}</span>
+      </div>
+    </div>
+  );
+}
+
 export function Category64Fields({
   category,
   onChange,
@@ -2282,8 +2431,8 @@ export function Category64Fields({
       inputs.difficultServicePreviousEndDate,
     );
     const distanceBranch = difficultServiceDistanceMarks(
-      inputs.difficultServicePreviousStartDate,
-      inputs.difficultServicePreviousEndDate,
+      inputs.difficultServiceDistanceStartDate,
+      inputs.difficultServiceDistanceEndDate,
       inputs.difficultServiceDistanceKm,
     );
     difficultMarks = Math.max(previousBranch, distanceBranch);
@@ -2333,7 +2482,8 @@ export function Category64Fields({
             />
           </RadioGroup>
           {(inputs.contributionPath ?? "institution") === "institution" && (
-              <div className="grid grid-cols-2 gap-5 pt-3 max-md:grid-cols-1">
+              <div className="grid gap-4 pt-3">
+              <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
                     className="size-4"
@@ -2349,6 +2499,57 @@ export function Category64Fields({
                   value={inputs.contributionServiceStartDate}
                   onChange={(contributionServiceStartDate) => onChange({ contributionServiceStartDate })}
                 />
+                <DateField
+                  id={`contribution-end-${id}`}
+                  label={t("category.64.contribution.serviceEndLabel")}
+                  hint={t("category.64.contribution.serviceEndHint")}
+                  value={inputs.contributionServiceEndDate}
+                  onChange={(contributionServiceEndDate) => onChange({ contributionServiceEndDate })}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  id={`contribution-second-period-toggle-${id}`}
+                  className="size-4"
+                  checked={inputs.contributionSecondPeriodEnabled === true}
+                  onCheckedChange={(checked) => onChange({ contributionSecondPeriodEnabled: checked === true })}
+                />
+                {t("category.64.contribution.addSecondPeriod")}
+              </label>
+              {inputs.contributionSecondPeriodEnabled && (
+                  <div className="grid gap-1.5">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("category.64.contribution.secondPeriodLabel")}
+                    </span>
+                    <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          className="size-4"
+                          checked={inputs.contributionSecondSameSchool === true}
+                          onCheckedChange={(checked) => onChange({ contributionSecondSameSchool: checked === true })}
+                        />
+                        {t("category.64.contribution.sameSchool")}
+                      </label>
+                      <DateField
+                        id={`contribution-second-start-${id}`}
+                        label={t("category.64.contribution.serviceStartLabel")}
+                        value={inputs.contributionSecondServiceStartDate}
+                        onChange={(contributionSecondServiceStartDate) =>
+                          onChange({ contributionSecondServiceStartDate })
+                        }
+                      />
+                      <DateField
+                        id={`contribution-second-end-${id}`}
+                        label={t("category.64.contribution.serviceEndLabel")}
+                        hint={t("category.64.contribution.serviceEndHint")}
+                        value={inputs.contributionSecondServiceEndDate}
+                        onChange={(contributionSecondServiceEndDate) =>
+                          onChange({ contributionSecondServiceEndDate })
+                        }
+                      />
+                    </div>
+                  </div>
+              )}
               </div>
           )}
           {inputs.contributionPath === "university" && (
@@ -2502,6 +2703,13 @@ export function Category64Fields({
                     />
                   </div>
                 </div>
+                <DifficultServiceBreakdown
+                  previousStartDate={inputs.difficultServicePreviousStartDate}
+                  previousEndDate={inputs.difficultServicePreviousEndDate}
+                  distanceStartDate={inputs.difficultServiceDistanceStartDate}
+                  distanceEndDate={inputs.difficultServiceDistanceEndDate}
+                  distanceKm={inputs.difficultServiceDistanceKm}
+                />
               </div>
           )}
         </Field>

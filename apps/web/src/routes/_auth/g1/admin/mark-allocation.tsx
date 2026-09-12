@@ -135,7 +135,7 @@ const categories: Array<{
         rows: [
           { label: "University degree", formula: "Degree 3 / Postgrad 4 / PhD 5", max: DEGREE_MAX },
           { label: "Diploma / NVQ 5-6", formula: "2 marks", max: DIPLOMA_MARKS },
-          { label: "School activities", formula: "0.5/occasion, Sports meet + Shramadana combined", max: CONTRIBUTION_MAX },
+          { label: "School activities", formula: "0.5/occasion, Carnivals + Shramadana + Other combined", max: CONTRIBUTION_MAX },
           { label: "School projects", formula: "4 marks", max: SCHOOL_PROJECTS_MARKS },
         ],
       },
@@ -180,7 +180,7 @@ const categories: Array<{
         rows: [
           {
             label: "Contribution to school education (GATES the rest of this category)",
-            formula: "Institution: rate/yr at current station | University: 3 sub-items",
+            formula: "Institution: rate/yr, up to 2 summed periods | University: 3 sub-items",
             max: SCHOOL_EDUCATION_CONTRIBUTION_MAX,
             tiers: `Same school ${CONTRIBUTION_PATH1_SAME_SCHOOL_RATE}/yr (max ${CONTRIBUTION_PATH1_SAME_SCHOOL_MAX}) | Elsewhere ${CONTRIBUTION_PATH1_ELSEWHERE_RATE}/yr (max ${CONTRIBUTION_PATH1_ELSEWHERE_MAX}) | <1yr: half rate | University: exams/curriculum/training ${CONTRIBUTION_PATH2_RATE_PER_ITEM}/yr each (max ${CONTRIBUTION_PATH2_ITEM_MAX} each)`,
           },

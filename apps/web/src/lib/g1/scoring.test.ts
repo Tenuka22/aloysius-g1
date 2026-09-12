@@ -194,6 +194,40 @@ describe("scoreCategory62 – alumni", () => {
     ).toBe(5);
   });
 
+  // 6.2.7: renamed from the circular's "Sports Meet" to "Carnivals" in the
+  // UI, plus a free-text "Other" bucket for contributions that don't fit
+  // either named category - all three share the same 0.5/occasion rate
+  // under the same 2-mark combined ceiling.
+  it("sums carnival and shramadana contributions at half a mark each, capped at two", () => {
+    expect(scoreCategory62({ carnivalContribution: 2 }).breakdown[11]?.marks).toBe(1);
+    expect(scoreCategory62({ carnivalContribution: 2, shramadanaContribution: 2 }).breakdown[11]?.marks).toBe(2);
+    expect(scoreCategory62({ carnivalContribution: 10 }).breakdown[11]?.marks).toBe(2); // capped
+  });
+
+  it("sums the free-text other-contribution entries' counts at the same rate", () => {
+    expect(
+      scoreCategory62({
+        otherContributionEntries: [{ description: "Carnival stall", count: 2 }, { description: "Prize giving", count: 1 }],
+      }).breakdown[11]?.marks,
+    ).toBe(1.5); // 3 occasions * 0.5
+  });
+
+  it("combines carnival, shramadana, and other under the shared two-mark cap", () => {
+    expect(
+      scoreCategory62({
+        carnivalContribution: 2,
+        shramadanaContribution: 2,
+        otherContributionEntries: [{ description: "Sports day help", count: 2 }],
+      }).breakdown[11]?.marks,
+    ).toBe(2); // 1 + 1 + 1 = 3, capped at 2
+  });
+
+  it("ignores other-contribution entries with no count", () => {
+    expect(
+      scoreCategory62({ otherContributionEntries: [{ description: "Unfilled" }, {}] }).breakdown[11]?.marks,
+    ).toBe(0);
+  });
+
   it("sums to the documented attainable maximum of sixty-six from collected inputs", () => {
     const maximal = scoreCategory62({
       alumniStartDate: "2013-01-01",
@@ -325,6 +359,54 @@ describe("scoreCategory64 – education sector", () => {
 
     it("scores zero with no service start date", () => {
       expect(scoreCategory64({ contributionPath: "institution", contributionSameSchool: true }).breakdown[0]?.marks).toBe(0);
+    });
+
+    it("closes the first period on its end date instead of measuring through today", () => {
+      expect(
+        scoreCategory64({
+          contributionPath: "institution",
+          contributionSameSchool: true,
+          contributionServiceStartDate: "2020-09-01",
+          contributionServiceEndDate: "2023-09-01", // 3 years, not measured to "now" (2026-09-01)
+        }).breakdown[0]?.marks,
+      ).toBe(6);
+    });
+
+    it("sums a second, independently-dated period with the first", () => {
+      expect(
+        scoreCategory64({
+          contributionPath: "institution",
+          contributionSameSchool: true,
+          contributionServiceStartDate: "2024-09-01", // 2 years -> 4
+          contributionServiceEndDate: "2026-09-01",
+          contributionSecondSameSchool: false,
+          contributionSecondServiceStartDate: "2020-09-01", // 2 years -> 3
+          contributionSecondServiceEndDate: "2022-09-01",
+        }).breakdown[0]?.marks,
+      ).toBe(7);
+    });
+
+    it("caps the sum of both periods at the shared ten-mark ceiling", () => {
+      expect(
+        scoreCategory64({
+          contributionPath: "institution",
+          contributionSameSchool: true,
+          contributionServiceStartDate: "2015-09-01", // 11 years, capped at 5*2=10
+          contributionSecondSameSchool: true,
+          contributionSecondServiceStartDate: "2005-09-01", // 5 years -> 10, but overall capped at 10
+          contributionSecondServiceEndDate: "2010-09-01",
+        }).breakdown[0]?.marks,
+      ).toBe(10);
+    });
+
+    it("ignores an unfilled second period", () => {
+      expect(
+        scoreCategory64({
+          contributionPath: "institution",
+          contributionSameSchool: true,
+          contributionServiceStartDate: "2023-09-01",
+        }).breakdown[0]?.marks,
+      ).toBe(6);
     });
   });
 

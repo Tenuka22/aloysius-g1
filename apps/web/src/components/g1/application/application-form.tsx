@@ -25,6 +25,7 @@ import {
   type CategoryApplication,
   type CategoryType,
   type ScoringInputs,
+  type OtherContributionEntry,
   type SocietyEntry,
   type SportsEntry,
   applyLocationChange,
@@ -227,6 +228,12 @@ function humanizeCategoryFieldValue(key: string, value: unknown): string {
       })
       .join(", ");
   }
+  if (key === "otherContributionEntries" && Array.isArray(value)) {
+    const entries = value as OtherContributionEntry[];
+    const filled = entries.filter((entry) => (entry.count ?? 0) > 0 || (entry.description ?? "").trim() !== "");
+    if (filled.length === 0) return "None";
+    return filled.map((entry) => `${entry.description || "(unnamed)"} \u00d7${entry.count ?? 0}`).join(", ");
+  }
   if (Array.isArray(value)) {
     if (value.length === 0) return "None";
     if (/year/i.test(key)) return value.join(", ");
@@ -282,7 +289,7 @@ const CATEGORY_SCORING_GROUPS: Record<CategoryType, CategoryFieldGroup[]> = {
     { heading: "Academic qualifications", fields: ["highestDegree", "hasDiploma"] },
     {
       heading: "School contributions",
-      fields: ["sportsMeetContribution", "shramadanaContribution", "schoolProjectsContribution", "schoolProjectsDescription"],
+      fields: ["carnivalContribution", "shramadanaContribution", "otherContributionEntries", "schoolProjectsContribution", "schoolProjectsDescription"],
     },
   ],
   "6.3": [
@@ -310,6 +317,11 @@ const CATEGORY_SCORING_GROUPS: Record<CategoryType, CategoryFieldGroup[]> = {
         "contributionPath",
         "contributionSameSchool",
         "contributionServiceStartDate",
+        "contributionServiceEndDate",
+        "contributionSecondPeriodEnabled",
+        "contributionSecondSameSchool",
+        "contributionSecondServiceStartDate",
+        "contributionSecondServiceEndDate",
         "contributionExamYears",
         "contributionCurriculumYears",
         "contributionTrainingYears",
@@ -359,6 +371,11 @@ function societiesEntriesHasValue(value: SocietyEntry[] | undefined): boolean {
   return (value ?? []).some((entry) => (entry.roles ?? []).length > 0);
 }
 
+/** Same padding concern as `sportsEntriesHasValue`, for `otherContributionEntries`. */
+function otherContributionEntriesHasValue(value: OtherContributionEntry[] | undefined): boolean {
+  return (value ?? []).some((entry) => (entry.count ?? 0) > 0 || (entry.description ?? "").trim() !== "");
+}
+
 /** Grouped rows for every field the category step asks for (see
  * `CATEGORY_SCORING_GROUPS`) - filled fields show their value, unfilled ones
  * show as missing so nothing the applicant hasn't gotten to yet goes
@@ -386,6 +403,9 @@ function categoryFieldRows(
       } else if (key === "studentSocietiesEntries") {
         const societyEntries = value as SocietyEntry[] | undefined;
         missing = !societiesEntriesHasValue(societyEntries);
+      } else if (key === "otherContributionEntries") {
+        const otherEntries = value as OtherContributionEntry[] | undefined;
+        missing = !otherContributionEntriesHasValue(otherEntries);
       } else {
         missing = !fieldHasValue(value);
       }

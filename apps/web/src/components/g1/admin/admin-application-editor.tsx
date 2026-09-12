@@ -157,7 +157,7 @@ const DEGREE_LEVELS = ["none", "first-degree", "postgraduate", "doctorate", "cha
 
 type CategoryTextFieldKey = "mainDocumentType" | "documentOwnership" | "otherActivityName" | "highestDegree" | "schoolProjectsDescription";
 type CategoryDateFieldKey = "deedTransferDate" | "serviceStartDate" | "previousWorkplaceStartDate" | "transferDate" | "abroadStartDate" | "abroadEndDate" | "alumniStartDate" | "alumniEndDate" | "pastPupilsLifeMemberStart" | "pastPupilsMembershipStart" | "pastPupilsMembershipEnd" | "contributionServiceStartDate" | "difficultServiceStartDate" | "difficultServicePreviousStartDate" | "difficultServicePreviousEndDate" | "difficultServiceDistanceStartDate" | "difficultServiceDistanceEndDate";
-type CategoryNumberFieldKey = "schoolsRadiusKm" | "difficultServiceDistanceKm" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "siblingGradesCompletedCount" | "pastPupilsCommitteeYears" | "pastPupilsExecutiveCount" | "sportsMeetContribution" | "shramadanaContribution" | "contributionExamYears" | "contributionCurriculumYears" | "contributionTrainingYears";
+type CategoryNumberFieldKey = "schoolsRadiusKm" | "difficultServiceDistanceKm" | "unutilizedLeaveYears" | "residenceToSchoolKm" | "workplaceToSchoolKm" | "previousWorkplaceDistanceKm" | "olSubjectCount" | "olGradeS" | "olGradeC" | "olGradeB" | "olGradeA" | "alSubjectCount" | "alGradeS" | "alGradeC" | "alGradeB" | "alGradeA" | "siblingGradesCompletedCount" | "pastPupilsCommitteeYears" | "pastPupilsExecutiveCount" | "carnivalContribution" | "shramadanaContribution" | "contributionExamYears" | "contributionCurriculumYears" | "contributionTrainingYears";
 type CategoryBooleanFieldKey = "grade5ScholarshipPassed" | "pastPupilsLifeMember" | "hasDiploma" | "schoolProjectsContribution" | "contributionSameSchool";
 
 const CATEGORY_TEXT_FIELDS: Array<[CategoryTextFieldKey, string]> = [
@@ -208,7 +208,7 @@ const CATEGORY_NUMBER_FIELDS: Array<[CategoryNumberFieldKey, string]> = [
   ["siblingGradesCompletedCount", "Grades completed by sibling"],
   ["pastPupilsCommitteeYears", "Past Pupils committee years/terms"],
   ["pastPupilsExecutiveCount", "Past Pupils executive office posts"],
-  ["sportsMeetContribution", "Sports Meet contribution (times)"],
+  ["carnivalContribution", "Carnival contribution (times)"],
   ["shramadanaContribution", "Shramadana contribution (times)"],
   ["contributionExamYears", "Contribution: national exam years"],
   ["contributionCurriculumYears", "Contribution: curriculum development years"],
@@ -257,8 +257,9 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["pastPupilsExecutiveCount", "Past Pupils executive office posts"],
   ["highestDegree", "Highest degree"],
   ["hasDiploma", "Has Diploma / Higher Diploma"],
-  ["sportsMeetContribution", "Sports Meet contribution"],
+  ["carnivalContribution", "Carnival contribution"],
   ["shramadanaContribution", "Shramadana contribution"],
+  ["otherContributionEntries", "Other contribution entries"],
   ["schoolProjectsContribution", "School Projects contribution"],
   ["schoolProjectsDescription", "School projects description"],
   ["siblingGradesCompletedCount", "Grades completed by sibling"],
@@ -272,6 +273,11 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["contributionPath", "Contribution path (institution | university)"],
   ["contributionSameSchool", "Contribution: same school as applied to"],
   ["contributionServiceStartDate", "Contribution: institution service start date"],
+  ["contributionServiceEndDate", "Contribution: institution service end date"],
+  ["contributionSecondPeriodEnabled", "Contribution: second period of service enabled"],
+  ["contributionSecondSameSchool", "Contribution: second period same school as applied to"],
+  ["contributionSecondServiceStartDate", "Contribution: second period service start date"],
+  ["contributionSecondServiceEndDate", "Contribution: second period service end date"],
   ["contributionExamYears", "Contribution: national exam years"],
   ["contributionCurriculumYears", "Contribution: curriculum development years"],
   ["contributionTrainingYears", "Contribution: teacher-training years"],
@@ -373,6 +379,11 @@ function formatScoringValue(key: string, raw: unknown): string {
       const roles = (entry.roles ?? []).join("/");
       return entry.name ? `${entry.name} (${roles})` : roles;
     }).join(", ");
+  }
+  if (key === "otherContributionEntries" && Array.isArray(raw)) {
+    const entries = raw as { count?: number; description?: string }[];
+    const filled = entries.filter((entry) => (entry.count ?? 0) > 0 || (entry.description ?? "").trim() !== "");
+    return filled.length === 0 ? "" : filled.map((entry) => `${entry.description || "(unnamed)"} \u00d7${entry.count ?? 0}`).join(", ");
   }
   if (Array.isArray(raw)) {
     if (key === "schoolsWithinRadius") return `${raw.length} school${raw.length === 1 ? "" : "s"} selected`;

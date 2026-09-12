@@ -32,7 +32,7 @@ import {
   PAST_PUPILS_TOTAL_MAX,
   DEGREE_MAX,
   DIPLOMA_MARKS,
-  SPORTS_MEET_CONTRIBUTION,
+  CARNIVAL_CONTRIBUTION,
   SHRAMADANA_CONTRIBUTION,
   CONTRIBUTION_MAX,
   SCHOOL_PROJECTS_MARKS,
@@ -395,8 +395,13 @@ export function scoreCategory62(inputs: ScoringInputs): CategoryScore {
   const diplomaMarks = inputs.hasDiploma ? DIPLOMA_MARKS : 0;
 
   let contributionMarks = 0;
-  contributionMarks += (inputs.sportsMeetContribution ?? 0) * SPORTS_MEET_CONTRIBUTION;
+  contributionMarks += (inputs.carnivalContribution ?? 0) * CARNIVAL_CONTRIBUTION;
   contributionMarks += (inputs.shramadanaContribution ?? 0) * SHRAMADANA_CONTRIBUTION;
+  const otherContributionCount = (inputs.otherContributionEntries ?? []).reduce(
+    (sum, entry) => sum + (entry.count ?? 0),
+    0,
+  );
+  contributionMarks += otherContributionCount * CARNIVAL_CONTRIBUTION;
   contributionMarks = cap(contributionMarks, CONTRIBUTION_MAX);
 
   const projectMarks = inputs.schoolProjectsContribution ? SCHOOL_PROJECTS_MARKS : 0;
@@ -515,22 +520,48 @@ export function difficultServiceDistanceMarks(
   return rateTimesYearsWithBonus(years, remainderMonths, ratePerYear, tierCap);
 }
 
+/** 7.5.1 Path I, a single period of qualifying-institution service: a
+ * per-year rate (higher if that station is the very school being
+ * applied to), capped per-branch, with a half-rate award for under a
+ * year of service. An open-ended period (no end date) is measured
+ * through today, matching a still-serving applicant; a closed period
+ * (both dates present) lets a second, earlier station also count - see
+ * `contributionMarks64`, which sums two independently-dated periods. */
+function contributionInstitutionPeriodMarks(
+  sameSchool: boolean,
+  startDate: string | undefined,
+  endDate: string | undefined,
+): number {
+  const rate = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_RATE : CONTRIBUTION_PATH1_ELSEWHERE_RATE;
+  const branchMax = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_MAX : CONTRIBUTION_PATH1_ELSEWHERE_MAX;
+  const { years, remainderMonths } = yearsAndMonthsBetween(startDate, endDate);
+  if (years < 1) {
+    if (years === 0 && remainderMonths === 0) return 0;
+    return cap(rate / 2, branchMax);
+  }
+  return cap(Math.min(years, CONTRIBUTION_PATH1_YEARS_CAP) * rate, branchMax);
+}
+
 /** 7.5.1 - an eligibility gate for the rest of category 6.4 (see
- * `scoreCategory64`), not just a standalone line item. Path I pays a
- * per-year rate for CURRENT-station service (higher rate if that station
- * is the very school being applied to), with a half-rate award for under
- * a year of current-station service. Path II sums three UGC-university
+ * `scoreCategory64`), not just a standalone line item. Path I sums up to
+ * two periods of qualifying-institution service (e.g. the current
+ * station plus an earlier one, before a transfer), each its own rate
+ * depending on whether that station is the very school being applied
+ * to, under the shared 10-mark ceiling. Path II sums three UGC-university
  * sub-items, each its own per-year rate capped independently. */
 export function contributionMarks64(inputs: ScoringInputs): number {
   if (inputs.contributionPath === "institution") {
-    const sameSchool = inputs.contributionSameSchool === true;
-    const rate = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_RATE : CONTRIBUTION_PATH1_ELSEWHERE_RATE;
-    const branchMax = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_MAX : CONTRIBUTION_PATH1_ELSEWHERE_MAX;
-    const totalYears = yearsFromDate(inputs.contributionServiceStartDate);
-    if (totalYears <= 0) return 0;
-    const wholeYears = wholeYearsFromDate(inputs.contributionServiceStartDate);
-    if (wholeYears < 1) return cap(rate / 2, branchMax);
-    return cap(Math.min(wholeYears, CONTRIBUTION_PATH1_YEARS_CAP) * rate, branchMax);
+    const firstPeriodMarks = contributionInstitutionPeriodMarks(
+      inputs.contributionSameSchool === true,
+      inputs.contributionServiceStartDate,
+      inputs.contributionServiceEndDate,
+    );
+    const secondPeriodMarks = contributionInstitutionPeriodMarks(
+      inputs.contributionSecondSameSchool === true,
+      inputs.contributionSecondServiceStartDate,
+      inputs.contributionSecondServiceEndDate,
+    );
+    return cap(firstPeriodMarks + secondPeriodMarks, SCHOOL_EDUCATION_CONTRIBUTION_MAX);
   }
   if (inputs.contributionPath === "university") {
     const examMarks = cap((inputs.contributionExamYears ?? 0) * CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX);
