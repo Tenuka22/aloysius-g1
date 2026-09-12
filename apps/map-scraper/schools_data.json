@@ -5662,11 +5662,11 @@
     "mapUrl": "https://www.google.com/maps/place/Sudharma+Maha+Vidyalaya/@6.0339781,80.2369738,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae1724def414269:0x232425e97e990f7c!8m2!3d6.0339781!4d80.2369738!16s%2Fg%2F1tdkknc4?entry=ttu&g_ep=EgoyMDI2MDgzMS4wIKXMDSoASAFQAw%3D%3D"
   },
   {
-    "id": "allsaint-viddyalaya-galle",
-    "en": "Allsaint Viddyalaya",
+    "id": "all-saints-college-galle",
+    "en": "All Saints' College - Galle",
     "si": "",
-    "lat": null,
-    "lng": null,
+    "lat": 6.028389,
+    "lng": 80.21611,
     "genderType": "boys",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -5678,7 +5678,7 @@
       "zone": "Galle",
       "division": "Galle"
     },
-    "mapUrl": null
+    "mapUrl": "https://en.wikipedia.org/wiki/All_Saints_College,_Galle"
   },
   {
     "id": "b-t-s-college-galle",

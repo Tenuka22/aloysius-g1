@@ -8,6 +8,13 @@
       "when": 1788876669364,
       "tag": "0000_lazy_layla_miller",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789204562119,
+      "tag": "0001_gigantic_rawhide_kid",
+      "breakpoints": true
     }
   ]
 }

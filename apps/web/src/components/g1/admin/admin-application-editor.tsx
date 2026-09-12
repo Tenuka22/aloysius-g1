@@ -20,7 +20,7 @@ import { Input } from "@aloysius-admissions/ui/components/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-admissions/ui/components/select";
 import { Badge } from "@aloysius-admissions/ui/components/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs";
-import { Category61Fields, Category62Fields, Category63Fields, Category64Fields, Category66Fields } from "@/components/g1/application/category-step";
+import { Category61Fields, Category62Fields, Category63Fields, Category64Fields, Category65Fields, Category66Fields } from "@/components/g1/application/category-step";
 
 const sections = [
   ["applicant", "Applicant"],
@@ -272,12 +272,7 @@ const SCORING_INPUT_SUMMARY_ROWS: Array<[keyof ScoringInputs, string]> = [
   ["parentsSupportDescription", "Parent support description"],
   ["contributionPath", "Contribution path (institution | university)"],
   ["contributionSameSchool", "Contribution: same school as applied to"],
-  ["contributionServiceStartDate", "Contribution: institution service start date"],
-  ["contributionServiceEndDate", "Contribution: institution service end date"],
-  ["contributionSecondPeriodEnabled", "Contribution: second period of service enabled"],
-  ["contributionSecondSameSchool", "Contribution: second period same school as applied to"],
-  ["contributionSecondServiceStartDate", "Contribution: second period service start date"],
-  ["contributionSecondServiceEndDate", "Contribution: second period service end date"],
+  ["contributionServiceStartDate", "Contribution: current-station service start date"],
   ["contributionExamYears", "Contribution: national exam years"],
   ["contributionCurriculumYears", "Contribution: curriculum development years"],
   ["contributionTrainingYears", "Contribution: teacher-training years"],
@@ -793,7 +788,29 @@ export function AdminApplicationEditor({ id }: { id: string }) {
 }
 
 function AdminFieldSection({ section, label, value, onChange }: { section: keyof ApplicationDraft; label: string; value: Record<string, unknown>; onChange: (section: keyof ApplicationDraft, key: string, value: string | boolean) => void }) {
-  return <div className="border rounded-xl p-4"><h3>{label}</h3><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">{Object.entries(value).filter(([key]) => key !== "sameAsPermanent" && !key.endsWith("Search")).map(([key, item]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{SECTION_FIELD_LABELS[section]?.[key] ?? key.replace(/[A-Z]/g, (letter) => ` ${letter}`).replace(/^./, (letter) => letter.toUpperCase())}</span><Input type={key === "dateOfBirth" ? "date" : key === "email" ? "email" : "text"} value={String(item ?? "")} onChange={(event) => onChange(section, key, event.target.value)} /></label>)}</div>{section === "residence" && <Toggle label="Current address is the same as permanent address" checked={Boolean(value.sameAsPermanent)} onChange={(checked) => onChange(section, "sameAsPermanent", checked)} />}</div>;
+  return <div className="border rounded-xl p-4"><h3>{label}</h3><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">{Object.entries(value).filter(([key]) => key !== "sameAsPermanent" && !key.endsWith("Search")).map(([key, item]) => <label className="grid gap-1" key={key}><span className="text-muted-foreground text-[0.78rem] font-semibold">{SECTION_FIELD_LABELS[section]?.[key] ?? key.replace(/[A-Z]/g, (letter) => ` ${letter}`).replace(/^./, (letter) => letter.toUpperCase())}</span>{key === "dateOfBirth" ? <AdminDateInput value={String(item ?? "")} onChange={(next) => onChange(section, key, next)} /> : <Input type={key === "email" ? "email" : "text"} value={String(item ?? "")} onChange={(event) => onChange(section, key, event.target.value)} />}</label>)}</div>{section === "residence" && <Toggle label="Current address is the same as permanent" checked={Boolean(value.sameAsPermanent)} onChange={(checked) => onChange(section, "sameAsPermanent", checked)} />}</div>;
+}
+
+// A bare native `<input type="date">` gives no reliable cross-browser way to
+// blank a value already set (Chromium shows a hover-only 'x', Firefox/Safari
+// show none at all) - this adds an explicit, always-visible clear control
+// instead of depending on that inconsistent native chrome.
+function AdminDateInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="relative">
+      <Input type="date" value={value} onChange={(event) => onChange(event.target.value)} />
+      {value && (
+        <button
+          type="button"
+          aria-label="Clear date"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          onClick={() => onChange("")}
+        >
+          <X className="size-3.5" />
+        </button>
+      )}
+    </div>
+  );
 }
 
 function AdminLocationHistory({ title, history }: { title: string; history: LocationDraft[] }) {
@@ -836,6 +853,7 @@ function AdminCategoryEditor({ category, onPatch, onRemove }: { category: Catego
       case "6.2": return <Category62Fields category={category} onChange={patch} />;
       case "6.3": return <Category63Fields category={category} onChange={patch} />;
       case "6.4": return <Category64Fields category={category} onChange={patch} />;
+      case "6.5": return <Category65Fields category={category} onChange={patch} />;
       case "6.6": return <Category66Fields category={category} onChange={patch} />;
       default: return (
         <div className="grid gap-x-5 gap-y-1 sm:grid-cols-2">

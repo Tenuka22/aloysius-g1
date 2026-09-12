@@ -29,75 +29,39 @@ function renderCategory64(scoringInputs: ScoringInputs) {
   return { onChange, ...view };
 }
 
-// 7.5.1 Path I used to only accept one open-ended institution-service
-// period (implicitly measured through "now"). It now accepts a second,
-// independently-dated period (e.g. an earlier station before a transfer)
-// that is summed with the first under the shared 10-mark ceiling.
-describe("Category64Fields contribution to school education - two service periods", () => {
-  it("keeps the second period's fields hidden by default, and checking the toggle enables it", () => {
-    const { container, onChange } = renderCategory64({
+// 7.5.1 Path I awards marks "only for the service period at the current
+// service station", so the form collects just the two required inputs: the
+// same-school flag and the current-station start date. (An earlier version
+// also offered an end date and a second, summed period, which contradicted
+// the circular.)
+describe("Category64Fields contribution to school education - current station only", () => {
+  it("renders the required current-station inputs and no extra period fields", () => {
+    const { container } = renderCategory64({
       contributionPath: "institution",
       contributionSameSchool: true,
       contributionServiceStartDate: "2023-09-01",
     });
     const queries = within(container);
     expect(queries.queryByText("Second period of service")).not.toBeInTheDocument();
-
-    // Base UI's Checkbox renders both a visible `span[role=checkbox]` and a
-    // hidden native `input[type=checkbox]` inside the same `<label>`, and
-    // both independently resolve as "the labelled element" to
-    // testing-library's label-text queries - querying the checkbox by its
-    // own id sidesteps that double-match rather than fighting it.
-    const toggle = container.querySelector("#contribution-second-period-toggle-cat-64");
-    expect(toggle).not.toBeNull();
-    fireEvent.click(toggle as Element);
-
-    // The checkbox flips scoringInputs.contributionSecondPeriodEnabled via
-    // the same onChange wiring every other field uses; re-rendering with
-    // that patch applied (rather than asserting on Base UI's own internal
-    // click-to-check behavior, which needs a full pointer-event sequence
-    // jsdom's plain `click` doesn't reproduce) is what actually reveals the
-    // second period's fields.
-    expect(onChange).toHaveBeenCalledWith({ contributionSecondPeriodEnabled: true });
+    expect(container.querySelector("#contribution-start-cat-64")).not.toBeNull();
+    expect(container.querySelector("#contribution-second-period-toggle-cat-64")).toBeNull();
+    expect(container.querySelector("#contribution-second-start-cat-64")).toBeNull();
+    expect(container.querySelector("#contribution-end-cat-64")).toBeNull();
   });
 
-  it("shows the second period's fields once contributionSecondPeriodEnabled is set", () => {
-    const { container } = renderCategory64({
-      contributionPath: "institution",
-      contributionSameSchool: true,
-      contributionServiceStartDate: "2023-09-01",
-      contributionSecondPeriodEnabled: true,
-    });
-    expect(within(container).getByText("Second period of service")).toBeInTheDocument();
-  });
-
-  it("sums marks from both periods once the second is enabled and dated", () => {
+  it("scores the current-station period, ignoring stale second-period values", () => {
     const { container } = renderCategory64({
       contributionPath: "institution",
       contributionSameSchool: true,
       contributionServiceStartDate: "2024-09-01", // 2 years * 2/yr = 4
       contributionServiceEndDate: "2026-09-01",
       contributionSecondPeriodEnabled: true,
-      contributionSecondSameSchool: false,
-      contributionSecondServiceStartDate: "2020-09-01", // 2 years * 1.5/yr = 3
-      contributionSecondServiceEndDate: "2022-09-01",
-    });
-
-    expect(within(container).getByText("7 / 10")).toBeInTheDocument();
-  });
-
-  it("caps the combined total at the shared ten-mark ceiling", () => {
-    const { container } = renderCategory64({
-      contributionPath: "institution",
-      contributionSameSchool: true,
-      contributionServiceStartDate: "2015-09-01", // 11 years capped at 5*2=10
-      contributionSecondPeriodEnabled: true,
       contributionSecondSameSchool: true,
-      contributionSecondServiceStartDate: "2005-09-01", // 5 years * 2/yr = 10, but overall capped
-      contributionSecondServiceEndDate: "2010-09-01",
+      contributionSecondServiceStartDate: "2020-09-01",
+      contributionSecondServiceEndDate: "2026-09-01",
     });
 
-    expect(within(container).getByText("10 / 10")).toBeInTheDocument();
+    expect(within(container).getByText("4 / 10")).toBeInTheDocument();
   });
 });
 

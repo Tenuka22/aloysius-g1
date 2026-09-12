@@ -272,6 +272,7 @@ describe("application marks: applicant-submitted vs admin-authoritative isolatio
         accessKey,
         marks: [
           {
+            categoryId: "category-6.1-a",
             categoryType: "6.1",
             total: 100,
             breakdown: [{ label: "Forged", marks: 100, max: 100 }],
@@ -294,6 +295,7 @@ describe("application marks: applicant-submitted vs admin-authoritative isolatio
       context.appRouter.admin.admissions.saveMarks,
       {
         applicationId,
+        categoryId: "category-6.1-a",
         categoryType: "6.1",
         breakdown: [{ label: "Verified", marks: 42, max: 100 }],
         total: 42,
@@ -330,6 +332,7 @@ describe("application marks: applicant-submitted vs admin-authoritative isolatio
           accessKey,
           marks: [
             {
+              categoryId: "category-6.1-a",
               categoryType: "6.1",
               total: 999,
               breakdown: [{ label: "Too high", marks: 999, max: 100 }],

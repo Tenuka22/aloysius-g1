@@ -3278,11 +3278,11 @@
     "dsId": "galle-fg"
   },
   {
-    "id": "allsaint-viddyalaya-galle",
-    "en": "Allsaint Viddyalaya",
+    "id": "all-saints-college-galle",
+    "en": "All Saints' College - Galle",
     "si": "",
-    "lat": null,
-    "lng": null,
+    "lat": 6.028389,
+    "lng": 80.21611,
     "genderType": "boys",
     "schoolType": "provincial",
     "districtId": "galle",

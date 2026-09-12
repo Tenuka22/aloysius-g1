@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { isChunkLoadError } from "@/lib/chunk-reload";
 import { STATUS_ERROR } from "@/lib/color-classes";
 import { useTranslation } from "@/lib/i18n";
+import { SUPPORT_CONTACT } from "@/lib/g1/school-config";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import {
   Empty,
@@ -12,22 +14,34 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@aloysius-admissions/ui/components/empty";
-import { TriangleAlert } from "lucide-react";
+import { MessageCircle, TriangleAlert } from "lucide-react";
 
 interface ErrorStateProps {
   error?: unknown;
   reset?: () => void;
 }
 
+function buildErrorWhatsAppLink(error: unknown, pagePath: string): string {
+  const url = new URL(window.location.href);
+  const sessionCode = url.searchParams.get("code") || url.searchParams.get("key") || "-";
+  const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  const timestamp = new Date().toISOString();
+
+  const message =
+    `Hello, I encountered an error on the Grade 1 admissions portal.\n\n` +
+    `Page: ${pagePath}\n` +
+    `Session/Key: ${sessionCode}\n` +
+    `Time: ${timestamp}\n` +
+    `Error: ${errorMessage}\n\n` +
+    `Please help me resolve this issue.`;
+
+  return `https://wa.me/${SUPPORT_CONTACT.whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
+
 export function ErrorState({ error, reset }: ErrorStateProps) {
   const { t } = useTranslation();
 
   const handleRetry = () => {
-    // A stale-chunk failure means the JS file itself is gone from the
-    // server (superseded by a newer deploy) - re-rendering via `reset()`
-    // retries the exact same broken import and fails again. Only a full
-    // navigation, which re-fetches index.html and its current chunk
-    // manifest, can recover.
     if (isChunkLoadError(error)) {
       window.location.reload();
     } else if (reset) {
@@ -41,8 +55,9 @@ export function ErrorState({ error, reset }: ErrorStateProps) {
     window.location.href = "/";
   };
 
-  // Extract error message if error is an Error instance
   const errorMessage = error instanceof Error ? error.message : undefined;
+  const pagePath = typeof window !== "undefined" ? window.location.pathname : "/";
+  const whatsappHref = useMemo(() => buildErrorWhatsAppLink(error, pagePath), [error, pagePath]);
 
   return (
     <div className="flex h-svh items-center justify-center p-4">
@@ -69,6 +84,17 @@ export function ErrorState({ error, reset }: ErrorStateProps) {
             <Button onClick={handleRetry}>{t("error.boundary.retry")}</Button>
             <Button variant="outline" onClick={handleHome}>
               {t("error.boundary.home")}
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              render={
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" />
+              }
+              nativeButton={false}
+            >
+              <MessageCircle size={14} />
+              {t("error.boundary.whatsapp")}
             </Button>
           </div>
         </EmptyContent>

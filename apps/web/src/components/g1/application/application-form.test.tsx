@@ -98,7 +98,7 @@ function renderWithClient(ui: React.ReactElement) {
 
 function renderForm() {
   renderWithClient(<ApplicationForm />);
-  return screen.findByRole("button", { name: /continue/i });
+  return screen.findByRole("button", { name: /(continue|previously skipped)/i });
 }
 
 function renderReview() {

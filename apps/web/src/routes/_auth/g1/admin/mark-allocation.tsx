@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
+import { electoralRegisterYears } from "@/lib/g1/marking-scheme";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@aloysius-admissions/ui/components/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@aloysius-admissions/ui/components/tabs";
@@ -37,6 +38,9 @@ import { SPORTS_LEVEL_MARKS, LEADERSHIP_ROLE_MARKS, STUDENT_SOCIETIES_ROLE_MARKS
 export const Route = createFileRoute("/_auth/g1/admin/mark-allocation")({
   component: MarkAllocationPage,
 });
+
+const electoralYears = electoralRegisterYears(INTAKE_YEAR_DEFAULT);
+const electoralYearRange = `${electoralYears[0]} - ${electoralYears[electoralYears.length - 1]}`;
 
 type DetailRow = { label: string; formula: string; max: number; tiers?: string };
 
@@ -76,7 +80,7 @@ const categories: Array<{
         heading: "C) Electoral register",
         max: ELECTORAL_MAX_61,
         rows: [
-          { label: "Mother & father registration (2020 - 2024)", formula: `${ELECTORAL_MARKS_PER_PERSON_YEAR_61} marks/person-year`, max: ELECTORAL_MAX_61 },
+          { label: `Mother & father registration (${electoralYearRange})`, formula: `${ELECTORAL_MARKS_PER_PERSON_YEAR_61} marks/person-year`, max: ELECTORAL_MAX_61 },
         ],
       },
       {
@@ -180,7 +184,7 @@ const categories: Array<{
         rows: [
           {
             label: "Contribution to school education (GATES the rest of this category)",
-            formula: "Institution: rate/yr, up to 2 summed periods | University: 3 sub-items",
+            formula: "Institution: current-station rate/yr | University: 3 sub-items",
             max: SCHOOL_EDUCATION_CONTRIBUTION_MAX,
             tiers: `Same school ${CONTRIBUTION_PATH1_SAME_SCHOOL_RATE}/yr (max ${CONTRIBUTION_PATH1_SAME_SCHOOL_MAX}) | Elsewhere ${CONTRIBUTION_PATH1_ELSEWHERE_RATE}/yr (max ${CONTRIBUTION_PATH1_ELSEWHERE_MAX}) | <1yr: half rate | University: exams/curriculum/training ${CONTRIBUTION_PATH2_RATE_PER_ITEM}/yr each (max ${CONTRIBUTION_PATH2_ITEM_MAX} each)`,
           },

@@ -156,12 +156,7 @@ const scoringFields64: FieldGroup = {
   fields: [
     { field: "scoringInputs.contributionPath", type: "enum", source: "form", description: "7.5.1 eligibility gate: institution | university - earning zero here zeroes the rest of category 6.4" },
     { field: "scoringInputs.contributionSameSchool", type: "boolean", source: "form", description: "Institution path: whether the current station is the very school being applied to (2/yr vs 1.5/yr)" },
-    { field: "scoringInputs.contributionServiceStartDate", type: "string (ISO date)", source: "form", description: "Institution path: date started at current qualifying station" },
-    { field: "scoringInputs.contributionServiceEndDate", type: "string (ISO date)", source: "form", description: "Institution path: date service at that station ended (blank if still serving there)" },
-    { field: "scoringInputs.contributionSecondPeriodEnabled", type: "boolean", source: "form", description: "Institution path: whether a second, independently-dated period of qualifying-institution service is entered" },
-    { field: "scoringInputs.contributionSecondSameSchool", type: "boolean", source: "form", description: "Institution path: whether the second period's station is the very school being applied to (2/yr vs 1.5/yr)" },
-    { field: "scoringInputs.contributionSecondServiceStartDate", type: "string (ISO date)", source: "form", description: "Institution path: second period's start date - summed with the first period, capped at the shared 10-mark ceiling" },
-    { field: "scoringInputs.contributionSecondServiceEndDate", type: "string (ISO date)", source: "form", description: "Institution path: second period's end date (blank if still serving there)" },
+    { field: "scoringInputs.contributionServiceStartDate", type: "string (ISO date)", source: "form", description: "Institution path: date started at the current (applied-to) station - the only service period 7.5.1 scores" },
     { field: "scoringInputs.contributionExamYears", type: "number", source: "form", description: "University path: years involved with national exams (0.5/yr, max 2.5)" },
     { field: "scoringInputs.contributionCurriculumYears", type: "number", source: "form", description: "University path: years involved with NIE curriculum development (0.5/yr, max 2.5)" },
     { field: "scoringInputs.contributionTrainingYears", type: "number", source: "form", description: "University path: years involved with national teacher-training programmes (0.5/yr, max 2.5)" },

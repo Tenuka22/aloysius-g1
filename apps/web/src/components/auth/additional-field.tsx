@@ -4,7 +4,7 @@ import {
 } from "@better-auth-ui/core"
 import { useAuth, useCopyToClipboard } from "@better-auth-ui/react"
 import { format } from "date-fns"
-import { CalendarIcon, Check, ChevronDownIcon, Copy } from "lucide-react"
+import { CalendarIcon, Check, ChevronDownIcon, Copy, X as XIcon } from "lucide-react"
 import { type ComponentType, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -544,6 +544,7 @@ function DateInput({ name, field, isPending }: AdditionalFieldProps) {
           }}
         />
         <Popover open={open} onOpenChange={setOpen}>
+        <div className="relative flex-1">
           <PopoverTrigger
             type="button"
             id={`${name}-date`}
@@ -558,8 +559,24 @@ function DateInput({ name, field, isPending }: AdditionalFieldProps) {
           >
             {date ? format(date, "PPP") : <span>{field.placeholder}</span>}
 
-            {isDateTime ? <ChevronDownIcon /> : <CalendarIcon />}
+            {!date && (isDateTime ? <ChevronDownIcon /> : <CalendarIcon />)}
           </PopoverTrigger>
+          {date && !isPending && !field.readOnly && (
+            <button
+              type="button"
+              aria-label="Clear date"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={(event) => {
+                event.stopPropagation()
+                setDate(undefined)
+                setTime("")
+                setError(undefined)
+              }}
+            >
+              <XIcon className="size-3.5" />
+            </button>
+          )}
+        </div>
 
           <PopoverContent className="w-auto overflow-hidden p-0" align="start">
             <Calendar

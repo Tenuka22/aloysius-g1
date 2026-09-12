@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, Database, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, Minus, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, ClipboardCheck, Database, FileWarning, KeyRound, LayoutDashboard, ListOrdered, MapPin, MapPinned, Minus, Plus, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@aloysius-admissions/ui/components/sidebar";
@@ -290,7 +290,19 @@ function DateTimePicker({ value, onChange, label }: { value: string; onChange: (
   return (
     <div className="grid gap-1">
       <span className="text-muted-foreground text-xs font-semibold">{label}</span>
-      <Input type="datetime-local" value={value} onChange={(e) => onChange(e.target.value)} />
+      <div className="relative">
+        <Input type="datetime-local" value={value} onChange={(e) => onChange(e.target.value)} />
+        {value && (
+          <button
+            type="button"
+            aria-label="Clear date and time"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => onChange("")}
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

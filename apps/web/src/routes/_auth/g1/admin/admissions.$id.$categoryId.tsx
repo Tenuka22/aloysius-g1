@@ -612,7 +612,6 @@ function BanDialog({ open, onOpenChange, onConfirm, applicantName, reason, onRea
 }
 
 type EditableBreakdown = { label: string; marks: number; max: number };
-type EditableCategory = { categoryType: string; breakdown: EditableBreakdown[]; total: number };
 
 function CategoryScoringCard({ applicationId, category, autoScore, draft, flaggedInputs, onToggleInputFlag, homeLocation, onSaveInterviewEdits }: { applicationId: string; category: ApplicationDraft["categories"][0]; autoScore: ReturnType<typeof scoreCategory> | null; draft: ApplicationDraft; flaggedInputs: Set<string>; onToggleInputFlag: (key: string) => void; homeLocation: { lat: number; lng: number } | null; onSaveInterviewEdits: (edits: InterviewEdit[]) => void }) {
   const queryClient = useQueryClient();
@@ -623,13 +622,20 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
 
   const savedMark = useMemo(() => {
     if (!existingMarks.data) return null;
-    const found = existingMarks.data.find((m) => m.categoryType === category.categoryType);
+    // Prefer an exact categoryId match (every mark saved after this fix
+    // carries one); fall back to a categoryType-only match ONLY for a
+    // legacy row saved before categoryId existed (categoryId is null) -
+    // otherwise two same-type category entries would silently share one
+    // saved mark record.
+    const found =
+      existingMarks.data.find((m) => m.categoryId === category.id) ??
+      existingMarks.data.find((m) => !m.categoryId && m.categoryType === category.categoryType);
     if (!found) return null;
     return {
       ...found,
       breakdown: (found.breakdown as Array<{ label: string; marks: number; max: number }>),
     };
-  }, [existingMarks.data, category.categoryType]);
+  }, [existingMarks.data, category.id, category.categoryType]);
 
   const [breakdown, setBreakdown] = useState<EditableBreakdown[]>([]);
   const [inputsEditable, setInputsEditable] = useState(false);
@@ -697,6 +703,7 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
     mutationFn: () =>
       client.admin.admissions.saveMarks({
         applicationId,
+        categoryId: category.id,
         categoryType: category.categoryType,
         breakdown: breakdown.map((r) => ({ label: r.label, marks: r.marks, max: r.max })),
         total: breakdown.reduce((s, r) => s + r.marks, 0),
@@ -935,208 +942,6 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
             This is a baseline estimate calculated from the answers. The interview panel checks original documents and may adjust these marks at the interview.
           </p>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MarkAllocationEditor({ applicationId, categories }: { applicationId: string; categories: ApplicationDraft["categories"] }) {
-  const queryClient = useQueryClient();
-
-  const existingMarks = useQuery({
-    ...orpc.admin.admissions.getMarks.queryOptions({ input: { applicationId } }),
-  });
-
-  const autoScores = useMemo(
-    () => categories.map((cat) => scoreCategory(cat)),
-    [categories],
-  );
-
-  const [editorState, setEditorState] = useState<EditableCategory[]>([]);
-
-  const marksMap = useMemo(() => {
-    const map = new Map<string, EditableCategory>();
-    if (existingMarks.data) {
-      for (const mark of existingMarks.data) {
-        map.set(mark.categoryType, {
-          categoryType: mark.categoryType,
-          breakdown: mark.breakdown as EditableBreakdown[],
-          total: mark.total,
-        });
-      }
-    }
-    return map;
-  }, [existingMarks.data]);
-
-  useEffect(() => {
-    setEditorState(
-      autoScores.map((auto) => {
-        const saved = marksMap.get(auto.categoryType);
-        if (saved) return { ...saved };
-        return {
-          categoryType: auto.categoryType,
-          breakdown: auto.breakdown.map((row) => ({ ...row })),
-          total: auto.total,
-        };
-      }),
-    );
-  }, [marksMap, autoScores]);
-
-  const saveMutation = useMutation({
-    mutationFn: (cat: EditableCategory) =>
-      client.admin.admissions.saveMarks({
-        applicationId,
-        categoryType: cat.categoryType,
-        breakdown: cat.breakdown.map((r) => ({ label: r.label, marks: r.marks, max: r.max })),
-        total: cat.total,
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.getMarks.key() });
-      toast.success("Marks saved");
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save marks"),
-  });
-
-  const updateRow = (categoryType: string, rowIndex: number, value: string) => {
-    setEditorState((prev) =>
-      prev.map((cat) => {
-        if (cat.categoryType !== categoryType) return cat;
-        const newBreakdown = [...cat.breakdown];
-        const numValue = value === "" ? 0 : Number(value);
-        newBreakdown[rowIndex] = { ...newBreakdown[rowIndex], marks: Math.max(0, numValue) };
-        const total = newBreakdown.reduce((sum, row) => sum + row.marks, 0);
-        return { ...cat, breakdown: newBreakdown, total };
-      }),
-    );
-  };
-
-  const resetCategory = (categoryType: string) => {
-    const auto = autoScores.find((s) => s.categoryType === categoryType);
-    if (!auto) return;
-    setEditorState((prev) =>
-      prev.map((cat) => {
-        if (cat.categoryType !== categoryType) return cat;
-        return {
-          categoryType: auto.categoryType,
-          breakdown: auto.breakdown.map((row) => ({ ...row })),
-          total: auto.total,
-        };
-      }),
-    );
-  };
-
-  if (categories.length === 0) return null;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calculator size={18} className="text-primary" /> Mark allocation
-        </CardTitle>
-        <CardDescription>Override the auto-calculated marks per category. Admin-entered marks are saved independently.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-5">
-        {existingMarks.isLoading && (
-          <p className="text-sm text-muted-foreground">Loading saved marks…</p>
-        )}
-        {autoScores.map((auto) => {
-          const editor = editorState.find((e) => e.categoryType === auto.categoryType);
-          if (!editor) return null;
-          const label = CATEGORY_LABELS[auto.categoryType] ?? auto.categoryType;
-          const hasChanges = editor.breakdown.some((row, i) => row.marks !== auto.breakdown[i]?.marks) || editor.total !== auto.total;
-          const hasExceeded = editor.breakdown.some((row) => row.marks > row.max);
-
-          return (
-            <section key={auto.categoryType} className="grid gap-3 rounded-xl border border-border p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold">{label}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Auto: <Badge variant="outline">{auto.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Badge>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {hasChanges && <Badge variant="secondary">Modified</Badge>}
-                  {hasExceeded && <Badge variant="destructive">Exceeds max</Badge>}
-                  <Badge variant={hasChanges ? "default" : "outline"}>
-                    Admin total: {editor.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <th className="pb-2 pr-4">Label</th>
-                      <th className="pb-2 pr-4 text-right">Auto</th>
-                      <th className="pb-2 pr-4 text-right">Admin</th>
-                      <th className="pb-2 text-right">Max</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {editor.breakdown.map((row, rowIndex) => {
-                      const autoRow = auto.breakdown[rowIndex];
-                      const autoMarks = autoRow?.marks ?? 0;
-                      const exceedsMax = row.marks > row.max;
-                      const matchesAuto = row.marks === autoMarks;
-                      let bgClass = "";
-                      if (exceedsMax) bgClass = "bg-red-50";
-                      else if (!matchesAuto) bgClass = "bg-amber-50";
-                      else bgClass = "bg-emerald-50";
-
-                      return (
-                        <tr key={rowIndex} className="border-b border-border/50 last:border-b-0">
-                          <td className="py-2 pr-4 font-medium">{row.label}</td>
-                          <td className="py-2 pr-4 text-right text-muted-foreground">{autoMarks}</td>
-                          <td className="py-2 pr-4">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Input
-                                type="number"
-                                min={0}
-                                max={row.max}
-                                step={0.5}
-                                value={row.marks}
-                                onChange={(e) => updateRow(editor.categoryType, rowIndex, e.target.value)}
-                                className={`h-8 w-20 text-right ${bgClass}`}
-                              />
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger render={<button type="button" className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" />}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Pre-filled: {autoMarks} / {row.max}</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </td>
-                          <td className="py-2 text-right text-muted-foreground">{row.max}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex items-center gap-3 border-t pt-3">
-                <Button
-                  size="sm"
-                  disabled={saveMutation.isPending || hasExceeded}
-                  onClick={() => saveMutation.mutate(editor)}
-                >
-                  <Save size={15} /> {saveMutation.isPending ? "Saving…" : "Save"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => resetCategory(editor.categoryType)}
-                >
-                  <RotateCcw size={15} /> Reset
-                </Button>
-              </div>
-            </section>
-          );
-        })}
       </CardContent>
     </Card>
   );

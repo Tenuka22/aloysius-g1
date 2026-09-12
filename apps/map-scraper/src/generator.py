@@ -24,6 +24,10 @@ STABLE_SCHOOLS = {
     "richmondcollege": ("richmond-galle", "Richmond College"),
     "mahindacollege": ("mahinda-galle", "Mahinda College"),
     "southlandcollege": ("southlands-galle", "Southlands College"),
+    # Government listing carries this school under its pre-rebrand name
+    # ("ALLSAINT VIDDYALAYA"), which display_name() would otherwise title-case
+    # verbatim instead of its actual current name.
+    "allstviddyalaya": ("all-saints-college-galle", "All Saints' College - Galle"),
 }
 
 

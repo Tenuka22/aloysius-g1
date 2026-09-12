@@ -89,6 +89,14 @@ export function createAuth(db: Database) {
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
+      // aloysiuscollege.lk currently reverse-proxies /admissions to this app,
+      // on the same host as the separate aloysius-web CMS and its own
+      // better-auth instance/user table. Both would otherwise default to the
+      // identical `better-auth.session_token` cookie name there, so one
+      // app's login could silently overwrite the other's session cookie.
+      // This name is host-only (no `domain` is set below) and must stay
+      // that way - it is never meant to cross to aloysiuscollege.lk itself.
+      cookiePrefix: "aloysius-admissions",
       ipAddress: {
         ipAddressHeaders: [CLIENT_IP_HEADER],
       },

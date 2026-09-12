@@ -1,4 +1,4 @@
-import { getAppCookie, removeAppCookie, setAppCookie } from "../cookies";
+import { getAllAppCookieValues, getAppCookie, removeAppCookie, setAppCookie } from "../cookies";
 
 // Cookies (not localStorage) so the active access key / session code ride along with every
 // request and route loaders can read them synchronously before the component mounts - the same
@@ -8,19 +8,21 @@ const ACTIVE_KEY_STORAGE = "aloysius-admissions-application-key";
 const ACTIVE_SESSION_CODE_STORAGE = "aloysius-admissions-application-session-code";
 
 export function getSavedKeys(): string[] {
-  let stored: unknown = [];
-  try {
-    stored = JSON.parse(getAppCookie(SAVED_KEYS_STORAGE) ?? "[]");
-  } catch {
-    stored = [];
-  }
+  // Normally exactly one cookie named SAVED_KEYS_STORAGE applies, but right after the
+  // apex-domain/subdomain cookie-sharing change ships, a browser may still carry a
+  // leftover host-only cookie alongside the new shared-domain one until the next write
+  // (see cookies.ts). Union every occurrence rather than reading just one so a saved
+  // key is never dropped during that transition.
+  const stored = getAllAppCookieValues(SAVED_KEYS_STORAGE).flatMap((raw) => {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+    } catch {
+      return [];
+    }
+  });
   const legacy = getAppCookie(ACTIVE_KEY_STORAGE);
-  return [
-    ...new Set([
-      ...(Array.isArray(stored) ? stored.filter((value): value is string => typeof value === "string") : []),
-      ...(legacy ? [legacy] : []),
-    ]),
-  ];
+  return [...new Set([...stored, ...(legacy ? [legacy] : [])])];
 }
 
 export function saveKey(key: string): void {

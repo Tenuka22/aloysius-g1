@@ -17,8 +17,7 @@ export const useSavedApplicationsStore = create<SavedApplicationsStore>()((set) 
   // happened to trigger that first import into every other request's
   // initial render until its own mount-time refresh() corrects it. Starting
   // empty and relying on the existing useEffect(refresh) on mount (see
-  // home-page.tsx) keeps the real read per-request/client-side only, same
-  // as __root.tsx's refreshSchoolCoordinateOverrides().
+  // home-page.tsx) keeps the real read per-request/client-side only.
   keys: [],
   refresh: () => set({ keys: getSavedKeys() }),
   add: (key) => {

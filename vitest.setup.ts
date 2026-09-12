@@ -8,18 +8,29 @@ import { cleanup } from "@testing-library/react";
 // own `@/lib/cookies` wrapper directly (rather than the underlying package) with
 // a `document.cookie`-backed implementation - jsdom provides a real `document`,
 // so this behaves like an actual browser for every test.
-vi.mock("@/lib/cookies", () => ({
-  getAppCookie: (name: string): string | null => {
+vi.mock("@/lib/cookies", () => {
+  const readCookie = (name: string): string | null => {
     const match = document.cookie.match(new RegExp(`(?:^|; )${encodeURIComponent(name)}=([^;]*)`));
     return match ? decodeURIComponent(match[1]) : null;
-  },
-  setAppCookie: (name: string, value: string, maxAgeDays = 365): void => {
-    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeDays * 24 * 60 * 60}`;
-  },
-  removeAppCookie: (name: string): void => {
-    document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0`;
-  },
-}));
+  };
+  return {
+    getAppCookie: readCookie,
+    // jsdom's single `document.cookie` jar never holds two same-named cookies at
+    // once (unlike a real browser sharing one across a host-only and a
+    // shared-domain cookie - see cookies.ts), so the real multi-value case is
+    // covered directly against the unmocked module in cookies.test.ts instead.
+    getAllAppCookieValues: (name: string): string[] => {
+      const value = readCookie(name);
+      return value === null ? [] : [value];
+    },
+    setAppCookie: (name: string, value: string, maxAgeDays = 365): void => {
+      document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeDays * 24 * 60 * 60}`;
+    },
+    removeAppCookie: (name: string): void => {
+      document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0`;
+    },
+  };
+});
 
 // Ensure React Testing Library cleanup runs between tests.
 afterEach(() => {

@@ -29,6 +29,11 @@ export function provisionTestDatabase(): TestDatabase {
   const databasePath = join(dir, "test.db");
 
   process.env.TURSO_DATABASE_URL = `file:${databasePath}`;
+  // drizzle-kit's `dialect: "turso"` param validation treats an empty/unset
+  // authToken as a missing required param even for a local `file:` URL that
+  // never actually needs one - without this, `drizzle-kit push` below fails
+  // with an opaque "Please provide required params" error.
+  process.env.TURSO_AUTH_TOKEN = "test-only-token";
   process.env.BETTER_AUTH_SECRET ??= "test-only-secret-at-least-32-characters-long";
   process.env.BETTER_AUTH_URL ??= "http://localhost:3000";
   process.env.CORS_ORIGIN ??= "http://localhost:3001";

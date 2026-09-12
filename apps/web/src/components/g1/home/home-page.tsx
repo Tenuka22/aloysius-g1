@@ -2,7 +2,7 @@ import { useQueries } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ArrowRight, CheckCircle2, FileText, GraduationCap, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileText, GraduationCap, Info, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@aloysius-admissions/ui/components/empty";
@@ -192,16 +192,22 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
                 {t("home.quickActions.manageSavedKeys")}
               </Button>
             </div>
-            {(isAdmin || isSubAdmin) && (
-              <div className="flex justify-center sm:justify-start">
+            <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+              <Link to="/">
+                <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-primary">
+                  <Info size={14} />
+                  {t("home.quickActions.admissionsInfo")}
+                </Button>
+              </Link>
+              {(isAdmin || isSubAdmin) && (
                 <Link to={isAdmin ? "/g1/admin" : "/sub-admin"}>
                   <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-primary">
                     <GraduationCap size={14} />
                     {isAdmin ? t("home.quickActions.adminPanel") : t("home.quickActions.subAdminPanel")}
                   </Button>
                 </Link>
-              </div>
-            )}
+              )}
+            </div>
           </section>
 
           {/* Your saved applications */}

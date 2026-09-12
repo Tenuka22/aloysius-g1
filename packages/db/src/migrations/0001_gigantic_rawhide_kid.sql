@@ -1,0 +1,1 @@
+ALTER TABLE `g1_application_marks` ADD `category_id` text;

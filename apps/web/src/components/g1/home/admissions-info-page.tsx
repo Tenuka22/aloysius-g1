@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, CalendarClock, CalendarDays, Download, HardHat, MessageCircle, Phone, PlayCircle, SquareArrowOutUpRight, TriangleAlert } from "lucide-react";
+import { CalendarClock, CalendarDays, MessageCircle, Phone, SquareArrowOutUpRight, TriangleAlert } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { Eyebrow } from "@aloysius-admissions/ui/components/eyebrow";
@@ -18,7 +18,7 @@ function useAdmissionsWindowText(locale: string) {
   const { t } = useTranslation();
   const status = useQuery(orpc.application.status.queryOptions({ input: { intakeYear: INTAKE_YEAR_DEFAULT } }));
 
-  if (status.isPending) return t("building.admissionsWindow.loading");
+  if (status.isPending) return t("admissionsInfo.window.loading");
   if (status.isError || !status.data) return null;
 
   const formatter = new Intl.DateTimeFormat(locale === "si" ? "si-LK" : "en-LK", {
@@ -29,23 +29,13 @@ function useAdmissionsWindowText(locale: string) {
   const closesAt = new Date(status.data.submissionClosesAt);
   const now = new Date();
 
-  if (now < opensAt) return t("building.admissionsWindow.upcoming", { opensDate: formatter.format(opensAt) });
-  if (now > closesAt) return t("building.admissionsWindow.closed", { closesDate: formatter.format(closesAt) });
-  return t("building.admissionsWindow.open", { closesDate: formatter.format(closesAt) });
+  if (now < opensAt) return t("admissionsInfo.window.upcoming", { opensDate: formatter.format(opensAt) });
+  if (now > closesAt) return t("admissionsInfo.window.closed", { closesDate: formatter.format(closesAt) });
+  return t("admissionsInfo.window.open", { closesDate: formatter.format(closesAt) });
 }
 
-// Served as a plain static file (see apps/web/public), not routed through a
-// server function - keeps the download a zero-compute CDN hit instead of an
-// invoked serverless function. Re-encoded from a 270MB screen capture down to
-// ~52MB (H.264 CRF 24 + faststart) specifically so it stays well under
-// GitHub's 100MB hard push limit and doesn't balloon Vercel bandwidth.
-const DEMO_VIDEO_SRC = "/g1-application-demo.mp4";
-const DEMO_VIDEO_DOWNLOAD_NAME = "St-Aloysius-G1-Application-Demo.mp4";
-// youtube-nocookie.com defers all YouTube cookies/tracking until playback
-// actually starts, and the iframe itself is only mounted once the dialog
-// opens (see `previewOpen` below) - so the placeholder page never makes a
-// single request to YouTube unless a visitor explicitly asks for the preview.
-const DEMO_VIDEO_YOUTUBE_ID = "LlxeQo4F30Q";
+// YouTube walkthrough video replacing the self-hosted MP4.
+const YOUTUBE_VIDEO_ID = "LlxeQo4F30Q";
 
 // wa.me requires the bare international number (no "+", spaces, or dashes).
 const HELP_PHONE_DISPLAY = "+94 77 936 8304";
@@ -83,20 +73,18 @@ function interviewSheetEmbedUrl(gid: string) {
   return `https://docs.google.com/spreadsheets/d/${INTERVIEW_SHEET_ID}/htmlembed/sheet?gid=${gid}`;
 }
 
-// Placeholder landing page for the school website while the real site is
-// being built. The Grade 1 admissions portal lives at /admissions and is
-// linked from here so the working part of the site stays reachable. Built as
-// a full-bleed crest-green hero (not a small centered card) so it carries
-// the same visual weight and brand language as the admissions dashboard.
-export function BuildingPage() {
+// Reference page for applicants: demo walkthrough, live interview schedule and a
+// help contact. Reached from the dashboard's quick actions (see home-page.tsx) -
+// unlike the old root-page placeholder this replaced, it is not the entry point to
+// the admissions portal, so it links back to the dashboard rather than to it.
+export function AdmissionsInfoPage() {
   const { t, locale } = useTranslation();
   const admissionsWindowText = useAdmissionsWindowText(locale);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [interviewOpen, setInterviewOpen] = useState(false);
   const [selectedInterviewGid, setSelectedInterviewGid] = useState<string | null>(null);
   const [isEmergency, setIsEmergency] = useState(false);
   const whatsappHref = `https://wa.me/${HELP_WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    t(isEmergency ? "building.help.templateEmergency" : "building.help.templateGeneral"),
+    t(isEmergency ? "admissionsInfo.help.templateEmergency" : "admissionsInfo.help.templateGeneral"),
   )}`;
 
   // Only today-or-later interview days ever show - a day that's already
@@ -110,12 +98,8 @@ export function BuildingPage() {
   const activeInterviewGid = selectedInterviewGid ?? upcomingInterviewDates[0]?.gid ?? null;
 
   return (
-    <div className="flex min-h-svh flex-col bg-primary text-primary-foreground" data-surface="school-home-building">
+    <div className="flex min-h-svh flex-col bg-primary text-primary-foreground" data-surface="admissions-info">
       <main className="relative flex flex-1 items-center justify-center overflow-hidden">
-        {/* Layered lighting: a soft gold vignette from the top and a faint
-            radial lift behind the crest - both scale with the viewport
-            instead of anchoring to fixed pixel coordinates, so the effect
-            holds from a 320px phone through an 8K display. */}
         <HeroVignette variant="vertical" />
         <div
           aria-hidden="true"
@@ -125,38 +109,20 @@ export function BuildingPage() {
         <div className="relative z-10 mx-auto grid w-full max-w-(--breakpoint-lg) place-items-center gap-[clamp(1.5rem,2vw+1rem,2.5rem)] px-[clamp(1.25rem,5vw,4rem)] py-[clamp(3rem,6vw+2rem,6rem)] text-center">
           <img
             src="/logo.png"
-            alt={t("building.crestAlt")}
-            className="h-[clamp(6rem,8vw+3rem,11rem)] w-[clamp(6rem,8vw+3rem,11rem)] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
-            width={176}
-            height={176}
+            alt={t("admissionsInfo.crestAlt")}
+            className="h-[clamp(5rem,6vw+2rem,8rem)] w-[clamp(5rem,6vw+2rem,8rem)] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+            width={128}
+            height={128}
           />
 
           <div className="grid gap-3">
-            <h1 className="font-display text-6xl font-semibold tracking-tight leading-[1.05]">
-              {t("building.schoolName")}
+            <h1 className="font-display text-5xl font-semibold tracking-tight leading-[1.05]">
+              {t("admissionsInfo.heading")}
             </h1>
-            <p className="text-primary-foreground/75 text-[clamp(0.95rem,0.85rem+0.4vw,1.25rem)] tracking-wide">
-              {t("building.location")}
-            </p>
             <Eyebrow variant="rule" className="mx-auto pt-1">
               {t("auth.hero.motto")}
             </Eyebrow>
           </div>
-
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/15 bg-primary-foreground/6 px-3.5 py-1.5 backdrop-blur-sm">
-            <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-gold opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-gold" />
-            </span>
-            <HardHat size={13} strokeWidth={2.25} className="text-brand-gold" />
-            <span className="text-[0.75rem] font-medium tracking-wide text-primary-foreground/85">
-              {t("building.status")}
-            </span>
-          </div>
-
-          <p className="max-w-[38rem] text-[clamp(0.9rem,0.85rem+0.2vw,1.0625rem)] leading-relaxed text-primary-foreground/70">
-            {t("building.description")}
-          </p>
 
           {admissionsWindowText && (
             <div className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/15 bg-primary-foreground/6 px-3.5 py-1.5 backdrop-blur-sm">
@@ -167,38 +133,31 @@ export function BuildingPage() {
             </div>
           )}
 
-          <Link to="/admissions" className="contents">
-            <Button
-              type="button"
-              variant="premium"
-              size="lg"
-              className="group h-auto gap-2.5 rounded-full px-[clamp(1.5rem,2vw+1rem,2.25rem)] py-[clamp(0.75rem,1vw+0.5rem,1rem)] text-[clamp(0.9rem,0.85rem+0.15vw,1.0625rem)] font-semibold"
-            >
-              {t("building.admissionsCta", { year: INTAKE_YEAR_DEFAULT })}
-              <ArrowRight size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Button>
-          </Link>
+          <p className="max-w-[38rem] text-[clamp(0.9rem,0.85rem+0.2vw,1.0625rem)] leading-relaxed text-primary-foreground/70">
+            {t("admissionsInfo.description")}
+          </p>
+
+          {/* YouTube walkthrough video */}
+          <div className="aspect-video w-full max-w-sm overflow-hidden rounded-xl border border-primary-foreground/15 shadow-lg shadow-black/20">
+            <iframe
+              className="h-full w-full"
+              src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}`}
+              title={t("admissionsInfo.demoVideo.previewAlt")}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5">
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2 rounded-full border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-              onClick={() => setPreviewOpen(true)}
-            >
-              <PlayCircle size={16} />
-              {t("building.demoVideo.preview")}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2 rounded-full border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-              render={<a href={DEMO_VIDEO_SRC} download={DEMO_VIDEO_DOWNLOAD_NAME} />}
-              nativeButton={false}
-            >
-              <Download size={16} />
-              {t("building.demoVideo.download")}
-            </Button>
+            <Link to="/admissions">
+              <Button
+                type="button"
+                variant="premium"
+                className="gap-2 rounded-full px-5 font-semibold"
+              >
+                {t("admissionsInfo.openAdmissions")}
+              </Button>
+            </Link>
             <Button
               type="button"
               variant="outline"
@@ -206,13 +165,13 @@ export function BuildingPage() {
               onClick={() => setInterviewOpen(true)}
             >
               <CalendarDays size={16} />
-              {t("building.interviewSchedule.button")}
+              {t("admissionsInfo.interviewSchedule.button")}
             </Button>
           </div>
 
           <div className="mt-2 flex w-full max-w-sm flex-col items-center gap-3 border-t border-primary-foreground/10 pt-6">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-primary-foreground/55">
-              {t("building.help.heading")}
+              {t("admissionsInfo.help.heading")}
             </p>
             <a
               href={`tel:+${HELP_WHATSAPP_NUMBER}`}
@@ -234,7 +193,7 @@ export function BuildingPage() {
                   }`}
                   onClick={() => setIsEmergency(false)}
                 >
-                  {t("building.help.general")}
+                  {t("admissionsInfo.help.general")}
                 </button>
                 <button
                   type="button"
@@ -247,7 +206,7 @@ export function BuildingPage() {
                   onClick={() => setIsEmergency(true)}
                 >
                   <TriangleAlert size={12} />
-                  {t("building.help.emergency")}
+                  {t("admissionsInfo.help.emergency")}
                 </button>
               </div>
 
@@ -259,40 +218,19 @@ export function BuildingPage() {
                 nativeButton={false}
               >
                 <MessageCircle size={16} />
-                {t("building.help.whatsapp")}
+                {t("admissionsInfo.help.whatsapp")}
               </Button>
             </div>
           </div>
         </div>
       </main>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent fullScreen className="w-[90svw] h-[90svh] max-w-none gap-0 p-0 overflow-hidden">
-          <DialogHeader className="shrink-0 p-6 pb-4">
-            <DialogTitle>{t("building.demoVideo.dialogTitle")}</DialogTitle>
-            <DialogDescription>{t("building.demoVideo.dialogDescription")}</DialogDescription>
-          </DialogHeader>
-          <div className="min-h-0 flex-1 w-full bg-black">
-            {previewOpen && (
-              <iframe
-                className="h-full w-full"
-                src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_YOUTUBE_ID}?autoplay=1&rel=0`}
-                title={t("building.demoVideo.dialogTitle")}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={interviewOpen} onOpenChange={setInterviewOpen}>
-        <DialogContent fullScreen className="w-[90svw] h-[90svh] max-w-none gap-0 p-0 overflow-hidden">
-          <DialogHeader className="shrink-0 flex-row items-start justify-between gap-4 p-6 pb-4">
+        <DialogContent fullScreen className="w-[90svw] h-[90svh] max-w-none gap-0 overflow-hidden bg-background">
+          <DialogHeader className="shrink-0 flex-row items-start justify-between gap-4 border-b bg-background p-6 pb-4">
             <div>
-              <DialogTitle>{t("building.interviewSchedule.dialogTitle")}</DialogTitle>
-              <DialogDescription>{t("building.interviewSchedule.dialogDescription")}</DialogDescription>
+              <DialogTitle>{t("admissionsInfo.interviewSchedule.dialogTitle")}</DialogTitle>
+              <DialogDescription>{t("admissionsInfo.interviewSchedule.dialogDescription")}</DialogDescription>
             </div>
             {activeInterviewGid && (
             <Button
@@ -304,12 +242,12 @@ export function BuildingPage() {
               nativeButton={false}
             >
               <SquareArrowOutUpRight size={14} />
-              {t("building.interviewSchedule.openInSheets")}
+              {t("admissionsInfo.interviewSchedule.openInSheets")}
             </Button>
             )}
           </DialogHeader>
           {upcomingInterviewDates.length > 1 && (
-            <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b px-6 pb-4">
+            <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b bg-background px-6 pb-4">
               {upcomingInterviewDates.map((entry) => (
                 <button
                   key={entry.gid}
@@ -333,12 +271,12 @@ export function BuildingPage() {
                 className="h-full w-full"
                 key={activeInterviewGid}
                 src={interviewSheetEmbedUrl(activeInterviewGid)}
-                title={t("building.interviewSchedule.dialogTitle")}
+                title={t("admissionsInfo.interviewSchedule.dialogTitle")}
                 referrerPolicy="strict-origin-when-cross-origin"
               />
             ) : interviewOpen ? (
-              <p className="grid h-full place-items-center text-sm text-muted-foreground">
-                {t("building.interviewSchedule.noUpcoming")}
+              <p className="grid h-full place-items-center bg-background p-6 text-sm text-muted-foreground">
+                {t("admissionsInfo.interviewSchedule.noUpcoming")}
               </p>
             ) : null}
           </div>

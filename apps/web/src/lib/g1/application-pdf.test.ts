@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { applicationPdfFilename, buildApplicationSections } from "./application-pdf";
+import { applicationPdfFilename, buildApplicationSections, buildMarkLines } from "./application-pdf";
 import { emptyDraft } from "./application-store";
 
 const draft = {
@@ -81,5 +81,21 @@ describe("buildApplicationSections", () => {
   it("always ends with the declaration so the record is self-contained", () => {
     const sections = buildApplicationSections(draft);
     expect(sections[sections.length - 1]?.heading).toBe("Declaration");
+  });
+});
+
+describe("buildMarkLines", () => {
+  it("prints every category's max as the true 100-mark ceiling, not the sum of its breakdown rows' own maxes", () => {
+    // Category 6.2's breakdown rows sum to 102 (26+3+10+12+10+5+5+5+13+5+2+2+4)
+    // even though the category itself is capped at 100 - regression test for
+    // a PDF-only bug where the printed "Max" column used that row-sum
+    // instead of the true ceiling every other on-screen display uses.
+    const withCategory62 = {
+      ...draft,
+      categories: [{ id: "a", categoryType: "6.2" as const, scoringInputs: {}, locked: false }],
+    };
+    const lines = buildMarkLines(withCategory62);
+    const categoryLine = lines.find((line) => line.kind === "category");
+    expect(categoryLine?.max).toBe(100);
   });
 });

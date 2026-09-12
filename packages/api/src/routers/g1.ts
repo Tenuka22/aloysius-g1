@@ -8,10 +8,9 @@ import {
   g1ApplicationMarks,
   g1ApplicationSettings,
   g1Applications,
-  g1SchoolCoordinateOverrides,
 } from "@aloysius-admissions/db";
 import { env } from "@aloysius-admissions/env/server";
-import { and, eq, isNotNull, ne } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import {
   accessRequestIssues,
@@ -32,7 +31,6 @@ import {
 } from "../g1-logic";
 import type { ApplicationData } from "../g1-logic";
 import { adminProcedure, publicProcedure, subAdminProcedure } from "../index";
-import { SCHOOL_CATALOG } from "../schools-catalog";
 
 const uniqueSessionCode = async () => {
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -688,6 +686,7 @@ export const g1Router = {
           accessKey: keySchema,
           marks: z.array(
             z.object({
+              categoryId: z.string().min(1),
               categoryType: z.string(),
               total: z.number().min(0).max(100),
               breakdown: z.array(
@@ -713,21 +712,44 @@ export const g1Router = {
           // Always written as source "applicant": this is a client-computed
           // preview only and must never overwrite or be confused with the
           // admin's authoritative "admin"-sourced row for the same category.
-          const existing = await db
-            .select({ id: g1ApplicationMarks.id })
-            .from(g1ApplicationMarks)
-            .where(
-              and(
-                eq(g1ApplicationMarks.applicationId, row.id),
-                eq(g1ApplicationMarks.categoryType, mark.categoryType),
-                eq(g1ApplicationMarks.source, "applicant"),
-              ),
-            )
-            .get();
+          // Prefer an exact categoryId match - required so two category
+          // entries of the same categoryType each get their own indicative
+          // row instead of overwriting each other. Fall back to a
+          // categoryType-only match ONLY for a legacy row saved before this
+          // column existed (categoryId is null), migrating it in place.
+          const existing =
+            (await db
+              .select({ id: g1ApplicationMarks.id })
+              .from(g1ApplicationMarks)
+              .where(
+                and(
+                  eq(g1ApplicationMarks.applicationId, row.id),
+                  eq(g1ApplicationMarks.categoryId, mark.categoryId),
+                  eq(g1ApplicationMarks.source, "applicant"),
+                ),
+              )
+              .get()) ??
+            (await db
+              .select({ id: g1ApplicationMarks.id })
+              .from(g1ApplicationMarks)
+              .where(
+                and(
+                  eq(g1ApplicationMarks.applicationId, row.id),
+                  isNull(g1ApplicationMarks.categoryId),
+                  eq(g1ApplicationMarks.categoryType, mark.categoryType),
+                  eq(g1ApplicationMarks.source, "applicant"),
+                ),
+              )
+              .get());
           if (existing) {
             await db
               .update(g1ApplicationMarks)
-              .set({ breakdown: mark.breakdown, total: mark.total, updatedAt: now })
+              .set({
+                categoryId: mark.categoryId,
+                breakdown: mark.breakdown,
+                total: mark.total,
+                updatedAt: now,
+              })
               .where(eq(g1ApplicationMarks.id, existing.id))
               .run();
           } else {
@@ -736,6 +758,7 @@ export const g1Router = {
               .values({
                 id: randomUUID(),
                 applicationId: row.id,
+                categoryId: mark.categoryId,
                 categoryType: mark.categoryType,
                 breakdown: mark.breakdown,
                 total: mark.total,
@@ -748,12 +771,6 @@ export const g1Router = {
         }
         return { saved: true };
       }),
-  },
-  schools: {
-    /** Manually placed school coordinates (admin hub). Public so every client shows the same catalog. */
-    overrides: publicProcedure.handler(async () => {
-      return db.select().from(g1SchoolCoordinateOverrides).all();
-    }),
   },
   admin: {
     accessRequests: {
@@ -906,115 +923,6 @@ export const g1Router = {
               .run();
           }
           return { opensAt: input.opensAt, closesAt: input.closesAt, updatedAt };
-        }),
-    },
-    schools: {
-      /** Same list as schools.overrides, kept for admin-only callers. */
-      overrides: adminProcedure.handler(async () => {
-        return db.select().from(g1SchoolCoordinateOverrides).all();
-      }),
-      save: adminProcedure
-        .input(
-          z.object({
-            id: z.string().trim().min(1),
-            name: z.string().trim().min(1).max(300),
-            latitude: z.number().min(-90).max(90),
-            longitude: z.number().min(-180).max(180),
-            note: z.string().trim().max(500).default(""),
-          }),
-        )
-        .handler(async ({ input, context }) => {
-          const now = new Date();
-          const existing = await db
-            .select({ id: g1SchoolCoordinateOverrides.id })
-            .from(g1SchoolCoordinateOverrides)
-            .where(eq(g1SchoolCoordinateOverrides.id, input.id))
-            .get();
-          const values = {
-            name: input.name,
-            latitude: input.latitude,
-            longitude: input.longitude,
-            note: input.note,
-            updatedBy: context.session.user?.id ?? "",
-            updatedAt: now,
-          };
-          if (existing) {
-            await db
-              .update(g1SchoolCoordinateOverrides)
-              .set(values)
-              .where(eq(g1SchoolCoordinateOverrides.id, input.id))
-              .run();
-          } else {
-            await db
-              .insert(g1SchoolCoordinateOverrides)
-              .values({ id: input.id, ...values })
-              .run();
-          }
-          return { id: input.id, updatedAt: now };
-        }),
-      remove: adminProcedure
-        .input(z.object({ id: z.string().trim().min(1) }))
-        .handler(async ({ input }) => {
-          await db
-            .delete(g1SchoolCoordinateOverrides)
-            .where(eq(g1SchoolCoordinateOverrides.id, input.id))
-            .run();
-          return { removed: true };
-        }),
-      clear: adminProcedure.handler(async () => {
-        await db.delete(g1SchoolCoordinateOverrides).run();
-        return { cleared: true };
-      }),
-      seedFromScraper: adminProcedure
-        .input(z.object({ mode: z.enum(["add", "upsert"]).default("add") }))
-        .handler(async ({ input }) => {
-          // The catalog is imported, not read from disk. It used to be loaded
-          // from "apps/map-scraper/schools_data.json" relative to the process
-          // cwd, which only resolved when the server happened to be started from
-          // the repo root - and never in a container, where .dockerignore keeps
-          // apps/map-scraper out of the image entirely. Importing bundles the
-          // data into the server build so the action cannot depend on layout.
-          const schools = SCHOOL_CATALOG;
-          const now = new Date();
-          let added = 0;
-          let skipped = 0;
-          let updated = 0;
-          for (const school of schools) {
-            if (!school.id || !school.en || school.lat == null || school.lng == null) continue;
-            const existing = await db
-              .select({ id: g1SchoolCoordinateOverrides.id })
-              .from(g1SchoolCoordinateOverrides)
-              .where(eq(g1SchoolCoordinateOverrides.id, school.id))
-              .get();
-            if (existing && input.mode === "add") {
-              skipped++;
-              continue;
-            }
-            const values = {
-              id: school.id,
-              name: school.en,
-              latitude: school.lat,
-              longitude: school.lng,
-              note:
-                input.mode === "add"
-                  ? "imported from scraper (new)"
-                  : "imported from scraper (upsert)",
-              updatedBy: "scraper",
-              updatedAt: now,
-            };
-            if (existing) {
-              await db
-                .update(g1SchoolCoordinateOverrides)
-                .set(values)
-                .where(eq(g1SchoolCoordinateOverrides.id, school.id))
-                .run();
-              updated++;
-            } else {
-              await db.insert(g1SchoolCoordinateOverrides).values(values).run();
-              added++;
-            }
-          }
-          return { added, skipped, updated };
         }),
     },
     overview: adminProcedure
@@ -1313,28 +1221,53 @@ export const g1Router = {
         .input(
           z.object({
             applicationId: applicationIdSchema,
+            categoryId: z.string().min(1),
             categoryType: z.string().min(1),
             breakdown: z.array(z.object({ label: z.string(), marks: z.number(), max: z.number() })),
             total: z.number(),
           }),
         )
         .handler(async ({ input }) => {
-          const existing = await db
+          // Prefer an exact categoryId match - required so two category
+          // entries of the same categoryType each keep their own
+          // authoritative admin score instead of overwriting each other.
+          // Fall back to a categoryType-only match ONLY for a legacy row
+          // saved before this column existed (categoryId is null),
+          // migrating it in place.
+          const existing =
+            (await db
             .select({ id: g1ApplicationMarks.id })
             .from(g1ApplicationMarks)
             .where(
               and(
                 eq(g1ApplicationMarks.applicationId, input.applicationId),
+                  eq(g1ApplicationMarks.categoryId, input.categoryId),
+                eq(g1ApplicationMarks.source, "admin"),
+              ),
+        )
+              .get()) ??
+            (await db
+            .select({ id: g1ApplicationMarks.id })
+            .from(g1ApplicationMarks)
+            .where(
+              and(
+                eq(g1ApplicationMarks.applicationId, input.applicationId),
+                  isNull(g1ApplicationMarks.categoryId),
                 eq(g1ApplicationMarks.categoryType, input.categoryType),
                 eq(g1ApplicationMarks.source, "admin"),
               ),
             )
-            .get();
+              .get());
           const now = new Date();
           if (existing) {
             await db
               .update(g1ApplicationMarks)
-              .set({ breakdown: input.breakdown, total: input.total, updatedAt: now })
+              .set({
+                categoryId: input.categoryId,
+              breakdown: input.breakdown,
+              total: input.total,
+              updatedAt: now,
+            })
               .where(eq(g1ApplicationMarks.id, existing.id))
               .run();
             return { id: existing.id, updatedAt: now };
@@ -1345,6 +1278,7 @@ export const g1Router = {
             .values({
               id,
               applicationId: input.applicationId,
+              categoryId: input.categoryId,
               categoryType: input.categoryType,
               breakdown: input.breakdown,
               total: input.total,
@@ -1356,13 +1290,33 @@ export const g1Router = {
           return { id, updatedAt: now };
         }),
       deleteMarks: adminProcedure
-        .input(z.object({ applicationId: applicationIdSchema, categoryType: z.string().min(1) }))
+        .input(
+          z.object({
+            applicationId: applicationIdSchema,
+            categoryId: z.string().min(1),
+            categoryType: z.string().min(1),
+          }),
+        )
         .handler(async ({ input }) => {
           await db
             .delete(g1ApplicationMarks)
             .where(
               and(
                 eq(g1ApplicationMarks.applicationId, input.applicationId),
+                eq(g1ApplicationMarks.categoryId, input.categoryId),
+                eq(g1ApplicationMarks.source, "admin"),
+              ),
+            )
+            .run();
+          // Also remove a legacy row (saved before categoryId existed) that
+          // would otherwise survive under the old categoryType-only
+          // addressing scheme.
+          await db
+            .delete(g1ApplicationMarks)
+            .where(
+              and(
+                eq(g1ApplicationMarks.applicationId, input.applicationId),
+                isNull(g1ApplicationMarks.categoryId),
                 eq(g1ApplicationMarks.categoryType, input.categoryType),
                 eq(g1ApplicationMarks.source, "admin"),
               ),

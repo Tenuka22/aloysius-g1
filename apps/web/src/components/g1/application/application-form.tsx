@@ -132,6 +132,7 @@ import {
   ShieldX,
   TriangleAlert,
   UserPlus,
+  X as XIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CategoryStep } from "./category-step";
@@ -317,11 +318,6 @@ const CATEGORY_SCORING_GROUPS: Record<CategoryType, CategoryFieldGroup[]> = {
         "contributionPath",
         "contributionSameSchool",
         "contributionServiceStartDate",
-        "contributionServiceEndDate",
-        "contributionSecondPeriodEnabled",
-        "contributionSecondSameSchool",
-        "contributionSecondServiceStartDate",
-        "contributionSecondServiceEndDate",
         "contributionExamYears",
         "contributionCurriculumYears",
         "contributionTrainingYears",
@@ -826,6 +822,7 @@ function DateOfBirthPicker({
   const validParsedDate = isValidDate ? parsedDate : undefined;
 
   return (
+    <div className="relative w-full">
     <Popover
       open={open}
       onOpenChange={(isOpen, details) => {
@@ -839,16 +836,17 @@ function DateOfBirthPicker({
         setOpen(isOpen);
       }}
     >
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1"
-        >
-          <span className={validParsedDate ? "" : "text-muted-foreground"}>
-            {validParsedDate ? format(validParsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
-          </span>
-          <CalendarIcon className="size-4 opacity-50" />
-        </button>
+        <PopoverTrigger render={
+          <button
+            type="button"
+            className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1"
+          >
+            <span className={validParsedDate ? "" : "text-muted-foreground"}>
+              {validParsedDate ? format(validParsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
+            </span>
+            {!validParsedDate && <CalendarIcon className="size-4 opacity-50" />}
+          </button>
+      }>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
@@ -865,12 +863,28 @@ function DateOfBirthPicker({
               const m = String(date.getMonth() + 1).padStart(2, "0");
               const d = String(date.getDate()).padStart(2, "0");
               onChange(`${y}-${m}-${d}`);
+            } else {
+              onChange("");
             }
             setOpen(false);
           }}
         />
       </PopoverContent>
     </Popover>
+    {validParsedDate && (
+      <button
+        type="button"
+        aria-label="Clear date"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={(event) => {
+          event.stopPropagation();
+          onChange("");
+        }}
+      >
+        <XIcon className="size-3.5" />
+      </button>
+    )}
+    </div>
   );
 }
 
@@ -2058,7 +2072,7 @@ function ReviewStep({
                     return (
                       <div
                         className="flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5"
-                        key={category.categoryType}
+                        key={category.id}
                       >
                         <div className="grid gap-0.5">
                           <span className="text-xs text-muted-foreground">
@@ -2377,6 +2391,7 @@ export function ApplicationForm({
           const marks = currentDraft.categories.map((cat) => {
             const score = scoreCategory(cat);
             return {
+              categoryId: cat.id,
               categoryType: cat.categoryType,
               total: score.total,
               breakdown: score.breakdown,
@@ -2582,6 +2597,21 @@ export function ApplicationForm({
     ...(birthCertOutstanding ? [1] : []),
   ];
   const advancingWithSkip = skippedSteps.includes(current);
+
+  // Whether the skipped field on the current step now has a value filled in.
+  // Used to show a softer "you previously skipped – let's proceed" instead
+  // of the harder "Continue without it" when the applicant already provided
+  // the data after skipping.
+  const skippedFieldHasValue =
+    current === 0
+      ? locationIsReady(draft.location)
+      : current === 1
+        ? !!draft.applicant.birthCertificateNumber.trim()
+        : false;
+
+  // On the declaration step there may be outstanding skipped fields from
+  // earlier steps. Show a "check again" prompt instead of a plain Continue.
+  const declarationHasSkipped = current === 5 && skippedSteps.length > 0;
 
   // Skipping a field advances to the next step, but only when the skip is what
   // was holding the step back. On the applicant step the birth certificate is
@@ -2792,12 +2822,14 @@ export function ApplicationForm({
                       <div className="grid gap-1.5">
                         {draft.categories.map((category) => {
                           const mark = adminMarks.find(
-                            (m) => m.categoryType === category.categoryType,
+                            (m) =>
+                              m.categoryId === category.id ||
+                              (!m.categoryId && m.categoryType === category.categoryType),
                           );
                           if (!mark) return null;
                           return (
                             <div
-                              key={category.categoryType}
+                              key={category.id}
                               className={`flex items-center justify-between text-sm py-1 border-b border-emerald-500/10 last:border-b-0`}
                             >
                               <span className="text-foreground">
@@ -2919,12 +2951,14 @@ export function ApplicationForm({
                       <div className="grid gap-1.5">
                         {draft.categories.map((category) => {
                           const mark = adminMarks.find(
-                            (m) => m.categoryType === category.categoryType,
+                            (m) =>
+                              m.categoryId === category.id ||
+                              (!m.categoryId && m.categoryType === category.categoryType),
                           );
                           if (!mark) return null;
                           return (
                             <div
-                              key={category.categoryType}
+                              key={category.id}
                               className="flex items-center justify-between text-sm py-1 border-b border-border/40 last:border-b-0"
                             >
                               <span className="text-foreground">
@@ -3195,7 +3229,7 @@ export function ApplicationForm({
                   <Button
                     disabled={isNextDisabled || isAdvancing}
                     className={
-                      advancingWithSkip
+                      advancingWithSkip || declarationHasSkipped
                         ? `${STATUS_WARNING.bgSolid} text-white ${STATUS_WARNING.hoverBg} ${STATUS_WARNING.hoverText}`
                         : "shadow-md shadow-primary/15"
                     }
@@ -3207,10 +3241,14 @@ export function ApplicationForm({
                       </>
                     ) : (
                       <>
-                    {advancingWithSkip && <TriangleAlert size={16} />}
-                    {advancingWithSkip
-                      ? t("appForm.buttons.continueSkipped")
-                      : t("appForm.buttons.continue")}{" "}
+                    {(advancingWithSkip || declarationHasSkipped) && <TriangleAlert size={16} />}
+                    {advancingWithSkip && skippedFieldHasValue
+                      ? t("appForm.buttons.continueSkippedWithValue")
+                      : advancingWithSkip
+                        ? t("appForm.buttons.continueSkipped")
+                        : declarationHasSkipped
+                          ? t("appForm.buttons.continueSkippedCheck")
+                          : t("appForm.buttons.continue")}{" "}
                     <ArrowRight size={17} />
                       </>
                     )}

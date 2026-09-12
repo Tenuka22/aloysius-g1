@@ -1,6 +1,6 @@
 import type { ApplicationDraft, CategoryType } from "./application-store";
 import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
-import { scoreCategory } from "./scoring";
+import { CATEGORY_MAX_MARKS, scoreCategory } from "./scoring";
 
 /**
  * Applicant-facing PDF of a submitted application, laid out as the school's
@@ -398,7 +398,7 @@ function buildMarkLinesForLocale(draft: ApplicationDraft, locale: PdfLocale): Ma
     lines.push({
       kind: "category",
       label: `${category.categoryType} - ${categoryLabels[category.categoryType] ?? ""}`.trim(),
-      max: score.breakdown.reduce((sum, row) => sum + row.max, 0),
+      max: CATEGORY_MAX_MARKS,
       declared: score.total,
     });
     for (const row of score.breakdown) {

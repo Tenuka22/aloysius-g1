@@ -63,6 +63,14 @@ export const g1ApplicationMarks = sqliteTable("g1_application_marks", {
  id: text("id").primaryKey(),
  applicationId: text("application_id").notNull(),
  categoryType: text("category_type").notNull(),
+ // Addresses one specific category ENTRY (ApplicationDraft.categories[].id),
+ // not just its type: an applicant can have two entries of the same
+ // categoryType (e.g. two "6.4" entries), and each needs its own
+ // independently addressable mark row. Nullable only because rows written
+ // before this column existed have none - every write path from here on
+ // always supplies it, and lookups fall back to categoryType matching
+ // solely for those pre-existing null rows.
+ categoryId: text("category_id"),
  breakdown: text("breakdown", { mode: "json" }).notNull().default("[]"),
  total: integer("total").notNull().default(0),
  // "admin" rows are the authoritative, admin-verified score used everywhere
@@ -76,13 +84,15 @@ export const g1ApplicationMarks = sqliteTable("g1_application_marks", {
 });
 
 /**
- * Manual lat/lng overrides for the Galle government school catalog.
+ * Manual lat/lng overrides for the Galle government school catalog - UNUSED by the
+ * app as of the move to fixing coordinates at the source (apps/map-scraper's
+ * map_coordinates.json, regenerated into apps/web/src/lib/g1/schools.ts's catalog)
+ * instead of an admin-editable database table. Left defined here deliberately: this
+ * repo generates its own migrations, and dropping it is a separate, deliberate step
+ * for whoever owns that migration, not an automatic side effect of this comment.
  *
  * The base catalog (apps/web/src/lib/g1/schools.ts) is generated from the
- * government-school listing scrape and ships with the web bundle. Schools that Google
- * Maps could not pin down are filled in by an admin through the schools hub;
- * those coordinates live here so every deployment and every client reads the
- * same overrides instead of editing checked-in JSON files.
+ * government-school listing scrape and ships with the web bundle.
  */
 export const g1SchoolCoordinateOverrides = sqliteTable("g1_school_coordinate_overrides", {
  /** Web catalog id (apps/web SCHOOLS[].id, e.g. "madoowa-k-v-galle"). */

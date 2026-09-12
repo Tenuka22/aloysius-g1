@@ -361,52 +361,37 @@ describe("scoreCategory64 – education sector", () => {
       expect(scoreCategory64({ contributionPath: "institution", contributionSameSchool: true }).breakdown[0]?.marks).toBe(0);
     });
 
-    it("closes the first period on its end date instead of measuring through today", () => {
+    // 7.5.1 Path I is the CURRENT station, so the period runs through today and
+    // has no end date. `contributionServiceEndDate` is a legacy field from an
+    // earlier UI; when present it must not close the period early.
+    it("measures the current-station period through today, ignoring a stale end date", () => {
       expect(
         scoreCategory64({
           contributionPath: "institution",
           contributionSameSchool: true,
-          contributionServiceStartDate: "2020-09-01",
-          contributionServiceEndDate: "2023-09-01", // 3 years, not measured to "now" (2026-09-01)
+          contributionServiceStartDate: "2023-09-01", // 3 years to "now" (2026-09-01)
+          contributionServiceEndDate: "2023-12-01", // would be under a year -> half rate if it counted
         }).breakdown[0]?.marks,
       ).toBe(6);
     });
 
-    it("sums a second, independently-dated period with the first", () => {
+    // 7.5.1 Path I awards marks "only for the service period at the current
+    // service station", so a single period is scored - never summed with an
+    // earlier station. These fields used to hold a second period; drafts saved
+    // while that was possible must not keep earning marks from it now.
+    it("scores only the current station, ignoring stale second-period values", () => {
       expect(
         scoreCategory64({
           contributionPath: "institution",
           contributionSameSchool: true,
           contributionServiceStartDate: "2024-09-01", // 2 years -> 4
           contributionServiceEndDate: "2026-09-01",
-          contributionSecondSameSchool: false,
-          contributionSecondServiceStartDate: "2020-09-01", // 2 years -> 3
-          contributionSecondServiceEndDate: "2022-09-01",
-        }).breakdown[0]?.marks,
-      ).toBe(7);
-    });
-
-    it("caps the sum of both periods at the shared ten-mark ceiling", () => {
-      expect(
-        scoreCategory64({
-          contributionPath: "institution",
-          contributionSameSchool: true,
-          contributionServiceStartDate: "2015-09-01", // 11 years, capped at 5*2=10
+          contributionSecondPeriodEnabled: true,
           contributionSecondSameSchool: true,
-          contributionSecondServiceStartDate: "2005-09-01", // 5 years -> 10, but overall capped at 10
-          contributionSecondServiceEndDate: "2010-09-01",
+          contributionSecondServiceStartDate: "2020-09-01",
+          contributionSecondServiceEndDate: "2026-09-01",
         }).breakdown[0]?.marks,
-      ).toBe(10);
-    });
-
-    it("ignores an unfilled second period", () => {
-      expect(
-        scoreCategory64({
-          contributionPath: "institution",
-          contributionSameSchool: true,
-          contributionServiceStartDate: "2023-09-01",
-        }).breakdown[0]?.marks,
-      ).toBe(6);
+      ).toBe(4);
     });
   });
 
@@ -425,6 +410,21 @@ describe("scoreCategory64 – education sector", () => {
     it("scores zero with no sub-items entered", () => {
       expect(scoreCategory64({ contributionPath: "university" }).breakdown[0]?.marks).toBe(0);
     });
+  });
+
+  it("treats an unset contributionPath as the default institution path", () => {
+    // A fresh 6.4 entry persists `{}`, but the form pre-selects "institution",
+    // so an untouched path must score the institution branch. Failing to
+    // default here showed the institution fields while scoring 0, which closed
+    // the 7.5.1 gate and zeroed the entire category.
+    const score = scoreCategory64({
+      contributionSameSchool: true,
+      contributionServiceStartDate: "2023-09-01",
+      unutilizedLeaveYears: 3,
+    });
+    expect(score.breakdown[0]?.marks).toBe(6); // 2/yr * 3 years
+    expect(score.breakdown[3]?.marks).toBe(6); // leave scores now the gate is open
+    expect(score.total).toBeGreaterThan(0);
   });
 
   it("zeroes the entire category when contribution is zero, regardless of other inputs", () => {

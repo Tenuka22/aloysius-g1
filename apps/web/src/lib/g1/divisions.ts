@@ -2265,19 +2265,29 @@ export const LOCAL_GOVT_BODIES: LookupItem[] = [
 ];
 
 export const ELECTORAL_CONSTITUENCIES: LookupItem[] = [
-  { id: "habaraduwa",    en: "Habaraduwa",              si: "හබරාදුව" },
-  { id: "galle",         en: "Galle",                   si: "ගාල්ල" },
-  { id: "kalutara",      en: "Baddegama",               si: "බද්දේගම" },
-  { id: "hikkaduwa",     en: "Hikkaduwa",               si: "හික්කඩුව" },
-  { id: "elpitiya",      en: "Elpitiya",                si: "එල්පිටිය" },
-  { id: "akuressa",      en: "Akuressa",                si: "අකුරැස්ස" },
-  { id: "weligama",      en: "Weligama",                si: "වෙලිගම" },
-  { id: "matara",        en: "Matara",                  si: "මාතර" },
-  { id: "kamburupitiya", en: "Kamburupitiya",           si: "කඹුරුපිටිය" },
-  { id: "weeraketiya",   en: "Weeraketiya",             si: "වීරකැටිය" },
-  { id: "hambantota",    en: "Hambantota",              si: "හම්බන්තොට" },
-  { id: "beliatta",      en: "Beliatta",                si: "බෙලිඅත්ත" },
-  { id: "mulkirigala",   en: "Mulkirigala",             si: "මුල්කිරිගල" },
+  { id: "ec-akmeemana",       en: "Akmeemana",        si: "අක්මීමන" },
+  { id: "ec-ambalangoda",     en: "Ambalangoda",      si: "අම්බලන්ගොඩ" },
+  { id: "ec-baddegama",       en: "Baddegama",        si: "බද්දේගම" },
+  { id: "ec-balapitiya",      en: "Balapitiya",       si: "බලපිටිය" },
+  { id: "ec-bentara-elpitiya",en: "Bentara-Elpitiya", si: "බෙන්තර-එල්පිටිය" },
+  { id: "ec-galle",           en: "Galle",            si: "ගාල්ල" },
+  { id: "ec-habaraduwa",      en: "Habaraduwa",       si: "හබරාදුව" },
+  { id: "ec-hiniduma",        en: "Hiniduma",         si: "හිනිදුම" },
+  { id: "ec-karandeniya",     en: "Karandeniya",      si: "කරන්දෙණිය" },
+  { id: "ec-ratgama",         en: "Ratgama",          si: "රත්ගම" },
+
+  { id: "ec-akuressa",        en: "Akuressa",         si: "අකුරැස්ස" },
+  { id: "ec-deniyaya",        en: "Deniyaya",         si: "දෙනියාය" },
+  { id: "ec-devinuwara",      en: "Devinuwara",       si: "දෙවිනුවර" },
+  { id: "ec-hakmana",         en: "Hakmana",          si: "හක්මන" },
+  { id: "ec-kamburupitiya",   en: "Kamburupitiya",    si: "කඹුරුපිටිය" },
+  { id: "ec-matara",          en: "Matara",           si: "මාතර" },
+  { id: "ec-weligama",        en: "Weligama",         si: "වැලිගම" },
+
+  { id: "ec-beliatta",        en: "Beliatta",         si: "බෙලිඅත්ත" },
+  { id: "ec-mulkirigala",     en: "Mulkirigala",      si: "මුල්කිරිගල" },
+  { id: "ec-tangalle",        en: "Tangalle",         si: "තංගල්ල" },
+  { id: "ec-thissamaharama",  en: "Thissamaharama",   si: "තිස්සමහාරාමය" },
 ];
 
 export const FARMERS_SERVICE_CENTERS: LookupItem[] = [

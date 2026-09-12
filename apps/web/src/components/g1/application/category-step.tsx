@@ -1,4 +1,4 @@
-import { CATEGORY_COLORS, MARK_TOOLTIP, STATUS_ERROR, STATUS_WARNING } from "@/lib/color-classes";
+import { CATEGORY_COLORS, MARK_TOOLTIP, MISSING_INPUT, STATUS_ERROR, STATUS_WARNING } from "@/lib/color-classes";
 import {
   CATEGORY_TYPES,
   type CategoryApplication,
@@ -12,6 +12,7 @@ import {
 import {
   ABROAD_PERIOD_MAX,
   ADDITIONAL_DOC_MAX_61,
+  AL_MAX_MARKS,
   CATEGORY_MAX_MARKS,
   CONTRIBUTION_MAX,
   DEGREE_MAX,
@@ -30,6 +31,7 @@ import {
   LEADERSHIP_MAX,
   MAIN_DOCUMENT_MAX_61,
   MAIN_DOCUMENT_MAX_63,
+  OL_MAX_MARKS,
   OTHER_ACTIVITIES_MAX,
   PAST_PUPILS_LIFE_MEMBER_MARKS_PER_YEAR,
   PAST_PUPILS_LIFE_MEMBER_MAX,
@@ -412,16 +414,22 @@ function NumberField({
   label,
   value,
   onChange,
+  missing = false,
 }: {
   id: string;
   label: string;
   value: number | undefined;
   onChange: (value: number | undefined) => void;
+  /** Amber-highlight the box while it is empty, so a 0 marks badge has a
+   * visible cause (this field still needs a value). */
+  missing?: boolean;
 }) {
   const { t } = useTranslation();
   return (
     <Field>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={id} className={cn(missing && MISSING_INPUT.label)}>
+        {label}
+      </FieldLabel>
       <Input
         id={id}
         type="number"
@@ -429,6 +437,7 @@ function NumberField({
         step="1"
         value={value ?? ""}
         placeholder={t("category.common.enterNumber")}
+        className={cn(missing && MISSING_INPUT.control)}
         onChange={(event) => onChange(parseNumber(event.target.value))}
       />
     </Field>
@@ -440,21 +449,26 @@ function YearsSelect({
   label,
   value,
   onChange,
+  missing = false,
 }: {
   id: string;
   label: string;
   value: number | undefined;
   onChange: (years: number) => void;
+  /** Amber-highlight the select while nothing is chosen yet. */
+  missing?: boolean;
 }) {
   const { t } = useTranslation();
   return (
     <Field>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={id} className={cn(missing && MISSING_INPUT.label)}>
+        {label}
+      </FieldLabel>
       <Select
         value={value != null ? String(value) : null}
         onValueChange={(next) => onChange(Number(next))}
       >
-        <SelectTrigger id={id} className="w-full">
+        <SelectTrigger id={id} className={cn("w-full", missing && MISSING_INPUT.control)}>
           <SelectValue placeholder={t("category.common.selectYears")} />
         </SelectTrigger>
         <SelectContent>
@@ -482,6 +496,7 @@ function DateField({
   onChange,
   minDate,
   maxDate,
+  missing = false,
 }: {
   id: string;
   label: string;
@@ -490,10 +505,12 @@ function DateField({
   onChange: (value: string | undefined) => void;
   minDate?: Date;
   maxDate?: Date;
+  /** Amber-highlight the date box while no date is set. */
+  missing?: boolean;
 }) {
   return (
     <Field>
-      <FieldLabel htmlFor={id} className="flex items-center gap-1.5">
+      <FieldLabel htmlFor={id} className={cn("flex items-center gap-1.5", missing && MISSING_INPUT.label)}>
         {label}
         {hint && (
           <TooltipProvider>
@@ -514,6 +531,7 @@ function DateField({
         onChange={onChange}
         minDate={minDate}
         maxDate={maxDate}
+        missing={missing}
       />
     </Field>
   );
@@ -525,12 +543,14 @@ function CalendarDatePicker({
   onChange,
   minDate,
   maxDate,
+  missing = false,
 }: {
   id: string;
   value: string | undefined;
   onChange: (value: string | undefined) => void;
   minDate?: Date;
   maxDate?: Date;
+  missing?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const parsedDate = value ? new Date(`${value}T00:00:00`) : undefined;
@@ -559,7 +579,10 @@ function CalendarDatePicker({
     >
       <PopoverTrigger
         id={id}
-        className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1"
+        className={cn(
+          "flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 md:text-sm [&>span]:line-clamp-1",
+          missing && MISSING_INPUT.control,
+        )}
       >
         <span className={parsedDate ? "" : "text-muted-foreground"}>
           {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
@@ -1464,7 +1487,7 @@ export function Category62Fields({
   pastPupilsMarks = Math.min(pastPupilsMarks, PAST_PUPILS_TOTAL_MAX);
 
   // Degree marks
-  const degreeMarks = DEGREE_MARKS[inputs.highestDegree ?? ""] ?? 0;
+  const degreeMarks = Math.min(DEGREE_MARKS[inputs.highestDegree ?? ""] ?? 0, DEGREE_MAX);
   const diplomaMarks = inputs.hasDiploma ? DIPLOMA_MARKS : 0;
 
   // Contribution marks
@@ -1591,9 +1614,9 @@ export function Category62Fields({
                   m += (inputs[`olGrade${g}` as "olGradeS"] ?? 0) * gradeRate(t2, c, g);
                 }
               }
-              return Math.min(m, 10);
+              return Math.min(m, OL_MAX_MARKS);
             })()}
-            max={10}
+            max={OL_MAX_MARKS}
             hint={t("category.62.olResult.hint")}
           />
         </div>
@@ -1638,9 +1661,9 @@ export function Category62Fields({
                   m += (inputs[`alGrade${g}` as "alGradeS"] ?? 0) * gradeRate(t2, c, g);
                 }
               }
-              return Math.min(m, 12);
+              return Math.min(m, AL_MAX_MARKS);
             })()}
-            max={12}
+            max={AL_MAX_MARKS}
             hint={t("category.62.alResult.hint")}
           />
         </div>
@@ -2447,8 +2470,39 @@ export function Category64Fields({
     ? tieredDistanceMarks(inputs.residenceToSchoolKm, RESIDENCE_DISTANCE_TIERS_64, RESIDENCE_DISTANCE_FALLBACK_64)
     : 0;
   const workplaceDistance = gateOpen ? workplaceDistanceMarks(inputs.workplaceToSchoolKm) : 0;
+
+  // An empty input is the usual reason a marks badge reads 0, so highlight the
+  // ones the currently-selected branch still needs a value for.
+  const institutionBranch = (inputs.contributionPath ?? "institution") === "institution";
+  const universityAllEmpty =
+    inputs.contributionExamYears == null &&
+    inputs.contributionCurriculumYears == null &&
+    inputs.contributionTrainingYears == null;
+  const missingContribution = institutionBranch ? inputs.contributionServiceStartDate == null : universityAllEmpty;
+  const missingDifficult =
+    inputs.difficultServiceType === "current"
+      ? inputs.difficultServiceStartDate == null
+      : inputs.difficultServiceType === "previous"
+        ? inputs.difficultServicePreviousStartDate == null && inputs.difficultServiceDistanceStartDate == null
+        : false;
+  const missingLeave = inputs.unutilizedLeaveYears == null;
+  const missingResidence = inputs.residenceToSchoolKm == null;
+  const missingWorkplace = inputs.workplaceToSchoolKm == null;
+  const hasMissing =
+    missingContribution ||
+    inputs.serviceStartDate == null ||
+    missingDifficult ||
+    missingLeave ||
+    missingResidence ||
+    missingWorkplace;
+
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
+      {hasMissing && (
+        <p className="col-span-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 max-md:col-span-1 dark:text-amber-400">
+          {t("category.marking.missingNotice")}
+        </p>
+      )}
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{t("category.64.contribution.label")}</span>
@@ -2482,75 +2536,24 @@ export function Category64Fields({
             />
           </RadioGroup>
           {(inputs.contributionPath ?? "institution") === "institution" && (
-              <div className="grid gap-4 pt-3">
-              <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    className="size-4"
-                    checked={inputs.contributionSameSchool === true}
-                    onCheckedChange={(checked) => onChange({ contributionSameSchool: checked === true })}
-                  />
-                  {t("category.64.contribution.sameSchool")}
-                </label>
-                <DateField
-                  id={`contribution-start-${id}`}
-                  label={t("category.64.contribution.serviceStartLabel")}
-                  hint={t("category.64.contribution.serviceStartHint")}
-                  value={inputs.contributionServiceStartDate}
-                  onChange={(contributionServiceStartDate) => onChange({ contributionServiceStartDate })}
-                />
-                <DateField
-                  id={`contribution-end-${id}`}
-                  label={t("category.64.contribution.serviceEndLabel")}
-                  hint={t("category.64.contribution.serviceEndHint")}
-                  value={inputs.contributionServiceEndDate}
-                  onChange={(contributionServiceEndDate) => onChange({ contributionServiceEndDate })}
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-5 pt-3 max-md:grid-cols-1">
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
-                  id={`contribution-second-period-toggle-${id}`}
                   className="size-4"
-                  checked={inputs.contributionSecondPeriodEnabled === true}
-                  onCheckedChange={(checked) => onChange({ contributionSecondPeriodEnabled: checked === true })}
+                  checked={inputs.contributionSameSchool === true}
+                  onCheckedChange={(checked) => onChange({ contributionSameSchool: checked === true })}
                 />
-                {t("category.64.contribution.addSecondPeriod")}
+                {t("category.64.contribution.sameSchool")}
               </label>
-              {inputs.contributionSecondPeriodEnabled && (
-                  <div className="grid gap-1.5">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {t("category.64.contribution.secondPeriodLabel")}
-                    </span>
-                    <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
-                      <label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          className="size-4"
-                          checked={inputs.contributionSecondSameSchool === true}
-                          onCheckedChange={(checked) => onChange({ contributionSecondSameSchool: checked === true })}
-                        />
-                        {t("category.64.contribution.sameSchool")}
-                      </label>
-                      <DateField
-                        id={`contribution-second-start-${id}`}
-                        label={t("category.64.contribution.serviceStartLabel")}
-                        value={inputs.contributionSecondServiceStartDate}
-                        onChange={(contributionSecondServiceStartDate) =>
-                          onChange({ contributionSecondServiceStartDate })
-                        }
-                      />
-                      <DateField
-                        id={`contribution-second-end-${id}`}
-                        label={t("category.64.contribution.serviceEndLabel")}
-                        hint={t("category.64.contribution.serviceEndHint")}
-                        value={inputs.contributionSecondServiceEndDate}
-                        onChange={(contributionSecondServiceEndDate) =>
-                          onChange({ contributionSecondServiceEndDate })
-                        }
-                      />
-                    </div>
-                  </div>
-              )}
-              </div>
+              <DateField
+                id={`contribution-start-${id}`}
+                label={t("category.64.contribution.serviceStartLabel")}
+                hint={t("category.64.contribution.serviceStartHint")}
+                value={inputs.contributionServiceStartDate}
+                missing={missingContribution}
+                onChange={(contributionServiceStartDate) => onChange({ contributionServiceStartDate })}
+              />
+            </div>
           )}
           {inputs.contributionPath === "university" && (
               <div className="grid grid-cols-3 gap-5 pt-3 max-md:grid-cols-1">
@@ -2558,18 +2561,21 @@ export function Category64Fields({
                   id={`contribution-exam-${id}`}
                   label={t("category.64.contribution.examYears")}
                   value={inputs.contributionExamYears}
+                  missing={universityAllEmpty}
                   onChange={(contributionExamYears) => onChange({ contributionExamYears })}
                 />
                 <YearsSelect
                   id={`contribution-curriculum-${id}`}
                   label={t("category.64.contribution.curriculumYears")}
                   value={inputs.contributionCurriculumYears}
+                  missing={universityAllEmpty}
                   onChange={(contributionCurriculumYears) => onChange({ contributionCurriculumYears })}
                 />
                 <YearsSelect
                   id={`contribution-training-${id}`}
                   label={t("category.64.contribution.trainingYears")}
                   value={inputs.contributionTrainingYears}
+                  missing={universityAllEmpty}
                   onChange={(contributionTrainingYears) => onChange({ contributionTrainingYears })}
                 />
               </div>
@@ -2601,6 +2607,7 @@ export function Category64Fields({
           label={t("category.64.servicePeriod.dateLabel")}
           hint={t("category.64.servicePeriod.dateHint")}
           value={inputs.serviceStartDate}
+          missing={inputs.serviceStartDate == null}
           onChange={(serviceStartDate) => onChange({ serviceStartDate })}
         />
       </div>
@@ -2653,6 +2660,7 @@ export function Category64Fields({
                   label={t("category.64.difficultService.currentStartLabel")}
                   hint={t("category.64.difficultService.currentStartHint")}
                   value={inputs.difficultServiceStartDate}
+                  missing={inputs.difficultServiceStartDate == null}
                   onChange={(difficultServiceStartDate) => onChange({ difficultServiceStartDate })}
                 />
               </div>
@@ -2668,12 +2676,14 @@ export function Category64Fields({
                       id={`difficult-previous-start-${category.id}`}
                       label={t("category.64.difficultService.previousStartLabel")}
                       value={inputs.difficultServicePreviousStartDate}
+                      missing={missingDifficult}
                       onChange={(difficultServicePreviousStartDate) => onChange({ difficultServicePreviousStartDate })}
                     />
                     <DateField
                       id={`difficult-previous-end-${category.id}`}
                       label={t("category.64.difficultService.previousEndLabel")}
                       value={inputs.difficultServicePreviousEndDate}
+                      missing={inputs.difficultServicePreviousStartDate != null && inputs.difficultServicePreviousEndDate == null}
                       onChange={(difficultServicePreviousEndDate) => onChange({ difficultServicePreviousEndDate })}
                     />
                   </div>
@@ -2687,18 +2697,21 @@ export function Category64Fields({
                       id={`difficult-distance-start-${category.id}`}
                       label={t("category.64.difficultService.distanceStartLabel")}
                       value={inputs.difficultServiceDistanceStartDate}
+                      missing={missingDifficult}
                       onChange={(difficultServiceDistanceStartDate) => onChange({ difficultServiceDistanceStartDate })}
                     />
                     <DateField
                       id={`difficult-distance-end-${category.id}`}
                       label={t("category.64.difficultService.distanceEndLabel")}
                       value={inputs.difficultServiceDistanceEndDate}
+                      missing={inputs.difficultServiceDistanceStartDate != null && inputs.difficultServiceDistanceEndDate == null}
                       onChange={(difficultServiceDistanceEndDate) => onChange({ difficultServiceDistanceEndDate })}
                     />
                     <NumberField
                       id={`difficult-distance-${category.id}`}
                       label={t("category.64.difficultService.distanceKm")}
                       value={inputs.difficultServiceDistanceKm}
+                      missing={inputs.difficultServiceDistanceStartDate != null && inputs.difficultServiceDistanceKm == null}
                       onChange={(difficultServiceDistanceKm) => onChange({ difficultServiceDistanceKm })}
                     />
                   </div>
@@ -2735,6 +2748,7 @@ export function Category64Fields({
           id={`unutilized-leave-${category.id}`}
           label={t("category.64.unutilizedLeave.yearsLabel")}
           value={inputs.unutilizedLeaveYears}
+          missing={missingLeave}
           onChange={(unutilizedLeaveYears) => onChange({ unutilizedLeaveYears })}
         />
       </div>
@@ -2756,6 +2770,7 @@ export function Category64Fields({
           id={`residence-to-school-${category.id}`}
           label={t("category.64.residenceToSchool.distanceLabel")}
           value={inputs.residenceToSchoolKm}
+          missing={missingResidence}
           onChange={(residenceToSchoolKm) => onChange({ residenceToSchoolKm })}
         />
       </div>
@@ -2777,6 +2792,7 @@ export function Category64Fields({
           id={`workplace-to-school-${category.id}`}
           label={t("category.64.workplaceToSchool.distanceLabel")}
           value={inputs.workplaceToSchoolKm}
+          missing={missingWorkplace}
           onChange={(workplaceToSchoolKm) => onChange({ workplaceToSchoolKm })}
         />
       </div>

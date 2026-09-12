@@ -174,6 +174,17 @@ export const SCORE_ROW_BG = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Missing scoring input (amber highlight)
+// ---------------------------------------------------------------------------
+
+/** Applied to an empty scoring input the applicant still has to fill, so a
+ * marks badge reading 0 has a visible cause on the field itself. */
+export const MISSING_INPUT = {
+  control: "border-amber-400 bg-amber-50 dark:border-amber-500/60 dark:bg-amber-500/10",
+  label: "text-amber-700 dark:text-amber-400",
+} as const;
+
+// ---------------------------------------------------------------------------
 // Marking tooltip badge
 // ---------------------------------------------------------------------------
 

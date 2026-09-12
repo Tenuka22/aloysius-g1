@@ -40,10 +40,15 @@ function AdmissionCategorySelectPage() {
   });
 
   const adminMarksMap = useMemo(() => {
+    // Keyed by categoryId (every mark saved after this fix carries one) so
+    // two category entries of the same categoryType each get their own
+    // admin total instead of collapsing to whichever was saved last. A
+    // legacy row saved before categoryId existed falls back to its
+    // categoryType as the map key.
     const map = new Map<string, number>();
     if (marksQuery.data) {
       for (const mark of marksQuery.data) {
-        map.set(mark.categoryType, mark.total);
+        map.set(mark.categoryId ?? mark.categoryType, mark.total);
       }
     }
     return map;
@@ -106,8 +111,8 @@ function AdmissionCategorySelectPage() {
           {draft.categories.length === 0 && <p className="text-sm text-muted-foreground">No category entries were submitted.</p>}
           {draft.categories.map((category, categoryIndex) => {
             const score = scoreCategory(category);
-            const adminTotal = adminMarksMap.get(category.categoryType) ?? 0;
-            const hasAdminMarks = adminMarksMap.has(category.categoryType);
+            const adminTotal = adminMarksMap.get(category.id) ?? adminMarksMap.get(category.categoryType) ?? 0;
+            const hasAdminMarks = adminMarksMap.has(category.id) || adminMarksMap.has(category.categoryType);
             const sameTypeCount = draft.categories.filter((c) => c.categoryType === category.categoryType).length;
             const sameTypeIndex = draft.categories.filter((c) => c.categoryType === category.categoryType && draft.categories.indexOf(c) < categoryIndex).length + 1;
             return (
@@ -127,7 +132,7 @@ function AdmissionCategorySelectPage() {
                     {hasAdminMarks ? (
                       <Badge variant="default">{adminTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })} admin</Badge>
                     ) : (
-                      <Badge variant="secondary">0 admin</Badge>
+                      <Badge variant="outline" className="text-muted-foreground">Not scored yet</Badge>
                     )}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">

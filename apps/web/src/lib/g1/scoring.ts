@@ -520,21 +520,19 @@ export function difficultServiceDistanceMarks(
   return rateTimesYearsWithBonus(years, remainderMonths, ratePerYear, tierCap);
 }
 
-/** 7.5.1 Path I, a single period of qualifying-institution service: a
- * per-year rate (higher if that station is the very school being
- * applied to), capped per-branch, with a half-rate award for under a
- * year of service. An open-ended period (no end date) is measured
- * through today, matching a still-serving applicant; a closed period
- * (both dates present) lets a second, earlier station also count - see
- * `contributionMarks64`, which sums two independently-dated periods. */
+/** 7.5.1 Path I, the CURRENT-station service period - the circular awards
+ * marks "only for the service period at the current service station", so
+ * this is a single, open-ended period measured through today (the parent
+ * is still serving there on 30 June): a per-year rate (higher if that
+ * station is the very school being applied to), capped per-branch, with
+ * a half-rate award for under a year of service. */
 function contributionInstitutionPeriodMarks(
   sameSchool: boolean,
   startDate: string | undefined,
-  endDate: string | undefined,
 ): number {
   const rate = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_RATE : CONTRIBUTION_PATH1_ELSEWHERE_RATE;
   const branchMax = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_MAX : CONTRIBUTION_PATH1_ELSEWHERE_MAX;
-  const { years, remainderMonths } = yearsAndMonthsBetween(startDate, endDate);
+  const { years, remainderMonths } = yearsAndMonthsBetween(startDate);
   if (years < 1) {
     if (years === 0 && remainderMonths === 0) return 0;
     return cap(rate / 2, branchMax);
@@ -543,27 +541,28 @@ function contributionInstitutionPeriodMarks(
 }
 
 /** 7.5.1 - an eligibility gate for the rest of category 6.4 (see
- * `scoreCategory64`), not just a standalone line item. Path I sums up to
- * two periods of qualifying-institution service (e.g. the current
- * station plus an earlier one, before a transfer), each its own rate
- * depending on whether that station is the very school being applied
- * to, under the shared 10-mark ceiling. Path II sums three UGC-university
- * sub-items, each its own per-year rate capped independently. */
+ * `scoreCategory64`), not just a standalone line item. Path I pays a
+ * per-year rate for CURRENT-station service only (higher rate if that
+ * station is the very school being applied to), with a half-rate award
+ * for under a year of current-station service, under the shared 10-mark
+ * ceiling. Path II sums three UGC-university sub-items, each its own
+ * per-year rate capped independently. */
 export function contributionMarks64(inputs: ScoringInputs): number {
-  if (inputs.contributionPath === "institution") {
-    const firstPeriodMarks = contributionInstitutionPeriodMarks(
+  // The form's radio renders `contributionPath ?? "institution"` as
+  // pre-selected, so an untouched entry (persisted as `{}` by
+  // `createCategory`) has no explicit path. Treat that the same as
+  // "institution": otherwise the applicant sees the institution fields,
+  // fills them, and still scores 0 here - which closes the gate and zeroes
+  // every other row in the category.
+  const path = inputs.contributionPath ?? "institution";
+  if (path === "institution") {
+    const currentStationMarks = contributionInstitutionPeriodMarks(
       inputs.contributionSameSchool === true,
       inputs.contributionServiceStartDate,
-      inputs.contributionServiceEndDate,
     );
-    const secondPeriodMarks = contributionInstitutionPeriodMarks(
-      inputs.contributionSecondSameSchool === true,
-      inputs.contributionSecondServiceStartDate,
-      inputs.contributionSecondServiceEndDate,
-    );
-    return cap(firstPeriodMarks + secondPeriodMarks, SCHOOL_EDUCATION_CONTRIBUTION_MAX);
+    return cap(currentStationMarks, SCHOOL_EDUCATION_CONTRIBUTION_MAX);
   }
-  if (inputs.contributionPath === "university") {
+  if (path === "university") {
     const examMarks = cap((inputs.contributionExamYears ?? 0) * CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX);
     const curriculumMarks = cap((inputs.contributionCurriculumYears ?? 0) * CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX);
     const trainingMarks = cap((inputs.contributionTrainingYears ?? 0) * CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX);
