@@ -22,7 +22,7 @@ function SubAdminOverviewPage() {
             <CardDescription>{t("subAdminOverview.forgotKey.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="secondary" render={<Link to="/sub-admin/forgot-requests" />}>{t("subAdminOverview.forgotKey.viewButton")}</Button>
+            <Button variant="secondary" render={<Link to="/sub-admin/forgot-requests" />} nativeButton={false}>{t("subAdminOverview.forgotKey.viewButton")}</Button>
           </CardContent>
         </Card>
         <Card>
@@ -31,7 +31,7 @@ function SubAdminOverviewPage() {
             <CardDescription>{t("subAdminOverview.removal.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="secondary" render={<Link to="/sub-admin/removal-requests" />}>{t("subAdminOverview.removal.viewButton")}</Button>
+            <Button variant="secondary" render={<Link to="/sub-admin/removal-requests" />} nativeButton={false}>{t("subAdminOverview.removal.viewButton")}</Button>
           </CardContent>
         </Card>
       </div>

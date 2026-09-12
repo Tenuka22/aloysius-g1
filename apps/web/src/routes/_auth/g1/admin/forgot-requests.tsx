@@ -111,7 +111,7 @@ function AdminForgotRequestsPage() {
       onEvent: () => { void requests.refetch(); },
       onError: () => undefined,
     });
-    return () => { controller.abort(); cancel(); };
+    return () => { controller.abort(); void cancel().catch(() => undefined); };
   }, [session.data?.user.role, requests]);
 
   if (session.data?.user.role !== "admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Admin access required</CardTitle><CardDescription className="leading-relaxed">Your account does not have permission to view requests.</CardDescription></CardHeader><Button variant="default" className="w-fit" render={<Link to="/admissions" />} nativeButton={false}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;

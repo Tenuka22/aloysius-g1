@@ -90,7 +90,7 @@ function AdminMapPage() {
       onEvent: () => { void admissions.refetch(); },
       onError: () => undefined,
     });
-    return () => { controller.abort(); cancel(); };
+    return () => { controller.abort(); void cancel().catch(() => undefined); };
   }, []);
 
   const homeSchool = findSchoolById(HOME_SCHOOL_ID);

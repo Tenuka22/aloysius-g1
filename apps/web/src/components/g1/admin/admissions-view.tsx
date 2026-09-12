@@ -119,7 +119,7 @@ export function AdmissionsPage() {
       onEvent: () => { void admissions.refetch(); },
       onError: () => undefined,
     });
-    return () => { controller.abort(); cancel(); };
+    return () => { controller.abort(); void cancel().catch(() => undefined); };
   }, []);
 
   const counts = useMemo(() => ({ total: admissions.data?.total ?? 0, verified: items.filter((item) => item.admissionStatus === "verified").length, pending: items.filter((item) => item.admissionStatus === "pending").length, flagged: items.filter((item) => item.admissionStatus === "fake" || item.isBanned).length }), [admissions.data?.total, items]);

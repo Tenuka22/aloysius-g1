@@ -260,7 +260,7 @@ function AdminSchoolsPage() {
             Every Galle government school needs coordinates for distance scoring and map views. Schools the scraper could not pin down are listed first - find them via Google Maps / Earth and set the pin manually. Manual coordinates are stored in the database and shared everywhere.
           </p>
         </div>
-        <Button variant="secondary" render={<Link to="/g1/admin/admin_map" search={true} />}><MapPin size={17} /> Open map view</Button>
+        <Button variant="secondary" render={<Link to="/g1/admin/admin_map" search={true} />} nativeButton={false}><MapPin size={17} /> Open map view</Button>
       </div>
 
       <Card className="mb-6">

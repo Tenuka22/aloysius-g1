@@ -31,10 +31,6 @@ function AdmissionCategorySelectPage() {
   const { id } = Route.useParams();
   const location = useLocation();
 
-  if (location.pathname !== `/g1/admin/admissions/${id}`) {
-    return <Outlet />;
-  }
-
   const detail = useQuery({
     ...orpc.admin.admissions.get.queryOptions({ input: { id } }),
   });
@@ -42,8 +38,6 @@ function AdmissionCategorySelectPage() {
   const marksQuery = useQuery({
     ...orpc.admin.admissions.getMarks.queryOptions({ input: { applicationId: id } }),
   });
-
-  const data = detail.data as AdmissionDetail | undefined;
 
   const adminMarksMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -54,6 +48,17 @@ function AdmissionCategorySelectPage() {
     }
     return map;
   }, [marksQuery.data]);
+
+  // This component is a shared layout that stays mounted across navigation
+  // between the bare `/admissions/$id` route and its `/$categoryId` child
+  // (rendered via the `<Outlet/>` below) - every hook above must run on
+  // every render regardless of which branch is taken, or the hook count
+  // changes between renders ("Rendered fewer hooks than expected").
+  if (location.pathname !== `/g1/admin/admissions/${id}`) {
+    return <Outlet />;
+  }
+
+  const data = detail.data as AdmissionDetail | undefined;
 
   if (detail.isLoading) {
     return (

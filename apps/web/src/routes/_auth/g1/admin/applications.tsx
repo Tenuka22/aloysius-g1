@@ -58,6 +58,7 @@ type ApplicationRow = {
   validationErrors: string[]
   createdAt: Date
   updatedAt: Date
+  submittedAt: Date | null
 }
 
 function DeleteDialog({ open, onOpenChange, onConfirm, applicantName, isPending }: { open: boolean; onOpenChange: (open: boolean) => void; onConfirm: () => void; applicantName: string; isPending: boolean }) {
@@ -166,6 +167,13 @@ function useColumns(onRefetch: () => void) {
         : <span className="text-muted-foreground text-xs"> - </span>,
     },
     {
+      accessorKey: "submittedAt",
+      header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Submitted" />,
+      cell: ({ row }: { row: { original: ApplicationRow } }) => row.original.submittedAt
+        ? <span className="whitespace-nowrap">{new Date(row.original.submittedAt).toLocaleDateString()}</span>
+        : <span className="text-muted-foreground text-xs">Not submitted</span>,
+    },
+    {
       accessorKey: "updatedAt",
       header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Updated" />,
       cell: ({ row }: { row: { original: ApplicationRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.updatedAt).toLocaleDateString()}</span>,
@@ -211,17 +219,23 @@ function AdminApplicationsPage() {
       onEvent: () => { void applications.refetch(); void overview.refetch(); },
       onError: () => undefined,
     });
-    return () => { controller.abort(); cancel(); };
+    return () => { controller.abort(); void cancel().catch(() => undefined); };
   }, [session.data?.user.role]);
 
+  // Both hooks below must run on every render of this component instance -
+  // it's a shared layout that stays mounted across navigation between the
+  // bare list route and `/applications/$id` (rendered via the `<Outlet/>`
+  // early return just below), so any hook placed after that early return
+  // would run on some renders and not others, violating the Rules of
+  // Hooks ("Rendered fewer hooks than expected").
+  const refetchApplications = useCallback(() => { void applications.refetch(); }, [applications]);
+  const columns = useColumns(refetchApplications);
+
   if (location.pathname !== "/g1/admin/applications") return <Outlet />;
-  if (session.data?.user.role !== "admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Admin access required</CardTitle><CardDescription className="leading-relaxed">Your account does not have permission to view applications.</CardDescription></CardHeader><Button variant="default" className="w-fit" render={<Link to="/admissions" />}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
+  if (session.data?.user.role !== "admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Admin access required</CardTitle><CardDescription className="leading-relaxed">Your account does not have permission to view applications.</CardDescription></CardHeader><Button variant="default" className="w-fit" render={<Link to="/admissions" />} nativeButton={false}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
 
   const items = (applications.data?.items ?? []) as ApplicationRow[];
   const pageCount = applications.data ? Math.ceil(applications.data.total / applications.data.pageSize) : 0;
-
-  const refetchApplications = useCallback(() => { void applications.refetch(); }, [applications]);
-  const columns = useColumns(refetchApplications);
 
   return (
     <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">

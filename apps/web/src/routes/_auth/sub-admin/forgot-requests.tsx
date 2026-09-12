@@ -153,7 +153,7 @@ function SubAdminForgotRequestsPage() {
       onEvent: () => { void requests.refetch(); },
       onError: () => undefined,
     });
-    return () => { controller.abort(); cancel(); };
+    return () => { controller.abort(); void cancel().catch(() => undefined); };
   }, [session.data?.user.role, requests]);
 
   const role = session.data?.user.role;
@@ -166,7 +166,7 @@ function SubAdminForgotRequestsPage() {
           <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">{t("subAdminForgot.title")}</h1>
           <p className="text-muted-foreground">{t("subAdminForgot.description")}</p>
         </div>
-        <Button variant="secondary" render={<Link to="/sub-admin" />}>{t("subAdminForgot.backToOverview")}</Button>
+        <Button variant="secondary" render={<Link to="/sub-admin" />} nativeButton={false}>{t("subAdminForgot.backToOverview")}</Button>
       </div>
       <Card>
         <CardHeader>

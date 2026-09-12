@@ -1594,7 +1594,7 @@ function AdmissionWorkspacePage() {
                 ) : (
                   <Button variant="destructive" disabled={reviewMutation.isPending} onClick={() => setBanDialogOpen(true)}><Ban size={17} /> Ban applicant</Button>
                 )}
-                <Button variant="outline" render={<Link to="/g1/admin/applications/$id" params={{ id: data.id }} search={{ mode: "edit" }} />}><Edit3 size={17} /> Edit application</Button>
+                <Button variant="outline" render={<Link to="/g1/admin/applications/$id" params={{ id: data.id }} search={{ mode: "edit" }} />} nativeButton={false}><Edit3 size={17} /> Edit application</Button>
               </div>
             </CardContent>
           </Card>

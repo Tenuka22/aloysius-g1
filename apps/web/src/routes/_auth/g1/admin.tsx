@@ -87,7 +87,7 @@ function AdminPage() {
       onEvent: () => { void overview.refetch(); void applications.refetch(); },
       onError: () => undefined,
     });
-    return () => { controller.abort(); cancel(); };
+    return () => { controller.abort(); void cancel().catch(() => undefined); };
   }, [session.data?.user.role]);
 
   if (session.data?.user.role !== "admin") {
@@ -99,7 +99,7 @@ function AdminPage() {
             <CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">{t("admin.noAccess.title")}</CardTitle>
             <CardDescription className="leading-relaxed">{t("admin.noAccess.description")}</CardDescription>
           </CardHeader>
-          <Button variant="default" className="w-fit" render={<Link to="/admissions" />}><ArrowLeft size={17} /> {t("admin.noAccess.backToDashboard")}</Button>
+          <Button variant="default" className="w-fit" render={<Link to="/admissions" />} nativeButton={false}><ArrowLeft size={17} /> {t("admin.noAccess.backToDashboard")}</Button>
         </Card>
       </main>
     );
@@ -226,9 +226,9 @@ function AdminPage() {
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">{t("admin.overview.appRequests.description")}</p>
                 <div className="flex gap-2 flex-wrap">
-                  <Button variant="secondary" render={<Link to="/g1/admin/requests" search={true} />}>{t("admin.overview.appRequests.submissionRequests")}</Button>
-                  <Button variant="secondary" render={<Link to="/g1/admin/removal-requests" search={true} />}>{t("admin.overview.appRequests.removalRequests")}</Button>
-                  <Button variant="secondary" render={<Link to="/g1/admin/forgot-requests" search={true} />}>{t("admin.overview.appRequests.forgotKeyRequests")}</Button>
+                  <Button variant="secondary" render={<Link to="/g1/admin/requests" search={true} />} nativeButton={false}>{t("admin.overview.appRequests.submissionRequests")}</Button>
+                  <Button variant="secondary" render={<Link to="/g1/admin/removal-requests" search={true} />} nativeButton={false}>{t("admin.overview.appRequests.removalRequests")}</Button>
+                  <Button variant="secondary" render={<Link to="/g1/admin/forgot-requests" search={true} />} nativeButton={false}>{t("admin.overview.appRequests.forgotKeyRequests")}</Button>
                 </div>
               </CardContent>
             </Card>
@@ -236,14 +236,14 @@ function AdminPage() {
               <CardHeader><CardTitle>{t("admin.overview.admissions.title")}</CardTitle></CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">{t("admin.overview.admissions.description")}</p>
-                <Button variant="secondary" render={<Link to="/g1/admin/admissions" search={true} />}><ClipboardCheck size={17} /> {t("admin.overview.admissions.openAdmissions")}</Button>
+                <Button variant="secondary" render={<Link to="/g1/admin/admissions" search={true} />} nativeButton={false}><ClipboardCheck size={17} /> {t("admin.overview.admissions.openAdmissions")}</Button>
               </CardContent>
             </Card>
             <Card className="mb-4">
               <CardHeader><CardTitle>{t("admin.overview.schoolCoords.title")}</CardTitle></CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">{t("admin.overview.schoolCoords.description")}</p>
-                <Button variant="secondary" render={<Link to="/g1/admin/schools" search={true} />}><MapPinned size={17} /> {t("admin.overview.schoolCoords.openHub")}</Button>
+                <Button variant="secondary" render={<Link to="/g1/admin/schools" search={true} />} nativeButton={false}><MapPinned size={17} /> {t("admin.overview.schoolCoords.openHub")}</Button>
               </CardContent>
             </Card>
             <Card className="mb-4">

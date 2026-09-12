@@ -130,11 +130,11 @@ function SubAdminRemovalRequestsPage() {
       onEvent: () => { void requests.refetch(); },
       onError: () => undefined,
     });
-    return () => { controller.abort(); cancel(); };
+    return () => { controller.abort(); void cancel().catch(() => undefined); };
   }, [session.data?.user.role, requests]);
 
   const role = session.data?.user.role;
-  if (role !== "admin" && role !== "sub-admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">{t("subAdminRemoval.noAccess.title")}</CardTitle></CardHeader><Button variant="default" className="w-fit" render={<Link to="/admissions" />}><ArrowLeft size={17} /> {t("subAdminRemoval.noAccess.backToDashboard")}</Button></Card></main>;
+  if (role !== "admin" && role !== "sub-admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">{t("subAdminRemoval.noAccess.title")}</CardTitle></CardHeader><Button variant="default" className="w-fit" render={<Link to="/admissions" />} nativeButton={false}><ArrowLeft size={17} /> {t("subAdminRemoval.noAccess.backToDashboard")}</Button></Card></main>;
 
   const isOpen = !statusQuery.data?.submissionLocked;
   const items = (requests.data?.items ?? []) as RemovalRequestRow[];
@@ -148,7 +148,7 @@ function SubAdminRemovalRequestsPage() {
           <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">{t("subAdminRemoval.title")}</h1>
           <p className="text-muted-foreground">{t("subAdminRemoval.description")}</p>
         </div>
-        <Button variant="secondary" render={<Link to="/sub-admin" />}>{t("subAdminRemoval.backToOverview")}</Button>
+        <Button variant="secondary" render={<Link to="/sub-admin" />} nativeButton={false}>{t("subAdminRemoval.backToOverview")}</Button>
       </div>
       {!isOpen && (
         <Card className={`mb-4 ${FORM_WINDOW_WARNING.card}`}>

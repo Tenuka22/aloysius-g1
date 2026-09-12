@@ -683,7 +683,7 @@ export function AdminApplicationView({ id }: { id: string }) {
             </div>
           </TabsContent>}
         </Tabs>
-        <div className="flex justify-between gap-3 flex-wrap"><Button variant="secondary" render={<a href="/g1/admin/applications" />}>Back to applications</Button><Button render={<a href={`/g1/admin/applications/${id}?mode=edit`} />}>Edit application</Button></div>
+        <div className="flex justify-between gap-3 flex-wrap"><Button variant="secondary" nativeButton={false} render={<a href="/g1/admin/applications" />}>Back to applications</Button><Button nativeButton={false} render={<a href={`/g1/admin/applications/${id}?mode=edit`} />}>Edit application</Button></div>
       </CardContent>
     </Card>}
   </main>;
