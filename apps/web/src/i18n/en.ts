@@ -636,6 +636,7 @@ const en = {
   "appForm.reviewStep.adminMarksPending": "Admin marks pending",
   "appForm.reviewStep.indicative": "Indicative",
   "appForm.reviewStep.total": "Total",
+  "appForm.reviewStep.average": "Average",
   "appForm.reviewStep.noCategoriesSelected": "No categories selected.",
   "appForm.reviewStep.emptyValue": "(empty)",
   "appForm.statusBar.applicationStatus": "Application status",

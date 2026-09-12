@@ -611,6 +611,7 @@ const si = {
   "appForm.reviewStep.adminMarksPending": "පරිපාලක ලකුණු ලබා දීම ඉතිරිව ඇත",
   "appForm.reviewStep.indicative": "දැනට ලබාගත්",
   "appForm.reviewStep.total": "එකතුව",
+  "appForm.reviewStep.average": "සාමාන්‍යය",
   "appForm.reviewStep.noCategoriesSelected": "වර්ගීකරණයන් කිසිවක් තෝරාගෙන නොමැත.",
   "appForm.reviewStep.emptyValue": "(හිස්)",
   "appForm.statusBar.applicationStatus": "අයදුම්පතේ තත්ත්වය",

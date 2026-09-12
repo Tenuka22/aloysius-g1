@@ -2107,11 +2107,16 @@ function ReviewStep({
                     );
                   })}
                   <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 mt-1">
-                    <span className="text-sm font-medium">{t("appForm.reviewStep.total")}</span>
+                    <span className="text-sm font-medium">{t("appForm.reviewStep.average")}</span>
                     <span className="text-sm">
-                      {t("appForm.reviewStep.indicative")}:{" "}
                       <strong className="tabular-nums">
-                        {draft.categories.reduce((sum, c) => sum + scoreCategory(c).total, 0)}
+                        {draft.categories.length > 0
+                          ? (
+                              draft.categories.reduce((sum, c) => sum + scoreCategory(c).total, 0) /
+                              draft.categories.length
+                            ).toFixed(2)
+                          : "0"}
+                        %
                       </strong>
                     </span>
                   </div>
