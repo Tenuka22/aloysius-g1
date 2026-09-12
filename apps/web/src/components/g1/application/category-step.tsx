@@ -584,10 +584,22 @@ function CalendarDatePicker({
           missing && MISSING_INPUT.control,
         )}
       >
-        <span className={parsedDate ? "" : "text-muted-foreground"}>
+        <span
+          className={
+            parsedDate
+              ? ""
+              : missing
+                ? "text-amber-900 dark:text-amber-200"
+                : "text-muted-foreground"
+          }
+        >
           {parsedDate ? format(parsedDate, "dd/MM/yyyy") : "dd/mm/yyyy"}
         </span>
-        {!parsedDate && <CalendarIcon className="size-4 opacity-50" />}
+        {!parsedDate && (
+          <CalendarIcon
+            className={cn("size-4", missing ? "text-amber-900 dark:text-amber-200" : "opacity-50")}
+          />
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
@@ -2499,7 +2511,7 @@ export function Category64Fields({
   return (
     <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       {hasMissing && (
-        <p className="col-span-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 max-md:col-span-1 dark:text-amber-400">
+        <p className="col-span-2 rounded-lg border border-amber-500/50 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900 max-md:col-span-1 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
           {t("category.marking.missingNotice")}
         </p>
       )}
@@ -2582,7 +2594,9 @@ export function Category64Fields({
           )}
         </Field>
         {!gateOpen && (
-          <p className="text-xs text-amber-600 dark:text-amber-500">{t("category.64.contribution.gateWarning")}</p>
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+            {t("category.64.contribution.gateWarning")}
+          </p>
         )}
       </div>
       <div className="grid gap-1.5">

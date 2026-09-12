@@ -180,8 +180,12 @@ export const SCORE_ROW_BG = {
 /** Applied to an empty scoring input the applicant still has to fill, so a
  * marks badge reading 0 has a visible cause on the field itself. */
 export const MISSING_INPUT = {
-  control: "border-amber-400 bg-amber-50 dark:border-amber-500/60 dark:bg-amber-500/10",
-  label: "text-amber-700 dark:text-amber-400",
+  // amber-900 on amber-50 reads at ~10:1 (amber-700 was ~4.8:1); the border
+  // and placeholder are darkened the same way so an empty amber field is
+  // legible at a glance rather than a faint wash on white.
+  control:
+    "border-amber-500 bg-amber-50 placeholder:text-amber-900 dark:border-amber-500/70 dark:bg-amber-500/15 dark:placeholder:text-amber-200",
+  label: "text-amber-900 dark:text-amber-300",
 } as const;
 
 // ---------------------------------------------------------------------------
