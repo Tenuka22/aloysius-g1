@@ -182,10 +182,10 @@ export const SCORE_ROW_BG = {
 export const MISSING_INPUT = {
   // amber-900 on amber-50 reads at ~10:1 (amber-700 was ~4.8:1); the border
   // and placeholder are darkened the same way so an empty amber field is
-  // legible at a glance rather than a faint wash on white.
-  control:
-    "border-amber-500 bg-amber-50 placeholder:text-amber-900 dark:border-amber-500/70 dark:bg-amber-500/15 dark:placeholder:text-amber-200",
-  label: "text-amber-900 dark:text-amber-300",
+  // legible at a glance rather than a faint wash on white. The app is
+  // light-mode only, so no `dark:` variants are used here.
+  control: "border-amber-500 bg-amber-50 placeholder:text-amber-900",
+  label: "text-amber-900",
 } as const;
 
 // ---------------------------------------------------------------------------
