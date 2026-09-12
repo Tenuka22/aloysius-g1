@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { ApplicationForm } from "@/components/g1/application/application-form";
 import { useTranslation } from "@/lib/i18n";
-import { client, orpc } from "@/utils/orpc";
+import { orpc } from "@/utils/orpc";
 
 const applicationSearchSchema = z.object({
   key: z.string().optional(),
@@ -16,15 +16,14 @@ export const Route = createFileRoute("/application/")({
   loaderDeps: ({ search }) => ({ key: search.key }),
   loader: async ({ deps }) => {
     if (deps.key) return;
-    // No access key at all: nothing to resume, so start a fresh draft. This
-    // also covers what `/application/access` used to be the second step of -
-    // loading by key is handled entirely client-side below, on this same
-    // route, so a returning applicant's draft (which can carry an arbitrary
-    // amount of nested form data) never has to be serialized into the SSR
-    // payload - TanStack Start's dehydration chokes on some of that data's
-    // shape (see the seroval crash this replaced).
-    const created = await client.application.create({ data: {} });
-    throw redirect({ to: "/application", search: { key: created.accessKey, code: created.sessionCode } });
+    // No access key at all: this route never mints a draft itself - that's
+    // `/admissions`' job (and the home page's "start new application"
+    // button), both of which redirect back here with a key already in hand.
+    // A bare hit redirects once, to `/admissions`, instead of creating a
+    // second draft and redirecting to itself: two routes racing to each
+    // create-and-redirect-to-the-other on a stale cookie/session was the
+    // ERR_TOO_MANY_REDIRECTS loop reported in production.
+    throw redirect({ to: "/admissions" });
   },
   component: ApplicationIndexPage,
 });

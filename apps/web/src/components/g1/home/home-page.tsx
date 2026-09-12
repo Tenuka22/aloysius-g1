@@ -1,6 +1,7 @@
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { ArrowRight, CheckCircle2, FileText, GraduationCap, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
@@ -11,7 +12,7 @@ import { IconBadge } from "@aloysius-admissions/ui/components/icon-badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-admissions/ui/components/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { Input } from "@aloysius-admissions/ui/components/input";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 import type { ApplicationDraft } from "@/lib/g1/application-store";
 import { completionPercent } from "@/lib/g1/completion";
 import { INTAKE_YEAR_DEFAULT } from "@/lib/g1/intake-year";
@@ -46,9 +47,11 @@ type SavedApplicationRecord = {
 
 export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSubAdmin: boolean }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { keys, add: addSavedKey, remove: removeSavedApplication } = useSavedApplicationsStore();
   const ui = useHomeUiStore();
   const refreshSavedKeys = useSavedApplicationsStore((s) => s.refresh);
+  const [creatingApplication, setCreatingApplication] = useState(false);
 
   // The store starts empty (see saved-applications-store.ts) so it never reads cookies
   // during server rendering; this mount-time refresh is what actually loads the real
@@ -108,6 +111,23 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
     ui.closeLoadKey();
     window.location.assign(`/application?key=${encodeURIComponent(key)}`);
   };
+  // Creates the draft here, up front, rather than letting the bare `/application`
+  // route's loader do it: a loader-side create means every direct or repeated hit
+  // to that route (including the submission-window redirect back to `/admissions`)
+  // would mint a fresh draft as a side effect of navigation itself. Doing it on
+  // click keeps draft creation a deliberate, one-shot user action.
+  const startNewApplication = async () => {
+    if (creatingApplication) return;
+    setCreatingApplication(true);
+    try {
+      clearActiveKey();
+      const created = await client.application.create({ data: {} });
+      await navigate({ to: "/application", search: { key: created.accessKey, code: created.sessionCode } });
+    } catch (error) {
+      setCreatingApplication(false);
+      toast.error(error instanceof Error ? error.message : t("home.quickActions.newApplicationError"));
+    }
+  };
   const visibleKeys = loadedKeys.filter((key, index) => {
     const sessionCode = records[key]?.sessionCode;
     return !sessionCode || loadedKeys.findIndex((candidate) => records[candidate]?.sessionCode === sessionCode) === index;
@@ -143,15 +163,15 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
               {t("home.quickActions.heading")}
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Link to="/application" onClick={clearActiveKey} className="contents">
-                <Button
-                  type="button"
-                  className="group h-auto min-w-0 w-full flex-row sm:flex-col items-center justify-start sm:justify-center gap-4 sm:gap-3 whitespace-normal rounded-xl py-5 sm:py-8 px-5 text-left sm:text-center text-sm font-semibold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/25"
+              <Button
+                type="button"
+                className="group h-auto min-w-0 w-full flex-row sm:flex-col items-center justify-start sm:justify-center gap-4 sm:gap-3 whitespace-normal rounded-xl py-5 sm:py-8 px-5 text-left sm:text-center text-sm font-semibold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/25 disabled:opacity-60"
+                onClick={startNewApplication}
+                disabled={creatingApplication}
                 >
                   <IconBadge icon={<Plus size={20} strokeWidth={2.25} />} tone="gold" />
-                  {t("home.quickActions.newApplication")}
+                {creatingApplication ? t("home.quickActions.newApplicationCreating") : t("home.quickActions.newApplication")}
                 </Button>
-              </Link>
               <Button
                 type="button"
                 variant="outline"

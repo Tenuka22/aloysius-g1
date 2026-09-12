@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, CalendarClock, Download, HardHat, MessageCircle, Phone, PlayCircle, TriangleAlert } from "lucide-react";
+import { ArrowRight, CalendarClock, CalendarDays, Download, HardHat, MessageCircle, Phone, PlayCircle, SquareArrowOutUpRight, TriangleAlert } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { Eyebrow } from "@aloysius-admissions/ui/components/eyebrow";
@@ -51,6 +51,38 @@ const DEMO_VIDEO_YOUTUBE_ID = "LlxeQo4F30Q";
 const HELP_PHONE_DISPLAY = "+94 77 936 8304";
 const HELP_WHATSAPP_NUMBER = "94779368304";
 
+// Interview timetable, kept live in a shared Google Sheet rather than a
+// hand-copied schedule in this file, so a change on the sheet (a slot
+// reassigned, a category added) shows up here without a deploy. The
+// `/htmlembed/sheet` route (the same one Google Sites uses to embed a
+// sheet) renders just the grid - no toolbar, formula bar, or Sheets' own
+// bottom tab bar - so the day picker built below is the only way to switch
+// days, instead of competing with a second, redundant tab strip inside the
+// iframe. Works because the sheet is shared "Anyone with the link can
+// view", not because it's been separately "published to the web".
+const INTERVIEW_SHEET_ID = "1-Aa7F2yEJ2P6Ewwvf5onO2p9XTXAycixVhSqPF7Wzp8";
+
+// One tab per interview day in the shared sheet - `gid` is that tab's own
+// sheet id (stable even if the tab is renamed or reordered), captured by
+// opening the sheet and reading the `?gid=` each tab's URL updates to.
+// `date` gates visibility: a day drops off the picker once it's over, so
+// this list only ever needs a new entry appended for a future interview
+// day, never manual pruning of past ones.
+const INTERVIEW_SHEET_DATES: Array<{ date: string; gid: string; label: string }> = [
+  { date: "2026-09-15", gid: "0", label: "Sep 15" },
+  { date: "2026-09-16", gid: "1746423011", label: "Sep 16" },
+  { date: "2026-09-18", gid: "1200947531", label: "Sep 18" },
+  { date: "2026-09-21", gid: "1195790196", label: "Sep 21" },
+  { date: "2026-09-22", gid: "1592839584", label: "Sep 22" },
+];
+
+function interviewSheetLinkUrl(gid: string) {
+  return `https://docs.google.com/spreadsheets/d/${INTERVIEW_SHEET_ID}/edit?usp=sharing&gid=${gid}`;
+}
+function interviewSheetEmbedUrl(gid: string) {
+  return `https://docs.google.com/spreadsheets/d/${INTERVIEW_SHEET_ID}/htmlembed/sheet?gid=${gid}`;
+}
+
 // Placeholder landing page for the school website while the real site is
 // being built. The Grade 1 admissions portal lives at /admissions and is
 // linked from here so the working part of the site stays reachable. Built as
@@ -60,10 +92,22 @@ export function BuildingPage() {
   const { t, locale } = useTranslation();
   const admissionsWindowText = useAdmissionsWindowText(locale);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [interviewOpen, setInterviewOpen] = useState(false);
+  const [selectedInterviewGid, setSelectedInterviewGid] = useState<string | null>(null);
   const [isEmergency, setIsEmergency] = useState(false);
   const whatsappHref = `https://wa.me/${HELP_WHATSAPP_NUMBER}?text=${encodeURIComponent(
     t(isEmergency ? "building.help.templateEmergency" : "building.help.templateGeneral"),
   )}`;
+
+  // Only today-or-later interview days ever show - a day that's already
+  // passed drops out of the picker on its own the next time this renders,
+  // no cleanup needed on the sheet or in this list.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const upcomingInterviewDates = INTERVIEW_SHEET_DATES.filter(
+    (entry) => new Date(`${entry.date}T00:00:00`) >= todayStart,
+  );
+  const activeInterviewGid = selectedInterviewGid ?? upcomingInterviewDates[0]?.gid ?? null;
 
   return (
     <div className="flex min-h-svh flex-col bg-primary text-primary-foreground" data-surface="school-home-building">
@@ -155,6 +199,15 @@ export function BuildingPage() {
               <Download size={16} />
               {t("building.demoVideo.download")}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 rounded-full border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              onClick={() => setInterviewOpen(true)}
+            >
+              <CalendarDays size={16} />
+              {t("building.interviewSchedule.button")}
+            </Button>
           </div>
 
           <div className="mt-2 flex w-full max-w-sm flex-col items-center gap-3 border-t border-primary-foreground/10 pt-6">
@@ -230,6 +283,64 @@ export function BuildingPage() {
                 allowFullScreen
               />
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={interviewOpen} onOpenChange={setInterviewOpen}>
+        <DialogContent fullScreen className="w-[90svw] h-[90svh] max-w-none gap-0 p-0 overflow-hidden">
+          <DialogHeader className="shrink-0 flex-row items-start justify-between gap-4 p-6 pb-4">
+            <div>
+              <DialogTitle>{t("building.interviewSchedule.dialogTitle")}</DialogTitle>
+              <DialogDescription>{t("building.interviewSchedule.dialogDescription")}</DialogDescription>
+            </div>
+            {activeInterviewGid && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-1.5"
+                render={<a href={interviewSheetLinkUrl(activeInterviewGid)} target="_blank" rel="noopener noreferrer" />}
+              nativeButton={false}
+            >
+              <SquareArrowOutUpRight size={14} />
+              {t("building.interviewSchedule.openInSheets")}
+            </Button>
+            )}
+          </DialogHeader>
+          {upcomingInterviewDates.length > 1 && (
+            <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b px-6 pb-4">
+              {upcomingInterviewDates.map((entry) => (
+                <button
+                  key={entry.gid}
+              type="button"
+                  aria-pressed={activeInterviewGid === entry.gid}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    activeInterviewGid === entry.gid
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
+                  onClick={() => setSelectedInterviewGid(entry.gid)}
+            >
+                  {entry.label}
+                </button>
+              ))}
+            </div>
+            )}
+          <div className="min-h-0 flex-1 w-full bg-white">
+            {interviewOpen && activeInterviewGid ? (
+              <iframe
+                className="h-full w-full"
+                key={activeInterviewGid}
+                src={interviewSheetEmbedUrl(activeInterviewGid)}
+                title={t("building.interviewSchedule.dialogTitle")}
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            ) : interviewOpen ? (
+              <p className="grid h-full place-items-center text-sm text-muted-foreground">
+                {t("building.interviewSchedule.noUpcoming")}
+              </p>
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
