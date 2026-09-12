@@ -569,7 +569,33 @@ describe("ApplicationForm – submit a restored application", () => {
   });
 });
 
-describe("ApplicationForm – state transitions", () => {
+describe("ApplicationForm \u2013 revisiting an already-submitted application", () => {
+  it("shows only the review section, not the one-time submission confirmation", async () => {
+    setActiveKey(MOCK_ACCESS_KEY);
+    setActiveSessionCode(MOCK_SESSION_CODE);
+    getMock.mockResolvedValue({
+      data: { ...fullValidDraft, currentStep: 6 },
+      sessionCode: MOCK_SESSION_CODE,
+      accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
+      submittedAt: "2026-09-01T00:00:00.000Z",
+  });
+    // The applicant's own auto-saved indicative preview (source "applicant")
+    // - never a real admin score, per the backend's getMarks contract.
+    getMarksMock.mockResolvedValue([
+      { categoryType: "6.1", total: 76, breakdown: [] },
+    ]);
+    renderWithClient(<ApplicationForm />);
+    await screen.findByText("Review your draft");
+    expect(screen.queryByText("Application submitted successfully.")).not.toBeInTheDocument();
+    expect(screen.getByText("Mark Allocation")).toBeInTheDocument();
+    expect(screen.getByText("Admin marks pending")).toBeInTheDocument();
+    // The applicant's saved indicative preview must never be relabelled as an
+    // admin score just because a row exists for that category.
+    expect(screen.queryByText(/Admin:/)).not.toBeInTheDocument();
+  });
+});
+
+describe("ApplicationForm \u2013 state transitions", () => {
   it("returns to the previous step with the Back button", async () => {
     setStore({ currentStep: 1 });
     await renderForm();

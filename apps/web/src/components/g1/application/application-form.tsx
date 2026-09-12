@@ -1559,13 +1559,6 @@ function ReviewStep({
       setDownloadingCategoryId(null);
     }
   };
-  const marksQuery = useQuery({
-    queryKey: ["application-marks", draft.accessKey],
-    queryFn: () => client.application.getMarks({ accessKey: draft.accessKey }),
-    enabled: Boolean(draft.accessKey),
-    staleTime: 60_000,
-  });
-  const adminMarks = marksQuery.data ?? [];
   const categoryLabels = getCategoryLabels(t);
 
   const groupedSections = [
@@ -2053,20 +2046,15 @@ function ReviewStep({
               <h4 className="text-sm font-medium text-foreground">
                 {t("appForm.reviewStep.markAllocation")}
               </h4>
-              {adminMarks.length === 0 && (
-                <Badge variant="secondary" className="text-xs px-2.5 py-0.5">
-                  {t("appForm.reviewStep.adminMarksPending")}
-                </Badge>
-              )}
+              <Badge variant="secondary" className="text-xs px-2.5 py-0.5">
+                {t("appForm.reviewStep.adminMarksPending")}
+              </Badge>
             </div>
             <div className="p-4">
               {draft.categories.length > 0 ? (
                 <div className="grid gap-2">
                   {draft.categories.map((category) => {
                     const autoScore = scoreCategory(category);
-                    const adminMark = adminMarks.find(
-                      (m) => m.categoryType === category.categoryType,
-                    );
                     return (
                       <div
                         className="flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5"
@@ -2076,45 +2064,22 @@ function ReviewStep({
                           <span className="text-xs text-muted-foreground">
                             {categoryLabels[category.categoryType]}
                           </span>
-                          <div className="flex items-center gap-3 text-sm">
-                            <span>
-                              {t("appForm.reviewStep.indicative")}:{" "}
-                              <strong className="tabular-nums">{autoScore.total}</strong>
-                            </span>
-                            {adminMark != null && (
-                              <span className="text-primary font-semibold">
-                                {t("appForm.reviewStep.adminMarks")}:{" "}
-                                <strong className="tabular-nums">{adminMark.total}</strong>
-                              </span>
-                            )}
-                          </div>
+                          <span className="text-sm">
+                            {t("appForm.reviewStep.indicative")}:{" "}
+                            <strong className="tabular-nums">{autoScore.total}</strong>
+                          </span>
                         </div>
-                        {adminMark != null ? (
-                          <Badge variant="default">{t("appForm.reviewStep.scored")}</Badge>
-                        ) : (
-                          <Badge variant="outline">{t("appForm.reviewStep.pending")}</Badge>
-                        )}
                       </div>
                     );
                   })}
                   <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 mt-1">
                     <span className="text-sm font-medium">{t("appForm.reviewStep.total")}</span>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span>
-                        {t("appForm.reviewStep.indicative")}:{" "}
-                        <strong className="tabular-nums">
-                          {draft.categories.reduce((sum, c) => sum + scoreCategory(c).total, 0)}
-                        </strong>
-                      </span>
-                      {adminMarks.length > 0 && (
-                        <span className="text-primary font-semibold">
-                          {t("appForm.reviewStep.adminMarks")}:{" "}
-                          <strong className="tabular-nums">
-                            {adminMarks.reduce((sum, m) => sum + m.total, 0)}
-                          </strong>
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-sm">
+                      {t("appForm.reviewStep.indicative")}:{" "}
+                      <strong className="tabular-nums">
+                        {draft.categories.reduce((sum, c) => sum + scoreCategory(c).total, 0)}
+                      </strong>
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -2215,6 +2180,13 @@ export function ApplicationForm({
   // the server, so the step transition genuinely waits for the save.
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [pendingSkipAdvance, setPendingSkipAdvance] = useState(false);
+  // Distinguishes "the applicant just clicked submit in this session" from
+  // "this is a submitted application being loaded/revisited" - both leave
+  // `draft.submittedAt` set, but only the former should show the one-time
+  // confirmation screen below (access key, PDF receipt, next steps). A
+  // reload or a fresh visit via a saved key always lands on the plain
+  // review view instead, never re-showing that confirmation.
+  const [justSubmitted, setJustSubmitted] = useState(false);
   /**
    * PDF receipt download. Explicit states rather than a bare boolean so the
    * button can say what is actually happening: a failed generation must not
@@ -2509,6 +2481,7 @@ export function ApplicationForm({
       set({ saveStatus: t("appForm.statusBar.submitting") });
       await client.application.submit({ accessKey });
       set({ submittedAt: new Date().toISOString(), saveStatus: t("appForm.statusBar.submitted") });
+      setJustSubmitted(true);
     } catch (error) {
       set({ saveStatus: "" });
       if (
@@ -2749,7 +2722,7 @@ export function ApplicationForm({
               <p className="text-sm text-destructive break-words">{draft.submitError}</p>
             </div>
           )}
-          {draft.submittedAt && !draft.submissionLocked ? (
+          {justSubmitted ? (
             <div className="grid w-full gap-6 p-6 sm:p-8 lg:p-10">
               <div className="flex items-start gap-4 rounded-2xl border border-primary/25 bg-primary/8 p-5 sm:p-6">
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
