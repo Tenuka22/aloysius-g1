@@ -247,7 +247,7 @@ export function AdmissionsInfoPage() {
             )}
           </DialogHeader>
           {upcomingInterviewDates.length > 1 && (
-            <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b bg-background px-6 pb-4">
+            <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b bg-background px-6 pt-4 pb-4">
               {upcomingInterviewDates.map((entry) => (
                 <button
                   key={entry.gid}
