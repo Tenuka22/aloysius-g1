@@ -1053,6 +1053,43 @@ describe("ApplicationForm – skip stickiness and outstanding detection", () => 
       expect(screen.getByPlaceholderText(/enter birth certificate number/i)).toBeInTheDocument();
     });
 
+    it("declaration step shows a double-check notice, not a completion demand, once a skipped location already has a value", async () => {
+      setStore({
+        currentStep: 5,
+        locationStatus: "skipped",
+        location: { ...emptyDraft.location, latitude: 6.03, longitude: 80.21 },
+        applicant: validApplicant,
+        maxVisitedStep: 5,
+      });
+      await renderForm();
+      expect(
+        screen.getByText(
+          "You skipped some details earlier and have since filled them in - please double-check them below before submitting.",
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("You skipped some details earlier - complete them before submitting."),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByText("Previously skipped - please double-check the location below before submitting."),
+      ).toBeInTheDocument();
+    });
+
+    it("declaration step keeps demanding completion while a skipped location is still empty", async () => {
+      setStore({
+        currentStep: 5,
+        locationStatus: "skipped",
+        location: emptyDraft.location,
+        applicant: validApplicant,
+        maxVisitedStep: 5,
+      });
+      await renderForm();
+      expect(
+        screen.getByText("You skipped some details earlier - complete them before submitting."),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Skipped - you'll need to add this before submitting.")).toBeInTheDocument();
+    });
+
     it("declaration step catches a silently-cleared, never-explicitly-skipped field", async () => {
       setStore({
         currentStep: 5,

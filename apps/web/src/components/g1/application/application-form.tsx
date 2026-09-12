@@ -1462,6 +1462,15 @@ function DeclarationStep({
     draft.maxVisitedStep > 1,
     draft.applicant.birthCertificateNumber.trim().length > 0,
   );
+  // `*Skipped` above deliberately stays true forever once a field is
+  // skipped, even after a value shows up later, so the confirm step always
+  // re-surfaces it for a check. That means the banner text needs its own
+  // read of "is there actually a value now" to tell the applicant whether
+  // something is still missing or just needs a second look.
+  const locationHasValue = locationIsReady(draft.location);
+  const birthCertHasValue = draft.applicant.birthCertificateNumber.trim().length > 0;
+  const anyStillMissing =
+    (locationSkipped && !locationHasValue) || (birthCertSkipped && !birthCertHasValue);
   return (
     <div className="grid max-w-[920px] gap-5">
       <div className="mb-4">
@@ -1471,7 +1480,11 @@ function DeclarationStep({
 
       {(locationSkipped || birthCertSkipped) && (
         <p className="text-sm font-medium text-amber-700">
-          {t("appForm.declarationStep.completeSkippedHeading")}
+          {t(
+            anyStillMissing
+              ? "appForm.declarationStep.completeSkippedHeading"
+              : "appForm.declarationStep.reviewSkippedHeading",
+          )}
         </p>
       )}
 
@@ -1506,6 +1519,13 @@ function DeclarationStep({
               });
             }}
           />
+          <p className={`text-sm ${STATUS_WARNING.text}`}>
+            {t(
+              locationHasValue
+                ? "appForm.locationStep.skippedPreviouslyNotice"
+                : "appForm.locationStep.skippedNotice",
+            )}
+          </p>
         </div>
       )}
 

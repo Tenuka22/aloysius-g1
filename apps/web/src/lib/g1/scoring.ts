@@ -62,8 +62,6 @@ import {
   CONTRIBUTION_PATH1_SAME_SCHOOL_RATE,
   CONTRIBUTION_PATH1_ELSEWHERE_RATE,
   CONTRIBUTION_PATH1_YEARS_CAP,
-  CONTRIBUTION_PATH1_SAME_SCHOOL_MAX,
-  CONTRIBUTION_PATH1_ELSEWHERE_MAX,
   CONTRIBUTION_PATH2_RATE_PER_ITEM,
   CONTRIBUTION_PATH2_ITEM_MAX,
   SCHOOL_EDUCATION_CONTRIBUTION_MAX,
@@ -520,33 +518,33 @@ export function difficultServiceDistanceMarks(
   return rateTimesYearsWithBonus(years, remainderMonths, ratePerYear, tierCap);
 }
 
-/** 7.5.1 Path I, the CURRENT-station service period - the circular awards
- * marks "only for the service period at the current service station", so
- * this is a single, open-ended period measured through today (the parent
- * is still serving there on 30 June): a per-year rate (higher if that
- * station is the very school being applied to), capped per-branch, with
- * a half-rate award for under a year of service. */
-function contributionInstitutionPeriodMarks(
-  sameSchool: boolean,
-  startDate: string | undefined,
-): number {
-  const rate = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_RATE : CONTRIBUTION_PATH1_ELSEWHERE_RATE;
-  const branchMax = sameSchool ? CONTRIBUTION_PATH1_SAME_SCHOOL_MAX : CONTRIBUTION_PATH1_ELSEWHERE_MAX;
-  const { years, remainderMonths } = yearsAndMonthsBetween(startDate);
-  if (years < 1) {
-    if (years === 0 && remainderMonths === 0) return 0;
-    return cap(rate / 2, branchMax);
-  }
-  return cap(Math.min(years, CONTRIBUTION_PATH1_YEARS_CAP) * rate, branchMax);
+/** 7.5.1 Path I whole-years-plus-bonus split for a single period, mirroring
+ * `rateTimesYearsWithBonus`'s difficult-service convention: once at least
+ * one whole year is complete, a remainder needs 6 months or more before it
+ * earns anything, and even then only a flat half-year bonus - never rounded
+ * up to a full extra year. Below a first whole year, though, there is no
+ * such minimum: any positive duration (even a single day) already earns
+ * that same flat half-year credit, so a brand-new period is never left at
+ * zero just for being under six months old. */
+function contributionPeriodYearsEquivalent(
+  years: number,
+  remainderMonths: number,
+): { wholeYears: number; bonusYears: number } {
+  if (years === 0) return { wholeYears: 0, bonusYears: remainderMonths === 0 ? 0 : 0.5 };
+  return { wholeYears: years, bonusYears: remainderMonths >= 6 ? 0.5 : 0 };
 }
 
 /** 7.5.1 - an eligibility gate for the rest of category 6.4 (see
  * `scoreCategory64`), not just a standalone line item. Path I pays a
- * per-year rate for CURRENT-station service only (higher rate if that
- * station is the very school being applied to), with a half-rate award
- * for under a year of current-station service, under the shared 10-mark
- * ceiling. Path II sums three UGC-university sub-items, each its own
- * per-year rate capped independently. */
+ * per-year rate for the CURRENT station only (higher rate if that station
+ * is the very school being applied to), capped at
+ * `CONTRIBUTION_PATH1_YEARS_CAP` years and split into whole years plus a
+ * bonus via `contributionPeriodYearsEquivalent`. Only the currently-serving
+ * station is applicable - `contributionSecondPeriodEnabled` and its paired
+ * fields are a legacy shape from an earlier UI that briefly summed a second,
+ * earlier station in; they are read nowhere here and must never resurrect
+ * marks from a stale draft. Path II sums three UGC-university sub-items,
+ * each its own per-year rate capped independently. */
 export function contributionMarks64(inputs: ScoringInputs): number {
   // The form's radio renders `contributionPath ?? "institution"` as
   // pre-selected, so an untouched entry (persisted as `{}` by
@@ -556,11 +554,11 @@ export function contributionMarks64(inputs: ScoringInputs): number {
   // every other row in the category.
   const path = inputs.contributionPath ?? "institution";
   if (path === "institution") {
-    const currentStationMarks = contributionInstitutionPeriodMarks(
-      inputs.contributionSameSchool === true,
-      inputs.contributionServiceStartDate,
-    );
-    return cap(currentStationMarks, SCHOOL_EDUCATION_CONTRIBUTION_MAX);
+    const rate = inputs.contributionSameSchool === true ? CONTRIBUTION_PATH1_SAME_SCHOOL_RATE : CONTRIBUTION_PATH1_ELSEWHERE_RATE;
+    const { years, remainderMonths } = yearsAndMonthsBetween(inputs.contributionServiceStartDate);
+    const { wholeYears, bonusYears } = contributionPeriodYearsEquivalent(years, remainderMonths);
+    const creditedYears = Math.min(wholeYears + bonusYears, CONTRIBUTION_PATH1_YEARS_CAP);
+    return cap(creditedYears * rate, SCHOOL_EDUCATION_CONTRIBUTION_MAX);
   }
   if (path === "university") {
     const examMarks = cap((inputs.contributionExamYears ?? 0) * CONTRIBUTION_PATH2_RATE_PER_ITEM, CONTRIBUTION_PATH2_ITEM_MAX);

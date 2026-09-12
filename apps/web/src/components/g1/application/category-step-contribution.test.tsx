@@ -31,9 +31,10 @@ function renderCategory64(scoringInputs: ScoringInputs) {
 
 // 7.5.1 Path I awards marks "only for the service period at the current
 // service station", so the form collects just the two required inputs: the
-// same-school flag and the current-station start date. (An earlier version
-// also offered an end date and a second, summed period, which contradicted
-// the circular.)
+// same-school flag and the current-station start date. `contributionSecondPeriodEnabled`
+// and its paired fields are a legacy shape from an earlier UI that briefly
+// summed a second, earlier station in - drafts saved while that was
+// possible must not keep earning marks from it, or show its fields, now.
 describe("Category64Fields contribution to school education - current station only", () => {
   it("renders the required current-station inputs and no extra period fields", () => {
     const { container } = renderCategory64({
@@ -41,15 +42,13 @@ describe("Category64Fields contribution to school education - current station on
       contributionSameSchool: true,
       contributionServiceStartDate: "2023-09-01",
     });
-    const queries = within(container);
-    expect(queries.queryByText("Second period of service")).not.toBeInTheDocument();
     expect(container.querySelector("#contribution-start-cat-64")).not.toBeNull();
     expect(container.querySelector("#contribution-second-period-toggle-cat-64")).toBeNull();
     expect(container.querySelector("#contribution-second-start-cat-64")).toBeNull();
-    expect(container.querySelector("#contribution-end-cat-64")).toBeNull();
+    expect(container.querySelector("#contribution-second-end-cat-64")).toBeNull();
   });
 
-  it("scores the current-station period, ignoring stale second-period values", () => {
+  it("scores only the current station, ignoring stale second-period values", () => {
     const { container } = renderCategory64({
       contributionPath: "institution",
       contributionSameSchool: true,

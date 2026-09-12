@@ -348,13 +348,21 @@ describe("scoreCategory64 – education sector", () => {
       ).toBe(7.5); // capped at 5 years * 1.5/yr
     });
 
-    it("awards half of one year's rate for under a year at the current station", () => {
+    // Under a first, not-yet-complete year, there is no 6-month minimum:
+    // any positive duration - 5 months or 6 - earns the same flat half
+    // mark. The 6-month-or-more threshold only starts mattering for a
+    // remainder AFTER at least one whole year has already completed (see
+    // the next test).
+    it("awards the same flat half mark for any leftover under a first whole year", () => {
       expect(
-        scoreCategory64({ contributionPath: "institution", contributionSameSchool: true, contributionServiceStartDate: "2026-03-01" }).breakdown[0]?.marks,
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: true, contributionServiceStartDate: "2026-04-01" }).breakdown[0]?.marks,
       ).toBe(1); // half of 2
       expect(
-        scoreCategory64({ contributionPath: "institution", contributionSameSchool: false, contributionServiceStartDate: "2026-03-01" }).breakdown[0]?.marks,
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: false, contributionServiceStartDate: "2026-04-01" }).breakdown[0]?.marks,
       ).toBe(0.75); // half of 1.5
+      expect(
+        scoreCategory64({ contributionPath: "institution", contributionSameSchool: true, contributionServiceStartDate: "2026-03-01" }).breakdown[0]?.marks,
+      ).toBe(1); // still half of 2, even though this one is exactly 6 months - the 6-month rule doesn't apply until a whole year is already behind it
     });
 
     it("scores zero with no service start date", () => {
@@ -375,10 +383,42 @@ describe("scoreCategory64 – education sector", () => {
       ).toBe(6);
     });
 
+    // Once at least one whole year is behind a period, a new partial year
+    // needs to reach six months before it earns anything at all - under
+    // that, unlike the very first partial year, it is worth zero.
+    it("earns nothing for a leftover under six months once a whole year has already passed", () => {
+      expect(
+        scoreCategory64({
+          contributionPath: "institution",
+          contributionSameSchool: true,
+          contributionServiceStartDate: "2024-06-01", // 2 years 3 months to "now" (2026-09-01)
+        }).breakdown[0]?.marks,
+      ).toBe(4); // 2 whole years * 2/yr = 4; the 3-month remainder is under 6 months, so it earns nothing extra
+    });
+
+    // Six months or more after a whole year earns a flat half mark - never
+    // rounded up to a full extra year's worth.
+    it("awards a flat half mark for a six-month-or-more leftover after a whole year, never a full extra year", () => {
+      expect(
+        scoreCategory64({
+          contributionPath: "institution",
+          contributionSameSchool: true,
+          contributionServiceStartDate: "2024-03-01", // 2 years 6 months to "now"
+        }).breakdown[0]?.marks,
+      ).toBe(5); // 2 whole years * 2/yr = 4, plus a half mark (half of 2) for the 6-month remainder = 5
+      expect(
+        scoreCategory64({
+          contributionPath: "institution",
+          contributionSameSchool: false,
+          contributionServiceStartDate: "2024-03-01",
+        }).breakdown[0]?.marks,
+      ).toBe(3.75); // 2 whole years * 1.5/yr = 3, plus a half mark (half of 1.5) for the 6-month remainder = 3.75
+    });
+
     // 7.5.1 Path I awards marks "only for the service period at the current
     // service station", so a single period is scored - never summed with an
-    // earlier station. These fields used to hold a second period; drafts saved
-    // while that was possible must not keep earning marks from it now.
+    // earlier station. These fields used to hold a second period; drafts
+    // saved while that was possible must not keep earning marks from it now.
     it("scores only the current station, ignoring stale second-period values", () => {
       expect(
         scoreCategory64({

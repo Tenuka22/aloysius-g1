@@ -190,6 +190,14 @@ const en = {
   "location.networkLabel": "Approximate network location",
   "location.deviceLabel": "Your location",
   "location.selectedLabel": "Selected location",
+  "location.manualEntry.button": "Enter coordinates manually",
+  "location.manualEntry.title": "Enter coordinates",
+  "location.manualEntry.description":
+    "If the map or device location doesn't work, type the exact latitude and longitude instead.",
+  "location.manualEntry.latitudeLabel": "Latitude",
+  "location.manualEntry.longitudeLabel": "Longitude",
+  "location.manualEntry.apply": "Use these coordinates",
+  "location.manualEntry.invalid": "Enter a valid latitude (-90 to 90) and longitude (-180 to 180).",
 
   // ─── components/application/access-recovery-dialog.tsx ─────────
   "recovery.title": "Forget this application key?",
@@ -461,6 +469,8 @@ const en = {
   "appForm.locationStep.skippedNotice": "Skipped - you'll need to add this before submitting.",
   "appForm.locationStep.alreadySkippedNotice":
     "Already skipped - select a location below or continue without it.",
+  "appForm.locationStep.skippedPreviouslyNotice":
+    "Previously skipped - please double-check the location below before submitting.",
   "appForm.applicantStep.heading": "Tell us about the child",
   "appForm.applicantStep.description": "Use the name shown on the child's birth certificate.",
   "appForm.applicantStep.fullNameEn": "Full name in English",
@@ -545,6 +555,8 @@ const en = {
     "This is a collection draft. Nothing will be submitted while collection mode is active.",
   "appForm.declarationStep.completeSkippedHeading":
     "You skipped some details earlier - complete them before submitting.",
+  "appForm.declarationStep.reviewSkippedHeading":
+    "You skipped some details earlier and have since filled them in - please double-check them below before submitting.",
   "appForm.declarationStep.confirmAccuracy":
     "I confirm that the information I provide is accurate to the best of my knowledge.",
   "appForm.declarationStep.consentProcessing":
@@ -1033,14 +1045,14 @@ const en = {
   // Category 6.4 fields
   "category.64.contribution.label": "Contribution to school education",
   "category.64.contribution.hint":
-    "Marks for working in a school-education institution, or for national-level education work by state-university academic staff. This section qualifies you for the rest of the category: if you earn nothing here, the service period, difficult service, unutilized leave and distance rows below also score zero.\nInstitution service: 2 marks per year at this very school (max 10); 1.5 marks per year at any other qualifying school or education office (max 7.5). Under 1 year at your current station earns half of one year's rate.\nUniversity staff: 0.5 marks per year each for national exams, curriculum development and national teacher-training involvement (max 2.5 each).\n\nOverall maximum 10 marks.",
+    "Marks for working in a school-education institution, or for national-level education work by state-university academic staff. This section qualifies you for the rest of the category: if you earn nothing here, the service period, difficult service, unutilized leave and distance rows below also score zero.\nInstitution service: only your CURRENT station counts, measured through today - 2 marks per year at this very school, or 1.5 marks per year at any other qualifying school or education office, up to 5 years. Under your first whole year, any positive duration earns a half mark. After a whole year, a new partial year needs to reach 6 months before it earns a half mark too - nothing under that.\nUniversity staff: 0.5 marks per year each for national exams, curriculum development and national teacher-training involvement (max 2.5 each).\n\nOverall maximum 10 marks.",
   "category.64.contribution.pathLabel": "Which contribution applies to you?",
   "category.64.contribution.institutionPath": "I serve at a school or education-sector institution",
   "category.64.contribution.universityPath": "I am academic staff of a state university (UGC)",
   "category.64.contribution.sameSchool": "My current station is this very school",
   "category.64.contribution.serviceStartLabel": "Date I started at my current station",
   "category.64.contribution.serviceStartHint":
-    "2 marks per year at this school (max 10), or 1.5 marks per year at any other qualifying institution (max 7.5). Under 1 year at your current station earns half of one year's rate.",
+    "2 marks per year at this school, or 1.5 marks per year at any other qualifying institution, up to 5 years. A leftover under your first year always earns a half mark; after that, a new partial year needs 6 months or more to earn a half mark, otherwise nothing.",
   "category.64.contribution.examYears": "Years involved with national exams (Dept. of Examinations)",
   "category.64.contribution.curriculumYears": "Years involved with NIE curriculum development",
   "category.64.contribution.trainingYears": "Years involved with national teacher-training programmes",

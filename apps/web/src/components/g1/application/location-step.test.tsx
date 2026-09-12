@@ -11,13 +11,24 @@ type LocationValue = { label: string; address: string; latitude: number | null; 
 const { geolocationMock, fetchMock, mapMock } = vi.hoisted(() => ({
   geolocationMock: { getCurrentPosition: vi.fn(), watchPosition: vi.fn(), clearWatch: vi.fn() },
   fetchMock: vi.fn(),
-  mapMock: { flyTo: vi.fn(), getZoom: vi.fn(() => 7) },
+  mapMock: {
+    flyTo: vi.fn(),
+    getZoom: vi.fn(() => 7),
+    invalidateSize: vi.fn(),
+    getContainer: vi.fn(() => document.createElement("div")),
+    getSize: vi.fn(() => ({ x: 800, y: 600 })),
+    setView: vi.fn(),
+  },
 }));
 
 vi.mock("react-leaflet", () => ({
+  Circle: ({ children }: { children?: ReactNode }) => <>{children}</>,
   CircleMarker: ({ children }: { children?: ReactNode }) => <>{children}</>,
   MapContainer: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  Marker: ({ children }: { children?: ReactNode }) => <>{children}</>,
+  Polyline: ({ children }: { children?: ReactNode }) => <>{children}</>,
   TileLayer: () => null,
+  Tooltip: ({ children }: { children?: ReactNode }) => <>{children}</>,
   useMap: () => mapMock,
   useMapEvents: () => undefined,
 }));
@@ -121,5 +132,37 @@ describe("LocationStep", () => {
     // just not repeated inside the previous-locations list.
     expect(screen.getAllByText("18 Church Street, Galle")).toHaveLength(1);
     expect(screen.getByText("12 Lighthouse Street, Galle")).toBeInTheDocument();
+  });
+
+  it("lets the applicant enter coordinates manually via the settings popover", async () => {
+    const { onChange } = renderLocation();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Enter coordinates manually" }));
+    await user.type(await screen.findByLabelText("Latitude"), "6.9271");
+    await user.type(screen.getByLabelText("Longitude"), "79.8612");
+    await user.click(screen.getByRole("button", { name: "Use these coordinates" }));
+
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({ latitude: 6.9271, longitude: 79.8612, source: "manual" }),
+        undefined,
+      ),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("rejects an out-of-range manual coordinate instead of applying it", async () => {
+    const { onChange } = renderLocation();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Enter coordinates manually" }));
+    await user.type(await screen.findByLabelText("Latitude"), "999");
+    await user.type(screen.getByLabelText("Longitude"), "79.8612");
+    await user.click(screen.getByRole("button", { name: "Use these coordinates" }));
+
+    expect(await screen.findByText(/enter a valid latitude/i)).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

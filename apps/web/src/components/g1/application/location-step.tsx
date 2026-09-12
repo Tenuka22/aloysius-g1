@@ -1,11 +1,19 @@
 import { useEffect, lazy, useMemo, useRef, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { LocateFixed, MapPin, TriangleAlert, X } from "lucide-react";
+import { LocateFixed, MapPin, Settings2, TriangleAlert, X } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { Field, FieldLabel, FieldDescription } from "@aloysius-admissions/ui/components/field";
 import { Input } from "@aloysius-admissions/ui/components/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@aloysius-admissions/ui/components/popover";
 import { STATUS_WARNING } from "@/lib/color-classes";
 import { useTranslation } from "@/lib/i18n";
 
@@ -37,6 +45,10 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
   const [locationError, setLocationError] = useState<LocationError | null>(null);
   const [deviceAccuracy, setDeviceAccuracy] = useState<number | null>(null);
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
+  const [manualError, setManualError] = useState(false);
   const activeLocationRequest = useRef<(() => void) | null>(null);
   const point = useMemo<[number, number] | null>(() => value.latitude != null && value.longitude != null && Number.isFinite(value.latitude) && Number.isFinite(value.longitude) ? [value.latitude, value.longitude] : null, [value.latitude, value.longitude]);
 
@@ -177,6 +189,29 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
     }
   };
 
+  const applyManualCoordinates = () => {
+    const latitude = Number(manualLat);
+    const longitude = Number(manualLng);
+    if (
+      manualLat.trim() === "" ||
+      manualLng.trim() === "" ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      setManualError(true);
+      return;
+    }
+    setManualError(false);
+    setManualOpen(false);
+    setManualLat("");
+    setManualLng("");
+    void reverseGeocode(latitude, longitude, "manual");
+  };
+
   useEffect(() => {
     if (readOnly) {
       onAvailabilityChange?.(true);
@@ -219,9 +254,69 @@ export function LocationStep({ value, defaultValue, onChange, onAvailabilityChan
         </Field>
 
         {!readOnly && (
-          <Button type="button" variant="secondary" className="h-auto w-full min-h-10 whitespace-normal text-center" onClick={() => useDeviceLocation(false)}>
-            <LocateFixed size={17} className="shrink-0" /> {t("location.useDeviceLocation")}
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="secondary" className="h-auto min-h-10 flex-1 whitespace-normal text-center" onClick={() => useDeviceLocation(false)}>
+              <LocateFixed size={17} className="shrink-0" /> {t("location.useDeviceLocation")}
+            </Button>
+            <Popover open={manualOpen} onOpenChange={setManualOpen}>
+              <PopoverTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-auto min-h-10 shrink-0"
+                    title={t("location.manualEntry.button")}
+                    aria-label={t("location.manualEntry.button")}
+                  />
+                }
+              >
+                <Settings2 size={17} />
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72">
+                <PopoverHeader>
+                  <PopoverTitle>{t("location.manualEntry.title")}</PopoverTitle>
+                  <PopoverDescription>{t("location.manualEntry.description")}</PopoverDescription>
+                </PopoverHeader>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field>
+                    <FieldLabel htmlFor="location-manual-latitude" className="text-xs">
+                      {t("location.manualEntry.latitudeLabel")}
+                    </FieldLabel>
+                    <Input
+                      id="location-manual-latitude"
+                      type="number"
+                      step="any"
+                      inputMode="decimal"
+                      value={manualLat}
+                      onChange={(event) => { setManualError(false); setManualLat(event.target.value); }}
+                      placeholder="6.9271"
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="location-manual-longitude" className="text-xs">
+                      {t("location.manualEntry.longitudeLabel")}
+                    </FieldLabel>
+                    <Input
+                      id="location-manual-longitude"
+                      type="number"
+                      step="any"
+                      inputMode="decimal"
+                      value={manualLng}
+                      onChange={(event) => { setManualError(false); setManualLng(event.target.value); }}
+                      placeholder="79.8612"
+                    />
+                  </Field>
+                </div>
+                {manualError && (
+                  <p className={`text-xs ${STATUS_WARNING.text}`}>{t("location.manualEntry.invalid")}</p>
+                )}
+                <Button type="button" size="sm" className="w-full" onClick={applyManualCoordinates}>
+                  {t("location.manualEntry.apply")}
+                </Button>
+              </PopoverContent>
+            </Popover>
+          </div>
         )}
 
         {locationError && !readOnly && (
