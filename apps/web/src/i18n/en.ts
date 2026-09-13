@@ -954,6 +954,7 @@ const en = {
   "category.62.leadership.label": "Leadership positions held",
   "category.62.leadership.hint":
     "Marks by role:\n• Primary Student Prefect: 1\n• Junior Student Prefect: 1.5\n• Senior Student Prefect: 3\n• Deputy Head Prefect: 4\n• Head Prefect: 5\n• First Team Vice-Captain: 1.5\n• First Team Captain: 2\n\nMax 5 marks",
+  "category.62.leadership.rolesLabel": "Select roles held",
   "category.62.leadership.highestRole": "Highest role held",
   "category.62.leadership.highestRolePlaceholder": "Select leadership role",
   "category.62.studentSocieties.label": "Student society positions held",

@@ -919,6 +919,7 @@ const si = {
   "category.62.leadership.label": "නායකත්ව තනතුරු",
   "category.62.leadership.hint":
     "තනතුර අනුව ලකුණු:\n• ප්‍රාථමික ශිෂ්‍ය නායක: 1\n• කනිෂ්ඨ ශිෂ්‍ය නායක: 1.5\n• ජ්‍යෙෂ්ඨ ශිෂ්‍ය නායක: 3\n• උප ප්‍රධාන ශිෂ්‍ය නායක: 4\n• ප්‍රධාන ශිෂ්‍ය නායක: 5\n• පළමු කණ්ඩායම් උප නායක: 1.5\n• පළමු කණ්ඩායම් නායක: 2\n\nඋපරිම ලකුණු 5 යි",
+  "category.62.leadership.rolesLabel": "දැරූ තනතුරු තෝරන්න",
   "category.62.leadership.highestRole": "දැරූ ඉහළම තනතුර",
   "category.62.leadership.highestRolePlaceholder": "නායකත්ව තනතුර තෝරන්න",
   "category.62.studentSocieties.label": "ශිෂ්‍ය සමිති සහ සංගම්",
