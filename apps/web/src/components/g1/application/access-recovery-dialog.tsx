@@ -2,27 +2,41 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { Input } from "@aloysius-admissions/ui/components/input";
 import { Button } from "@aloysius-admissions/ui/components/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-admissions/ui/components/select";
 import { PhoneInput } from "@/components/g1/application/phone-input";
 import { client } from "@/utils/orpc";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/i18n";
 
-export function AccessRecoveryDialog({ applicantName, open, onOpenChange, onForgot }: { applicantName?: string; open: boolean; onOpenChange: (open: boolean) => void; onForgot: () => void }) {
+type Mode = "session" | "identity";
+
+export function AccessRecoveryDialog({ open, onOpenChange, onForgot }: { applicantName?: string; open: boolean; onOpenChange: (open: boolean) => void; onForgot: () => void }) {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<"session" | "birth" | "guardian">("session");
-  const [name, setName] = useState(applicantName ?? "");
-  const [birthCertificateNumber, setBirthCertificateNumber] = useState("");
+  const [mode, setMode] = useState<Mode>("session");
   const [sessionCode, setSessionCode] = useState("");
+  const [birthCertificateNumber, setBirthCertificateNumber] = useState("");
   const [guardianNic, setGuardianNic] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const hasIdentifier =
+    mode === "session"
+      ? Boolean(sessionCode.trim())
+      : Boolean(birthCertificateNumber.trim() && guardianNic.trim());
+
+  const canSubmit = hasIdentifier && Boolean(contactPhone.trim());
+
   const submit = async () => {
     setSaving(true);
     setMessage("");
     try {
-      await client.application.requestAccess({ birthCertificateNumber: mode === "birth" ? birthCertificateNumber.trim() || undefined : undefined, sessionCode: mode === "session" ? sessionCode.trim() || undefined : undefined, guardianNic: mode === "guardian" ? guardianNic.trim() || undefined : undefined, applicantName: name, contactPhone, requestType: "forgot" });
+      await client.application.requestAccess({
+        ...(mode === "session"
+          ? { sessionCode: sessionCode.trim() }
+          : { birthCertificateNumber: birthCertificateNumber.trim(), guardianNic: guardianNic.trim() }),
+        contactPhone,
+        requestType: "forgot",
+      });
       onForgot();
       toast.success(t("recovery.success"));
     } catch (error) {
@@ -31,6 +45,72 @@ export function AccessRecoveryDialog({ applicantName, open, onOpenChange, onForg
       setSaving(false);
     }
   };
-  const hasIdentifier = mode === "session" ? Boolean(sessionCode.trim()) : mode === "birth" ? Boolean(birthCertificateNumber.trim()) : Boolean(guardianNic.trim() && name.trim());
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-[min(36rem,calc(100%-2rem))]"><DialogHeader><DialogTitle>{t("recovery.title")}</DialogTitle><DialogDescription>{t("recovery.description")}</DialogDescription></DialogHeader><div className="grid gap-2"><label className="text-muted-foreground text-sm font-semibold" htmlFor="recovery-mode">{t("recovery.methodLabel")}</label><Select value={mode} onValueChange={(value) => setMode((value ?? "session") as typeof mode)}><SelectTrigger id="recovery-mode" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="session">{t("recovery.methodSession")}</SelectItem><SelectItem value="birth">{t("recovery.methodBirth")}</SelectItem><SelectItem value="guardian">{t("recovery.methodGuardian")}</SelectItem></SelectContent></Select>{mode === "session" && <Input value={sessionCode} onChange={(event) => setSessionCode(event.target.value.toUpperCase())} placeholder={t("recovery.sessionPlaceholder")} autoComplete="off" />}{mode === "birth" && <Input value={birthCertificateNumber} onChange={(event) => setBirthCertificateNumber(event.target.value)} placeholder={t("recovery.birthPlaceholder")} />}{mode === "guardian" && <><Input value={guardianNic} onChange={(event) => setGuardianNic(event.target.value.toUpperCase())} placeholder={t("recovery.guardianNicPlaceholder")} autoComplete="off" /><Input value={name} onChange={(event) => setName(event.target.value)} placeholder={t("recovery.applicantNamePlaceholder")} autoComplete="name" /></>}<label className="text-muted-foreground text-sm font-semibold" htmlFor="recovery-phone">{t("recovery.phoneLabel")}</label><PhoneInput value={contactPhone} onChange={setContactPhone} /><Button type="button" disabled={saving || !hasIdentifier || !contactPhone.trim()} onClick={() => void submit()}>{saving ? t("recovery.sending") : t("recovery.submit")}</Button>{message && <p className="text-sm text-muted-foreground" role="status">{message}</p>}</div></DialogContent></Dialog>;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[min(36rem,calc(100%-2rem))]">
+        <DialogHeader>
+          <DialogTitle>{t("recovery.title")}</DialogTitle>
+          <DialogDescription>{t("recovery.descriptionCombined")}</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          {/* Mode toggle */}
+          <div className="grid grid-cols-2 gap-1 rounded-lg border p-1">
+            <button
+              type="button"
+              onClick={() => setMode("session")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mode === "session" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t("recovery.methodSession")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("identity")}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${mode === "identity" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t("recovery.methodIdentity")}
+            </button>
+          </div>
+
+          {mode === "session" && (
+            <Input
+              value={sessionCode}
+              onChange={(e) => setSessionCode(e.target.value.toUpperCase())}
+              placeholder={t("recovery.sessionPlaceholder")}
+              autoComplete="off"
+            />
+          )}
+
+          {mode === "identity" && (
+            <>
+              <Input
+                value={birthCertificateNumber}
+                onChange={(e) => setBirthCertificateNumber(e.target.value)}
+                placeholder={t("recovery.birthPlaceholder")}
+                autoComplete="off"
+              />
+              <Input
+                value={guardianNic}
+                onChange={(e) => setGuardianNic(e.target.value.toUpperCase())}
+                placeholder={t("recovery.guardianNicPlaceholder")}
+                autoComplete="off"
+              />
+            </>
+          )}
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-semibold text-muted-foreground" htmlFor="recovery-phone">
+              {t("recovery.phoneLabel")}
+            </label>
+            <PhoneInput value={contactPhone} onChange={setContactPhone} />
+          </div>
+
+          <Button type="button" disabled={saving || !canSubmit} onClick={() => void submit()}>
+            {saving ? t("recovery.sending") : t("recovery.submit")}
+          </Button>
+          {message && <p className="text-sm text-muted-foreground" role="status">{message}</p>}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

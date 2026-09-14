@@ -203,8 +203,12 @@ const en = {
   "recovery.title": "Forget this application key?",
   "recovery.description":
     "Choose one way to identify the submitted application. Draft applications cannot be recovered through this request.",
+  "recovery.descriptionCombined":
+    "Provide the child's birth certificate number and the guardian's NIC to identify the submitted application. Draft applications cannot be recovered through this request.",
+  "recovery.guardianNicLabel": "Guardian NIC",
   "recovery.methodLabel": "Recovery method",
   "recovery.methodSession": "Session code",
+  "recovery.methodIdentity": "Birth cert + NIC",
   "recovery.methodBirth": "Birth certificate number",
   "recovery.methodGuardian": "Guardian NIC and applicant name",
   "recovery.sessionPlaceholder": "Session code",

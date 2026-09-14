@@ -86,24 +86,18 @@ describe("AdmissionsPage", () => {
     mockState.list = { total: 0, items: [] };
   });
 
-  it("shows a warning and allows opening admissions early", async () => {
-    const user = userEvent.setup();
+  it("shows the applicants table even before the submission window closes", () => {
     render(<AdmissionsPage />);
-
-    expect(screen.getByText("Admissions is not open yet")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /open admissions early/i }));
-    expect(screen.getByRole("alertdialog")).toHaveTextContent("Open admissions before the window closes?");
-    expect(screen.queryByText("All applicants")).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /^Open admissions$/ }));
-    expect(await screen.findByText("All applicants")).toBeInTheDocument();
+    // Window is still open (closesAt = 2099), but table is always visible.
+    expect(screen.getAllByText("All applicants").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Admissions is not open yet")).not.toBeInTheDocument();
   });
 
   it("renders one row per applicant with category badges", async () => {
     setOpenAdmissionsData();
     render(<AdmissionsPage />);
 
-    expect(screen.getByText("All applicants")).toBeInTheDocument();
+    expect(screen.getAllByText("All applicants").length).toBeGreaterThan(0);
     expect(screen.getByText("Amaya Perera")).toBeInTheDocument();
     expect(screen.getByText("6.1")).toBeInTheDocument();
     expect(screen.getByText("6.3")).toBeInTheDocument();
@@ -114,7 +108,7 @@ describe("AdmissionsPage", () => {
     const user = userEvent.setup();
     render(<AdmissionsPage />);
 
-    await user.click(screen.getByText("Amaya Perera"));
+    await user.click(screen.getAllByText("Amaya Perera")[0]);
     expect(mockNavigate).toHaveBeenCalledWith({
       to: "/g1/admin/admissions/$id",
       params: { id: "11111111-1111-4111-8111-111111111111" },

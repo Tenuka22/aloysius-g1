@@ -196,8 +196,12 @@ const si = {
   "recovery.title": "අයදුම්පත් සංකේතය අමතක වුණාද?",
   "recovery.description":
     "යොමු කරන ලද අයදුම්පත හඳුනා ගැනීමට එක් ක්‍රමයක් තෝරන්න. අසම්පූර්ණ සටහන් (Drafts) මෙම ඉල්ලීම මඟින් නැවත ලබාගත නොහැක.",
+  "recovery.descriptionCombined":
+    "ඉදිරිපත් කළ අයදුම්පත හඳුනා ගැනීමට දරුවාගේ උප්පැන්න සහතික අංකය සහ භාරකරුගේ ජා.හැ. අංකය ඇතුළත් කරන්න. අසම්පූර්ණ සටහන් (Drafts) මෙම ඉල්ලීම මඟින් නැවත ලබාගත නොහැක.",
+  "recovery.guardianNicLabel": "භාරකරුගේ ජා.හැ. අංකය",
   "recovery.methodLabel": "නැවත ලබා ගැනීමේ ක්‍රමය",
   "recovery.methodSession": "Session code එක",
+  "recovery.methodIdentity": "උප්පැන්න සහතිකය + ජා.හැ.",
   "recovery.methodBirth": "උප්පැන්න සහතික අංකය",
   "recovery.methodGuardian": "භාරකරුගේ ජා.හැ. අංකය සහ අයදුම්කරුගේ නම",
   "recovery.sessionPlaceholder": "Session code එක",

@@ -2,7 +2,7 @@ import { useQueries } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ArrowRight, CheckCircle2, FileText, GraduationCap, Info, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileText, GraduationCap, Info, KeyRound, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@aloysius-admissions/ui/components/empty";
@@ -20,6 +20,7 @@ import { clearActiveKey, setActiveKey } from "@/lib/g1/saved-keys";
 import { useSavedApplicationsStore } from "@/lib/g1/saved-applications-store";
 import { useHomeUiStore } from "@/lib/g1/home-ui-store";
 import { AccessRecoveryDialog } from "@/components/g1/application/access-recovery-dialog";
+import { AccessKeyQrImporter } from "@/components/g1/application/access-key-qr";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useTranslation } from "@/lib/i18n";
@@ -191,6 +192,15 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
                 <IconBadge icon={<ShieldCheck size={18} strokeWidth={2.25} />} tone="primary" />
                 {t("home.quickActions.manageSavedKeys")}
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="group h-auto min-w-0 w-full flex-row sm:flex-col items-center justify-start sm:justify-center gap-4 sm:gap-3 whitespace-normal rounded-xl border-2 border-primary/15 bg-accent/40 py-5 sm:py-8 px-5 text-left sm:text-center text-sm font-semibold transition-all hover:-translate-y-0.5 hover:bg-accent/70 hover:border-brand-gold/60"
+                onClick={() => ui.setQrImportOpen(true)}
+              >
+                <IconBadge icon={<QrCode size={18} strokeWidth={2.25} />} tone="primary" />
+                {t("home.quickActions.importQrImage")}
+              </Button>
             </div>
             <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
               <Link to="/">
@@ -199,6 +209,10 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
                   {t("home.quickActions.admissionsInfo")}
                 </Button>
               </Link>
+              <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-primary" onClick={() => ui.openRecovery(null)}>
+                <KeyRound size={14} />
+                {t("home.quickActions.forgotKey")}
+              </Button>
               {(isAdmin || isSubAdmin) && (
                 <Link to={isAdmin ? "/g1/admin" : "/sub-admin"}>
                   <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-primary">
@@ -319,7 +333,30 @@ export function HomeComponent({ isAdmin, isSubAdmin }: { isAdmin: boolean; isSub
               <Input value={ui.loadKeyInput} onChange={(e) => ui.setLoadKeyInput(e.target.value)} placeholder={t("home.loadKey.placeholder")} />
               {ui.loadKeyError && <p className="text-sm text-destructive">{ui.loadKeyError}</p>}
               <Button type="button" onClick={loadWithKey}>{t("home.loadKey.submit")}</Button>
+              <div className="border-t pt-3">
+                <AccessKeyQrImporter onKey={(key) => {
+                  setActiveKey(key);
+                  addSavedKey(key);
+                  ui.closeLoadKey();
+                  window.location.assign(`/application?key=${encodeURIComponent(key)}`);
+                }} />
+              </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={ui.qrImportOpen} onOpenChange={ui.setQrImportOpen}>
+          <DialogContent className="max-w-[min(28rem,calc(100%-2rem))]">
+            <DialogHeader>
+              <DialogTitle>{t("home.qrDialog.title")}</DialogTitle>
+              <DialogDescription>{t("home.qrDialog.description")}</DialogDescription>
+            </DialogHeader>
+            <AccessKeyQrImporter onKey={(key) => {
+              setActiveKey(key);
+              addSavedKey(key);
+              ui.setQrImportOpen(false);
+              window.location.assign(`/application?key=${encodeURIComponent(key)}`);
+            }} />
           </DialogContent>
         </Dialog>
       </main>

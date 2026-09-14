@@ -2748,7 +2748,7 @@ export function ApplicationForm({
         />
 
         {isSubmittedUser && (
-          <div className="flex items-center gap-2.5 border-b bg-muted/40 px-5 py-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2.5 border-b bg-muted/40 px-5 py-3 text-sm text-muted-foreground md:px-8">
             <LockKeyhole size={15} className="shrink-0" />
             <span>
               {INTERVIEW_STATUSES.includes(draft.admissionStatus)

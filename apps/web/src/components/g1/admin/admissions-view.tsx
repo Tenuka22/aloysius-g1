@@ -3,21 +3,22 @@ import { Outlet, getRouteApi, useLocation, useNavigate } from "@tanstack/react-r
 import { useQuery } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { type ColumnDef, type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
-import { CheckCircle2, ClipboardCheck, FileWarning, LockKeyhole, ShieldAlert } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, FileWarning, ShieldAlert } from "lucide-react";
 import { client, orpc } from "@/utils/orpc";
 import { Badge } from "@aloysius-admissions/ui/components/badge";
 import { Button } from "@aloysius-admissions/ui/components/button";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
 import { Input } from "@aloysius-admissions/ui/components/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@aloysius-admissions/ui/components/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@aloysius-admissions/ui/components/alert-dialog";
+
 import {
   DataTable,
   DataTableColumnHeader,
   DataTablePagination,
   DataTableViewOptions,
 } from "@aloysius-admissions/ui/components/data-table";
-import { FORM_WINDOW_WARNING } from "@/lib/color-classes";
+
 
 // This component and the shared types/labels below live outside the routes
 // directory so the route file (`admissions.tsx`) can export only its `Route`.
@@ -84,14 +85,12 @@ export function AdmissionsPage() {
   const navigate = useNavigate();
   const { intakeYear } = Route.useSearch();
   const settings = useQuery(orpc.admin.settings.get.queryOptions({ input: { intakeYear } }));
-  const [earlyAccessGranted, setEarlyAccessGranted] = useState(false);
-  const [earlyAccessDialogOpen, setEarlyAccessDialogOpen] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const closesAt = settings.data?.closesAt ? new Date(settings.data.closesAt) : null;
   const windowClosed = closesAt ? Date.now() >= closesAt.getTime() : false;
-  const admissionsOpen = windowClosed || earlyAccessGranted;
+
 
   const searchQuery = typeof columnFilters.find((f) => f.id === "query")?.value === "string"
     ? (columnFilters.find((f) => f.id === "query")!.value as string)
@@ -110,7 +109,7 @@ export function AdmissionsPage() {
         intakeYear,
       },
     }),
-    enabled: admissionsOpen,
+    enabled: true,
   });
 
   const items = (admissions.data?.items ?? []) as AdmissionSummary[];
@@ -195,39 +194,10 @@ export function AdmissionsPage() {
           <h1 className="mt-1 font-heading text-[clamp(2rem,4vw,3.6rem)]">Interview admissions</h1>
           <p className="mt-3 max-w-[68ch] text-muted-foreground">Review submitted applications one at a time, confirm each category entry, and record the interview outcome.</p>
         </div>
-        <div className="flex items-center gap-2 text-sm font-semibold text-primary"><span className="size-2 rounded-full bg-current" /> {windowClosed ? "Submission window closed" : earlyAccessGranted ? "Early access enabled" : ""}</div>
+        {windowClosed && <div className="flex items-center gap-2 text-sm font-semibold text-primary"><span className="size-2 rounded-full bg-current" /> Submission window closed</div>}
       </div>
 
-      {!admissionsOpen ? (
-        <>
-          <Card className={`mx-auto max-w-2xl ${FORM_WINDOW_WARNING.card}`}>
-            <CardHeader>
-              <div className={`mb-2 flex size-11 items-center justify-center rounded-xl ${FORM_WINDOW_WARNING.icon}`}><LockKeyhole size={22} /></div>
-              <CardTitle>Admissions is not open yet</CardTitle>
-              <CardDescription>Submitted applications become available automatically after the submission window closes{closesAt ? ` on ${closesAt.toLocaleString()}` : ""}.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => setEarlyAccessDialogOpen(true)}><ShieldAlert size={17} /> Open admissions early</Button>
-            </CardContent>
-          </Card>
-          <AlertDialog open={earlyAccessDialogOpen} onOpenChange={setEarlyAccessDialogOpen}>
-            <AlertDialogContent size="sm">
-              <AlertDialogHeader>
-                <div className={`mb-2 flex size-10 items-center justify-center rounded-full ${FORM_WINDOW_WARNING.icon}`}><LockKeyhole size={20} /></div>
-                <AlertDialogTitle>Open admissions before the window closes?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  The submission window closes on{closesAt ? ` ${closesAt.toLocaleString()}` : " - check the schedule"}. Admissions and interview reviews will become available automatically after that. Note that applicants can still edit their submissions until the window closes.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Not yet</AlertDialogCancel>
-                <AlertDialogAction onClick={() => { setEarlyAccessGranted(true); setEarlyAccessDialogOpen(false); }}>Open admissions</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
-      ) : (
-        <>
+      <>
           <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Submitted applications" value={counts.total} icon={ClipboardCheck} />
             <StatCard label="Pending review" value={counts.pending} icon={FileWarning} />
@@ -300,8 +270,7 @@ export function AdmissionsPage() {
               />
             </CardContent>
           </Card>
-        </>
-      )}
+      </>
     </main>
   );
 }
