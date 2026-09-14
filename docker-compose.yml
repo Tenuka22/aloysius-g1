@@ -7,7 +7,7 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    image: aloysius-admissions-web:latest
+    image: tenuka22/aloysius-admissions:latest
     init: true
     ports:
       - "${WEB_PORT:-3001}:${WEB_PORT:-3001}"
