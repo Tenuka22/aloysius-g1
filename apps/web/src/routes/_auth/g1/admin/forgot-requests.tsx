@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, KeyRound, QrCode, X } from "lucide-react";
+import { ArrowLeft, KeyRound, MoreHorizontal, QrCode, X } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { consumeEventIterator } from "@orpc/client";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
