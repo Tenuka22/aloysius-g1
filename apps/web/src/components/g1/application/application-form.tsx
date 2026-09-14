@@ -126,6 +126,7 @@ import {
   House,
   Info,
   KeyRound,
+  LockKeyhole,
   MessageCircle,
   RotateCcw,
   ShieldCheck,
@@ -2063,7 +2064,7 @@ function ReviewStep({
                         <span className="line-through text-muted-foreground">
                           {edit.previousValue || t("appForm.reviewStep.emptyValue")}
                         </span>
-                        <span className="text-muted-foreground">→</span>
+                        <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
                         <span className="font-semibold text-foreground">
                           {edit.newValue || t("appForm.reviewStep.emptyValue")}
                         </span>
@@ -2363,29 +2364,25 @@ export function ApplicationForm({
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastSavedSnapshot = useRef("");
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     if (!draft.accessKey) return;
-    if (draft.submittedAt && draft.submissionLocked) return;
+    if (draft.submittedAt) return;
     const snapshot = JSON.stringify(normalizeDraft(draft));
     if (!lastSavedSnapshot.current) {
       lastSavedSnapshot.current = snapshot;
+      setIsDirty(false);
       return;
     }
-    if (snapshot === lastSavedSnapshot.current) return;
-    // Instant, durable local safety net - written synchronously on every
-    // change, well ahead of the 1.5s debounced DB sync below, so a closed
-    // tab or dropped connection during that window doesn't lose the edit
-    // (see draft-local-cache.ts). Cleared once the DB sync actually confirms.
+    if (snapshot === lastSavedSnapshot.current) {
+      setIsDirty(false);
+      return;
+    }
+    // Persist locally so a closed tab can recover the edit (draft-local-cache.ts).
+    // Server sync only happens on explicit Save.
     saveDraftLocally(draft.accessKey, normalizeDraft(draft));
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => {
-      lastSavedSnapshot.current = snapshot;
-      void saveToServer();
-    }, 1500);
-    return () => {
-      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    };
+    setIsDirty(true);
   }, [
     draft.categories,
     draft.applicant,
@@ -2400,6 +2397,16 @@ export function ApplicationForm({
 
   const current = draft.currentStep;
   const steps = getSteps(t);
+  // After submission: the user's own form is locked — only admin can edit.
+  // Lock the user-facing form only when:
+  // - submission window has closed and they've submitted (can't re-open window), OR
+  // - interview process has started (under_interview) or concluded (verified/fake)
+  // A plain "submitted" application within the open window is still editable.
+  const INTERVIEW_STATUSES = ["under_interview", "verified", "fake"];
+  const isSubmittedUser = !adminApplicationId && (
+    (!!draft.submittedAt && draft.submissionLocked) ||
+    INTERVIEW_STATUSES.includes(draft.admissionStatus)
+  );
 
   const saveToServer = async (showFeedback = true) => {
     const operation = saveQueue.current.then(async () => {
@@ -2436,6 +2443,8 @@ export function ApplicationForm({
         // The DB now has this exact state, so the local safety-net entry
         // (see draft-local-cache.ts) has nothing left to recover.
         if (currentDraft.accessKey) clearDraftLocally(currentDraft.accessKey);
+        lastSavedSnapshot.current = JSON.stringify(data);
+        setIsDirty(false);
       } catch (error) {
         const reason = friendlyErrorMessage(error, t("appForm.statusBar.saveFailedUnknownReason"));
         set({ saveStatus: t("appForm.statusBar.saveFailedReason", { reason }) });
@@ -2474,8 +2483,7 @@ export function ApplicationForm({
       set({ submitError: "" });
       if (restorePromise.current) await restorePromise.current;
       await ensureAccessKey();
-      const nextStep = Math.min(current + 1, steps.length - 1);
-      draft.setStep(nextStep);
+      draft.setStep(Math.min(current + 1, steps.length - 1));
       await saveToServer();
     } catch (error) {
       set({
@@ -2563,6 +2571,8 @@ export function ApplicationForm({
   };
 
   const back = () => draft.setStep(Math.max(current - 1, 0));
+
+  const goToStep = (index: number) => draft.setStep(index);
 
   const runPdfDownload = async () => {
     setPdfState("generating");
@@ -2732,16 +2742,26 @@ export function ApplicationForm({
           maxVisited={draft.maxVisitedStep}
           steps={steps}
           skippedSteps={skippedSteps}
-          onStepClick={(index) => draft.setStep(index)}
+          onStepClick={goToStep}
           saveStatus={draft.saveStatus}
           accessKey={draft.accessKey}
         />
 
-        <CardContent className="min-h-[440px] p-3 md:p-9">
+        {isSubmittedUser && (
+          <div className="flex items-center gap-2.5 border-b bg-muted/40 px-5 py-3 text-sm text-muted-foreground">
+            <LockKeyhole size={15} className="shrink-0" />
+            <span>
+              {INTERVIEW_STATUSES.includes(draft.admissionStatus)
+                ? "Your application is currently under review and cannot be edited."
+                : "The submission window has closed. Your application is locked."}
+            </span>
+          </div>
+        )}
+        <CardContent className={`min-h-[440px] p-3 md:p-9${isSubmittedUser ? " pointer-events-none select-none opacity-80" : ""}`}>
           {current === 0 && (
             <LocationStepCard
               draft={draft}
-              readOnly={readOnly}
+              readOnly={readOnly || isSubmittedUser}
               set={set}
               onSkip={() => skipAndAdvance({ locationStatus: "skipped" })}
             />
@@ -2760,7 +2780,7 @@ export function ApplicationForm({
           {current === 6 && (
             <ReviewStep
               draft={draft}
-              onNavigateToStep={(step) => draft.setStep(step)}
+              onNavigateToStep={goToStep}
               pdfState={pdfState}
               pdfError={pdfError}
               pdfLocale={pdfLocale}
@@ -2926,7 +2946,7 @@ export function ApplicationForm({
                             <span className="line-through text-muted-foreground">
                               {edit.previousValue || t("appForm.reviewStep.emptyValue")}
                             </span>
-                            <span>→</span>
+                            <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
                             <span className="font-semibold text-primary">
                               {edit.newValue || t("appForm.reviewStep.emptyValue")}
                             </span>
@@ -3029,7 +3049,7 @@ export function ApplicationForm({
                             <span className="line-through text-muted-foreground">
                               {edit.previousValue || t("appForm.reviewStep.emptyValue")}
                             </span>
-                            <span>→</span>
+                            <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
                             <span className="font-semibold text-primary">
                               {edit.newValue || t("appForm.reviewStep.emptyValue")}
                             </span>
@@ -3245,12 +3265,35 @@ export function ApplicationForm({
                 </span>
               )}
               <div className="ml-auto flex flex-wrap justify-end gap-2 sm:gap-3">
-                {current > 0 && (
+                {!isSubmittedUser && (
+                  <Button
+                    variant={isDirty ? "default" : "ghost"}
+                    disabled={isAdvancing}
+                    className={isDirty ? "shadow-sm" : "text-muted-foreground"}
+                    onClick={async () => {
+                      if (isAdvancing) return;
+                      setIsAdvancing(true);
+                      try {
+                        await ensureAccessKey();
+                        await saveToServer();
+                      } finally {
+                        setIsAdvancing(false);
+                      }
+                    }}
+                  >
+                    {isAdvancing
+                      ? <><Spinner /> {t("appForm.statusBar.saving")}</>
+                      : isDirty
+                        ? <><Check size={16} /> Save</>
+                        : <><Check size={16} /> Saved</>}
+                  </Button>
+                )}
+                {current > 0 && !isSubmittedUser && (
                   <Button variant="secondary" onClick={back}>
                     <ArrowLeft size={17} /> {t("appForm.buttons.back")}
                   </Button>
                 )}
-                {current < steps.length - 1 ? (
+                {!isSubmittedUser && current < steps.length - 1 ? (
                   <Button
                     disabled={isNextDisabled || isAdvancing}
                     className={
@@ -3278,7 +3321,7 @@ export function ApplicationForm({
                       </>
                     )}
                   </Button>
-                ) : (
+                ) : isSubmittedUser ? null : (
                   <Button
                     disabled={
                       draft.isSubmitting ||
@@ -3303,8 +3346,6 @@ export function ApplicationForm({
                           date: draft.submissionOpensAt ? format(new Date(draft.submissionOpensAt), "d MMM yyyy") : "",
                         })}
                       </>
-                    ) : draft.submittedAt ? (
-                      t("appForm.buttons.updateApplication")
                     ) : (
                       t("appForm.buttons.submitApplication")
                     )}
@@ -3444,3 +3485,4 @@ export function ApplicationForm({
     </main>
   );
 }
+

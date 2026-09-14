@@ -30,3 +30,9 @@ export const subAdminProcedure = protectedProcedure.use(async ({ context, next }
   if (!hasSubAdminRole(context.session.user)) throw new ORPCError("FORBIDDEN");
   return next({ context });
 });
+
+export const adminOrSubAdminProcedure = protectedProcedure.use(async ({ context, next }) => {
+  if (!hasAdminRole(context.session.user) && !hasSubAdminRole(context.session.user))
+    throw new ORPCError("FORBIDDEN");
+  return next({ context });
+});

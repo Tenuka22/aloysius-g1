@@ -78,7 +78,7 @@ function ActionsMenu({ item, onAction }: { item: RequestRow; onAction: () => voi
       <DropdownMenu>
         <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground outline-hidden hover:bg-accent hover:text-accent-foreground">
           <span className="sr-only">Open menu</span>
-          <span className="flex items-center justify-center">⋯</span>
+          <MoreHorizontal size={16} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setApproveOpen(true)}>

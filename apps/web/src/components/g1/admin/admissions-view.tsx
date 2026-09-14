@@ -25,13 +25,14 @@ import { FORM_WINDOW_WARNING } from "@/lib/color-classes";
 // no other exports; keeping the page here is what lets it split.
 const Route = getRouteApi("/_auth/g1/admin/admissions");
 
-export type AdmissionStatus = "pending" | "verified" | "fake";
+export type AdmissionStatus = "pending" | "verified" | "fake" | "under_interview";
 export type FlagEntry = { type: "field" | "input" | "location"; key: string; label: string };
 export type AdmissionSummary = {
   id: string;
   applicantName: string;
   birthCertificateNumber: string;
   sessionCode: string;
+  guardianNic: string;
   submittedAt: Date | null;
   updatedAt: Date;
   categoryCount: number;
@@ -54,8 +55,10 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
   pending: "Pending review",
   verified: "Verified",
   fake: "Potentially fake",
+  under_interview: "Under interview",
   banned: "Banned applicants",
 };
+
 export const CATEGORY_LABELS: Record<string, string> = {
   "6.1": "6.1 - Residence Verification & Proximity",
   "6.2": "6.2 - Alumni",
@@ -151,6 +154,13 @@ export function AdmissionsPage() {
       accessorKey: "birthCertificateNumber",
       header: "Birth certificate",
       cell: ({ row }) => <code className="text-xs">{row.original.birthCertificateNumber}</code>,
+    },
+    {
+      accessorKey: "guardianNic",
+      header: "Parent NIC",
+      cell: ({ row }) => row.original.guardianNic
+        ? <code className="text-xs">{row.original.guardianNic}</code>
+        : <span className="text-muted-foreground text-xs">—</span>,
     },
     {
       accessorKey: "sessionCode",

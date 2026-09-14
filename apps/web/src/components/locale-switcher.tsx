@@ -36,7 +36,7 @@ export function LocaleSwitcher() {
           <span className="flex items-center gap-2">
             <span className="text-base">🇱🇰</span> සිංහල
           </span>
-          {locale === "si" && <span className="text-xs text-primary">●</span>}
+          {locale === "si" && <span className="inline-block size-1.5 rounded-full bg-primary" />}
         </button>
       </PopoverContent>
     </Popover>

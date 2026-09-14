@@ -5,7 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { client, orpc } from "@/utils/orpc";
-import { emptyDraft, normalizeDraft, prependLocationHistory, type ApplicationDraft, type CategoryApplication, type CategoryType, type LocationDraft, type ScoringInputs } from "@/lib/g1/application-store";
+import { emptyDraft, normalizeDraft, prependLocationHistory, createCategory, CATEGORY_TYPES, type ApplicationDraft, type CategoryApplication, type CategoryType, type LocationDraft, type ScoringInputs } from "@/lib/g1/application-store";
 import { scoreCategory } from "@/lib/g1/scoring";
 import { CATEGORY_MAX_MARKS } from "@/lib/g1/marking-scheme";
 import { findSchoolById } from "@/lib/g1/school-utils";
@@ -716,11 +716,19 @@ export function AdminApplicationEditor({ id }: { id: string }) {
   const navigate = useNavigate();
   const detail = useQuery(orpc.admin.application.get.queryOptions({ input: { id } }));
   const [draft, setDraft] = useState<ApplicationDraft>(() => detail.data?.data ? normalizeDraft(detail.data.data as Partial<ApplicationDraft>) : emptyDraft);
+  const [savedDraft, setSavedDraft] = useState<ApplicationDraft | null>(null);
   const [saveState, setSaveState] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
-  useEffect(() => { if (detail.data?.data) setDraft(normalizeDraft(detail.data.data as Partial<ApplicationDraft>)); }, [detail.data?.data, setDraft]);
+  useEffect(() => {
+    if (detail.data?.data) {
+      const normalized = normalizeDraft(detail.data.data as Partial<ApplicationDraft>);
+      setDraft(normalized);
+      setSavedDraft(normalized);
+    }
+  }, [detail.data?.data]);
+  const isDirty = savedDraft !== null && JSON.stringify(draft) !== JSON.stringify(savedDraft);
   const set = (section: keyof ApplicationDraft, key: string, value: string | boolean) => setDraft((current) => ({ ...current, [section]: { ...(current[section] as object), [key]: value } }));
   const save = async () => {
     if (saving) return;
@@ -730,6 +738,7 @@ export function AdminApplicationEditor({ id }: { id: string }) {
     try {
       await client.admin.application.update({ id, data: normalizeDraft(draft) });
       await detail.refetch();
+      setSavedDraft(normalizeDraft(draft));
       setSavedAt(new Date());
       setSaveState("Saved just now");
       toast.success("Application changes saved");
@@ -749,7 +758,7 @@ export function AdminApplicationEditor({ id }: { id: string }) {
     <AdminFieldSection key="guardian" section="guardian" label="Parent / guardian" value={draft.guardian as Record<string, unknown>} onChange={set} />,
     <AdminFieldSection key="residence" section="residence" label="Residence" value={draft.residence as Record<string, unknown>} onChange={set} />,
     <div key="locations" className="border rounded-xl p-4"><h3>Locations</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured browser point or the location selected by the applicant. Drag the green pin, edit the coordinates, then save.</p><AdminLocationMap editable browser={draft.defaultLocations[0]} selected={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} history={draft.userLocationHistory} onSelectedChange={(latitude, longitude) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, latitude, longitude, source: "map" }, location: { ...current.location, latitude, longitude, source: "map" }, userLocationHistory: prependLocationHistory(current.userLocationHistory, { ...current.selectedLocation, latitude, longitude, source: "map", label: "Selected location" }) }))} /><div className="grid grid-cols-2 gap-4 max-md:grid-cols-1"><AdminLocationEditor label="Saved browser location" value={draft.defaultLocations[0] ?? emptyDraft.location} onChange={(key, value) => setDraft((current) => ({ ...current, defaultLocations: current.defaultLocations.length > 0 ? current.defaultLocations.map((loc, i) => i === 0 ? { ...loc, [key]: value } : loc) : [{ ...emptyDraft.location, [key]: value }] }))} /><AdminLocationEditor label="Selected / edited location" value={draft.selectedLocation.latitude != null ? draft.selectedLocation : draft.location} onChange={(key, value) => setDraft((current) => ({ ...current, selectedLocation: { ...current.selectedLocation, [key]: value }, location: { ...current.location, [key]: value } }))} /></div><AdminLocationHistory title="Device fixes (newest first)" history={draft.deviceLocationHistory} /><AdminLocationHistory title="Previously selected locations" history={draft.userLocationHistory} /></div>,
-    <div key="categories" className="border rounded-xl p-4"><h3>Categories</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured category details. Schools within radius are shown for reference and cannot be edited here.</p><div className="grid gap-4">{draft.categories.length === 0 && <p className="text-muted-foreground">No categories selected.</p>}{draft.categories.map((category) => <AdminCategoryEditor key={category.id} category={category} onPatch={(categoryId, patch) => setDraft((current) => ({ ...current, categories: current.categories.map((entry) => entry.id === categoryId ? { ...entry, scoringInputs: { ...entry.scoringInputs, ...patch } } : entry) }))} onRemove={() => setDraft((current) => ({ ...current, categories: current.categories.filter((entry) => entry.id !== category.id) }))} />)}</div></div>,
+    <div key="categories" className="border rounded-xl p-4"><h3>Categories</h3><p className="text-muted-foreground text-[0.82rem]">Correct the captured category details. Schools within radius are shown for reference and cannot be edited here.</p><div className="grid gap-4">{draft.categories.length === 0 && <p className="text-muted-foreground">No categories selected.</p>}{draft.categories.map((category) => <AdminCategoryEditor key={category.id} category={category} onPatch={(categoryId, patch) => setDraft((current) => ({ ...current, categories: current.categories.map((entry) => entry.id === categoryId ? { ...entry, scoringInputs: { ...entry.scoringInputs, ...patch } } : entry) }))} onRemove={() => setDraft((current) => ({ ...current, categories: current.categories.filter((entry) => entry.id !== category.id) }))} />)}<div className="flex items-center gap-2"><Select value="" onValueChange={(value) => { if (value) { setDraft((current) => ({ ...current, categories: [...current.categories, createCategory(value as CategoryType, current.categories.length)] })); } }}><SelectTrigger className="h-9 w-full sm:w-[280px]"><SelectValue placeholder="Add a category…" /></SelectTrigger><SelectContent>{CATEGORY_TYPES.filter((ct) => !draft.categories.some((c) => c.categoryType === ct)).map((ct) => <SelectItem key={ct} value={ct}>{CATEGORY_LABELS[ct]}</SelectItem>)}</SelectContent></Select></div></div></div>,
     <div key="declaration" className="border rounded-xl p-4"><h3>Declaration</h3><Toggle label="Information confirmed" checked={draft.declaration.confirmed} onChange={(value) => set("declaration", "confirmed", value)} /><Toggle label="Consent given" checked={draft.declaration.consent} onChange={(value) => set("declaration", "consent", value)} /></div>,
   ];
 
@@ -775,11 +784,15 @@ export function AdminApplicationEditor({ id }: { id: string }) {
           <Button variant="secondary" className="whitespace-normal" disabled={saving} onClick={() => void navigate({ to: "/g1/admin/applications/$id", params: { id } })}><X size={16} /> Cancel</Button>
           <div className="flex flex-wrap gap-2">
             {currentStep > 0 && <Button variant="outline" className="whitespace-normal" disabled={saving} onClick={() => setCurrentStep(currentStep - 1)}>Back</Button>}
-            {currentStep < EDITOR_STEPS.length - 1 ? (
-              <Button className="whitespace-normal" disabled={saving} onClick={() => setCurrentStep(currentStep + 1)}>Next</Button>
-            ) : (
-              <Button className="whitespace-normal" disabled={saving} onClick={() => void save()}><Save size={16} /> {saving ? "Saving…" : "Save changes"}</Button>
-            )}
+            {currentStep < EDITOR_STEPS.length - 1 && <Button className="whitespace-normal" disabled={saving} onClick={() => setCurrentStep(currentStep + 1)}>Next</Button>}
+            <Button
+              variant={isDirty ? "default" : "ghost"}
+              className={"whitespace-normal " + (isDirty ? "" : "opacity-60 text-muted-foreground")}
+              disabled={saving}
+              onClick={() => void save()}
+            >
+              <Save size={16} /> {saving ? "Saving…" : isDirty ? "Save changes" : "Saved"}
+            </Button>
           </div>
         </div>
       </Card>

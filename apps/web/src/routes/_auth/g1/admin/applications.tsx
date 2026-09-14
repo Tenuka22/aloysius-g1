@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { ArrowLeft, Eye, Pencil, ShieldCheck, Trash2, Clock } from "lucide-react";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Eye, Pencil, Plus, ShieldCheck, Trash2, Clock, Upload } from "lucide-react";
 import { consumeEventIterator } from "@orpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ColumnFiltersState, type PaginationState, type SortingState } from "@tanstack/react-table";
@@ -54,6 +54,8 @@ type ApplicationRow = {
   applicantName: string
   sessionCode: string
   accessKeyHint: string
+  birthCertificateNumber: string
+  guardianNic: string
   status: string
   validationErrors: string[]
   createdAt: Date
@@ -80,7 +82,7 @@ function DeleteDialog({ open, onOpenChange, onConfirm, applicantName, isPending 
   );
 }
 
-function ActionsMenu({ item, onDeleted }: { item: ApplicationRow; onDeleted: () => void }) {
+function ActionsMenu({ item, onDeleted, isAdmin }: { item: ApplicationRow; onDeleted: () => void; isAdmin: boolean }) {
   const queryClient = useQueryClient();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -94,12 +96,31 @@ function ActionsMenu({ item, onDeleted }: { item: ApplicationRow; onDeleted: () 
     },
   }));
 
+  const unsubmitMutation = useMutation(orpc.admin.application.unsubmit.mutationOptions({
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.applications.key() });
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.overview.key() });
+      toast.success("Application unsubmitted — reverted to draft");
+      onDeleted();
+    },
+  }));
+
+  const submitMutation = useMutation(orpc.admin.application.submit.mutationOptions({
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.applications.key() });
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.overview.key() });
+      toast.success("Application submitted");
+      onDeleted();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not submit"),
+  }));
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground outline-hidden hover:bg-accent hover:text-accent-foreground">
           <span className="sr-only">Open menu</span>
-          <span className="flex items-center justify-center">⋯</span>
+          <MoreHorizontal size={16} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem render={<Link to="/g1/admin/applications/$id" params={{ id: item.id }} />}>
@@ -108,10 +129,24 @@ function ActionsMenu({ item, onDeleted }: { item: ApplicationRow; onDeleted: () 
           <DropdownMenuItem render={<Link to="/g1/admin/applications/$id" params={{ id: item.id }} search={{ mode: "edit" }} />}>
             <Pencil size={15} /> Edit
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
-            <Trash2 size={15} /> Delete
-          </DropdownMenuItem>
+          {item.status === "draft" && (
+            <DropdownMenuItem onClick={() => submitMutation.mutate({ id: item.id })} disabled={submitMutation.isPending}>
+              <Upload size={15} /> Submit
+            </DropdownMenuItem>
+          )}
+          {item.status === "submitted" && (
+            <DropdownMenuItem onClick={() => unsubmitMutation.mutate({ id: item.id })} disabled={unsubmitMutation.isPending}>
+              <ShieldCheck size={15} /> Unsubmit
+            </DropdownMenuItem>
+          )}
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 size={15} /> Delete
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <DeleteDialog
@@ -129,7 +164,7 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: number; 
   return <div className="grid gap-2 rounded-xl border bg-card p-4 shadow-[0_10px_30px_color-mix(in_oklch,var(--foreground)_5%,transparent)]"><Icon className="text-primary" size={19} /><span className="text-xs text-muted-foreground">{label}</span><strong className="font-heading text-3xl">{value.toLocaleString()}</strong></div>;
 }
 
-function useColumns(onRefetch: () => void) {
+function useColumns(onRefetch: () => void, isAdmin: boolean) {
   return useMemo(() => [
     {
       accessorKey: "applicantName",
@@ -144,6 +179,20 @@ function useColumns(onRefetch: () => void) {
       accessorKey: "sessionCode",
       header: "Session",
       cell: ({ row }: { row: { original: ApplicationRow } }) => <code className="text-xs">{row.original.sessionCode}</code>,
+    },
+    {
+      accessorKey: "birthCertificateNumber",
+      header: "Birth Cert #",
+      cell: ({ row }: { row: { original: ApplicationRow } }) => row.original.birthCertificateNumber
+        ? <code className="text-xs">{row.original.birthCertificateNumber}</code>
+        : <span className="text-muted-foreground text-xs">—</span>,
+    },
+    {
+      accessorKey: "guardianNic",
+      header: "Parent NIC",
+      cell: ({ row }: { row: { original: ApplicationRow } }) => row.original.guardianNic
+        ? <code className="text-xs">{row.original.guardianNic}</code>
+        : <span className="text-muted-foreground text-xs">—</span>,
     },
     {
       accessorKey: "accessKeyHint",
@@ -181,9 +230,37 @@ function useColumns(onRefetch: () => void) {
     {
       id: "actions",
       header: "Actions",
-      cell: ({ row }: { row: { original: ApplicationRow } }) => <ActionsMenu item={row.original} onDeleted={onRefetch} />,
+      cell: ({ row }: { row: { original: ApplicationRow } }) => <ActionsMenu item={row.original} onDeleted={onRefetch} isAdmin={isAdmin} />,
     },
   ], [onRefetch]);
+}
+
+function NewApplicationButton({ intakeYear }: { intakeYear: string }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [creating, setCreating] = useState(false);
+
+  const handleCreate = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const result = await client.admin.application.create({ intakeYear });
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.applications.key() });
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.overview.key() });
+      navigate({ to: "/g1/admin/applications/$id", params: { id: result.id }, search: { mode: "edit" } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create application");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <Button size="sm" onClick={() => void handleCreate()} disabled={creating}>
+      <Plus size={15} />
+      {creating ? "Creating…" : "New application"}
+    </Button>
+  );
 }
 
 function AdminApplicationsPage() {
@@ -199,7 +276,8 @@ function AdminApplicationsPage() {
   const query = typeof columnFilters.find((f) => f.id === "query")?.value === "string" ? (columnFilters.find((f) => f.id === "query")!.value as string) : "";
   const statusFilter = typeof columnFilters.find((f) => f.id === "status")?.value === "string" ? (columnFilters.find((f) => f.id === "status")!.value as string) : "all";
 
-  const overview = useQuery(orpc.admin.overview.queryOptions({ input: { intakeYear } }));
+  // Overview stats are admin-only; sub-admins skip the query (they don't see stat cards).
+  const overview = useQuery({ ...orpc.admin.overview.queryOptions({ input: { intakeYear } }), enabled: session.data?.user.role === "admin" });
   const applications = useQuery(orpc.admin.applications.queryOptions({
     input: {
       page: pagination.pageIndex + 1,
@@ -229,13 +307,17 @@ function AdminApplicationsPage() {
   // would run on some renders and not others, violating the Rules of
   // Hooks ("Rendered fewer hooks than expected").
   const refetchApplications = useCallback(() => { void applications.refetch(); }, [applications]);
-  const columns = useColumns(refetchApplications);
+  const isAdmin = session.data?.user.role === "admin";
+  const isSubAdmin = session.data?.user.role === "sub-admin";
+  const columns = useColumns(refetchApplications, isAdmin);
 
   if (location.pathname !== "/g1/admin/applications") return <Outlet />;
-  if (session.data?.user.role !== "admin") return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Admin access required</CardTitle><CardDescription className="leading-relaxed">Your account does not have permission to view applications.</CardDescription></CardHeader><Button variant="default" className="w-fit" render={<Link to="/admissions" />} nativeButton={false}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
+  if (!isAdmin && !isSubAdmin) return <main className="grid place-items-center min-h-svh p-6"><Card className="w-full max-w-md gap-5 p-8"><CardHeader className="p-0"><CardTitle className="font-heading text-[clamp(1.8rem,4vw,2.5rem)]">Access required</CardTitle><CardDescription className="leading-relaxed">Your account does not have permission to view applications.</CardDescription></CardHeader><Button variant="default" className="w-fit" render={<Link to="/admissions" />} nativeButton={false}><ArrowLeft size={17} /> Back to dashboard</Button></Card></main>;
 
   const items = (applications.data?.items ?? []) as ApplicationRow[];
   const pageCount = applications.data ? Math.ceil(applications.data.total / applications.data.pageSize) : 0;
+  // Sub-admins must search before browsing; admins see everything.
+  const requiresSearch = isSubAdmin && query.trim().length < 2;
 
   return (
     <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
@@ -245,16 +327,19 @@ function AdminApplicationsPage() {
           <h1 className="font-heading text-[clamp(2rem,4vw,3.6rem)] mt-1 mb-3">Applications</h1>
           <p className="text-muted-foreground">Review, filter, and manage application records in real time.</p>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-primary text-sm font-semibold">
-          <span className="w-2 h-2 rounded-full bg-current shadow-[0_0_0_0.2rem_color-mix(in_oklch,currentColor_15%,transparent)]" /> Live via SSE
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 text-primary text-sm font-semibold">
+            <span className="w-2 h-2 rounded-full bg-current shadow-[0_0_0_0.2rem_color-mix(in_oklch,currentColor_15%,transparent)]" /> Live via SSE
+          </span>
+          {isAdmin && <NewApplicationButton intakeYear={intakeYear} />}
+        </div>
       </div>
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {isAdmin && <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total" value={overview.data?.total ?? 0} icon={ShieldCheck} />
         <StatCard label="Drafts" value={overview.data?.drafts ?? 0} icon={Clock} />
         <StatCard label="Submitted" value={overview.data?.submitted ?? 0} icon={ShieldCheck} />
         <StatCard label="Needs attention" value={overview.data?.incomplete ?? 0} icon={ShieldCheck} />
-      </div>
+      </div>}
       {prefs.recentlyViewed.length > 0 && (
         <Card className="mb-4">
           <CardContent className="py-3">
@@ -274,12 +359,31 @@ function AdminApplicationsPage() {
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle>All applications</CardTitle>
-              <CardDescription>Selections and location data are available in the details view.</CardDescription>
+              <CardTitle>{requiresSearch ? "Search applications" : "All applications"}</CardTitle>
+              <CardDescription>{requiresSearch ? "Enter at least 2 characters to search by name, birth certificate, or session code." : "Selections and location data are available in the details view."}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
+          {requiresSearch ? (
+            <div className="grid gap-4">
+              <Input
+                autoFocus
+                placeholder="Search name, birth certificate, or session code…"
+                value={query}
+                onChange={(e) => {
+                  const next = columnFilters.filter((f) => f.id !== "query");
+                  if (e.target.value) next.push({ id: "query", value: e.target.value });
+                  setColumnFilters(next);
+                }}
+                className="h-10 max-w-sm"
+              />
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+                <ShieldCheck size={36} className="opacity-20" />
+                <p className="text-sm">Type at least 2 characters to see results.</p>
+              </div>
+            </div>
+          ) : (
           <DataTable
             columns={columns}
             data={items}
@@ -312,7 +416,7 @@ function AdminApplicationsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-1 flex-wrap items-center gap-2">
                     <Input
-                      placeholder="Search applicant or key hint…"
+                      placeholder="Search name, key hint, or birth cert…"
                       value={(filters.find((f) => f.id === "query")?.value as string) ?? ""}
                       onChange={(e) => setFilter("query", e.target.value)}
                       className="h-10 w-full sm:max-w-62.5"
@@ -343,6 +447,7 @@ function AdminApplicationsPage() {
             }}
             paginationBar={(table) => <DataTablePagination table={table} />}
           />
+          )}
         </CardContent>
       </Card>
     </main>

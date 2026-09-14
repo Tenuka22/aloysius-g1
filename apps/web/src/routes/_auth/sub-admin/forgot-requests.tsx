@@ -74,7 +74,7 @@ function ActionsMenu({ item, onAction }: { item: ForgotRequestRow; onAction: () 
     <>
       <DropdownMenu>
         <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground outline-hidden hover:bg-accent hover:text-accent-foreground">
-          <span className="flex items-center justify-center">⋯</span>
+          <MoreHorizontal size={16} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setConfirmOpen(true)}>

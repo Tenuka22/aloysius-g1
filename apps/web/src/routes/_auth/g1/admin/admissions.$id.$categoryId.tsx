@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { lazy } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Calculator, Check, ClipboardCheck, CreditCard, Edit3, FileText, Flag, Hash, LockKeyhole, Mail, MapPin, Pencil, Phone, RotateCcw, Save, ShieldAlert, User, UserRound, X } from "lucide-react";
+import { Ban, Check, ClipboardCheck, CreditCard, Edit3, FileText, Flag, Hash, LockKeyhole, Mail, MapPin, MousePointer2, Pencil, Phone, RotateCcw, Save, Settings2, ShieldAlert, User, UserRound, X } from "lucide-react";
 import { client, orpc } from "@/utils/orpc";
 import { normalizeDraft, type ApplicationDraft, type InterviewEdit, type LocationDraft, type ScoringInputs } from "@/lib/g1/application-store";
 import { scoreCategory } from "@/lib/g1/scoring";
@@ -132,38 +132,61 @@ function DataRow({ label, value, fieldKey, onEdit, previousValue, flagged, onFla
   const isEmpty = value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0);
   const type = fieldKey ? getFieldType(fieldKey) : "text";
   const style = FIELD_STYLES[type] ?? FIELD_STYLES.text;
-  const displayValue = isEmpty ? "Not provided" : String(value === null || value === undefined ? "Not provided" : value);
+  const displayValue = isEmpty ? "Not provided" : String(value ?? "Not provided");
   const hasEdit = previousValue !== undefined && previousValue !== displayValue;
-  const valueEl = (
-    <strong className={isEmpty ? "text-muted-foreground italic font-normal text-sm leading-relaxed" : `${style.colorClass} text-sm leading-relaxed`}>{displayValue}</strong>
-  );
   return (
-    <div className={`grid gap-1 border-b border-border/70 py-3 last:border-b-0 ${flagged ? "bg-red-50/50 -mx-2 px-2 rounded" : ""}`}>
-      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground flex items-center gap-1.5">
-        <span className="opacity-50">{style.icon}</span>
-        {label}
-        {flagged && <span className="text-red-500 font-bold text-[0.6rem] uppercase tracking-wider ml-1">Flagged</span>}
-        <span className="ml-auto flex items-center gap-1">
+    <div className={`group relative rounded-xl border p-3 transition-colors ${
+      flagged
+        ? "border-red-200 bg-red-50/50 ring-1 ring-red-200/60"
+        : "border-border/40 hover:border-border hover:bg-muted/20"
+    }`}>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <span className="flex min-w-0 items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="opacity-50 shrink-0">{style.icon}</span>
+          <span className="truncate">{label}</span>
+          {flagged && (
+            <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[0.58rem] font-bold text-red-600 uppercase tracking-wide leading-none">
+              Flagged
+            </span>
+          )}
+        </span>
+        <span className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           {onFlag && (
-            <button type="button" onClick={onFlag} className={`rounded-md p-1 transition-colors ${flagged ? "bg-red-100 text-red-600 hover:bg-red-200" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} title={flagged ? "Remove flag" : "Flag as suspicious"}>
-              <Flag size={12} />
+            <button
+              type="button"
+              onClick={onFlag}
+              title={flagged ? "Remove flag" : "Flag as suspicious"}
+              className={`rounded-lg p-1.5 transition-colors ${
+                flagged ? "bg-red-100 text-red-600 hover:bg-red-200" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <Flag size={13} />
             </button>
           )}
           {onEdit && (
-            <button type="button" onClick={onEdit} className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title={`Edit ${label}`}>
-              <Pencil size={12} />
+            <button
+              type="button"
+              onClick={onEdit}
+              title={`Edit ${label}`}
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Pencil size={13} />
             </button>
           )}
         </span>
-      </span>
-      {hasEdit ? (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger render={<span className="cursor-help">{valueEl}</span>} />
-            <TooltipContent>Previous: {previousValue || "(empty)"}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ) : valueEl}
+      </div>
+      <p className={`text-[0.9rem] font-semibold leading-snug ${
+        isEmpty ? "text-muted-foreground/50 italic font-normal text-sm" : style.colorClass
+      }`}>
+        {displayValue}
+      </p>
+      {hasEdit && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 rounded-md bg-amber-50 border border-amber-200/60 px-2 py-1 text-xs">
+          <span className="line-through text-muted-foreground/70">{previousValue || "(empty)"}</span>
+          <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
+          <span className="font-semibold text-amber-700">{displayValue}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -283,6 +306,10 @@ function EditableDataRow({ label, value, fieldKey, onChange, readOnly }: { label
 function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag, onSaveAdminLocation }: { draft: ApplicationDraft; flaggedLocations: Set<string>; onToggleLocationFlag: (id: string) => void; onSaveAdminLocation: (lat: number, lng: number) => void }) {
   const [editMode, setEditMode] = useState(false);
   const [pendingPin, setPendingPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
+  const [manualError, setManualError] = useState(false);
 
   const editModeRef = useRef(editMode);
   editModeRef.current = editMode;
@@ -307,9 +334,13 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
       });
     };
 
-    // Primary applicant-submitted locations
+    // Primary applicant-submitted locations. location and selectedLocation are always set to
+    // the same value (see LocationStepCard onChange), so skip location if coords match.
     addPoint("applicant-selected", "Selected application location", draft.selectedLocation, "selected");
-    addPoint("applicant-detected", "Application location (auto-detected)", draft.location, "selected");
+    const selLat = draft.selectedLocation?.latitude, selLng = draft.selectedLocation?.longitude;
+    const locLat = draft.location?.latitude, locLng = draft.location?.longitude;
+    if (locLat != null && locLng != null && (locLat !== selLat || locLng !== selLng))
+      addPoint("applicant-detected", "Application location", draft.location, "selected");
 
     // Browser-provided default locations
     draft.defaultLocations.forEach((entry, i) => addPoint(`browser-${i}`, `Browser location ${i + 1}`, entry, "true"));
@@ -323,7 +354,14 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
     // Device GPS history
     draft.deviceLocationHistory.forEach((entry, i) => addPoint(entry.id ?? `device-${i}`, `Device GPS fix ${i + 1}`, entry, "true"));
 
-    return pts;
+    // Deduplicate: skip any point whose (lat, lng) already appeared earlier in the list.
+    const seen = new Set<string>();
+    return pts.filter((p) => {
+      const key = `${p.latitude.toFixed(6)},${p.longitude.toFixed(6)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [draft]);
 
   // ─── Derive logical groups ──────────────────────────────────────────────────
@@ -332,7 +370,7 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
   const truePins = useMemo(() => allPoints.filter(p => p.group === "true"), [allPoints]);
 
   // The "effective" home location: admin override replaces the last user-selected pin
-  const effectivePin = useMemo(() => adminPin ?? (userSelectedPins.length > 0 ? userSelectedPins[userSelectedPins.length - 1] : null), [adminPin, userSelectedPins]);
+  const effectivePin = useMemo(() => adminPin ?? (userSelectedPins.length > 0 ? userSelectedPins[0] : null), [adminPin, userSelectedPins]);
 
   // What appears in the "User selected locations" list - admin override replaces the last user pin
   const displayedSelectedPins = useMemo(() => {
@@ -486,14 +524,71 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
                 </Button>
               </>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
-                <Pencil size={14} /> {adminPin ? "Replace admin location" : "Set admin location"}
-              </Button>
+              <>
+                <Button size="sm" variant="outline" onClick={() => setManualEntryOpen(!manualEntryOpen)}>
+                  <Settings2 size={14} /> Manual entry
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+                  <Pencil size={14} /> {adminPin ? "Replace admin location" : "Set admin location"}
+                </Button>
+              </>
             )}
           </div>
         </div>
       </CardHeader>
       <CardContent className="grid gap-5">
+        {manualEntryOpen && !editMode && (
+          <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4">
+            <p className="text-xs font-semibold text-muted-foreground mb-2">Manual coordinate entry</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-1">
+                <label htmlFor="adm-manual-lat" className="text-xs font-semibold">Latitude</label>
+                <Input
+                  id="adm-manual-lat"
+                  type="number"
+                  step="any"
+                  inputMode="decimal"
+                  value={manualLat}
+                  onChange={(e) => { setManualError(false); setManualLat(e.target.value); }}
+                  placeholder="6.9271"
+                />
+              </div>
+              <div className="grid gap-1">
+                <label htmlFor="adm-manual-lng" className="text-xs font-semibold">Longitude</label>
+                <Input
+                  id="adm-manual-lng"
+                  type="number"
+                  step="any"
+                  inputMode="decimal"
+                  value={manualLng}
+                  onChange={(e) => { setManualError(false); setManualLng(e.target.value); }}
+                  placeholder="79.8612"
+                />
+              </div>
+            </div>
+            {manualError && (
+              <p className="text-xs text-destructive mt-1">Please enter valid latitude and longitude values.</p>
+            )}
+            <Button
+              size="sm"
+              className="w-full mt-2"
+              onClick={() => {
+                const lat = parseFloat(manualLat);
+                const lng = parseFloat(manualLng);
+                if (Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                  onSaveAdminLocation(lat, lng);
+                  setManualLat("");
+                  setManualLng("");
+                  setManualEntryOpen(false);
+                } else {
+                  setManualError(true);
+                }
+              }}
+            >
+              <Save size={14} /> Apply coordinates
+            </Button>
+          </div>
+        )}
         {allPoints.length === 0 ? (
           <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
             No coordinates were captured for this application.
@@ -516,40 +611,47 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
 
               {editMode && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500] bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg pointer-events-none">
-                  {pendingPin ? "📍 New location set - click Save location above" : "🖱 Click anywhere on the map to pin the admin location"}
+                  <>{pendingPin ? <><MapPin size={13} className="inline mr-1" /> New location set — click Save location above</> : <><MousePointer2 size={13} className="inline mr-1" /> Click anywhere on the map to pin the admin location</>}</>
                 </div>
               )}
             </div>
 
-            {/* Location lists */}
-            <div className="grid gap-4 lg:grid-cols-2">
-              {/* User selected + admin override */}
-              <div className="grid gap-2">
-                <h3 className="text-sm font-semibold">
-                  User selected locations
-                  {adminPin && <Badge variant="outline" className="ml-2 border-amber-500 text-amber-600 text-[0.6rem]">Admin override active</Badge>}
-                </h3>
+            {/* Location lists — tabbed */}
+            <Tabs defaultValue="selected">
+              <TabsList className="w-full">
+                <TabsTrigger value="selected" className="flex-1 gap-1.5">
+                  Saved locations
+                  {adminPin && <Badge variant="outline" className="border-amber-400 text-amber-600 text-[0.6rem] px-1 py-0">Admin override</Badge>}
+                  {displayedSelectedPins.length > 0 && (
+                    <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-primary">{displayedSelectedPins.length}</span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="device" className="flex-1 gap-1.5">
+                  Device &amp; browser
+                  {truePins.length > 0 && (
+                    <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-primary">{truePins.length}</span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="selected" className="mt-3">
                 {displayedSelectedPins.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No user-selected locations.</p>
+                  <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">No user-selected locations recorded.</p>
                 ) : (
-                  <ul className="grid max-h-[280px] gap-2 overflow-y-auto pr-1">
+                  <ul className="grid gap-2 max-h-[360px] overflow-y-auto pr-1">
                     {displayedSelectedPins.map((p, i) => renderPin(p, i === displayedSelectedPins.length - 1))}
                   </ul>
                 )}
-              </div>
-
-              {/* Device/browser true locations */}
-              <div className="grid gap-2">
-                <h3 className="text-sm font-semibold">Device &amp; browser locations</h3>
+              </TabsContent>
+              <TabsContent value="device" className="mt-3">
                 {truePins.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No device/browser locations captured.</p>
+                  <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">No device or browser locations captured.</p>
                 ) : (
-                  <ul className="grid max-h-[280px] gap-2 overflow-y-auto pr-1">
+                  <ul className="grid gap-2 max-h-[360px] overflow-y-auto pr-1">
                     {truePins.map((p, i) => renderPin(p, i === truePins.length - 1))}
                   </ul>
                 )}
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
 
             {/* School row */}
             <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50/50 p-3 flex items-center gap-3">
@@ -799,7 +901,7 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
                       <span className="text-[0.7rem] font-semibold text-amber-700">{change.label}</span>
                       <div className="flex items-center gap-1.5 text-[0.65rem]">
                         <span className="text-muted-foreground line-through truncate">{change.oldValue || "(empty)"}</span>
-                        <span className="text-muted-foreground">→</span>
+                        <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
                         <span className="font-medium text-amber-700 truncate">{change.newValue || "(empty)"}</span>
                       </div>
                     </div>
@@ -950,7 +1052,6 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
 const STEPS = [
   { label: "Applicant data", icon: User },
   { label: "Location evidence", icon: MapPin },
-  { label: "Category scoring", icon: Calculator },
   { label: "Decision & flagging", icon: Flag },
 ] as const;
 
@@ -1019,9 +1120,6 @@ function AdmissionWorkspacePage() {
     ...Array.from(flaggedInputs).map((key) => ({ type: "input" as const, key, label: key.replace(/([A-Z])/g, " $1").trim() })),
     ...Array.from(flaggedLocations).map((key) => ({ type: "location" as const, key, label: `Location ${key}` })),
   ];
-
-  const savedFlagsRef = useRef<string>("[]");
-
   useEffect(() => {
     if (data) {
       setStatus(data.admissionStatus);
@@ -1035,6 +1133,7 @@ function AdmissionWorkspacePage() {
   }, [data]);
 
   const isManualSaveRef = useRef(false);
+  const savedFlagsRef = useRef<string>("[]");
 
   useEffect(() => {
     if (!data) return;
@@ -1055,15 +1154,14 @@ function AdmissionWorkspacePage() {
     mutationFn: (input: { admissionStatus: AdmissionStatus; interviewNotes: string; isBanned: boolean; banReason?: string; flags: Array<{ type: string; key: string; label: string }> }) =>
       client.admin.admissions.updateReview({ id, ...input }),
     onSuccess: async () => {
-      if (isManualSaveRef.current) {
-        setReviewSaved(true);
-        isManualSaveRef.current = false;
-      }
+      const wasManual = isManualSaveRef.current;
+      isManualSaveRef.current = false;
+      if (wasManual) setReviewSaved(true);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.list.key() }),
         queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.get.queryOptions({ input: { id } }).queryKey }),
       ]);
-      toast.success("Admissions review saved");
+      if (wasManual) toast.success("Admissions review saved");
     },
     onError: (error) => {
       isManualSaveRef.current = false;
@@ -1096,10 +1194,15 @@ function AdmissionWorkspacePage() {
     const history = draft.userLocationHistory ?? [];
     const adminEntry = history.find((e) => e.source === "admin");
     const userEntries = history.filter((e) => e.source !== "admin");
-    const pin = adminEntry ?? (userEntries.length > 0 ? userEntries[userEntries.length - 1] : null);
+    // History is prepended (newest first); [0] is the most recent entry.
+    const pin =
+      adminEntry ??
+      (userEntries.length > 0 ? userEntries[0] : null) ??
+      (draft.selectedLocation?.latitude != null ? draft.selectedLocation : null) ??
+      (draft.location?.latitude != null ? draft.location : null);
     if (!pin || pin.latitude == null || pin.longitude == null) return null;
     return { lat: pin.latitude, lng: pin.longitude };
-  }, [draft.userLocationHistory]);
+  }, [draft.userLocationHistory, draft.selectedLocation, draft.location]);
 
   const interviewEditsMutation = useMutation({
     mutationFn: (patch: { interviewEdits: InterviewEdit[] }) =>
@@ -1149,7 +1252,7 @@ function AdmissionWorkspacePage() {
   if (detail.isLoading) {
     return (
       <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-        <Link to="/g1/admin/admissions/$id" params={{ id }} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to categories</Link>
+        <Link to="/g1/admin/admissions/$id" params={{ id }} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={14} /> Back to categories</Link>"
         <Card><CardContent className="flex items-center gap-3 p-8 text-sm text-muted-foreground"><ClipboardCheck className="text-primary" size={18} /> Loading applicant record…</CardContent></Card>
       </main>
     );
@@ -1158,7 +1261,7 @@ function AdmissionWorkspacePage() {
   if (detail.error || !data) {
     return (
       <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-        <Link to="/g1/admin/admissions/$id" params={{ id }} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to categories</Link>
+        <Link to="/g1/admin/admissions/$id" params={{ id }} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={14} /> Back to categories</Link>"
         <Card className="border-destructive/25"><CardContent className="flex items-start gap-2 p-6 text-sm text-destructive"><ShieldAlert size={17} className="mt-0.5 shrink-0" /> Could not load applicant: {detail.error?.message ?? "Not found"}</CardContent></Card>
       </main>
     );
@@ -1172,6 +1275,11 @@ function AdmissionWorkspacePage() {
     return edits.length > 0 ? edits[edits.length - 1] : null;
   };
 
+  // Latest admin-corrected value for a field; falls back to original draft value.
+  const fieldValue = (field: string, original: string) => lastEditFor(field)?.newValue ?? original;
+  // Original draft value shown as strikethrough when an interview edit exists.
+  const fieldPrev = (field: string, original: string) => (lastEditFor(field) ? original : undefined);
+
   const openFieldEditor = (config: { label: string; fieldKey: string; section: string; path: string; currentValue: string }) => {
     setEditFieldConfig(config);
     setEditFieldOpen(true);
@@ -1179,7 +1287,7 @@ function AdmissionWorkspacePage() {
 
   return (
     <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-      <Link to="/g1/admin/admissions/$id" params={{ id }} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to categories</Link>
+      <Link to="/g1/admin/admissions/$id" params={{ id }} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={14} /> Back to categories</Link>"
 
       <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 mb-5">
         <div className="flex items-start gap-3">
@@ -1225,44 +1333,63 @@ function AdmissionWorkspacePage() {
           <div className="grid gap-5 xl:grid-cols-2">
             <Card>
               <CardHeader><CardTitle>Applicant and guardian</CardTitle><CardDescription>Base information to confirm during the interview. Click the pencil to edit, flag to mark as suspicious.</CardDescription></CardHeader>
-              <CardContent className="grid gap-1 sm:grid-cols-2">
-                <DataRow label="Full name" value={draft.applicant.fullName} fieldKey="fullName" previousValue={lastEditFor("applicant.fullName")?.previousValue} flagged={flaggedFields.has("applicant.fullName")} onFlag={() => toggleFieldFlag("applicant.fullName")} onEdit={() => openFieldEditor({ label: "Full name", fieldKey: "fullName", section: "applicant", path: "fullName", currentValue: draft.applicant.fullName })} />
-                <DataRow label="Sinhala name" value={draft.applicant.sinhalaName} fieldKey="sinhalaName" previousValue={lastEditFor("applicant.sinhalaName")?.previousValue} flagged={flaggedFields.has("applicant.sinhalaName")} onFlag={() => toggleFieldFlag("applicant.sinhalaName")} onEdit={() => openFieldEditor({ label: "Sinhala name", fieldKey: "sinhalaName", section: "applicant", path: "sinhalaName", currentValue: draft.applicant.sinhalaName })} />
-                <DataRow label="Date of birth" value={draft.applicant.dateOfBirth} fieldKey="dateOfBirth" previousValue={lastEditFor("applicant.dateOfBirth")?.previousValue} flagged={flaggedFields.has("applicant.dateOfBirth")} onFlag={() => toggleFieldFlag("applicant.dateOfBirth")} onEdit={() => openFieldEditor({ label: "Date of birth", fieldKey: "dateOfBirth", section: "applicant", path: "dateOfBirth", currentValue: draft.applicant.dateOfBirth })} />
-                <DataRow label="Birth certificate" value={draft.applicant.birthCertificateNumber} fieldKey="birthCertificateNumber" previousValue={lastEditFor("applicant.birthCertificateNumber")?.previousValue} flagged={flaggedFields.has("applicant.birthCertificateNumber")} onFlag={() => toggleFieldFlag("applicant.birthCertificateNumber")} onEdit={() => openFieldEditor({ label: "Birth certificate", fieldKey: "birthCertificateNumber", section: "applicant", path: "birthCertificateNumber", currentValue: draft.applicant.birthCertificateNumber })} />
-                <DataRow label="Gender" value={draft.applicant.gender} fieldKey="gender" previousValue={lastEditFor("applicant.gender")?.previousValue} flagged={flaggedFields.has("applicant.gender")} onFlag={() => toggleFieldFlag("applicant.gender")} onEdit={() => openFieldEditor({ label: "Gender", fieldKey: "gender", section: "applicant", path: "gender", currentValue: draft.applicant.gender })} />
-                <DataRow label="Religion" value={draft.applicant.religion} fieldKey="religion" previousValue={lastEditFor("applicant.religion")?.previousValue} flagged={flaggedFields.has("applicant.religion")} onFlag={() => toggleFieldFlag("applicant.religion")} onEdit={() => openFieldEditor({ label: "Religion", fieldKey: "religion", section: "applicant", path: "religion", currentValue: draft.applicant.religion })} />
-                <DataRow label="Guardian" value={draft.guardian.fullName} fieldKey="guardianFullName" previousValue={lastEditFor("guardian.fullName")?.previousValue} flagged={flaggedFields.has("guardian.fullName")} onFlag={() => toggleFieldFlag("guardian.fullName")} onEdit={() => openFieldEditor({ label: "Guardian name", fieldKey: "guardianFullName", section: "guardian", path: "fullName", currentValue: draft.guardian.fullName })} />
-                <DataRow label="Relationship" value={draft.guardian.relationship} fieldKey="relationship" previousValue={lastEditFor("guardian.relationship")?.previousValue} flagged={flaggedFields.has("guardian.relationship")} onFlag={() => toggleFieldFlag("guardian.relationship")} onEdit={() => openFieldEditor({ label: "Relationship", fieldKey: "relationship", section: "guardian", path: "relationship", currentValue: draft.guardian.relationship })} />
-                <DataRow label="Guardian NIC" value={draft.guardian.nic} fieldKey="nic" previousValue={lastEditFor("guardian.nic")?.previousValue} flagged={flaggedFields.has("guardian.nic")} onFlag={() => toggleFieldFlag("guardian.nic")} onEdit={() => openFieldEditor({ label: "Guardian NIC", fieldKey: "nic", section: "guardian", path: "nic", currentValue: draft.guardian.nic })} />
-                <DataRow label="Phone" value={draft.guardian.phone} fieldKey="phone" previousValue={lastEditFor("guardian.phone")?.previousValue} flagged={flaggedFields.has("guardian.phone")} onFlag={() => toggleFieldFlag("guardian.phone")} onEdit={() => openFieldEditor({ label: "Phone", fieldKey: "phone", section: "guardian", path: "phone", currentValue: draft.guardian.phone })} />
-                <DataRow label="Email" value={draft.guardian.email} fieldKey="email" previousValue={lastEditFor("guardian.email")?.previousValue} flagged={flaggedFields.has("guardian.email")} onFlag={() => toggleFieldFlag("guardian.email")} onEdit={() => openFieldEditor({ label: "Email", fieldKey: "email", section: "guardian", path: "email", currentValue: draft.guardian.email })} />
+              <CardContent className="grid gap-2 sm:grid-cols-2">
+                <DataRow label="Full name" value={fieldValue("applicant.fullName", draft.applicant.fullName)} fieldKey="fullName" previousValue={fieldPrev("applicant.fullName", draft.applicant.fullName)} flagged={flaggedFields.has("applicant.fullName")} onFlag={() => toggleFieldFlag("applicant.fullName")} onEdit={() => openFieldEditor({ label: "Full name", fieldKey: "fullName", section: "applicant", path: "fullName", currentValue: fieldValue("applicant.fullName", draft.applicant.fullName) })} />
+                <DataRow label="Sinhala name" value={fieldValue("applicant.sinhalaName", draft.applicant.sinhalaName)} fieldKey="sinhalaName" previousValue={fieldPrev("applicant.sinhalaName", draft.applicant.sinhalaName)} flagged={flaggedFields.has("applicant.sinhalaName")} onFlag={() => toggleFieldFlag("applicant.sinhalaName")} onEdit={() => openFieldEditor({ label: "Sinhala name", fieldKey: "sinhalaName", section: "applicant", path: "sinhalaName", currentValue: fieldValue("applicant.sinhalaName", draft.applicant.sinhalaName) })} />
+                <DataRow label="Date of birth" value={fieldValue("applicant.dateOfBirth", draft.applicant.dateOfBirth)} fieldKey="dateOfBirth" previousValue={fieldPrev("applicant.dateOfBirth", draft.applicant.dateOfBirth)} flagged={flaggedFields.has("applicant.dateOfBirth")} onFlag={() => toggleFieldFlag("applicant.dateOfBirth")} onEdit={() => openFieldEditor({ label: "Date of birth", fieldKey: "dateOfBirth", section: "applicant", path: "dateOfBirth", currentValue: fieldValue("applicant.dateOfBirth", draft.applicant.dateOfBirth) })} />
+                <DataRow label="Birth certificate" value={fieldValue("applicant.birthCertificateNumber", draft.applicant.birthCertificateNumber)} fieldKey="birthCertificateNumber" previousValue={fieldPrev("applicant.birthCertificateNumber", draft.applicant.birthCertificateNumber)} flagged={flaggedFields.has("applicant.birthCertificateNumber")} onFlag={() => toggleFieldFlag("applicant.birthCertificateNumber")} onEdit={() => openFieldEditor({ label: "Birth certificate", fieldKey: "birthCertificateNumber", section: "applicant", path: "birthCertificateNumber", currentValue: fieldValue("applicant.birthCertificateNumber", draft.applicant.birthCertificateNumber) })} />
+                <DataRow label="Gender" value={fieldValue("applicant.gender", draft.applicant.gender)} fieldKey="gender" previousValue={fieldPrev("applicant.gender", draft.applicant.gender)} flagged={flaggedFields.has("applicant.gender")} onFlag={() => toggleFieldFlag("applicant.gender")} onEdit={() => openFieldEditor({ label: "Gender", fieldKey: "gender", section: "applicant", path: "gender", currentValue: fieldValue("applicant.gender", draft.applicant.gender) })} />
+                <DataRow label="Religion" value={fieldValue("applicant.religion", draft.applicant.religion)} fieldKey="religion" previousValue={fieldPrev("applicant.religion", draft.applicant.religion)} flagged={flaggedFields.has("applicant.religion")} onFlag={() => toggleFieldFlag("applicant.religion")} onEdit={() => openFieldEditor({ label: "Religion", fieldKey: "religion", section: "applicant", path: "religion", currentValue: fieldValue("applicant.religion", draft.applicant.religion) })} />
+                <DataRow label="Education medium" value={fieldValue("applicant.educationMedium", draft.applicant.educationMedium)} fieldKey="educationMedium" previousValue={fieldPrev("applicant.educationMedium", draft.applicant.educationMedium)} flagged={flaggedFields.has("applicant.educationMedium")} onFlag={() => toggleFieldFlag("applicant.educationMedium")} onEdit={() => openFieldEditor({ label: "Education medium", fieldKey: "educationMedium", section: "applicant", path: "educationMedium", currentValue: fieldValue("applicant.educationMedium", draft.applicant.educationMedium) })} />
+                <DataRow label="Guardian" value={fieldValue("guardian.fullName", draft.guardian.fullName)} fieldKey="guardianFullName" previousValue={fieldPrev("guardian.fullName", draft.guardian.fullName)} flagged={flaggedFields.has("guardian.fullName")} onFlag={() => toggleFieldFlag("guardian.fullName")} onEdit={() => openFieldEditor({ label: "Guardian name", fieldKey: "guardianFullName", section: "guardian", path: "fullName", currentValue: fieldValue("guardian.fullName", draft.guardian.fullName) })} />
+                <DataRow label="Guardian Sinhala name" value={fieldValue("guardian.sinhalaName", draft.guardian.sinhalaName)} fieldKey="guardianSinhalaName" previousValue={fieldPrev("guardian.sinhalaName", draft.guardian.sinhalaName)} flagged={flaggedFields.has("guardian.sinhalaName")} onFlag={() => toggleFieldFlag("guardian.sinhalaName")} onEdit={() => openFieldEditor({ label: "Guardian Sinhala name", fieldKey: "guardianSinhalaName", section: "guardian", path: "sinhalaName", currentValue: fieldValue("guardian.sinhalaName", draft.guardian.sinhalaName) })} />
+                <DataRow label="Relationship" value={fieldValue("guardian.relationship", draft.guardian.relationship)} fieldKey="relationship" previousValue={fieldPrev("guardian.relationship", draft.guardian.relationship)} flagged={flaggedFields.has("guardian.relationship")} onFlag={() => toggleFieldFlag("guardian.relationship")} onEdit={() => openFieldEditor({ label: "Relationship", fieldKey: "relationship", section: "guardian", path: "relationship", currentValue: fieldValue("guardian.relationship", draft.guardian.relationship) })} />
+                <DataRow label="Guardian NIC" value={fieldValue("guardian.nic", draft.guardian.nic)} fieldKey="nic" previousValue={fieldPrev("guardian.nic", draft.guardian.nic)} flagged={flaggedFields.has("guardian.nic")} onFlag={() => toggleFieldFlag("guardian.nic")} onEdit={() => openFieldEditor({ label: "Guardian NIC", fieldKey: "nic", section: "guardian", path: "nic", currentValue: fieldValue("guardian.nic", draft.guardian.nic) })} />
+                <DataRow label="Phone" value={fieldValue("guardian.phone", draft.guardian.phone)} fieldKey="phone" previousValue={fieldPrev("guardian.phone", draft.guardian.phone)} flagged={flaggedFields.has("guardian.phone")} onFlag={() => toggleFieldFlag("guardian.phone")} onEdit={() => openFieldEditor({ label: "Phone", fieldKey: "phone", section: "guardian", path: "phone", currentValue: fieldValue("guardian.phone", draft.guardian.phone) })} />
+                <DataRow label="WhatsApp" value={fieldValue("guardian.whatsappPhone", draft.guardian.whatsappPhone)} fieldKey="whatsappPhone" previousValue={fieldPrev("guardian.whatsappPhone", draft.guardian.whatsappPhone)} flagged={flaggedFields.has("guardian.whatsappPhone")} onFlag={() => toggleFieldFlag("guardian.whatsappPhone")} onEdit={() => openFieldEditor({ label: "WhatsApp", fieldKey: "whatsappPhone", section: "guardian", path: "whatsappPhone", currentValue: fieldValue("guardian.whatsappPhone", draft.guardian.whatsappPhone) })} />
+                <DataRow label="Email" value={fieldValue("guardian.email", draft.guardian.email)} fieldKey="email" previousValue={fieldPrev("guardian.email", draft.guardian.email)} flagged={flaggedFields.has("guardian.email")} onFlag={() => toggleFieldFlag("guardian.email")} onEdit={() => openFieldEditor({ label: "Email", fieldKey: "email", section: "guardian", path: "email", currentValue: fieldValue("guardian.email", draft.guardian.email) })} />
               </CardContent>
             </Card>
             <Card>
               <CardHeader><CardTitle>Residence and location</CardTitle><CardDescription>Use the submitted address and map point as interview references. Flag suspicious entries.</CardDescription></CardHeader>
-              <CardContent className="grid gap-1">
-                <DataRow label="Permanent address (English)" value={draft.residence.permanentAddressEn} fieldKey="permanentAddressEn" previousValue={lastEditFor("residence.permanentAddressEn")?.previousValue} flagged={flaggedFields.has("residence.permanentAddressEn")} onFlag={() => toggleFieldFlag("residence.permanentAddressEn")} onEdit={() => openFieldEditor({ label: "Permanent address (English)", fieldKey: "permanentAddressEn", section: "residence", path: "permanentAddressEn", currentValue: draft.residence.permanentAddressEn })} />
-                <DataRow label="Permanent address (Sinhala)" value={draft.residence.permanentAddressSi} fieldKey="permanentAddressSi" previousValue={lastEditFor("residence.permanentAddressSi")?.previousValue} flagged={flaggedFields.has("residence.permanentAddressSi")} onFlag={() => toggleFieldFlag("residence.permanentAddressSi")} onEdit={() => openFieldEditor({ label: "Permanent address (Sinhala)", fieldKey: "permanentAddressSi", section: "residence", path: "permanentAddressSi", currentValue: draft.residence.permanentAddressSi })} />
-                <DataRow label="Current address (English)" value={draft.residence.currentAddressEn} fieldKey="currentAddressEn" previousValue={lastEditFor("residence.currentAddressEn")?.previousValue} flagged={flaggedFields.has("residence.currentAddressEn")} onFlag={() => toggleFieldFlag("residence.currentAddressEn")} onEdit={() => openFieldEditor({ label: "Current address (English)", fieldKey: "currentAddressEn", section: "residence", path: "currentAddressEn", currentValue: draft.residence.currentAddressEn })} />
-                <DataRow label="Current address (Sinhala)" value={draft.residence.currentAddressSi} fieldKey="currentAddressSi" previousValue={lastEditFor("residence.currentAddressSi")?.previousValue} flagged={flaggedFields.has("residence.currentAddressSi")} onFlag={() => toggleFieldFlag("residence.currentAddressSi")} onEdit={() => openFieldEditor({ label: "Current address (Sinhala)", fieldKey: "currentAddressSi", section: "residence", path: "currentAddressSi", currentValue: draft.residence.currentAddressSi })} />
-                <DataRow label="District" value={draft.residence.district} fieldKey="district" previousValue={lastEditFor("residence.district")?.previousValue} flagged={flaggedFields.has("residence.district")} onFlag={() => toggleFieldFlag("residence.district")} onEdit={() => openFieldEditor({ label: "District", fieldKey: "district", section: "residence", path: "district", currentValue: draft.residence.district })} />
-                <DataRow label="DS division" value={draft.residence.dsDivision} fieldKey="dsDivision" previousValue={lastEditFor("residence.dsDivision")?.previousValue} flagged={flaggedFields.has("residence.dsDivision")} onFlag={() => toggleFieldFlag("residence.dsDivision")} onEdit={() => openFieldEditor({ label: "DS division", fieldKey: "dsDivision", section: "residence", path: "dsDivision", currentValue: draft.residence.dsDivision })} />
-                <DataRow label="GN division" value={draft.residence.gnDivision} fieldKey="gnDivision" previousValue={lastEditFor("residence.gnDivision")?.previousValue} flagged={flaggedFields.has("residence.gnDivision")} onFlag={() => toggleFieldFlag("residence.gnDivision")} onEdit={() => openFieldEditor({ label: "GN division", fieldKey: "gnDivision", section: "residence", path: "gnDivision", currentValue: draft.residence.gnDivision })} />
-                <DataRow label="Electoral district" value={draft.residence.electoralDistrict} fieldKey="electoralDistrict" previousValue={lastEditFor("residence.electoralDistrict")?.previousValue} flagged={flaggedFields.has("residence.electoralDistrict")} onFlag={() => toggleFieldFlag("residence.electoralDistrict")} onEdit={() => openFieldEditor({ label: "Electoral district", fieldKey: "electoralDistrict", section: "residence", path: "electoralDistrict", currentValue: draft.residence.electoralDistrict })} />
+              <CardContent className="grid gap-2">
+                <DataRow label="Permanent address (English)" value={fieldValue("residence.permanentAddressEn", draft.residence.permanentAddressEn)} fieldKey="permanentAddressEn" previousValue={fieldPrev("residence.permanentAddressEn", draft.residence.permanentAddressEn)} flagged={flaggedFields.has("residence.permanentAddressEn")} onFlag={() => toggleFieldFlag("residence.permanentAddressEn")} onEdit={() => openFieldEditor({ label: "Permanent address (English)", fieldKey: "permanentAddressEn", section: "residence", path: "permanentAddressEn", currentValue: fieldValue("residence.permanentAddressEn", draft.residence.permanentAddressEn) })} />
+                <DataRow label="Permanent address (Sinhala)" value={fieldValue("residence.permanentAddressSi", draft.residence.permanentAddressSi)} fieldKey="permanentAddressSi" previousValue={fieldPrev("residence.permanentAddressSi", draft.residence.permanentAddressSi)} flagged={flaggedFields.has("residence.permanentAddressSi")} onFlag={() => toggleFieldFlag("residence.permanentAddressSi")} onEdit={() => openFieldEditor({ label: "Permanent address (Sinhala)", fieldKey: "permanentAddressSi", section: "residence", path: "permanentAddressSi", currentValue: fieldValue("residence.permanentAddressSi", draft.residence.permanentAddressSi) })} />
+                <DataRow label="Current address (English)" value={fieldValue("residence.currentAddressEn", draft.residence.currentAddressEn)} fieldKey="currentAddressEn" previousValue={fieldPrev("residence.currentAddressEn", draft.residence.currentAddressEn)} flagged={flaggedFields.has("residence.currentAddressEn")} onFlag={() => toggleFieldFlag("residence.currentAddressEn")} onEdit={() => openFieldEditor({ label: "Current address (English)", fieldKey: "currentAddressEn", section: "residence", path: "currentAddressEn", currentValue: fieldValue("residence.currentAddressEn", draft.residence.currentAddressEn) })} />
+                <DataRow label="Current address (Sinhala)" value={fieldValue("residence.currentAddressSi", draft.residence.currentAddressSi)} fieldKey="currentAddressSi" previousValue={fieldPrev("residence.currentAddressSi", draft.residence.currentAddressSi)} flagged={flaggedFields.has("residence.currentAddressSi")} onFlag={() => toggleFieldFlag("residence.currentAddressSi")} onEdit={() => openFieldEditor({ label: "Current address (Sinhala)", fieldKey: "currentAddressSi", section: "residence", path: "currentAddressSi", currentValue: fieldValue("residence.currentAddressSi", draft.residence.currentAddressSi) })} />
+                <DataRow label="District" value={fieldValue("residence.district", draft.residence.district)} fieldKey="district" previousValue={fieldPrev("residence.district", draft.residence.district)} flagged={flaggedFields.has("residence.district")} onFlag={() => toggleFieldFlag("residence.district")} onEdit={() => openFieldEditor({ label: "District", fieldKey: "district", section: "residence", path: "district", currentValue: fieldValue("residence.district", draft.residence.district) })} />
+                <DataRow label="DS division" value={fieldValue("residence.dsDivision", draft.residence.dsDivision)} fieldKey="dsDivision" previousValue={fieldPrev("residence.dsDivision", draft.residence.dsDivision)} flagged={flaggedFields.has("residence.dsDivision")} onFlag={() => toggleFieldFlag("residence.dsDivision")} onEdit={() => openFieldEditor({ label: "DS division", fieldKey: "dsDivision", section: "residence", path: "dsDivision", currentValue: fieldValue("residence.dsDivision", draft.residence.dsDivision) })} />
+                <DataRow label="GN division" value={fieldValue("residence.gnDivision", draft.residence.gnDivision)} fieldKey="gnDivision" previousValue={fieldPrev("residence.gnDivision", draft.residence.gnDivision)} flagged={flaggedFields.has("residence.gnDivision")} onFlag={() => toggleFieldFlag("residence.gnDivision")} onEdit={() => openFieldEditor({ label: "GN division", fieldKey: "gnDivision", section: "residence", path: "gnDivision", currentValue: fieldValue("residence.gnDivision", draft.residence.gnDivision) })} />
+                <DataRow label="Electoral district" value={fieldValue("residence.electoralDistrict", draft.residence.electoralDistrict)} fieldKey="electoralDistrict" previousValue={fieldPrev("residence.electoralDistrict", draft.residence.electoralDistrict)} flagged={flaggedFields.has("residence.electoralDistrict")} onFlag={() => toggleFieldFlag("residence.electoralDistrict")} onEdit={() => openFieldEditor({ label: "Electoral district", fieldKey: "electoralDistrict", section: "residence", path: "electoralDistrict", currentValue: fieldValue("residence.electoralDistrict", draft.residence.electoralDistrict) })} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Declaration</CardTitle><CardDescription>Confirm the applicant's declaration status.</CardDescription></CardHeader>
+              <CardContent className="grid gap-2 sm:grid-cols-2">
+                <DataRow label="Information confirmed" value={fieldValue("declaration.confirmed", String(draft.declaration.confirmed))} fieldKey="confirmed" previousValue={fieldPrev("declaration.confirmed", String(draft.declaration.confirmed))} flagged={flaggedFields.has("declaration.confirmed")} onFlag={() => toggleFieldFlag("declaration.confirmed")} onEdit={() => openFieldEditor({ label: "Information confirmed", fieldKey: "confirmed", section: "declaration", path: "confirmed", currentValue: fieldValue("declaration.confirmed", String(draft.declaration.confirmed)) })} />
+                <DataRow label="Consent given" value={fieldValue("declaration.consent", String(draft.declaration.consent))} fieldKey="consent" previousValue={fieldPrev("declaration.consent", String(draft.declaration.consent))} flagged={flaggedFields.has("declaration.consent")} onFlag={() => toggleFieldFlag("declaration.consent")} onEdit={() => openFieldEditor({ label: "Consent given", fieldKey: "consent", section: "declaration", path: "consent", currentValue: fieldValue("declaration.consent", String(draft.declaration.consent)) })} />
               </CardContent>
             </Card>
           </div>
           {(flaggedFields.size > 0) && (
             <Card className="border-red-200 bg-red-50/30">
               <CardHeader><CardTitle className="text-red-700 flex items-center gap-2"><Flag size={16} /> Flagged fields ({flaggedFields.size})</CardTitle><CardDescription>Fields marked as suspicious during review.</CardDescription></CardHeader>
-              <CardContent className="grid gap-1">
+              <CardContent className="grid gap-2">
                 {Array.from(flaggedFields).map((fieldKey) => {
-                  const label = fieldKey.startsWith("applicant.") ? fieldKey.replace("applicant.", "") : fieldKey.startsWith("guardian.") ? fieldKey.replace("guardian.", "") : fieldKey.startsWith("residence.") ? fieldKey.replace("residence.", "") : fieldKey;
+                  const parts = fieldKey.split(".");
+                  const section = parts[0] as keyof typeof draft;
+                  const prop = parts.slice(1).join(".");
+                  const sectionData = draft[section] as Record<string, unknown> | undefined;
+                  const rawVal = sectionData ? (sectionData as Record<string,unknown>)[prop] : undefined;
+                  const currentVal = fieldValue(fieldKey, String(rawVal ?? ""));
+                  const humanLabel = prop.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()).trim();
                   return (
-                    <div key={fieldKey} className="flex items-center justify-between py-2 border-b border-red-200/50 last:border-b-0">
-                      <span className="text-sm capitalize">{label.replace(/([A-Z])/g, " $1")}</span>
-                      <Button size="sm" variant="ghost" onClick={() => toggleFieldFlag(fieldKey)} className="text-red-600 hover:text-red-700"><X size={14} /> Remove flag</Button>
+                    <div key={fieldKey} className="flex items-center justify-between gap-3 rounded-lg border border-red-200/60 bg-white px-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="text-[0.68rem] font-bold uppercase tracking-wide text-red-500 mb-0.5">{humanLabel}</p>
+                        <p className="text-sm font-semibold text-foreground truncate">{currentVal || <span className="italic text-muted-foreground font-normal">Not provided</span>}</p>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => toggleFieldFlag(fieldKey)} className="shrink-0 text-red-600 hover:text-red-700"><X size={14} /> Remove flag</Button>
                     </div>
                   );
                 })}
@@ -1280,7 +1407,7 @@ function AdmissionWorkspacePage() {
                       <span className="text-sm font-semibold">{edit.label}</span>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                         <span className="rounded bg-muted px-1.5 py-0.5 line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
-                        <span className="text-muted-foreground">→</span>
+                        <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
                         <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary">{edit.newValue || "(empty)"}</span>
                       </div>
                       <span className="mt-1 block text-[0.65rem] text-muted-foreground">{new Date(edit.editedAt).toLocaleString()}</span>
@@ -1300,15 +1427,7 @@ function AdmissionWorkspacePage() {
           <ApplicantLocationReview draft={draft} flaggedLocations={flaggedLocations} onToggleLocationFlag={toggleLocationFlag} onSaveAdminLocation={handleSaveAdminLocation} />
         )}
 
-        {activeStep === 2 && activeCategory && (
-          <CategoryScoringCard applicationId={data.id} category={activeCategory} autoScore={activeAutoScore} draft={draft} flaggedInputs={flaggedInputs} onToggleInputFlag={toggleInputFlag} homeLocation={effectiveHomeLocation} onSaveInterviewEdits={(edits) => interviewEditsMutation.mutate({ interviewEdits: edits })} />
-        )}
-
-        {activeStep === 2 && !activeCategory && (
-          <Card><CardContent className="p-8 text-center text-muted-foreground">No category data found for this entry.</CardContent></Card>
-        )}
-
-        {activeStep === 3 && (
+        {activeStep === 2 && (
           <Card className="border-primary/20">
             <CardHeader><CardTitle>Interview decision & flagging</CardTitle><CardDescription>Record the review outcome and flag or ban the applicant if needed.</CardDescription></CardHeader>
             <CardContent className="grid gap-5">
@@ -1406,9 +1525,9 @@ function AdmissionWorkspacePage() {
         )}
 
         <div className="flex items-center justify-between border-t pt-4">
-          <Button variant="outline" disabled={activeStep === 0} onClick={() => setActiveStep((s) => Math.max(0, s - 1))}>← Previous</Button>
+          <Button variant="outline" disabled={activeStep === 0} onClick={() => setActiveStep((s) => Math.max(0, s - 1))}><ArrowLeft size={15} /> Previous</Button>
           <span className="text-sm text-muted-foreground">Step {activeStep + 1} of {STEPS.length}</span>
-          <Button variant="outline" disabled={activeStep === STEPS.length - 1} onClick={() => setActiveStep((s) => Math.min(STEPS.length - 1, s + 1))}>Next →</Button>
+          <Button variant="outline" disabled={activeStep === STEPS.length - 1} onClick={() => setActiveStep((s) => Math.min(STEPS.length - 1, s + 1))}>Next <ArrowRight size={15} /></Button>
         </div>
 
         <BanDialog open={banDialogOpen} onOpenChange={setBanDialogOpen} applicantName={data.applicantName} reason={banReason} onReasonChange={setBanReason} pending={reviewMutation.isPending} onConfirm={() => { setBanned(true); setBanDialogOpen(false); saveReview(true); }} />

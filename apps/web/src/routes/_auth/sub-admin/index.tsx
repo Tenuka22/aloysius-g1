@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { KeyRound, ShieldCheck, Trash2 } from "lucide-react";
+import { FileText, KeyRound, ShieldCheck, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@aloysius-admissions/ui/components/card";
 import { Button } from "@aloysius-admissions/ui/components/button";
 import { useTranslation } from "@/lib/i18n";
@@ -32,6 +32,15 @@ function SubAdminOverviewPage() {
           </CardHeader>
           <CardContent>
             <Button variant="secondary" render={<Link to="/sub-admin/removal-requests" />} nativeButton={false}>{t("subAdminOverview.removal.viewButton")}</Button>
+          </CardContent>
+        </Card>
+        <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><FileText size={18} /> Applications</CardTitle>
+          <CardDescription>Search and manage G1 admission applications. Edit, submit, or unsubmit records.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="secondary" render={<Link to="/g1/admin/applications" />} nativeButton={false}>Browse applications</Button>
           </CardContent>
         </Card>
       </div>

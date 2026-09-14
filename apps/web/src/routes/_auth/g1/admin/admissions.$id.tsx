@@ -1,13 +1,15 @@
 import { useMemo } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ClipboardCheck, ChevronRight, ShieldAlert, UserRound } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ClipboardCheck, ChevronRight, Mic, MicOff, ShieldAlert, UserRound } from "lucide-react";
 import "leaflet/dist/leaflet.css";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 import { normalizeDraft } from "@/lib/g1/application-store";
 import { scoreCategory } from "@/lib/g1/scoring";
 import { Badge } from "@aloysius-admissions/ui/components/badge";
+import { Button } from "@aloysius-admissions/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
+import { toast } from "sonner";
 import { type AdmissionStatus, type AdmissionDetail, CATEGORY_LABELS } from "@/components/g1/admin/admissions-view";
 
 export const Route = createFileRoute("/_auth/g1/admin/admissions/$id")({
@@ -24,6 +26,7 @@ function StatusBadge({ status, banned }: { status: AdmissionStatus; banned: bool
   if (banned) return <Badge variant="destructive">Banned</Badge>;
   if (status === "verified") return <Badge variant="default">Verified</Badge>;
   if (status === "fake") return <Badge variant="destructive">Potentially fake</Badge>;
+  if (status === "under_interview") return <Badge className="bg-blue-600 text-white hover:bg-blue-700">Under interview</Badge>;
   return <Badge variant="secondary">Pending review</Badge>;
 }
 
@@ -54,6 +57,18 @@ function AdmissionCategorySelectPage() {
     return map;
   }, [marksQuery.data]);
 
+  const queryClient = useQueryClient();
+  const interviewMutation = useMutation({
+    mutationFn: (status: "pending" | "under_interview") =>
+      client.admin.admissions.setInterviewStatus({ id, status }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.get.queryOptions({ input: { id } }).queryKey });
+      void queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.list.key() });
+      toast.success(result.admissionStatus === "under_interview" ? "Moved to under interview" : "Moved back to pending");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not update status"),
+  });
+
   // This component is a shared layout that stays mounted across navigation
   // between the bare `/admissions/$id` route and its `/$categoryId` child
   // (rendered via the `<Outlet/>` below) - every hook above must run on
@@ -68,7 +83,7 @@ function AdmissionCategorySelectPage() {
   if (detail.isLoading) {
     return (
       <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-        <Link to="/g1/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
+        <Link to="/g1/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={14} /> Back to admissions</Link>"
         <Card><CardContent className="flex items-center gap-3 p-8 text-sm text-muted-foreground"><ClipboardCheck className="text-primary" size={18} /> Loading applicant record…</CardContent></Card>
       </main>
     );
@@ -77,7 +92,7 @@ function AdmissionCategorySelectPage() {
   if (detail.error || !data) {
     return (
       <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-        <Link to="/g1/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
+        <Link to="/g1/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={14} /> Back to admissions</Link>"
         <Card className="border-destructive/25"><CardContent className="flex items-start gap-2 p-6 text-sm text-destructive"><ShieldAlert size={17} className="mt-0.5 shrink-0" /> Could not load applicant: {detail.error?.message ?? "Not found"}</CardContent></Card>
       </main>
     );
@@ -88,7 +103,7 @@ function AdmissionCategorySelectPage() {
 
   return (
     <main className="min-h-svh p-6 md:p-10 bg-[radial-gradient(circle_at_80%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_32rem)]">
-      <Link to="/g1/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">← Back to admissions</Link>
+      <Link to="/g1/admin/admissions" search={true} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft size={14} /> Back to admissions</Link>"
 
       <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 mb-5">
         <div className="flex items-start gap-3">
@@ -99,7 +114,21 @@ function AdmissionCategorySelectPage() {
             <p className="text-sm text-muted-foreground">Session {data.sessionCode} · Submitted {data.submittedAt ? new Date(data.submittedAt).toLocaleString() : "Not submitted"}</p>
           </div>
         </div>
-        <StatusBadge status={data.admissionStatus} banned={data.isBanned} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={data.admissionStatus} banned={data.isBanned} />
+          {!data.isBanned && (data.admissionStatus === "pending" || data.admissionStatus === "under_interview") && (
+            <Button
+              size="sm"
+              variant={data.admissionStatus === "under_interview" ? "outline" : "default"}
+              disabled={interviewMutation.isPending}
+              onClick={() => interviewMutation.mutate(
+                data.admissionStatus === "under_interview" ? "pending" : "under_interview"
+              )}
+            >
+              {data.admissionStatus === "under_interview" ? <><MicOff size={14} /> Move back to pending</> : <><Mic size={14} /> Start interview</>}
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

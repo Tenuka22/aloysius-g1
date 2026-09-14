@@ -30,7 +30,7 @@ import {
   withoutSchoolPreferences,
 } from "../g1-logic";
 import type { ApplicationData } from "../g1-logic";
-import { adminProcedure, publicProcedure, subAdminProcedure } from "../index";
+import { adminOrSubAdminProcedure, adminProcedure, publicProcedure, subAdminProcedure } from "../index";
 
 const uniqueSessionCode = async () => {
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -197,6 +197,8 @@ const applicationRecord = (row: typeof g1Applications.$inferSelect) => {
     id: row.id,
     sessionCode: row.sessionCode,
     applicantName: data?.applicant?.fullName || "Unnamed applicant",
+    guardianNic: extractGuardianNic(row.data as Record<string, unknown>) ?? "",
+    birthCertificateNumber: row.birthCertificateNumber ?? "",
     status: row.submittedAt ? "submitted" : "draft",
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -205,7 +207,7 @@ const applicationRecord = (row: typeof g1Applications.$inferSelect) => {
     validationErrors: applicationValidationErrors(data),
   };
 };
-const admissionStatusSchema = z.enum(["pending", "verified", "fake"]);
+const admissionStatusSchema = z.enum(["pending", "verified", "fake", "under_interview"]);
 const applicationIdSchema = z.string().trim().min(1);
 const admissionsListInput = paginationInput.extend({
   status: z.enum(["all", "pending", "verified", "fake", "banned"]).default("all"),
@@ -239,6 +241,7 @@ const admissionSummary = (row: typeof g1Applications.$inferSelect) => {
     applicantName: data?.applicant?.fullName || "Unnamed applicant",
     birthCertificateNumber: row.birthCertificateNumber ?? "Not provided",
     sessionCode: row.sessionCode,
+    guardianNic: extractGuardianNic(row.data as Record<string, unknown>) ?? "",
     submittedAt: row.submittedAt,
     updatedAt: row.updatedAt,
     categoryCount: categories.length,
@@ -542,9 +545,15 @@ export const g1Router = {
     liveCount: publicProcedure
       .output(eventIterator(z.object({ count: z.number() })))
       .handler(async function* ({ signal }) {
-        yield { count: await applicationCount() };
-        for await (const payload of applicationEvents.subscribe("application-count", { signal }))
-          yield payload;
+        try {
+          yield { count: await applicationCount() };
+          for await (const payload of applicationEvents.subscribe("application-count", { signal }))
+            yield payload;
+        } catch (error) {
+          // Client disconnected — expected when the browser navigates away.
+          if (signal.aborted) return;
+          throw error;
+        }
       }),
     count: publicProcedure.handler(async () => ({ count: await applicationCount() })),
     update: publicProcedure
@@ -1094,6 +1103,23 @@ export const g1Router = {
             flags: input.flags,
           };
         }),
+      setInterviewStatus: adminProcedure
+        .input(z.object({ id: applicationIdSchema, status: z.enum(["pending", "under_interview"]) }))
+        .handler(async ({ input }) => {
+          const existing = await db
+            .select({ id: g1Applications.id })
+            .from(g1Applications)
+            .where(eq(g1Applications.id, input.id))
+            .get();
+          if (!existing) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
+          const updatedAt = new Date();
+          await db
+            .update(g1Applications)
+            .set({ admissionStatus: input.status, admissionUpdatedAt: updatedAt, updatedAt })
+            .where(eq(g1Applications.id, input.id))
+            .run();
+          return { admissionStatus: input.status, updatedAt };
+        }),
       saveAdminLocation: adminProcedure
         .input(
           z.object({
@@ -1325,7 +1351,7 @@ export const g1Router = {
           return { deleted: true };
         }),
     },
-    applications: adminProcedure
+    applications: adminOrSubAdminProcedure
       .input(
         z.object({
           page: z.number().int().min(1).default(1),
@@ -1351,7 +1377,8 @@ export const g1Router = {
               input.query &&
               !record.applicantName.toLowerCase().includes(input.query.toLowerCase()) &&
               !record.sessionCode.toLowerCase().includes(input.query.toLowerCase()) &&
-              !record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase())
+              !record.accessKeyHint.toLowerCase().includes(input.query.toLowerCase()) &&
+              !record.birthCertificateNumber.toLowerCase().includes(input.query.toLowerCase())
             )
               return false;
             if (input.status !== "all") {
@@ -1377,7 +1404,7 @@ export const g1Router = {
         };
       }),
     application: {
-      get: adminProcedure
+      get: adminOrSubAdminProcedure
         .input(z.object({ id: applicationIdSchema }))
         .handler(async ({ input }) => {
           const row = await db
@@ -1395,7 +1422,30 @@ export const g1Router = {
             submittedAt: row.submittedAt,
           };
         }),
-      update: adminProcedure
+      create: adminProcedure
+        .input(z.object({ intakeYear: z.string().default("2027") }).optional())
+        .handler(async ({ input }) => {
+          const accessKey = createAccessKey();
+          const sessionCode = await uniqueSessionCode();
+          const now = new Date();
+          const id = randomUUID();
+          await db
+            .insert(g1Applications)
+            .values({
+              id,
+              sessionCode,
+              accessKeyHash: hashKey(accessKey),
+              accessKeyHint: accessKey.slice(-6),
+              birthCertificateNumber: null,
+              data: {},
+              intakeYear: input?.intakeYear ?? "2027",
+              createdAt: now,
+              updatedAt: now,
+            });
+          await publishApplicationChange();
+          return { id, accessKey, sessionCode };
+        }),
+      update: adminOrSubAdminProcedure
         .input(z.object({ id: applicationIdSchema, data: draftSchema }))
         .handler(async ({ input }) => {
           const updatedAt = new Date();
@@ -1443,6 +1493,50 @@ export const g1Router = {
           await db.delete(g1Applications).where(eq(g1Applications.id, input.id)).run();
           await publishApplicationChange();
           return { deleted: true };
+        }),
+      unsubmit: adminOrSubAdminProcedure
+        .input(z.object({ id: applicationIdSchema }))
+        .handler(async ({ input }) => {
+          const existing = await db
+            .select({ id: g1Applications.id, submittedAt: g1Applications.submittedAt })
+            .from(g1Applications)
+            .where(eq(g1Applications.id, input.id))
+            .get();
+          if (!existing) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
+          if (!existing.submittedAt) throw new ORPCError("BAD_REQUEST", { message: "Application is not submitted" });
+          const updatedAt = new Date();
+          await db
+            .update(g1Applications)
+            .set({ submittedAt: null, updatedAt })
+            .where(eq(g1Applications.id, input.id))
+            .run();
+          await publishApplicationChange();
+          return { updatedAt };
+        }),
+      submit: adminOrSubAdminProcedure
+        .input(z.object({ id: applicationIdSchema }))
+        .handler(async ({ input }) => {
+          const row = await db
+            .select()
+            .from(g1Applications)
+            .where(eq(g1Applications.id, input.id))
+            .get();
+          if (!row) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
+          if (row.submittedAt) throw new ORPCError("BAD_REQUEST", { message: "Application is already submitted" });
+          const birthCertificateNumber = extractBirthCertificateNumber(row.data as Record<string, unknown>);
+          if (!birthCertificateNumber)
+            throw new ORPCError("BAD_REQUEST", { message: "Birth certificate number is required before submitting" });
+          const duplicate = await db
+            .select({ id: g1Applications.id })
+            .from(g1Applications)
+            .where(and(eq(g1Applications.birthCertificateNumber, birthCertificateNumber), isNotNull(g1Applications.submittedAt)))
+            .get();
+          if (duplicate && duplicate.id !== row.id)
+            throw new ORPCError("CONFLICT", { message: "An application with this birth certificate number has already been submitted." });
+          const submittedAt = new Date();
+          await db.update(g1Applications).set({ submittedAt, updatedAt: submittedAt }).where(eq(g1Applications.id, input.id)).run();
+          await publishApplicationChange();
+          return { submittedAt };
         }),
     },
   },

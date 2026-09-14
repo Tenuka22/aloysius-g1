@@ -2,9 +2,23 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { nitro } from "nitro/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { createLogger, defineConfig } from "vite";
+
+// Suppress benign Node.js HTTP "aborted" errors from the Vite HMR overlay.
+// These are client-disconnect events (browser navigating away while an SSE or
+// streaming response is in flight); Node's http module calls abortIncoming(),
+// which is normal and only tears down that single connection. Without this
+// filter the Vite dev-server overlay fires on every page navigation that
+// interrupts an active SSE stream (e.g. the live application count feed).
+const logger = createLogger();
+const _error = logger.error.bind(logger);
+logger.error = (msg, opts) => {
+  if (typeof msg === "string" && (msg.includes("aborted") || msg.includes("ECONNRESET"))) return;
+  _error(msg, opts);
+};
 
 export default defineConfig({
+  customLogger: logger,
   server: {
     port: 3001,
     // Fail instead of silently moving to 3002: BETTER_AUTH_URL and the OAuth

@@ -22,10 +22,12 @@ export const Route = createFileRoute("/_auth/g1/admin")({
   loaderDeps: ({ search }) => ({ intakeYear: search.intakeYear }),
   loader: async ({ context, deps }) => {
     const { intakeYear } = deps;
+    const role = context.session?.user?.role;
+    const isAdmin = role === "admin";
     await Promise.all([
-      context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions({ input: { intakeYear } })),
+      isAdmin ? context.queryClient.prefetchQuery(context.orpc.admin.overview.queryOptions({ input: { intakeYear } })) : Promise.resolve(),
       context.queryClient.prefetchQuery(context.orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "", intakeYear } })),
-      context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions({ input: { intakeYear } })),
+      isAdmin ? context.queryClient.prefetchQuery(context.orpc.admin.settings.get.queryOptions({ input: { intakeYear } })) : Promise.resolve(),
     ]);
   },
   component: AdminPage,
@@ -77,9 +79,10 @@ function AdminPage() {
     void navigate({ search: { intakeYear: year } });
   }, [navigate]);
 
-  const overview = useQuery(orpc.admin.overview.queryOptions({ input: { intakeYear } }));
+  const isAdminRole = session.data?.user.role === "admin";
+  const overview = useQuery({ ...orpc.admin.overview.queryOptions({ input: { intakeYear } }), enabled: isAdminRole });
   const applications = useQuery(orpc.admin.applications.queryOptions({ input: { page: 1, pageSize: 50, query: "", intakeYear } }));
-  const settings = useQuery(orpc.admin.settings.get.queryOptions({ input: { intakeYear } }));
+  const settings = useQuery({ ...orpc.admin.settings.get.queryOptions({ input: { intakeYear } }), enabled: isAdminRole });
   useEffect(() => {
     if (session.data?.user.role !== "admin") return;
     const controller = new AbortController();
@@ -90,7 +93,8 @@ function AdminPage() {
     return () => { controller.abort(); void cancel().catch(() => undefined); };
   }, [session.data?.user.role]);
 
-  if (session.data?.user.role !== "admin") {
+  const role = session.data?.user.role;
+  if (role !== "admin" && role !== "sub-admin") {
     return (
       <main className="grid place-items-center min-h-svh p-6">
         <Card className="w-full max-w-md gap-5 p-8">
@@ -156,9 +160,7 @@ function AdminPage() {
           <SidebarMenuItem>
             <SidebarMenuButton href={adminHref("/g1/admin/admin_map")} isActive={location.pathname === "/g1/admin/admin_map"}><MapPin size={20} /> {t("admin.sidebar.mapView")}</SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton href={adminHref("/g1/admin/mark-allocation")} isActive={location.pathname === "/g1/admin/mark-allocation"}><ListOrdered size={20} /> {t("admin.sidebar.markAllocation")}</SidebarMenuButton>
-          </SidebarMenuItem>
+          
           <SidebarMenuItem>
             <SidebarMenuButton href={adminHref("/g1/admin/data-extraction")} isActive={location.pathname === "/g1/admin/data-extraction"}><Database size={20} /> {t("admin.sidebar.dataExtraction")}</SidebarMenuButton>
           </SidebarMenuItem>
