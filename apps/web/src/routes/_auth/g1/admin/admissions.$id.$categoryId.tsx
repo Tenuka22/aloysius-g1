@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { lazy } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Check, ClipboardCheck, CreditCard, Edit3, FileText, Flag, Hash, LockKeyhole, Mail, MapPin, MousePointer2, Pencil, Phone, RotateCcw, Save, Settings2, ShieldAlert, User, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Ban, Check, ClipboardCheck, CreditCard, Edit3, FileText, Flag, Hash, LockKeyhole, Mail, MapPin, MoreHorizontal, MousePointer2, Pencil, Phone, RotateCcw, Save, Settings2, ShieldAlert, User, UserRound, X } from "lucide-react";
 import { client, orpc } from "@/utils/orpc";
 import { normalizeDraft, type ApplicationDraft, type InterviewEdit, type LocationDraft, type ScoringInputs } from "@/lib/g1/application-store";
 import { scoreCategory } from "@/lib/g1/scoring";

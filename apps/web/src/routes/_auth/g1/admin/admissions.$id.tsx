@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardCheck, ChevronRight, Mic, MicOff, ShieldAlert, UserRound } from "lucide-react";
+import { ArrowLeft, ChevronRight, ClipboardCheck, Mic, MicOff, ShieldAlert, UserRound } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import { client, orpc } from "@/utils/orpc";
 import { normalizeDraft } from "@/lib/g1/application-store";
