@@ -1008,22 +1008,10 @@ function AdmissionWorkspacePage() {
 
   // The flags' server snapshot, used by the auto-save effect below to tell
   // "we just loaded this admission's saved flags into local state" apart from
-  // a real admin edit. Set in the SAME effect that performs the sync (not a
-  // separate one keyed on `data`) so there is no dependency on cross-effect
-  // execution order - without this, merely opening an admission that already
-  // has saved flags could look identical to a fresh edit (new Set references)
-  // and immediately re-save the review, auto-promoting it to "under_interview"
-  // and locking the applicant out before an admin ever touched anything.
+  // a real admin edit - without this, merely opening an admission that
+  // already has saved flags could look identical to a fresh edit (new Set
+  // references) and immediately re-save the review.
   const savedFlagsRef = useRef<string>("[]");
-
-  useEffect(() => {
-    if (data?.flags) {
-      setFlaggedFields(new Set(data.flags.filter((f) => f.type === "field").map((f) => f.key)));
-      setFlaggedInputs(new Set(data.flags.filter((f) => f.type === "input").map((f) => f.key)));
-      setFlaggedLocations(new Set(data.flags.filter((f) => f.type === "location").map((f) => f.key)));
-      savedFlagsRef.current = JSON.stringify(data.flags);
-    }
-  }, [data?.flags]);
 
   const toggleFieldFlag = (fieldKey: string) => {
     setFlaggedFields((prev) => {
@@ -1072,6 +1060,10 @@ function AdmissionWorkspacePage() {
       setNotes(data.interviewNotes);
       setBanned(data.isBanned);
       setBanReason(data.banReason ?? "");
+      setFlaggedFields(new Set(data.flags.filter((f) => f.type === "field").map((f) => f.key)));
+      setFlaggedInputs(new Set(data.flags.filter((f) => f.type === "input").map((f) => f.key)));
+      setFlaggedLocations(new Set(data.flags.filter((f) => f.type === "location").map((f) => f.key)));
+      savedFlagsRef.current = JSON.stringify(data.flags);
     }
   }, [data]);
 
