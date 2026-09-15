@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useRef } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight, ClipboardCheck, Mic, MicOff, ShieldAlert, UserRound } from "lucide-react";
@@ -49,6 +49,23 @@ function AdmissionCategorySelectPage() {
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Could not update status"),
   });
+
+  // Auto-starts the interview the first time an admin opens this admission's
+  // detail page while it's still "pending" - opening the record to review it
+  // is, from the admin's perspective, the start of the interview, so this
+  // removes the extra manual "Start interview" click. Guarded to fire only
+  // once per mount: the component stays mounted across navigation between
+  // the bare `/admissions/$id` route and its `/$categoryId` child (see the
+  // comment below), so without the ref guard this would re-fire on every
+  // query refetch triggered by that navigation.
+  const hasAutoStartedInterviewRef = useRef(false);
+  useEffect(() => {
+    const record = detail.data as AdmissionDetail | undefined;
+    if (hasAutoStartedInterviewRef.current) return;
+    if (!record || record.isBanned || record.admissionStatus !== "pending") return;
+    hasAutoStartedInterviewRef.current = true;
+    interviewMutation.mutate("under_interview");
+  }, [detail.data]);
 
   // This component is a shared layout that stays mounted across navigation
   // between the bare `/admissions/$id` route and its `/$categoryId` child

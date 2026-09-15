@@ -1006,11 +1006,22 @@ function AdmissionWorkspacePage() {
   const [flaggedInputs, setFlaggedInputs] = useState<Set<string>>(new Set());
   const [flaggedLocations, setFlaggedLocations] = useState<Set<string>>(new Set());
 
+  // The flags' server snapshot, used by the auto-save effect below to tell
+  // "we just loaded this admission's saved flags into local state" apart from
+  // a real admin edit. Set in the SAME effect that performs the sync (not a
+  // separate one keyed on `data`) so there is no dependency on cross-effect
+  // execution order - without this, merely opening an admission that already
+  // has saved flags could look identical to a fresh edit (new Set references)
+  // and immediately re-save the review, auto-promoting it to "under_interview"
+  // and locking the applicant out before an admin ever touched anything.
+  const savedFlagsRef = useRef<string>("[]");
+
   useEffect(() => {
     if (data?.flags) {
       setFlaggedFields(new Set(data.flags.filter((f) => f.type === "field").map((f) => f.key)));
       setFlaggedInputs(new Set(data.flags.filter((f) => f.type === "input").map((f) => f.key)));
       setFlaggedLocations(new Set(data.flags.filter((f) => f.type === "location").map((f) => f.key)));
+      savedFlagsRef.current = JSON.stringify(data.flags);
     }
   }, [data?.flags]);
 
@@ -1046,18 +1057,25 @@ function AdmissionWorkspacePage() {
     ...Array.from(flaggedInputs).map((key) => ({ type: "input" as const, key, label: key.replace(/([A-Z])/g, " $1").trim() })),
     ...Array.from(flaggedLocations).map((key) => ({ type: "location" as const, key, label: `Location ${key}` })),
   ];
+  // The status/notes server snapshot - see savedFlagsRef above for why this
+  // matters: without comparing against the exact last-loaded value, the sync
+  // effect's own setStatus/setNotes calls look indistinguishable from a real
+  // admin edit to the auto-save effect below.
+  const hydratedStatusRef = useRef<AdmissionStatus | null>(null);
+  const hydratedNotesRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (data) {
+      hydratedStatusRef.current = data.admissionStatus;
+      hydratedNotesRef.current = data.interviewNotes;
       setStatus(data.admissionStatus);
       setNotes(data.interviewNotes);
       setBanned(data.isBanned);
       setBanReason(data.banReason ?? "");
-      savedFlagsRef.current = JSON.stringify(data.flags ?? []);
     }
   }, [data]);
 
   // Unified auto-save: debounce notes/status changes; flags save immediately on change.
-  const savedFlagsRef = useRef<string>("[]");
   const autoSaveTimerRef = useRef<number | undefined>(undefined);
   const [reviewSaveState, setReviewSaveState] = useState<"idle" | "saving" | "saved">("idle");
 
@@ -1070,16 +1088,23 @@ function AdmissionWorkspacePage() {
     reviewMutation.mutate({ admissionStatus: status, interviewNotes: notes.trim(), isBanned, banReason: isBanned ? banReason.trim() : undefined, flags });
   };
 
-  // Auto-save notes/status with 1.5 s debounce
+  // Auto-save notes/status with 1.5 s debounce - skipped when the current
+  // values still match the last snapshot loaded from the server (the sync
+  // above, not a real edit).
   useEffect(() => {
     if (!data) return;
+    if (status === hydratedStatusRef.current && notes === hydratedNotesRef.current) {
+      setReviewSaveState("idle");
+      return;
+    }
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(() => doSaveReview(banned), 1500);
     setReviewSaveState("idle");
     return () => { if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current); };
   }, [notes, status]);
 
-  // Auto-save flags immediately on change
+  // Auto-save flags immediately on change - skipped when they still match
+  // the last snapshot loaded from the server (see savedFlagsRef above).
   useEffect(() => {
     if (!data) return;
     const currentFlags = JSON.stringify(buildFlags());

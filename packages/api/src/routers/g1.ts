@@ -230,11 +230,12 @@ const applicationRecord = (row: typeof g1Applications.$inferSelect) => {
 const admissionStatusSchema = z.enum(["pending", "verified", "fake", "under_interview"]);
 const applicationIdSchema = z.string().trim().min(1);
 const admissionsListInput = paginationInput.extend({
-  status: z.enum(["all", "pending", "verified", "fake", "banned"]).default("all"),
+  status: z.enum(["all", "pending", "verified", "fake", "under_interview", "banned"]).default("all"),
 });
 const admissionSummaryDataSchema = z
   .object({
     applicant: z.object({ fullName: z.string().optional() }).optional(),
+    guardian: z.object({ fullName: z.string().optional() }).optional(),
     categories: z.array(z.object({ categoryType: z.string().optional() }).passthrough()).optional(),
   })
   .passthrough();
@@ -259,6 +260,7 @@ const admissionSummary = (row: typeof g1Applications.$inferSelect) => {
   return {
     id: row.id,
     applicantName: data?.applicant?.fullName || "Unnamed applicant",
+    guardianName: data?.guardian?.fullName || "",
     birthCertificateNumber: row.birthCertificateNumber ?? "Not provided",
     sessionCode: row.sessionCode,
     guardianNic: extractGuardianNic(row.data as Record<string, unknown>) ?? "",
@@ -881,7 +883,7 @@ export const g1Router = {
           .filter((record) => {
             if (
               query &&
-              ![record.applicantName, record.birthCertificateNumber, record.sessionCode].some(
+              ![record.applicantName, record.guardianName, record.birthCertificateNumber, record.sessionCode].some(
                 (value) => value.toLowerCase().includes(query),
               )
             )

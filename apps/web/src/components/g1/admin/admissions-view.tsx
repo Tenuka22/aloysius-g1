@@ -31,6 +31,7 @@ export type FlagEntry = { type: "field" | "input" | "location"; key: string; lab
 export type AdmissionSummary = {
   id: string;
   applicantName: string;
+  guardianName: string;
   birthCertificateNumber: string;
   sessionCode: string;
   guardianNic: string;
@@ -238,7 +239,7 @@ export function AdmissionsPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex flex-1 items-center gap-2">
                         <Input
-                          placeholder="Search applicant, birth certificate, or session…"
+                          placeholder="Search applicant, parent name, birth certificate, or session…"
                           value={(filters.find((f) => f.id === "query")?.value as string) ?? ""}
                           onChange={(e) => setFilter("query", e.target.value)}
                           className="h-8 w-[200px] lg:w-[250px]"
