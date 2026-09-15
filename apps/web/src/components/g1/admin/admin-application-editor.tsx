@@ -315,11 +315,14 @@ function fieldPatch<K extends keyof ScoringInputs>(key: K, value: ScoringInputs[
 }
 
 function schoolsSelectedSummary(ids: string[] | undefined): string {
+  const MAX_DISPLAY = 3;
   const names = (ids ?? []).flatMap((schoolId) => {
     const school = findSchoolById(schoolId);
     return school ? [school.en] : [];
   });
-  return names.length === 0 ? "0" : `(${names.length}) ${names.join(", ")}`;
+  if (names.length === 0) return "0";
+  if (names.length <= MAX_DISPLAY) return `(${names.length}) ${names.join(", ")}`;
+  return `(${names.length}) ${names.slice(0, MAX_DISPLAY).join(", ")} +${names.length - MAX_DISPLAY} more`;
 }
 
 type FieldType = "text" | "name" | "date" | "phone" | "email" | "nic" | "boolean" | "address" | "select" | "number" | "document";
@@ -634,9 +637,9 @@ export function AdminApplicationView({ id }: { id: string }) {
                     )}
                     {category.scoringInputs.schoolsWithinRadius && category.scoringInputs.schoolsWithinRadius.length > 0 && (
                       <div className="px-5 py-3 border-t bg-muted/20">
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">Nearby schools</p>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Nearby schools ({category.scoringInputs.schoolsWithinRadius.length})</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {category.scoringInputs.schoolsWithinRadius.map((schoolId) => {
+                          {category.scoringInputs.schoolsWithinRadius.slice(0, 5).map((schoolId) => {
                             const school = findSchoolById(schoolId);
                             return (
                               <span key={schoolId} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
@@ -645,6 +648,11 @@ export function AdminApplicationView({ id }: { id: string }) {
                               </span>
                             );
                           })}
+                          {category.scoringInputs.schoolsWithinRadius.length > 5 && (
+                            <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                              +{category.scoringInputs.schoolsWithinRadius.length - 5} more
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}

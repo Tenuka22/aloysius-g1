@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@aloysius-admissions/ui/components/card";
 import { Button } from "@aloysius-admissions/ui/components/button";
@@ -57,6 +57,28 @@ function AdminApplicationPage() {
           <Card className="w-full max-w-md">
             <CardContent className="p-6 text-sm text-destructive">
               Could not load application: {detail.error?.message ?? "Not found"}
+            </CardContent>
+          </Card>
+        </main>
+      );
+    }
+    const INTERVIEW_STATUSES = ["under_interview", "verified", "fake"];
+    if (INTERVIEW_STATUSES.includes(detail.data.admissionStatus)) {
+      return (
+        <main className="grid min-h-svh place-items-center p-6">
+          <Card className="w-full max-w-sm">
+            <CardContent className="flex flex-col gap-4 p-8">
+              <div className="flex items-center gap-3 text-amber-600">
+                <LockKeyhole size={20} />
+                <CardTitle className="text-base">Editing locked</CardTitle>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                This application is currently <strong>{detail.data.admissionStatus === "under_interview" ? "under interview" : detail.data.admissionStatus === "verified" ? "verified" : "flagged as potentially fake"}</strong> and cannot be edited through the application form. Use the admissions workspace to make interview-time edits.
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" size="sm" render={<Link to="/g1/admin/applications/$id" params={{ id }} />} nativeButton={false}><ArrowLeft size={14} /> Back</Button>
+                <Button size="sm" render={<Link to="/g1/admin/admissions/$id" params={{ id }} />} nativeButton={false}>Go to admissions workspace</Button>
+              </div>
             </CardContent>
           </Card>
         </main>

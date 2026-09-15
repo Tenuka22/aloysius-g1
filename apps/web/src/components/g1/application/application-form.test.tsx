@@ -14,14 +14,13 @@ const { MOCK_ACCESS_KEY, MOCK_SESSION_CODE } = vi.hoisted(() => ({
   MOCK_SESSION_CODE: "26ABC123",
 }));
 
-const { createMock, getMock, statusMock, checkBirthCertificateMock, submitMock, updateMock, getMarksMock } = vi.hoisted(() => ({
+const { createMock, getMock, statusMock, checkBirthCertificateMock, submitMock, updateMock } = vi.hoisted(() => ({
   createMock: vi.fn(),
   getMock: vi.fn(),
   statusMock: vi.fn(),
   checkBirthCertificateMock: vi.fn(),
   submitMock: vi.fn(),
   updateMock: vi.fn(),
-  getMarksMock: vi.fn(),
 }));
 
 vi.mock("@/utils/orpc", () => ({
@@ -34,7 +33,7 @@ vi.mock("@/utils/orpc", () => ({
       submit: submitMock,
       checkBirthCertificate: checkBirthCertificateMock,
       requestAccess: vi.fn().mockResolvedValue({ submitted: true }),
-      getMarks: getMarksMock,
+      
     },
     admin: {
       application: {
@@ -134,7 +133,6 @@ beforeEach(() => {
   checkBirthCertificateMock.mockReset().mockResolvedValue({ exists: false });
   submitMock.mockReset().mockResolvedValue({ accepted: true });
   updateMock.mockReset().mockResolvedValue({ updatedAt: "2026-01-01T00:00:00.000Z" });
-  getMarksMock.mockReset().mockResolvedValue([]);
   Object.defineProperty(navigator, "clipboard", { value: { writeText: vi.fn().mockResolvedValue(undefined) }, configurable: true });
 });
 
@@ -580,18 +578,10 @@ describe("ApplicationForm \u2013 revisiting an already-submitted application", (
       submittedAt: "2026-09-01T00:00:00.000Z",
   });
     // The applicant's own auto-saved indicative preview (source "applicant")
-    // - never a real admin score, per the backend's getMarks contract.
-    getMarksMock.mockResolvedValue([
-      { categoryType: "6.1", total: 76, breakdown: [] },
-    ]);
+    // - never a real admin score, per the backend.
     renderWithClient(<ApplicationForm />);
     await screen.findByText("Review your draft");
     expect(screen.queryByText("Application submitted successfully.")).not.toBeInTheDocument();
-    expect(screen.getByText("Mark Allocation")).toBeInTheDocument();
-    expect(screen.getByText("Admin marks pending")).toBeInTheDocument();
-    // The applicant's saved indicative preview must never be relabelled as an
-    // admin score just because a row exists for that category.
-    expect(screen.queryByText(/Admin:/)).not.toBeInTheDocument();
   });
 });
 

@@ -179,6 +179,7 @@ import {
   TableRow,
 } from "@aloysius-admissions/ui/components/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aloysius-admissions/ui/components/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@aloysius-admissions/ui/components/dialog";
 import { Textarea } from "@aloysius-admissions/ui/components/textarea";
 import {
   Tooltip,
@@ -189,7 +190,7 @@ import {
 import { cn } from "@aloysius-admissions/ui/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { Flag, MapPin, Plus, X as XIcon } from "lucide-react";
+import { Flag, MapPin, Maximize2, Plus, X as XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { DropdownProps } from "react-day-picker";
 import { SchoolMapPicker } from "./school-map-picker";
@@ -197,6 +198,7 @@ import { SchoolMapPicker } from "./school-map-picker";
 export type FlagProps = {
   flaggedInputs?: Set<string>;
   onToggleInputFlag?: (key: string) => void;
+  interviewChanges?: InterviewChanges;
 };
 
 type TFn = ReturnType<typeof useTranslation>["t"];
@@ -714,7 +716,7 @@ function ElectoralYearCheckboxes({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger className="text-muted-foreground text-xs cursor-help">
-                
+
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs whitespace-normal">
                 {hint}
@@ -819,14 +821,23 @@ function AdditionalDocsCheckboxGroup({
       <FieldLabel>{t("category.additionalDocs.title")}</FieldLabel>
       <div className="grid gap-2 sm:grid-cols-2">
         {options.map(([doc, docLabel]) => (
-          <label key={doc} className="flex items-center gap-2 text-sm">
-            <Checkbox
-              className="size-4"
-              checked={docs.includes(doc)}
-              onCheckedChange={() => toggleDoc(doc)}
-            />
+          <div
+            key={doc}
+            role="none"
+            className="flex cursor-pointer items-center gap-2 text-sm"
+            onClick={() => toggleDoc(doc)}
+          >
+            {/* Stop the checkbox button's click from bubbling to the parent div
+                so it doesn't double-fire toggleDoc. */}
+            <span onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                className="size-4"
+                checked={docs.includes(doc)}
+                onCheckedChange={() => toggleDoc(doc)}
+              />
+            </span>
             {docLabel}
-          </label>
+          </div>
         ))}
       </div>
     </Field>
@@ -1039,6 +1050,70 @@ function FlagButton({
   );
 }
 
+export type InterviewChanges = Record<string, { previousValue: string; newValue: string }>;
+
+function InputChangeRow({ changes, fieldKey }: { changes?: InterviewChanges; fieldKey: string }) {
+  const c = changes?.[fieldKey];
+  if (!c || c.previousValue === c.newValue) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 rounded-md bg-amber-50 border border-amber-200/60 px-2 py-1 text-xs">
+      <span className="line-through text-muted-foreground/70">{c.previousValue || "(empty)"}</span>
+      <span className="shrink-0 text-muted-foreground">→</span>
+      <span className="font-semibold text-amber-700">{c.newValue || "(empty)"}</span>
+    </div>
+  );
+}
+
+function SchoolsExpandDialog({
+  forceSelectable,
+  label,
+  centerLat,
+  centerLng,
+  selectedIds,
+  marksPerSchool,
+  highlightSchoolId,
+  onToggle,
+}: {
+  label: string;
+  centerLat: number;
+  centerLng: number;
+  selectedIds: string[];
+  marksPerSchool: number;
+  highlightSchoolId: string;
+  onToggle: (schoolId: string) => void;
+  forceSelectable?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        title="Expand school map"
+        className="ml-auto rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      >
+        <Maximize2 size={14} />
+      </button>
+      <DialogContent className="w-[95vw] h-[98svh] flex flex-col p-4 gap-3 sm:max-w-none">
+        <DialogHeader className="shrink-0">
+          <DialogTitle>{label}</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 min-h-0 overflow-auto">
+          <SchoolMapPicker
+            forceSelectable={forceSelectable}
+            centerLat={centerLat}
+            centerLng={centerLng}
+            selectedIds={selectedIds}
+            highlightSchoolId={highlightSchoolId}
+            marksPerSchool={marksPerSchool}
+            onToggle={onToggle}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function Category61Fields({
   category,
   onChange,
@@ -1046,11 +1121,14 @@ export function Category61Fields({
   centerLng,
   flaggedInputs,
   onToggleInputFlag,
+  forceSelectable,
+  interviewChanges,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
   centerLat?: number;
   centerLng?: number;
+  forceSelectable?: boolean;
 } & FlagProps) {
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
@@ -1092,6 +1170,7 @@ export function Category61Fields({
             onChange={onChange}
             options={mainDocumentOptions}
           />
+          <InputChangeRow changes={interviewChanges} fieldKey="mainDocumentType" />
         </div>
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
@@ -1114,6 +1193,7 @@ export function Category61Fields({
             value={inputs.deedTransferDate}
             onChange={(deedTransferDate) => onChange({ deedTransferDate })}
           />
+          <InputChangeRow changes={interviewChanges} fieldKey="deedTransferDate" />
         </div>
       </div>
       <div className="grid gap-1.5">
@@ -1135,6 +1215,7 @@ export function Category61Fields({
           onChange={onChange}
           options={additionalDocOptions}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="additionalDocs" />
       </div>
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
@@ -1153,6 +1234,7 @@ export function Category61Fields({
             value={inputs.electoralMotherYears}
             onChange={(electoralMotherYears) => onChange({ electoralMotherYears })}
           />
+          <InputChangeRow changes={interviewChanges} fieldKey="electoralMotherYears" />
         </div>
         <div className="grid gap-1.5">
           <div className="flex items-center gap-2">
@@ -1170,6 +1252,7 @@ export function Category61Fields({
             value={inputs.electoralFatherYears}
             onChange={(electoralFatherYears) => onChange({ electoralFatherYears })}
           />
+          <InputChangeRow changes={interviewChanges} fieldKey="electoralFatherYears" />
         </div>
       </div>
       <div className="flex items-center gap-2 border-t pt-3">
@@ -1198,6 +1281,24 @@ export function Category61Fields({
               {t("category.common.selected", { count: selectedSchoolIds.length })}
             </span>
           )}
+          {hasCenter && (
+            <SchoolsExpandDialog
+              label={String(t("category.61.nearbySchools.label"))}
+              centerLat={centerLat!}
+              centerLng={centerLng!}
+              selectedIds={selectedSchoolIds}
+              highlightSchoolId={HOME_SCHOOL_ID}
+              marksPerSchool={PROXIMITY_PER_SCHOOL_61}
+              forceSelectable={forceSelectable}
+              onToggle={(schoolId) =>
+                onChange({
+                  schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
+                    ? selectedSchoolIds.filter((id) => id !== schoolId)
+                    : [...selectedSchoolIds, schoolId],
+                })
+              }
+            />
+          )}
         </div>
         {hasCenter ? (
           <SchoolMapPicker
@@ -1206,6 +1307,7 @@ export function Category61Fields({
             selectedIds={selectedSchoolIds}
             highlightSchoolId={HOME_SCHOOL_ID}
             marksPerSchool={PROXIMITY_PER_SCHOOL_61}
+            forceSelectable={forceSelectable}
             onToggle={(schoolId) =>
               onChange({
                 schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
@@ -1217,6 +1319,7 @@ export function Category61Fields({
         ) : (
           <p className="text-xs text-muted-foreground">{t("category.noHomeLocation")}</p>
         )}
+        <InputChangeRow changes={interviewChanges} fieldKey="schoolsWithinRadius" />
       </div>
     </div>
   );
@@ -1447,6 +1550,7 @@ export function Category62Fields({
   onChange,
   flaggedInputs,
   onToggleInputFlag,
+  interviewChanges,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
@@ -1581,6 +1685,7 @@ export function Category62Fields({
             minDate={parseDateOrUndefined(inputs.alumniStartDate)}
           />
         </div>
+        <InputChangeRow changes={interviewChanges} fieldKey="alumniStartDate" />
       </div>
 
       <Separator className="hidden col-span-2 max-md:block" />
@@ -1608,6 +1713,7 @@ export function Category62Fields({
           />
           {t("category.62.grade5Scholarship.checkbox")}
         </label>
+        <InputChangeRow changes={interviewChanges} fieldKey="grade5ScholarshipPassed" />
       </div>
 
       <Separator className="hidden col-span-2 max-md:block" />
@@ -1724,6 +1830,7 @@ export function Category62Fields({
               nameColumnLabel={t("category.62.sports.nameColumnLabel")}
               namePlaceholder={(number) => t("category.62.sports.namePlaceholder", { number })}
             />
+            <InputChangeRow changes={interviewChanges} fieldKey="sportsEntries" />
           </div>
 
           <Separator />
@@ -1750,6 +1857,7 @@ export function Category62Fields({
               onChange={onChange}
               t={t}
             />
+            <InputChangeRow changes={interviewChanges} fieldKey="studentSocietiesEntries" />
           </div>
           </div>
 
@@ -1793,6 +1901,7 @@ export function Category62Fields({
                 ))}
               </div>
             </Field>
+            <InputChangeRow changes={interviewChanges} fieldKey="leadershipRoles" />
           </div>
 
           <Separator />
@@ -1848,6 +1957,7 @@ export function Category62Fields({
                 />
               </Field>
             )}
+            <InputChangeRow changes={interviewChanges} fieldKey="otherActivities" />
           </div>
           </div>
         </div>
@@ -1934,6 +2044,7 @@ export function Category62Fields({
             onChange={(pastPupilsExecutiveCount) => onChange({ pastPupilsExecutiveCount })}
             />
         </div>
+        <InputChangeRow changes={interviewChanges} fieldKey="pastPupilsLifeMember" />
       </div>
 
       <Separator className="hidden col-span-2 max-md:block" />
@@ -1961,6 +2072,7 @@ export function Category62Fields({
               placeholder={t("category.62.degrees.highestQualificationPlaceholder")}
               onChange={(highestDegree) => onChange({ highestDegree })}
             />
+            <InputChangeRow changes={interviewChanges} fieldKey="highestDegree" />
           </div>
 
           {/* Diploma */}
@@ -1986,6 +2098,7 @@ export function Category62Fields({
               />
               {t("category.62.diploma.checkbox")}
             </label>
+            <InputChangeRow changes={interviewChanges} fieldKey="hasDiploma" />
           </div>
         </div>
       </div>
@@ -2035,6 +2148,7 @@ export function Category62Fields({
                 />
               </div>
             </div>
+            <InputChangeRow changes={interviewChanges} fieldKey="carnivalContribution" />
           </div>
 
           {/* Contribution to School Projects */}
@@ -2072,6 +2186,7 @@ export function Category62Fields({
               }
               className="text-sm"
             />
+            <InputChangeRow changes={interviewChanges} fieldKey="schoolProjectsContribution" />
           </div>
         </div>
       </div>
@@ -2086,11 +2201,14 @@ export function Category63Fields({
   centerLng,
   flaggedInputs,
   onToggleInputFlag,
+  forceSelectable,
+  interviewChanges,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
   centerLat?: number;
   centerLng?: number;
+  forceSelectable?: boolean;
 } & FlagProps) {
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
@@ -2177,6 +2295,7 @@ export function Category63Fields({
             onChange({ siblingGradesCompletedCount })
           }
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="siblingGradesCompletedCount" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2202,6 +2321,7 @@ export function Category63Fields({
           />
           {t("category.63.studiedHere.checkbox")}
         </label>
+        <InputChangeRow changes={interviewChanges} fieldKey="siblingStudiedAtAppliedSchool" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2225,6 +2345,7 @@ export function Category63Fields({
           />
           {t("category.63.multipleSiblings.checkbox")}
         </label>
+        <InputChangeRow changes={interviewChanges} fieldKey="twoOrMoreSiblingsStudyingOtherGrades" />
       </div>
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
@@ -2313,6 +2434,7 @@ export function Category63Fields({
             )}
           </div>
         </div>
+        <InputChangeRow changes={interviewChanges} fieldKey="siblingSportsEntries" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2333,6 +2455,7 @@ export function Category63Fields({
           onChange={onChange}
           options={siblingDocumentOptions}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="mainDocumentType" />
       </div>
       <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
         <div className="grid gap-1.5">
@@ -2367,6 +2490,7 @@ export function Category63Fields({
           onToggleInputFlag={onToggleInputFlag}
         />
       </div>
+        <InputChangeRow changes={interviewChanges} fieldKey="electoralMotherYears" />
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{t("category.61.nearbySchools.label")}</span>
@@ -2381,6 +2505,7 @@ export function Category63Fields({
             onToggleInputFlag={onToggleInputFlag}
           />
         </div>
+        <InputChangeRow changes={interviewChanges} fieldKey="schoolsWithinRadius" />
       </div>
     </div>
   );
@@ -2441,6 +2566,7 @@ export function Category64Fields({
   onChange,
   flaggedInputs,
   onToggleInputFlag,
+  interviewChanges,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
@@ -2598,6 +2724,7 @@ export function Category64Fields({
             {t("category.64.contribution.gateWarning")}
           </p>
         )}
+        <InputChangeRow changes={interviewChanges} fieldKey="contributionPath" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2624,6 +2751,7 @@ export function Category64Fields({
           missing={inputs.serviceStartDate == null}
           onChange={(serviceStartDate) => onChange({ serviceStartDate })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="serviceStartDate" />
       </div>
       <div className="grid gap-1.5 col-span-2 max-md:col-span-1">
         <div className="flex items-center gap-2">
@@ -2740,6 +2868,7 @@ export function Category64Fields({
               </div>
           )}
         </Field>
+        <InputChangeRow changes={interviewChanges} fieldKey="difficultServiceType" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2765,6 +2894,7 @@ export function Category64Fields({
           missing={missingLeave}
           onChange={(unutilizedLeaveYears) => onChange({ unutilizedLeaveYears })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="unutilizedLeaveYears" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2787,6 +2917,7 @@ export function Category64Fields({
           missing={missingResidence}
           onChange={(residenceToSchoolKm) => onChange({ residenceToSchoolKm })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="residenceToSchoolKm" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2809,6 +2940,7 @@ export function Category64Fields({
           missing={missingWorkplace}
           onChange={(workplaceToSchoolKm) => onChange({ workplaceToSchoolKm })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="workplaceToSchoolKm" />
       </div>
     </div>
   );
@@ -2821,11 +2953,14 @@ export function Category65Fields({
   centerLng,
   flaggedInputs,
   onToggleInputFlag,
+  forceSelectable,
+  interviewChanges,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
   centerLat?: number;
   centerLng?: number;
+  forceSelectable?: boolean;
 } & FlagProps) {
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
@@ -2867,6 +3002,7 @@ export function Category65Fields({
           value={inputs.previousWorkplaceDistanceKm}
           onChange={(previousWorkplaceDistanceKm) => onChange({ previousWorkplaceDistanceKm })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="previousWorkplaceDistanceKm" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2892,6 +3028,7 @@ export function Category65Fields({
           value={inputs.serviceStartDate}
           onChange={(serviceStartDate) => onChange({ serviceStartDate })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="serviceStartDate" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2914,6 +3051,7 @@ export function Category65Fields({
           value={inputs.previousWorkplaceStartDate}
           onChange={(previousWorkplaceStartDate) => onChange({ previousWorkplaceStartDate })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="previousWorkplaceStartDate" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2936,6 +3074,7 @@ export function Category65Fields({
           value={inputs.transferDate}
           onChange={(transferDate) => onChange({ transferDate })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="transferDate" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2960,6 +3099,7 @@ export function Category65Fields({
           value={inputs.unutilizedLeaveYears}
           onChange={(unutilizedLeaveYears) => onChange({ unutilizedLeaveYears })}
         />
+        <InputChangeRow changes={interviewChanges} fieldKey="unutilizedLeaveYears" />
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
@@ -2979,6 +3119,24 @@ export function Category65Fields({
               {t("category.common.selected", { count: selectedSchoolIds.length })}
             </span>
           )}
+          {hasCenter && (
+            <SchoolsExpandDialog
+              label={String(t("category.61.nearbySchools.label"))}
+              centerLat={centerLat!}
+              centerLng={centerLng!}
+              selectedIds={selectedSchoolIds}
+              highlightSchoolId={HOME_SCHOOL_ID}
+              marksPerSchool={PROXIMITY_PER_SCHOOL_65}
+              forceSelectable={forceSelectable}
+              onToggle={(schoolId) =>
+                onChange({
+                  schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
+                    ? selectedSchoolIds.filter((sid) => sid !== schoolId)
+                    : [...selectedSchoolIds, schoolId],
+                })
+              }
+            />
+          )}
         </div>
         {hasCenter ? (
           <SchoolMapPicker
@@ -2987,6 +3145,7 @@ export function Category65Fields({
             selectedIds={selectedSchoolIds}
             highlightSchoolId={HOME_SCHOOL_ID}
             marksPerSchool={PROXIMITY_PER_SCHOOL_65}
+            forceSelectable={forceSelectable}
             onToggle={(schoolId) =>
               onChange({
                 schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
@@ -2998,6 +3157,7 @@ export function Category65Fields({
         ) : (
           <p className="text-xs text-muted-foreground">{t("category.noHomeLocation")}</p>
         )}
+        <InputChangeRow changes={interviewChanges} fieldKey="schoolsWithinRadius" />
       </div>
     </div>
   );
@@ -3010,11 +3170,14 @@ export function Category66Fields({
   centerLng,
   flaggedInputs,
   onToggleInputFlag,
+  forceSelectable,
+  interviewChanges,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
   centerLat?: number;
   centerLng?: number;
+  forceSelectable?: boolean;
 } & FlagProps) {
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
@@ -3062,6 +3225,7 @@ export function Category66Fields({
             minDate={parseDateOrUndefined(inputs.abroadStartDate)}
           />
         </div>
+        <InputChangeRow changes={interviewChanges} fieldKey="abroadStartDate" />
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -3112,6 +3276,7 @@ export function Category66Fields({
             />
           </RadioGroup>
         </Field>
+        <InputChangeRow changes={interviewChanges} fieldKey="employmentPurpose" />
       </div>
       <div className="grid gap-1.5 border-t pt-4">
         <div className="flex items-center gap-2">
@@ -3131,6 +3296,24 @@ export function Category66Fields({
               {t("category.common.selected", { count: selectedSchoolIds.length })}
             </span>
           )}
+          {hasCenter && (
+            <SchoolsExpandDialog
+              label={String(t("category.61.nearbySchools.label"))}
+              centerLat={centerLat!}
+              centerLng={centerLng!}
+              selectedIds={selectedSchoolIds}
+              highlightSchoolId={HOME_SCHOOL_ID}
+              marksPerSchool={PROXIMITY_PER_SCHOOL_66}
+              forceSelectable={forceSelectable}
+              onToggle={(schoolId) =>
+                onChange({
+                  schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
+                    ? selectedSchoolIds.filter((sid) => sid !== schoolId)
+                    : [...selectedSchoolIds, schoolId],
+                })
+              }
+            />
+          )}
         </div>
         {hasCenter ? (
           <SchoolMapPicker
@@ -3139,6 +3322,7 @@ export function Category66Fields({
             selectedIds={selectedSchoolIds}
             highlightSchoolId={HOME_SCHOOL_ID}
             marksPerSchool={PROXIMITY_PER_SCHOOL_66}
+            forceSelectable={forceSelectable}
             onToggle={(schoolId) =>
               onChange({
                 schoolsWithinRadius: selectedSchoolIds.includes(schoolId)
@@ -3150,6 +3334,7 @@ export function Category66Fields({
         ) : (
           <p className="text-xs text-muted-foreground">{t("category.noHomeLocation")}</p>
         )}
+        <InputChangeRow changes={interviewChanges} fieldKey="schoolsWithinRadius" />
       </div>
     </div>
   );
@@ -3341,8 +3526,8 @@ function CategoryCard({
               </p>
             ) : (
               <SchoolMapPicker
-                centerLat={centerLat}
-                centerLng={centerLng}
+                centerLat={centerLat!}
+                centerLng={centerLng!}
                 selectedIds={selectedSchoolIds}
                 highlightSchoolId={HOME_SCHOOL_ID}
                 marksPerSchool={proximityConfig.marksPerSchool}

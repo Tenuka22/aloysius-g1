@@ -5,12 +5,11 @@ import { randomUUID } from "node:crypto";
 import {
   db,
   g1ApplicationAccessRequests,
-  g1ApplicationMarks,
   g1ApplicationSettings,
   g1Applications,
 } from "@aloysius-admissions/db";
 import { env } from "@aloysius-admissions/env/server";
-import { and, eq, isNotNull, isNull, ne } from "drizzle-orm";
+import { and, eq, isNotNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import {
   accessRequestIssues,
@@ -665,121 +664,6 @@ export const g1Router = {
       await publishApplicationChange();
       return { accepted: true };
     }),
-    getMarks: publicProcedure
-      .input(z.object({ accessKey: keySchema }))
-      .handler(async ({ input }) => {
-        const row = await db
-          .select({ id: g1Applications.id })
-          .from(g1Applications)
-          .where(eq(g1Applications.accessKeyHash, hashKey(input.accessKey)))
-          .get();
-        if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
-        // Applicants only ever see their own indicative preview, never the admin's
-        // authoritative score (that would leak pre-decision outcomes and, combined
-        // with the write path below, let an applicant read back a forged value).
-        const marks = await db
-          .select()
-          .from(g1ApplicationMarks)
-          .where(
-            and(
-              eq(g1ApplicationMarks.applicationId, row.id),
-              eq(g1ApplicationMarks.source, "applicant"),
-            ),
-          )
-          .all();
-        return marks;
-      }),
-    saveIndicativeMarks: publicProcedure
-      .input(
-        z.object({
-          accessKey: keySchema,
-          marks: z.array(
-            z.object({
-              categoryId: z.string().min(1),
-              categoryType: z.string(),
-              total: z.number().min(0).max(100),
-              breakdown: z.array(
-                z.object({
-                  label: z.string(),
-                  marks: z.number().min(0).max(100),
-                  max: z.number().min(0).max(100),
-                }),
-              ),
-            }),
-          ),
-        }),
-      )
-      .handler(async ({ input }) => {
-        const row = await db
-          .select({ id: g1Applications.id })
-          .from(g1Applications)
-          .where(eq(g1Applications.accessKeyHash, hashKey(input.accessKey)))
-          .get();
-        if (!row) throw new ORPCError("NOT_FOUND", { message: "Application key not found" });
-        const now = new Date();
-        for (const mark of input.marks) {
-          // Always written as source "applicant": this is a client-computed
-          // preview only and must never overwrite or be confused with the
-          // admin's authoritative "admin"-sourced row for the same category.
-          // Prefer an exact categoryId match - required so two category
-          // entries of the same categoryType each get their own indicative
-          // row instead of overwriting each other. Fall back to a
-          // categoryType-only match ONLY for a legacy row saved before this
-          // column existed (categoryId is null), migrating it in place.
-          const existing =
-            (await db
-              .select({ id: g1ApplicationMarks.id })
-              .from(g1ApplicationMarks)
-              .where(
-                and(
-                  eq(g1ApplicationMarks.applicationId, row.id),
-                  eq(g1ApplicationMarks.categoryId, mark.categoryId),
-                  eq(g1ApplicationMarks.source, "applicant"),
-                ),
-              )
-              .get()) ??
-            (await db
-              .select({ id: g1ApplicationMarks.id })
-              .from(g1ApplicationMarks)
-              .where(
-                and(
-                  eq(g1ApplicationMarks.applicationId, row.id),
-                  isNull(g1ApplicationMarks.categoryId),
-                  eq(g1ApplicationMarks.categoryType, mark.categoryType),
-                  eq(g1ApplicationMarks.source, "applicant"),
-                ),
-              )
-              .get());
-          if (existing) {
-            await db
-              .update(g1ApplicationMarks)
-              .set({
-                categoryId: mark.categoryId,
-                breakdown: mark.breakdown,
-                total: mark.total,
-                updatedAt: now,
-              })
-              .where(eq(g1ApplicationMarks.id, existing.id))
-              .run();
-          } else {
-            await db
-              .insert(g1ApplicationMarks)
-              .values({
-                id: randomUUID(),
-                applicationId: row.id,
-                categoryId: mark.categoryId,
-                categoryType: mark.categoryType,
-                breakdown: mark.breakdown,
-                total: mark.total,
-                source: "applicant",
-                createdAt: now,
-                updatedAt: now,
-              })
-              .run();
-          }
-        }
-        return { saved: true };
-      }),
   },
   admin: {
     accessRequests: {
@@ -1175,6 +1059,8 @@ export const g1Router = {
                 previousValue: z.string(),
                 newValue: z.string(),
                 editedAt: z.string(),
+                rawPreviousValue: z.string().optional(),
+                rawNewValue: z.string().optional(),
               }),
             ),
           }),
@@ -1194,161 +1080,6 @@ export const g1Router = {
             .where(eq(g1Applications.id, input.id))
             .run();
           return { interviewEdits: input.interviewEdits };
-        }),
-      saveScoringInputs: adminProcedure
-        .input(
-          z.object({
-            id: applicationIdSchema,
-            categoryId: z.string(),
-            scoringInputs: z.record(z.string(), z.unknown()),
-          }),
-        )
-        .handler(async ({ input }) => {
-          const row = await db
-            .select({ id: g1Applications.id, data: g1Applications.data })
-            .from(g1Applications)
-            .where(eq(g1Applications.id, input.id))
-            .get();
-          if (!row) throw new ORPCError("NOT_FOUND", { message: "Application not found" });
-          const data = (row.data ?? {}) as Record<string, unknown>;
-          const categories = Array.isArray(data.categories)
-            ? (data.categories as Array<Record<string, unknown>>)
-            : [];
-          const updatedCategories = categories.map((cat) =>
-            cat.id === input.categoryId ? { ...cat, scoringInputs: input.scoringInputs } : cat,
-          );
-          const updatedData = { ...data, categories: updatedCategories };
-          await db
-            .update(g1Applications)
-            .set({ data: updatedData, updatedAt: new Date() })
-            .where(eq(g1Applications.id, input.id))
-            .run();
-          return { success: true };
-        }),
-      getMarks: adminProcedure
-        .input(z.object({ applicationId: applicationIdSchema }))
-        .handler(async ({ input }) => {
-          // Only ever return admin-authored, authoritative marks: an applicant's
-          // own indicative-preview rows (source "applicant") must never pre-fill
-          // or influence the admin's editable/saved score.
-          const marks = await db
-            .select()
-            .from(g1ApplicationMarks)
-            .where(
-              and(
-                eq(g1ApplicationMarks.applicationId, input.applicationId),
-                eq(g1ApplicationMarks.source, "admin"),
-              ),
-            )
-            .all();
-          return marks;
-        }),
-      saveMarks: adminProcedure
-        .input(
-          z.object({
-            applicationId: applicationIdSchema,
-            categoryId: z.string().min(1),
-            categoryType: z.string().min(1),
-            breakdown: z.array(z.object({ label: z.string(), marks: z.number(), max: z.number() })),
-            total: z.number(),
-          }),
-        )
-        .handler(async ({ input }) => {
-          // Prefer an exact categoryId match - required so two category
-          // entries of the same categoryType each keep their own
-          // authoritative admin score instead of overwriting each other.
-          // Fall back to a categoryType-only match ONLY for a legacy row
-          // saved before this column existed (categoryId is null),
-          // migrating it in place.
-          const existing =
-            (await db
-            .select({ id: g1ApplicationMarks.id })
-            .from(g1ApplicationMarks)
-            .where(
-              and(
-                eq(g1ApplicationMarks.applicationId, input.applicationId),
-                  eq(g1ApplicationMarks.categoryId, input.categoryId),
-                eq(g1ApplicationMarks.source, "admin"),
-              ),
-        )
-              .get()) ??
-            (await db
-            .select({ id: g1ApplicationMarks.id })
-            .from(g1ApplicationMarks)
-            .where(
-              and(
-                eq(g1ApplicationMarks.applicationId, input.applicationId),
-                  isNull(g1ApplicationMarks.categoryId),
-                eq(g1ApplicationMarks.categoryType, input.categoryType),
-                eq(g1ApplicationMarks.source, "admin"),
-              ),
-            )
-              .get());
-          const now = new Date();
-          if (existing) {
-            await db
-              .update(g1ApplicationMarks)
-              .set({
-                categoryId: input.categoryId,
-              breakdown: input.breakdown,
-              total: input.total,
-              updatedAt: now,
-            })
-              .where(eq(g1ApplicationMarks.id, existing.id))
-              .run();
-            return { id: existing.id, updatedAt: now };
-          }
-          const id = randomUUID();
-          await db
-            .insert(g1ApplicationMarks)
-            .values({
-              id,
-              applicationId: input.applicationId,
-              categoryId: input.categoryId,
-              categoryType: input.categoryType,
-              breakdown: input.breakdown,
-              total: input.total,
-              source: "admin",
-              createdAt: now,
-              updatedAt: now,
-            })
-            .run();
-          return { id, updatedAt: now };
-        }),
-      deleteMarks: adminProcedure
-        .input(
-          z.object({
-            applicationId: applicationIdSchema,
-            categoryId: z.string().min(1),
-            categoryType: z.string().min(1),
-          }),
-        )
-        .handler(async ({ input }) => {
-          await db
-            .delete(g1ApplicationMarks)
-            .where(
-              and(
-                eq(g1ApplicationMarks.applicationId, input.applicationId),
-                eq(g1ApplicationMarks.categoryId, input.categoryId),
-                eq(g1ApplicationMarks.source, "admin"),
-              ),
-            )
-            .run();
-          // Also remove a legacy row (saved before categoryId existed) that
-          // would otherwise survive under the old categoryType-only
-          // addressing scheme.
-          await db
-            .delete(g1ApplicationMarks)
-            .where(
-              and(
-                eq(g1ApplicationMarks.applicationId, input.applicationId),
-                isNull(g1ApplicationMarks.categoryId),
-                eq(g1ApplicationMarks.categoryType, input.categoryType),
-                eq(g1ApplicationMarks.source, "admin"),
-              ),
-            )
-            .run();
-          return { deleted: true };
         }),
     },
     applications: adminOrSubAdminProcedure
@@ -1420,6 +1151,8 @@ export const g1Router = {
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
             submittedAt: row.submittedAt,
+            admissionStatus: row.admissionStatus,
+            isBanned: row.isBanned,
           };
         }),
       create: adminProcedure

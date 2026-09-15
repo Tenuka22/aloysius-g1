@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { lazy } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Ban, Check, ClipboardCheck, CreditCard, Edit3, FileText, Flag, Hash, LockKeyhole, Mail, MapPin, MoreHorizontal, MousePointer2, Pencil, Phone, RotateCcw, Save, Settings2, ShieldAlert, User, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Ban, Check, ClipboardCheck, CreditCard, Edit3, FileText, Flag, Hash, LockKeyhole, Mail, MapPin, MoreHorizontal, MousePointer2, Pencil, Phone, Save, Settings2, ShieldAlert, User, UserRound, X } from "lucide-react";
 import { client, orpc } from "@/utils/orpc";
 import { normalizeDraft, type ApplicationDraft, type InterviewEdit, type LocationDraft, type ScoringInputs } from "@/lib/g1/application-store";
 import { scoreCategory } from "@/lib/g1/scoring";
@@ -70,7 +70,6 @@ export const Route = createFileRoute("/_auth/g1/admin/admissions/$id/$categoryId
   loader: async ({ context, params }) => {
     await Promise.all([
       context.queryClient.prefetchQuery(context.orpc.admin.admissions.get.queryOptions({ input: { id: params.id } })),
-      context.queryClient.prefetchQuery(context.orpc.admin.admissions.getMarks.queryOptions({ input: { applicationId: params.id } })),
     ]);
   },
   component: AdmissionWorkspacePage,
@@ -90,8 +89,11 @@ function formatFieldName(value: string): string {
 function formatFieldValue(key: string, value: unknown): string {
   if (Array.isArray(value)) {
     if (key === "schoolsWithinRadius") {
+      const MAX_DISPLAY = 3;
       const names = value.flatMap((schoolId) => typeof schoolId === "string" && findSchoolById(schoolId) ? [findSchoolById(schoolId)!.en] : []);
-      return names.length > 0 ? names.join(", ") : "None selected";
+      if (names.length === 0) return "None selected";
+      if (names.length <= MAX_DISPLAY) return names.join(", ");
+      return `${names.slice(0, MAX_DISPLAY).join(", ")} +${names.length - MAX_DISPLAY} more`;
     }
     return value.length > 0 ? value.map(String).join(", ") : "None";
   }
@@ -187,7 +189,7 @@ function DataRow({ label, value, fieldKey, onEdit, previousValue, flagged, onFla
           <span className="font-semibold text-amber-700">{displayValue}</span>
         </div>
       )}
-    </div>
+  </div>
   );
 }
 
@@ -713,53 +715,70 @@ function BanDialog({ open, onOpenChange, onConfirm, applicantName, reason, onRea
   );
 }
 
-type EditableBreakdown = { label: string; marks: number; max: number };
 
-function CategoryScoringCard({ applicationId, category, autoScore, draft, flaggedInputs, onToggleInputFlag, homeLocation, onSaveInterviewEdits }: { applicationId: string; category: ApplicationDraft["categories"][0]; autoScore: ReturnType<typeof scoreCategory> | null; draft: ApplicationDraft; flaggedInputs: Set<string>; onToggleInputFlag: (key: string) => void; homeLocation: { lat: number; lng: number } | null; onSaveInterviewEdits: (edits: InterviewEdit[]) => void }) {
-  const queryClient = useQueryClient();
-
-  const existingMarks = useQuery({
-    ...orpc.admin.admissions.getMarks.queryOptions({ input: { applicationId } }),
-  });
-
-  const savedMark = useMemo(() => {
-    if (!existingMarks.data) return null;
-    // Prefer an exact categoryId match (every mark saved after this fix
-    // carries one); fall back to a categoryType-only match ONLY for a
-    // legacy row saved before categoryId existed (categoryId is null) -
-    // otherwise two same-type category entries would silently share one
-    // saved mark record.
-    const found =
-      existingMarks.data.find((m) => m.categoryId === category.id) ??
-      existingMarks.data.find((m) => !m.categoryId && m.categoryType === category.categoryType);
-    if (!found) return null;
-    return {
-      ...found,
-      breakdown: (found.breakdown as Array<{ label: string; marks: number; max: number }>),
-    };
-  }, [existingMarks.data, category.id, category.categoryType]);
-
-  const [breakdown, setBreakdown] = useState<EditableBreakdown[]>([]);
+/** Replay saved interview edits over the applicant's pristine scoring inputs.
+ *  The DB copy of `scoringInputs` is NEVER mutated by admin edits - every admin
+ *  change is stored only as an interviewEdit record, and this function reconstructs
+ *  the current values from those records on load.
+ *
+ *  `rawNewValue` holds the JSON-serialized value, so arrays and objects replay
+ *  exactly. Older records without it fall back to coercing the display string. */
+function applyInterviewEditsToScoringInputs(
+  original: ScoringInputs,
+  categoryType: string,
+  interviewEdits: InterviewEdit[],
+): ScoringInputs {
+  const prefix = `category.${categoryType}.scoringInputs.`;
+  const result: Record<string, unknown> = { ...original };
+  // Array-typed keys that a legacy (no rawNewValue) edit record can never safely
+  // coerce from a display string. Checked by name, not by Array.isArray(cur), because
+  // an unset field's original value is undefined and would otherwise pass through.
+  const ARRAY_KEYS: Record<string, true> = {
+    additionalDocs: true, electoralMotherYears: true, electoralFatherYears: true,
+    schoolsWithinRadius: true, sportsEntries: true, leadershipRoles: true,
+    studentSocietiesEntries: true, otherActivities: true, siblingSportsEntries: true,
+    siblingExamAchievements: true, otherContributionEntries: true,
+  };
+  // chronological order - later edits win
+  const latest: Record<string, InterviewEdit> = {};
+  for (const edit of interviewEdits) {
+    if (!edit.field.startsWith(prefix)) continue;
+    latest[edit.field.slice(prefix.length)] = edit;
+  }
+  for (const [key, edit] of Object.entries(latest)) {
+    if (edit.rawNewValue !== undefined) {
+      try {
+        result[key] = JSON.parse(edit.rawNewValue) as unknown;
+        continue;
+      } catch {
+        // Corrupt JSON - fall through to string coercion below.
+      }
+    }
+    // Legacy records (no rawNewValue): coerce the display string by current type.
+    const cur = result[key];
+    const strVal = edit.newValue;
+    if (Array.isArray(cur) || ARRAY_KEYS[key]) continue; // cannot reconstruct an array from a display string
+    if (typeof cur === "boolean") { result[key] = strVal === "Yes" || strVal === "true"; continue; }
+    if (typeof cur === "number") { const n = parseFloat(strVal); if (!isNaN(n)) result[key] = n; continue; }
+    result[key] = strVal;
+  }
+  return result as ScoringInputs;
+}
+function CategoryScoringCard({ applicationId, category, draft, flaggedInputs, onToggleInputFlag, homeLocation, onSaveInterviewEdits, onFirstEdit }: { applicationId: string; category: ApplicationDraft["categories"][0]; draft: ApplicationDraft; flaggedInputs: Set<string>; onToggleInputFlag: (key: string) => void; homeLocation: { lat: number; lng: number } | null; onSaveInterviewEdits: (edits: InterviewEdit[]) => void; onFirstEdit?: () => void }) {
   const [inputsEditable, setInputsEditable] = useState(false);
-  const [editedInputs, setEditedInputs] = useState<ScoringInputs>(() => ({ ...category.scoringInputs }));
+  // Replay saved interview edits so the fields show the latest admin-entered values on load.
+  const [editedInputs, setEditedInputs] = useState<ScoringInputs>(() =>
+    applyInterviewEditsToScoringInputs({ ...category.scoringInputs }, category.categoryType, draft.interviewEdits),
+  );
   const originalInputsRef = useRef<ScoringInputs>({ ...category.scoringInputs });
 
   useEffect(() => {
-    setEditedInputs({ ...category.scoringInputs });
+    setEditedInputs(applyInterviewEditsToScoringInputs({ ...category.scoringInputs }, category.categoryType, draft.interviewEdits));
     originalInputsRef.current = { ...category.scoringInputs };
   }, [category.id]);
 
   const editedCategory = useMemo(() => ({ ...category, scoringInputs: editedInputs }), [category, editedInputs]);
   const editedAutoScore = useMemo(() => scoreCategory(editedCategory), [editedCategory]);
-
-  useEffect(() => {
-    if (!autoScore) return;
-    if (savedMark) {
-      setBreakdown(savedMark.breakdown.map((r) => ({ label: r.label, marks: r.marks, max: r.max })));
-    } else {
-      setBreakdown(editedAutoScore.breakdown.map((r) => ({ ...r })));
-    }
-  }, [autoScore, savedMark, editedAutoScore]);
 
   const inputChanges = useMemo(() => {
     const changes: Array<{ key: string; label: string; oldValue: string; newValue: string }> = [];
@@ -776,80 +795,67 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
   }, [editedInputs]);
 
   const handleInputPatch = (patch: Partial<ScoringInputs>) => {
-    setEditedInputs((prev) => {
-      const next = { ...prev, ...patch };
-      const edits: InterviewEdit[] = [];
-      for (const [key, newVal] of Object.entries(patch)) {
-        const oldVal = (prev as Record<string, unknown>)[key];
-        const oldStr = formatFieldValue(key, oldVal);
-        const newStr = formatFieldValue(key, newVal);
-        if (oldStr !== newStr) {
-          edits.push({
-            field: `category.${category.categoryType}.scoringInputs.${key}`,
-            label: formatFieldName(key),
-            previousValue: oldStr,
-            newValue: newStr,
-            editedAt: new Date().toISOString(),
-          });
-        }
+    const prev = editedInputs;
+    const next = { ...prev, ...patch };
+    const edits: InterviewEdit[] = [];
+
+    for (const [key, newVal] of Object.entries(patch)) {
+      const oldVal = (prev as Record<string, unknown>)[key];
+      // Display strings for the audit trail / diff UI.
+      let oldStr: string;
+      let newStr: string;
+      if (key === "schoolsWithinRadius" && Array.isArray(oldVal) && Array.isArray(newVal)) {
+        const oldSet = new Set(oldVal.map(String));
+        const newSet = new Set((newVal as unknown[]).map(String));
+        const added = [...newSet].filter((sid) => !oldSet.has(sid)).map((sid) => findSchoolById(sid)?.en ?? sid);
+        const removed = [...oldSet].filter((sid) => !newSet.has(sid)).map((sid) => findSchoolById(sid)?.en ?? sid);
+        const parts: string[] = [];
+        if (added.length > 0) parts.push(`+${added.join(", ")}`);
+        if (removed.length > 0) parts.push(`-${removed.join(", ")}`);
+        oldStr = `${oldVal.length} school${oldVal.length === 1 ? "" : "s"}`;
+        newStr = parts.length > 0 ? parts.join(" | ") : `${(newVal as unknown[]).length} school${(newVal as unknown[]).length === 1 ? "" : "s"}`;
+      } else {
+        oldStr = formatFieldValue(key, oldVal);
+        newStr = formatFieldValue(key, newVal);
       }
-      if (edits.length > 0) {
-        onSaveInterviewEdits([...draft.interviewEdits, ...edits]);
-      }
-      saveScoringInputsMutation.mutate(next);
-      return next;
-    });
+      // Compare on the raw value so array reordering / equal displays don't drop a real change.
+      const rawOld = JSON.stringify(oldVal ?? null);
+      const rawNew = JSON.stringify(newVal ?? null);
+      if (rawOld === rawNew) continue;
+      edits.push({
+        field: `category.${category.categoryType}.scoringInputs.${key}`,
+        label: formatFieldName(key),
+        previousValue: oldStr,
+        newValue: newStr,
+        editedAt: new Date().toISOString(),
+        rawPreviousValue: rawOld,
+        rawNewValue: rawNew,
+      });
+    }
+
+    console.log("[scoring] patch:", Object.keys(patch), "-> edits recorded:", edits.length, edits);
+    setEditedInputs(next);
+    if (edits.length > 0) {
+      onSaveInterviewEdits([...draft.interviewEdits, ...edits]);
+    }
   };
-
-  const saveMarksMutation = useMutation({
-    mutationFn: () =>
-      client.admin.admissions.saveMarks({
-        applicationId,
-        categoryId: category.id,
-        categoryType: category.categoryType,
-        breakdown: breakdown.map((r) => ({ label: r.label, marks: r.marks, max: r.max })),
-        total: breakdown.reduce((s, r) => s + r.marks, 0),
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.getMarks.key() });
-      toast.success("Marks saved");
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save marks"),
-  });
-
-  const saveScoringInputsMutation = useMutation({
-    mutationFn: (scoringInputs: ScoringInputs) =>
-      client.admin.admissions.saveScoringInputs({ id: applicationId, categoryId: category.id, scoringInputs }),
-    onSuccess: () => {
-      const queryKey = orpc.admin.admissions.get.queryOptions({ input: { id: applicationId } }).queryKey;
-      queryClient.invalidateQueries({ queryKey });
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save scoring inputs"),
-  });
-
-  const updateMarks = (idx: number, val: string) => {
-    setBreakdown((prev) => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], marks: Math.max(0, val === "" ? 0 : Number(val)) };
-      return next;
-    });
-  };
-
-  const total = breakdown.reduce((s, r) => s + r.marks, 0);
-  const hasExceeded = breakdown.some((r) => r.marks > r.max);
-  const hasMarkChanges = autoScore ? breakdown.some((r, i) => r.marks !== autoScore.breakdown[i]?.marks) || total !== autoScore.total : false;
   const hasInputChanges = inputChanges.length > 0;
+
+  const currentSessionChanges = useMemo(() =>
+    Object.fromEntries(inputChanges.map(c => [c.key, { previousValue: c.oldValue, newValue: c.newValue }])),
+    [inputChanges],
+  );
 
   const renderFields = () => {
     const flagProps = { flaggedInputs, onToggleInputFlag };
     const locProps = homeLocation ? { centerLat: homeLocation.lat, centerLng: homeLocation.lng } : {};
     switch (category.categoryType) {
-      case "6.1": return <Category61Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} />;
-      case "6.2": return <Category62Fields category={editedCategory} onChange={handleInputPatch} {...flagProps} />;
-      case "6.3": return <Category63Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} />;
-      case "6.4": return <Category64Fields category={editedCategory} onChange={handleInputPatch} {...flagProps} />;
-      case "6.5": return <Category65Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} />;
-      case "6.6": return <Category66Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} />;
+      case "6.1": return <Category61Fields forceSelectable category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
+      case "6.2": return <Category62Fields category={editedCategory} onChange={handleInputPatch} {...flagProps} interviewChanges={currentSessionChanges} />;
+      case "6.3": return <Category63Fields forceSelectable category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
+      case "6.4": return <Category64Fields category={editedCategory} onChange={handleInputPatch} {...flagProps} interviewChanges={currentSessionChanges} />;
+      case "6.5": return <Category65Fields forceSelectable category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
+      case "6.6": return <Category66Fields forceSelectable category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
       default: return (
         <div className="grid gap-x-5 gap-y-1 sm:grid-cols-2">
           {Object.entries(editedInputs).map(([key, value]) => (
@@ -889,28 +895,21 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
             </h4>
             <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setInputsEditable((v) => !v)}>{inputsEditable ? "View only" : "Edit inputs"}</button>
           </div>
-          {renderFields()}
-
           {hasInputChanges && (
-            <div className="mt-2 pt-2 border-t">
-              <p className="text-xs font-semibold text-amber-600 flex items-center gap-1 mb-1"><Pencil size={10} /> Modified inputs ({inputChanges.length})</p>
-              <div className="grid gap-1">
+            <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1.5 mb-2"><Pencil size={11} /> {inputChanges.length} field{inputChanges.length === 1 ? "" : "s"} changed</p>
+              <div className="grid gap-1.5">
                 {inputChanges.map((change) => (
-                  <div key={change.key} className="flex items-center justify-between gap-2 rounded-md bg-amber-50 px-2 py-1.5">
+                  <div key={change.key} className="flex items-start justify-between gap-3 rounded-md bg-white/70 border border-amber-100 px-2.5 py-1.5">
                     <div className="min-w-0 flex-1">
-                      <span className="text-[0.7rem] font-semibold text-amber-700">{change.label}</span>
-                      <div className="flex items-center gap-1.5 text-[0.65rem]">
-                        <span className="text-muted-foreground line-through truncate">{change.oldValue || "(empty)"}</span>
+                      <span className="text-[0.68rem] font-bold uppercase tracking-wide text-amber-800 block mb-0.5">{change.label}</span>
+                      <div className="flex items-center gap-2 text-xs flex-wrap">
+                        <span className="line-through text-muted-foreground/70">{change.oldValue || "(empty)"}</span>
                         <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
-                        <span className="font-medium text-amber-700 truncate">{change.newValue || "(empty)"}</span>
+                        <span className="font-semibold text-amber-800">{change.newValue || "(empty)"}</span>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => onToggleInputFlag(change.key)}
-                      className={`shrink-0 rounded-md p-1 transition-colors ${flaggedInputs.has(change.key) ? "bg-red-100 text-red-600 hover:bg-red-200" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-                      title={flaggedInputs.has(change.key) ? "Remove flag" : "Flag as suspicious"}
-                    >
+                    <button type="button" onClick={() => onToggleInputFlag(change.key)} title={flaggedInputs.has(change.key) ? "Remove flag" : "Flag"} className={`shrink-0 mt-0.5 rounded-md p-1 transition-colors ${flaggedInputs.has(change.key) ? "bg-red-100 text-red-600 hover:bg-red-200" : "text-amber-400 hover:bg-amber-100 hover:text-amber-700"}`}>
                       <Flag size={12} />
                     </button>
                   </div>
@@ -918,16 +917,17 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
               </div>
             </div>
           )}
+          {renderFields()}
 
           <div className="mt-2 pt-2 border-t">
-            <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1 mb-1"><Flag size={10} /> Flag inputs</p>
-            <div className="flex flex-wrap gap-1">
-              {Object.keys(editedInputs).map((key) => (
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-1.5">Flag inputs</p>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.keys(editedInputs).filter(key => !["schoolsWithinRadius"].includes(key)).map((key) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => onToggleInputFlag(key)}
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[0.65rem] transition-colors ${
+                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-semibold transition-colors ${
                     flaggedInputs.has(key)
                       ? "bg-red-100 text-red-700 hover:bg-red-200"
                       : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
@@ -953,77 +953,6 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
           )}
         </div>
 
-        <div className="grid gap-3 rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold">Mark allocation</h4>
-            <div className="flex items-center gap-2">
-              {hasInputChanges && <Badge variant="secondary">Inputs changed</Badge>}
-              {hasMarkChanges && <Badge variant="secondary">Marks modified</Badge>}
-              {hasExceeded && <Badge variant="destructive">Exceeds max</Badge>}
-              <Badge variant={hasMarkChanges ? "default" : "outline"}>Admin: {total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Badge>
-            </div>
-          </div>
-          {breakdown.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No breakdown rows for this category.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <th className="pb-2 pr-4">Label</th>
-                    <th className="pb-2 pr-4 text-right">Auto</th>
-                    <th className="pb-2 pr-4 text-right">Admin</th>
-                    <th className="pb-2 text-right">Max</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {breakdown.map((row, idx) => {
-                    const autoMarks = editedAutoScore.breakdown[idx]?.marks ?? autoScore?.breakdown[idx]?.marks ?? 0;
-                    const exceeds = row.marks > row.max;
-                    const matches = row.marks === autoMarks;
-                    let bg = "";
-                    if (exceeds) bg = "bg-red-50";
-                    else if (!matches) bg = "bg-amber-50";
-                    else bg = "bg-emerald-50";
-                    return (
-                      <tr key={idx} className="border-b border-border/50 last:border-b-0">
-                        <td className="py-2 pr-4 font-medium">{row.label}</td>
-                        <td className="py-2 pr-4 text-right text-muted-foreground">{autoMarks}</td>
-                        <td className="py-2 pr-4">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={row.max}
-                              step={0.5}
-                              value={row.marks}
-                              onChange={(e) => updateMarks(idx, e.target.value)}
-                              className={`h-8 w-20 text-right ${bg}`}
-                            />
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger render={<button type="button" className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" />}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                                </TooltipTrigger>
-                                <TooltipContent>Pre-filled: {autoMarks} / {row.max}</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </td>
-                        <td className="py-2 text-right text-muted-foreground">{row.max}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <div className="flex items-center gap-3 border-t pt-3">
-            <Button size="sm" disabled={saveMarksMutation.isPending || hasExceeded} onClick={() => saveMarksMutation.mutate()}><Save size={15} /> {saveMarksMutation.isPending ? "Saving…" : "Save marks"}</Button>
-            <Button size="sm" variant="outline" onClick={() => setBreakdown(editedAutoScore.breakdown.map((r) => ({ ...r })) )}><RotateCcw size={15} /> Reset</Button>
-          </div>
-        </div>
-
         <div className="grid gap-2 border-t pt-5">
           <p className="text-sm font-medium">Example marks - {CATEGORY_LABELS[category.categoryType]}</p>
           <div className="grid gap-1">
@@ -1036,13 +965,6 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
               </div>
             ))}
           </div>
-          <div className="flex items-baseline justify-between gap-3 border-t pt-2 text-base font-semibold">
-            <span>Indicative total</span>
-            <span className="font-mono tabular-nums">{editedAutoScore.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} / 100</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            This is a baseline estimate calculated from the answers. The interview panel checks original documents and may adjust these marks at the interview.
-          </p>
         </div>
       </CardContent>
     </Card>
@@ -1052,6 +974,7 @@ function CategoryScoringCard({ applicationId, category, autoScore, draft, flagge
 const STEPS = [
   { label: "Applicant data", icon: User },
   { label: "Location evidence", icon: MapPin },
+  { label: "Category entry", icon: FileText },
   { label: "Decision & flagging", icon: Flag },
 ] as const;
 
@@ -1071,7 +994,9 @@ function AdmissionWorkspacePage() {
   const [banned, setBanned] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
-  const [reviewSaved, setReviewSaved] = useState(false);
+
+  // Tracks whether we've auto-promoted this session to under_interview.
+  const hasAutoPromotedRef = useRef(false);
 
   const [editFieldOpen, setEditFieldOpen] = useState(false);
   const [editFieldConfig, setEditFieldConfig] = useState<{ label: string; fieldKey?: string; section: string; path: string; currentValue: string } | null>(null);
@@ -1127,64 +1052,59 @@ function AdmissionWorkspacePage() {
       setBanned(data.isBanned);
       setBanReason(data.banReason ?? "");
       savedFlagsRef.current = JSON.stringify(data.flags ?? []);
-      const hasExistingReview = data.interviewNotes?.trim() || data.flags?.length || data.admissionStatus !== "pending";
-      setReviewSaved(hasExistingReview);
     }
   }, [data]);
 
-  const isManualSaveRef = useRef(false);
+  // Unified auto-save: debounce notes/status changes; flags save immediately on change.
   const savedFlagsRef = useRef<string>("[]");
+  const autoSaveTimerRef = useRef<number | undefined>(undefined);
+  const [reviewSaveState, setReviewSaveState] = useState<"idle" | "saving" | "saved">("idle");
 
+  const doSaveReview = (isBanned: boolean) => {
+    const flags = [
+      ...Array.from(flaggedFields).map((key) => ({ type: "field" as const, key, label: key.replace(/\./g, " ").replace(/([A-Z])/g, " $1").trim() })),
+      ...Array.from(flaggedInputs).map((key) => ({ type: "input" as const, key, label: key.replace(/([A-Z])/g, " $1").trim() })),
+      ...Array.from(flaggedLocations).map((key) => ({ type: "location" as const, key, label: `Location ${key}` })),
+    ];
+    reviewMutation.mutate({ admissionStatus: status, interviewNotes: notes.trim(), isBanned, banReason: isBanned ? banReason.trim() : undefined, flags });
+  };
+
+  // Auto-save notes/status with 1.5 s debounce
+  useEffect(() => {
+    if (!data) return;
+    if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = window.setTimeout(() => doSaveReview(banned), 1500);
+    setReviewSaveState("idle");
+    return () => { if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current); };
+  }, [notes, status]);
+
+  // Auto-save flags immediately on change
   useEffect(() => {
     if (!data) return;
     const currentFlags = JSON.stringify(buildFlags());
     if (currentFlags === savedFlagsRef.current) return;
     savedFlagsRef.current = currentFlags;
-    isManualSaveRef.current = false;
-    reviewMutation.mutate({
-      admissionStatus: status,
-      interviewNotes: notes.trim(),
-      isBanned: banned,
-      banReason: banned ? banReason.trim() : undefined,
-      flags: buildFlags(),
-    });
+    autoPromoteToInterview();
+    doSaveReview(banned);
   }, [flaggedFields, flaggedInputs, flaggedLocations]);
 
   const reviewMutation = useMutation({
     mutationFn: (input: { admissionStatus: AdmissionStatus; interviewNotes: string; isBanned: boolean; banReason?: string; flags: Array<{ type: string; key: string; label: string }> }) =>
       client.admin.admissions.updateReview({ id, ...input }),
     onSuccess: async () => {
-      const wasManual = isManualSaveRef.current;
-      isManualSaveRef.current = false;
-      if (wasManual) setReviewSaved(true);
+      setReviewSaveState("saved");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.list.key() }),
         queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.get.queryOptions({ input: { id } }).queryKey }),
       ]);
-      if (wasManual) toast.success("Admissions review saved");
     },
-    onError: (error) => {
-      isManualSaveRef.current = false;
-      toast.error(error instanceof Error ? error.message : "Could not save admissions review");
-    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save review"),
   });
 
+  // saveReview: explicit save for ban/unban actions
   const saveReview = (isBanned: boolean = banned) => {
-    isManualSaveRef.current = true;
-    setReviewSaved(false);
-    const flags = [
-      ...Array.from(flaggedFields).map((key) => ({ type: "field", key, label: key.replace(/\./g, " ").replace(/([A-Z])/g, " $1").trim() })),
-      ...Array.from(flaggedInputs).map((key) => ({ type: "input", key, label: key.replace(/([A-Z])/g, " $1").trim() })),
-      ...Array.from(flaggedLocations).map((key) => ({ type: "location", key, label: `Location ${key}` })),
-    ];
-
-    reviewMutation.mutate({
-      admissionStatus: status,
-      interviewNotes: notes.trim(),
-      isBanned,
-      banReason: isBanned ? banReason.trim() : undefined,
-      flags,
-    });
+    if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
+    doSaveReview(isBanned);
   };
 
   const draftInput = data?.data as Partial<ApplicationDraft> | undefined;
@@ -1204,6 +1124,21 @@ function AdmissionWorkspacePage() {
     return { lat: pin.latitude, lng: pin.longitude };
   }, [draft.userLocationHistory, draft.selectedLocation, draft.location]);
 
+  const autoInterviewMutation = useMutation({
+    mutationFn: () => client.admin.admissions.setInterviewStatus({ id, status: "under_interview" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.get.queryOptions({ input: { id } }).queryKey });
+      queryClient.invalidateQueries({ queryKey: orpc.admin.admissions.list.key() });
+    },
+  });
+
+  const autoPromoteToInterview = () => {
+    if (hasAutoPromotedRef.current) return;
+    if (!data || data.admissionStatus !== "pending") return;
+    hasAutoPromotedRef.current = true;
+    autoInterviewMutation.mutate();
+  };
+
   const interviewEditsMutation = useMutation({
     mutationFn: (patch: { interviewEdits: InterviewEdit[] }) =>
       client.admin.admissions.saveInterviewEdits({ id, interviewEdits: patch.interviewEdits }),
@@ -1214,6 +1149,7 @@ function AdmissionWorkspacePage() {
         return { ...old, data: { ...old.data, interviewEdits: result.interviewEdits } };
       });
       toast.success("Field updated and recorded as interview edit");
+      autoPromoteToInterview();
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save edit"),
   });
@@ -1228,6 +1164,7 @@ function AdmissionWorkspacePage() {
         return { ...old, data: { ...old.data, userLocationHistory: result.userLocationHistory } };
       });
       toast.success("Admin location saved");
+      autoPromoteToInterview();
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save admin location"),
   });
@@ -1268,7 +1205,6 @@ function AdmissionWorkspacePage() {
   }
 
   const activeCategory = draft.categories.find((cat) => cat.id === categoryId);
-  const activeAutoScore = activeCategory ? scoreCategory(activeCategory) : null;
 
   const lastEditFor = (field: string) => {
     const edits = draft.interviewEdits.filter((e) => e.field === field);
@@ -1398,22 +1334,42 @@ function AdmissionWorkspacePage() {
           )}
           {draft.interviewEdits.length > 0 && (
             <Card>
-              <CardHeader><CardTitle>Interview edit history</CardTitle><CardDescription>Previous and new values for fields edited during this interview.</CardDescription></CardHeader>
-              <CardContent className="grid gap-2">
-                {[...draft.interviewEdits].reverse().map((edit, idx) => (
-                  <div key={idx} className="flex items-start gap-3 rounded-lg border p-3">
-                    <Pencil size={14} className="mt-0.5 shrink-0 text-primary" />
-                    <div className="min-w-0 flex-1">
-                      <span className="text-sm font-semibold">{edit.label}</span>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                        <span className="rounded bg-muted px-1.5 py-0.5 line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
-                        <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
-                        <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary">{edit.newValue || "(empty)"}</span>
-                      </div>
-                      <span className="mt-1 block text-[0.65rem] text-muted-foreground">{new Date(edit.editedAt).toLocaleString()}</span>
-                    </div>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <CardTitle>Interview edit history</CardTitle>
+                    <CardDescription>Previous and new values for fields edited during this interview.</CardDescription>
                   </div>
-                ))}
+                  <span className="text-xs font-semibold text-muted-foreground">{draft.interviewEdits.length} edits</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-72 overflow-y-auto grid gap-2">
+                  {[...draft.interviewEdits].reverse().map((edit, idx) => (
+                    <div key={idx} className="flex items-start gap-3 rounded-lg border p-3">
+                      <Pencil size={14} className="mt-0.5 shrink-0 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-semibold">{edit.label}</span>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                          {edit.field.includes("schoolsWithinRadius") ? (
+                            <>
+                              <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{edit.previousValue}</span>
+                              <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
+                              <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary whitespace-pre-wrap">{edit.newValue}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="rounded bg-muted px-1.5 py-0.5 line-through text-muted-foreground">{edit.previousValue || "(empty)"}</span>
+                              <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
+                              <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary">{edit.newValue || "(empty)"}</span>
+                            </>
+                          )}
+                        </div>
+                        <span className="mt-1 block text-[0.65rem] text-muted-foreground">{new Date(edit.editedAt).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -1428,15 +1384,37 @@ function AdmissionWorkspacePage() {
         )}
 
         {activeStep === 2 && (
+          activeCategory ? (
+            <CategoryScoringCard
+              category={activeCategory}
+              flaggedInputs={flaggedInputs}
+              onToggleInputFlag={toggleInputFlag}
+              homeLocation={effectiveHomeLocation}
+              applicationId={id}
+              draft={draft}
+              onSaveInterviewEdits={(edits) => interviewEditsMutation.mutate({ interviewEdits: edits })}
+              onFirstEdit={autoPromoteToInterview}
+            />
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                Category <code className="rounded bg-muted px-1.5 py-0.5">{categoryId}</code> not found in this application.
+              </CardContent>
+            </Card>
+          )
+        )}
+
+        {activeStep === 3 && (
           <Card className="border-primary/20">
             <CardHeader><CardTitle>Interview decision & flagging</CardTitle><CardDescription>Record the review outcome and flag or ban the applicant if needed.</CardDescription></CardHeader>
             <CardContent className="grid gap-5">
               <div className="grid gap-2 sm:max-w-sm">
                 <label htmlFor="admission-status" className="text-sm font-semibold">Review status</label>
-                <Select value={status} onValueChange={(value) => setStatus((value ?? "pending") as AdmissionStatus)}>
-                  <SelectTrigger id="admission-status" className="w-full"><SelectValue /></SelectTrigger>
+                <Select value={status} onValueChange={(value) => { setStatus((value ?? "pending") as AdmissionStatus); }}>
+                  <SelectTrigger id="admission-status" className="w-full"><SelectValue>{{"pending":"Pending review","under_interview":"Under interview","verified":"Verified","fake":"Potentially fake"}[status] ?? status}</SelectValue></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Pending review</SelectItem>
+                    <SelectItem value="under_interview">Under interview</SelectItem>
                     <SelectItem value="verified">Verified</SelectItem>
                     <SelectItem value="fake">Potentially fake</SelectItem>
                   </SelectContent>
@@ -1496,8 +1474,17 @@ function AdmissionWorkspacePage() {
                     {[...draft.interviewEdits].reverse().map((edit, idx) => (
                       <div key={idx} className="flex items-center gap-2 text-xs py-1 border-b border-blue-200/50 last:border-b-0">
                         <span className="font-medium">{edit.label}:</span>
-                        <span className="text-muted-foreground line-through">{edit.previousValue || "(empty)"}</span>
-                        <span className="text-blue-600">{edit.newValue || "(empty)"}</span>
+                        {edit.field.includes("schoolsWithinRadius") ? (
+                          <>
+                            <span className="text-muted-foreground">{edit.previousValue}</span>
+                            <span className="text-blue-600 whitespace-pre-wrap">{edit.newValue}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-muted-foreground line-through">{edit.previousValue || "(empty)"}</span>
+                            <span className="text-blue-600">{edit.newValue || "(empty)"}</span>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1506,13 +1493,15 @@ function AdmissionWorkspacePage() {
 
               <div className="grid gap-2">
                 <label htmlFor="interview-notes" className="text-sm font-semibold">Interview notes</label>
-                <Textarea id="interview-notes" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Record what was checked and any follow-up needed…" rows={5} maxLength={5000} />
+                <Textarea id="interview-notes" value={notes} onChange={(event) => { setNotes(event.target.value); }} placeholder="Record what was checked and any follow-up needed…" rows={5} maxLength={5000} />
                 <span className="text-xs text-muted-foreground">{notes.length.toLocaleString()} / 5,000 characters</span>
               </div>
               {banned && <div className="flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive"><Ban size={16} className="mt-0.5 shrink-0" /><span><strong>Applicant banned.</strong> {banReason || "No reason recorded."}</span></div>}
               {reviewMutation.error && <p className="text-sm text-destructive" role="alert">{reviewMutation.error instanceof Error ? reviewMutation.error.message : "Could not save review"}</p>}
               <div className="flex flex-wrap items-center gap-3 border-t pt-4">
-                <Button disabled={reviewMutation.isPending} onClick={() => saveReview()}><Check size={17} /> {reviewMutation.isPending ? "Saving…" : reviewSaved ? "Update review" : "Save review"}</Button>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  {reviewMutation.isPending ? <><span className="size-1.5 rounded-full bg-amber-400 animate-pulse inline-block" /> Saving…</> : reviewSaveState === "saved" ? <><Check size={12} className="text-emerald-600" /> Saved</> : <><span className="size-1.5 rounded-full bg-amber-500 inline-block" /> Unsaved</>}
+                </span>
                 {banned ? (
                   <Button variant="secondary" disabled={reviewMutation.isPending} onClick={() => { setBanned(false); saveReview(false); }}><X size={17} /> Remove ban</Button>
                 ) : (

@@ -540,10 +540,12 @@ function BirthCertificateField({
   draft,
   set,
   onSkip,
+  isAdminEdit,
 }: {
   draft: ApplicationDraft;
   set: (patch: Partial<ApplicationDraft>) => void;
   onSkip: () => void;
+  isAdminEdit?: boolean;
 }) {
   const { t } = useTranslation();
   const checkTimer = useRef<number | undefined>(undefined);
@@ -555,6 +557,10 @@ function BirthCertificateField({
       return;
     }
     try {
+      if (isAdminEdit) {
+        set({ duplicateBirthCertificate: false, bcDialogOpen: false });
+        return;
+      }
       const result = await client.application.checkBirthCertificate({
         birthCertificateNumber: number,
         guardianNic: draft.guardian.nic || undefined,
@@ -888,15 +894,16 @@ function DateOfBirthPicker({
     </div>
   );
 }
-
 function ApplicantStep({
   draft,
   set,
   onSkip,
+  isAdminEdit,
 }: {
   draft: ApplicationDraft;
   set: (patch: Partial<ApplicationDraft>) => void;
   onSkip: () => void;
+  isAdminEdit?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -1069,7 +1076,7 @@ function ApplicantStep({
       </Field>
 
       <div className="col-span-full">
-        <BirthCertificateField draft={draft} set={set} onSkip={onSkip} />
+        <BirthCertificateField draft={draft} set={set} onSkip={onSkip} isAdminEdit={isAdminEdit} />
       </div>
     </div>
   );
@@ -1445,9 +1452,11 @@ function ResidenceStep({
 function DeclarationStep({
   draft,
   set,
+  isAdminEdit,
 }: {
   draft: ApplicationDraft;
   set: (patch: Partial<ApplicationDraft>) => void;
+  isAdminEdit?: boolean;
 }) {
   const { t } = useTranslation();
   // Also catches a field that was never explicitly skipped but whose value
@@ -1535,6 +1544,7 @@ function DeclarationStep({
           draft={draft}
           set={set}
           onSkip={() => set({ birthCertificateStatus: "skipped" })}
+          isAdminEdit={isAdminEdit}
         />
       )}
 
@@ -2076,59 +2086,6 @@ function ReviewStep({
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
-              <h4 className="text-sm font-medium text-foreground">
-                {t("appForm.reviewStep.markAllocation")}
-              </h4>
-              <Badge variant="secondary" className="text-xs px-2.5 py-0.5">
-                {t("appForm.reviewStep.adminMarksPending")}
-              </Badge>
-            </div>
-            <div className="p-4">
-              {draft.categories.length > 0 ? (
-                <div className="grid gap-2">
-                  {draft.categories.map((category) => {
-                    const autoScore = scoreCategory(category);
-                    return (
-                      <div
-                        className="flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5"
-                        key={category.id}
-                      >
-                        <div className="grid gap-0.5">
-                          <span className="text-xs text-muted-foreground">
-                            {categoryLabels[category.categoryType]}
-                          </span>
-                          <span className="text-sm">
-                            {t("appForm.reviewStep.indicative")}:{" "}
-                            <strong className="tabular-nums">{autoScore.total}</strong>
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div className="flex items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 mt-1">
-                    <span className="text-sm font-medium">{t("appForm.reviewStep.average")}</span>
-                    <span className="text-sm">
-                      <strong className="tabular-nums">
-                        {draft.categories.length > 0
-                          ? (
-                              draft.categories.reduce((sum, c) => sum + scoreCategory(c).total, 0) /
-                              draft.categories.length
-                            ).toFixed(2)
-                          : "0"}
-                        %
-                      </strong>
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {t("appForm.reviewStep.noCategoriesSelected")}
-                </p>
-              )}
-            </div>
-          </div>
         </>
       )}
     </div>
@@ -2236,13 +2193,6 @@ export function ApplicationForm({
   const [pdfError, setPdfError] = useState("");
   const [pdfLocale, setPdfLocale] = useState<PdfLocale>("en");
 
-  const marksQuery = useQuery({
-    queryKey: ["application-marks", draft.accessKey],
-    queryFn: () => client.application.getMarks({ accessKey: draft.accessKey }),
-    enabled: Boolean(draft.accessKey && draft.submittedAt),
-    staleTime: 60_000,
-  });
-  const adminMarks = marksQuery.data ?? [];
 
   useEffect(() => {
     // Already handled synchronously above (see `seededRef`) for the common
@@ -2419,20 +2369,6 @@ export function ApplicationForm({
           await client.admin.application.update({ id: adminApplicationId, data });
         else if (currentDraft.accessKey)
           await client.application.update({ accessKey: currentDraft.accessKey, data });
-        if (currentDraft.accessKey && currentDraft.categories.length > 0) {
-          const marks = currentDraft.categories.map((cat) => {
-            const score = scoreCategory(cat);
-            return {
-              categoryId: cat.id,
-              categoryType: cat.categoryType,
-              total: score.total,
-              breakdown: score.breakdown,
-            };
-          });
-          await client.application
-            .saveIndicativeMarks({ accessKey: currentDraft.accessKey, marks })
-            .catch(() => {});
-        }
         const remainingFeedbackMs = 120 - (Date.now() - saveStartedAt);
         if (showFeedback && remainingFeedbackMs > 0) {
           const { promise, resolve } = Promise.withResolvers<void>();
@@ -2771,12 +2707,13 @@ export function ApplicationForm({
               draft={draft}
               set={set}
               onSkip={() => skipAndAdvance({ birthCertificateStatus: "skipped" })}
+              isAdminEdit={!!adminApplicationId}
             />
           )}
           {current === 2 && <GuardianStep draft={draft} set={set} />}
           {current === 3 && <ResidenceStep draft={draft} set={set} />}
           {current === 4 && <CategoryStep />}
-          {current === 5 && <DeclarationStep draft={draft} set={set} />}
+          {current === 5 && <DeclarationStep draft={draft} set={set} isAdminEdit={!!adminApplicationId} />}
           {current === 6 && (
             <ReviewStep
               draft={draft}
@@ -2855,46 +2792,6 @@ export function ApplicationForm({
                       </p>
                     </div>
                   </div>
-                  {adminMarks.length > 0 && (
-                    <div
-                      className={`mt-4 grid gap-2 rounded-xl border ${STATUS_SUCCESS.border} ${STATUS_SUCCESS.bgSoft} p-4`}
-                    >
-                      <span
-                        className={`text-xs font-bold uppercase tracking-wider ${STATUS_SUCCESS.text}`}
-                      >
-                        {t("appForm.submitted.categoryMarks")}
-                      </span>
-                      <div className="grid gap-1.5">
-                        {draft.categories.map((category) => {
-                          const mark = adminMarks.find(
-                            (m) =>
-                              m.categoryId === category.id ||
-                              (!m.categoryId && m.categoryType === category.categoryType),
-                          );
-                          if (!mark) return null;
-                          return (
-                            <div
-                              key={category.id}
-                              className={`flex items-center justify-between text-sm py-1 border-b border-emerald-500/10 last:border-b-0`}
-                            >
-                              <span className="text-foreground">
-                                {getCategoryLabels(t)[category.categoryType]}
-                              </span>
-                              <span className={`font-semibold ${STATUS_SUCCESS.textStrong}`}>
-                                {mark.total}
-                              </span>
-                            </div>
-                          );
-                        })}
-                        <div className="flex items-center justify-between text-sm font-semibold pt-1">
-                          <span>{t("appForm.reviewStep.total")}</span>
-                          <span className={`${STATUS_SUCCESS.textStrong}`}>
-                            {adminMarks.reduce((sum, m) => sum + m.total, 0)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                   {draft.flags && draft.flags.length > 0 && (
                     <div
                       className={`mt-3 grid gap-2 rounded-xl border ${STATUS_WARNING.border} ${STATUS_WARNING.bgSoft} p-4`}
@@ -2988,39 +2885,7 @@ export function ApplicationForm({
                       </div>
                     </div>
                   )}
-                  {adminMarks.length > 0 && (
-                    <div className="mt-3 grid gap-2 rounded-xl border border-border bg-card p-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        {t("appForm.submitted.categoryMarks")}
-                      </span>
-                      <div className="grid gap-1.5">
-                        {draft.categories.map((category) => {
-                          const mark = adminMarks.find(
-                            (m) =>
-                              m.categoryId === category.id ||
-                              (!m.categoryId && m.categoryType === category.categoryType),
-                          );
-                          if (!mark) return null;
-                          return (
-                            <div
-                              key={category.id}
-                              className="flex items-center justify-between text-sm py-1 border-b border-border/40 last:border-b-0"
-                            >
-                              <span className="text-foreground">
-                                {getCategoryLabels(t)[category.categoryType]}
-                              </span>
-                              <span className="font-semibold">{mark.total}</span>
-                            </div>
-                          );
-                        })}
-                        <div className="flex items-center justify-between text-sm font-semibold pt-1">
-                          <span>{t("appForm.reviewStep.total")}</span>
-                          <span>{adminMarks.reduce((sum, m) => sum + m.total, 0)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {draft.interviewNotes && (
+                                    {draft.interviewNotes && (
                     <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
                       <span className="text-xs font-bold uppercase tracking-wider text-destructive">
                         {t("appForm.submitted.adminNote")}

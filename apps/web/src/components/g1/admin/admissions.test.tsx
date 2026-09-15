@@ -35,7 +35,7 @@ vi.mock("@tanstack/react-query", () => ({
 
 vi.mock("@/utils/orpc", () => ({
   client: {
-    admin: { admissions: { updateReview: vi.fn(), getMarks: vi.fn(), saveMarks: vi.fn() } },
+    admin: { admissions: { updateReview: vi.fn() } },
     application: {
       liveCount: vi.fn().mockReturnValue({
         [Symbol.asyncIterator]: () => ({
@@ -50,7 +50,6 @@ vi.mock("@/utils/orpc", () => ({
       admissions: {
         list: { queryOptions: () => ({ queryKey: ["admissions-list"] }), key: () => ["admissions-list"] },
         get: { queryOptions: () => ({ queryKey: ["admissions-detail"] }), key: () => ["admissions-detail"] },
-        getMarks: { queryOptions: () => ({ queryKey: ["admissions-marks"] }), key: () => ["admissions-marks"] },
       },
     },
   },

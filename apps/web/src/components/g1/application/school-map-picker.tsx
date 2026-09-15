@@ -15,6 +15,8 @@ type SchoolMapPickerProps = {
   highlightSchoolId?: string;
   marksPerSchool?: number;
   onToggle?: (schoolId: string) => void;
+  /** When true, ineligible (gender-incompatible) schools can still be toggled. */
+  forceSelectable?: boolean;
   /** When true, selection is computed automatically (objective radius + gender-compatibility rule) and cannot be manually toggled. */
   readOnly?: boolean;
 };
@@ -32,7 +34,7 @@ const SchoolMapPickerMapLazy = lazy(() => import("./school-map-picker-map"));
 
 
 
-export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSchoolId, marksPerSchool, onToggle, readOnly }: SchoolMapPickerProps) {
+export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSchoolId, marksPerSchool, onToggle, readOnly, forceSelectable }: SchoolMapPickerProps) {
   const highlightSchool = highlightSchoolId ? findSchoolById(highlightSchoolId) : undefined;
   const appliedGenderType = highlightSchool?.genderType;
 
@@ -139,8 +141,8 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
           return (
             <li key={school.id}>
-              <label htmlFor={rowId} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${compatible ? "hover:bg-muted/50" : "border-violet-200 bg-violet-50/50 text-violet-700 cursor-not-allowed"}`}>
-                <Checkbox id={rowId} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible || readOnly} onCheckedChange={() => !readOnly && compatible && onToggle?.(school.id)} />
+              <label htmlFor={rowId} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${compatible || forceSelectable ? "hover:bg-muted/50" : "border-violet-200 bg-violet-50/50 text-violet-700 cursor-not-allowed"}`}>
+                <Checkbox id={rowId} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={(!compatible && !forceSelectable) || readOnly} onCheckedChange={() => !readOnly && (compatible || forceSelectable) && onToggle?.(school.id)} />
                 <span className="min-w-0 flex-1">
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
                   {!compatible && <span className="ml-1 text-xs text-violet-500 font-medium">Ineligible</span>}
@@ -188,9 +190,9 @@ export function SchoolMapPicker({ centerLat, centerLng, selectedIds, highlightSc
           }
           const compatible = appliedGenderType ? isGenderCompatible(school.genderType, appliedGenderType) : true;
           return (
-            <li key={school.id} className={compatible ? "opacity-50" : ""}>
-              <label htmlFor={`school-option-${school.id}`} className={`flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm ${compatible ? "hover:bg-muted/50" : "border-violet-200 bg-violet-50/50 text-violet-700 cursor-not-allowed"}`}>
-                <Checkbox id={`school-option-${school.id}`} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={!compatible || readOnly} onCheckedChange={() => !readOnly && compatible && onToggle?.(school.id)} />
+            <li key={school.id} className={compatible || forceSelectable ? "opacity-50" : ""}>
+              <label htmlFor={`school-option-${school.id}`} className={`flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm ${compatible || forceSelectable ? "hover:bg-muted/50" : "border-violet-200 bg-violet-50/50 text-violet-700 cursor-not-allowed"}`}>
+                <Checkbox id={`school-option-${school.id}`} className="size-5 shrink-0" checked={selectedIds.includes(school.id)} disabled={(!compatible && !forceSelectable) || readOnly} onCheckedChange={() => !readOnly && (compatible || forceSelectable) && onToggle?.(school.id)} />
                 <span className="min-w-0 flex-1">
                   {school.en} <span className="text-muted-foreground">({GENDER_LABELS[school.genderType]})</span>
                   {!compatible && <span className="ml-1 text-xs text-violet-500 font-medium">Ineligible</span>}

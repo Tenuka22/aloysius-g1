@@ -16,7 +16,6 @@ export const Route = createFileRoute("/_auth/g1/admin/admissions/$id")({
   loader: async ({ context, params }) => {
     await Promise.all([
       context.queryClient.prefetchQuery(context.orpc.admin.admissions.get.queryOptions({ input: { id: params.id } })),
-      context.queryClient.prefetchQuery(context.orpc.admin.admissions.getMarks.queryOptions({ input: { applicationId: params.id } })),
     ]);
   },
   component: AdmissionCategorySelectPage,
@@ -38,24 +37,6 @@ function AdmissionCategorySelectPage() {
     ...orpc.admin.admissions.get.queryOptions({ input: { id } }),
   });
 
-  const marksQuery = useQuery({
-    ...orpc.admin.admissions.getMarks.queryOptions({ input: { applicationId: id } }),
-  });
-
-  const adminMarksMap = useMemo(() => {
-    // Keyed by categoryId (every mark saved after this fix carries one) so
-    // two category entries of the same categoryType each get their own
-    // admin total instead of collapsing to whichever was saved last. A
-    // legacy row saved before categoryId existed falls back to its
-    // categoryType as the map key.
-    const map = new Map<string, number>();
-    if (marksQuery.data) {
-      for (const mark of marksQuery.data) {
-        map.set(mark.categoryId ?? mark.categoryType, mark.total);
-      }
-    }
-    return map;
-  }, [marksQuery.data]);
 
   const queryClient = useQueryClient();
   const interviewMutation = useMutation({
@@ -140,8 +121,6 @@ function AdmissionCategorySelectPage() {
           {draft.categories.length === 0 && <p className="text-sm text-muted-foreground">No category entries were submitted.</p>}
           {draft.categories.map((category, categoryIndex) => {
             const score = scoreCategory(category);
-            const adminTotal = adminMarksMap.get(category.id) ?? adminMarksMap.get(category.categoryType) ?? 0;
-            const hasAdminMarks = adminMarksMap.has(category.id) || adminMarksMap.has(category.categoryType);
             const sameTypeCount = draft.categories.filter((c) => c.categoryType === category.categoryType).length;
             const sameTypeIndex = draft.categories.filter((c) => c.categoryType === category.categoryType && draft.categories.indexOf(c) < categoryIndex).length + 1;
             return (
@@ -158,11 +137,6 @@ function AdmissionCategorySelectPage() {
                       {sameTypeCount > 1 && <span className="text-muted-foreground"> ({sameTypeIndex}/{sameTypeCount})</span>}
                     </h3>
                     <Badge variant="outline">{score.total.toLocaleString(undefined, { maximumFractionDigits: 2 })} indicative</Badge>
-                    {hasAdminMarks ? (
-                      <Badge variant="default">{adminTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })} admin</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground">Not scored yet</Badge>
-                    )}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {Object.keys(category.scoringInputs).length} fields captured

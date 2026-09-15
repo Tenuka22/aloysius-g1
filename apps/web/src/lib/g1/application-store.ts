@@ -197,6 +197,11 @@ export type InterviewEdit = {
   previousValue: string;
   newValue: string;
   editedAt: string;
+  /** JSON-serialized previous value. Present for scoring-input edits so array and
+   *  object fields replay losslessly; `previousValue` stays the human-readable form. */
+  rawPreviousValue?: string;
+  /** JSON-serialized new value. See `rawPreviousValue`. */
+  rawNewValue?: string;
 };
 
 export const emptyDraft: ApplicationDraft = {
