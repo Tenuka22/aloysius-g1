@@ -568,7 +568,7 @@ describe("ApplicationForm – submit a restored application", () => {
 });
 
 describe("ApplicationForm \u2013 revisiting an already-submitted application", () => {
-  it("shows only the review section, not the one-time submission confirmation", async () => {
+  it("shows the pending-review status heading (not the generic draft heading or one-time confirmation)", async () => {
     setActiveKey(MOCK_ACCESS_KEY);
     setActiveSessionCode(MOCK_SESSION_CODE);
     getMock.mockResolvedValue({
@@ -580,8 +580,63 @@ describe("ApplicationForm \u2013 revisiting an already-submitted application", (
     // The applicant's own auto-saved indicative preview (source "applicant")
     // - never a real admin score, per the backend.
     renderWithClient(<ApplicationForm />);
-    await screen.findByText("Review your draft");
+    // A returning applicant must see their actual admission status, not the
+    // generic pre-submission "Review your draft" copy.
+    await screen.findByText("Your application is pending admin review.");
+    expect(screen.queryByText("Review your draft")).not.toBeInTheDocument();
     expect(screen.queryByText("Application submitted successfully.")).not.toBeInTheDocument();
+  });
+
+  it("shows the under-interview status heading and badge for a revisiting applicant", async () => {
+    setActiveKey(MOCK_ACCESS_KEY);
+    setActiveSessionCode(MOCK_SESSION_CODE);
+    getMock.mockResolvedValue({
+      data: { ...fullValidDraft, currentStep: 6 },
+      sessionCode: MOCK_SESSION_CODE,
+      accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
+      submittedAt: "2026-09-01T00:00:00.000Z",
+      admissionStatus: "under_interview",
+    });
+    renderWithClient(<ApplicationForm />);
+    await screen.findByText("This application is currently under interview.");
+    expect(screen.getByText("Under interview")).toBeInTheDocument();
+    expect(screen.queryByText("Review your draft")).not.toBeInTheDocument();
+  });
+
+  it("shows the verified status heading and badge for a revisiting applicant", async () => {
+    setActiveKey(MOCK_ACCESS_KEY);
+    setActiveSessionCode(MOCK_SESSION_CODE);
+    getMock.mockResolvedValue({
+      data: { ...fullValidDraft, currentStep: 6 },
+      sessionCode: MOCK_SESSION_CODE,
+      accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
+      submittedAt: "2026-09-01T00:00:00.000Z",
+      admissionStatus: "verified",
+    });
+    renderWithClient(<ApplicationForm />);
+    await screen.findByText("Your application has been reviewed and verified.");
+    expect(screen.getByText("Verified")).toBeInTheDocument();
+  });
+
+  it("shows admin interview edits prominently near the top, above the field summary", async () => {
+    setActiveKey(MOCK_ACCESS_KEY);
+    setActiveSessionCode(MOCK_SESSION_CODE);
+    getMock.mockResolvedValue({
+      data: {
+        ...fullValidDraft,
+        currentStep: 6,
+        interviewEdits: [
+          { field: "applicant.fullName", label: "Full name", previousValue: "Ashan Perera", newValue: "Ashan P. Silva", editedAt: "2026-09-02T00:00:00.000Z" },
+        ],
+      },
+      sessionCode: MOCK_SESSION_CODE,
+      accessKeyHint: MOCK_ACCESS_KEY.slice(-6),
+      submittedAt: "2026-09-01T00:00:00.000Z",
+      admissionStatus: "under_interview",
+    });
+    renderWithClient(<ApplicationForm />);
+    await screen.findByText("Changes made by admin (1)");
+    expect(screen.getByText("Ashan P. Silva")).toBeInTheDocument();
   });
 });
 

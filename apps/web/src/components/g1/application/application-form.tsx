@@ -128,6 +128,7 @@ import {
   KeyRound,
   LockKeyhole,
   MessageCircle,
+  Pencil,
   RotateCcw,
   ShieldCheck,
   ShieldX,
@@ -1779,18 +1780,176 @@ function ReviewStep({
     category,
   }));
 
+  // Status-aware heading: a returning applicant (revisit via saved access key,
+  // no `justSubmitted` session flag) must see their actual admission status
+  // here too, not the generic pre-submission "Review your draft" copy - that
+  // copy is only correct before the application has ever been submitted.
+  const statusHeading = draft.isBanned
+    ? t("appForm.submitted.bannedTitle")
+    : draft.admissionStatus === "verified"
+      ? t("appForm.submitted.verifiedTitle")
+      : draft.admissionStatus === "fake"
+        ? t("appForm.submitted.flaggedTitle")
+        : draft.admissionStatus === "under_interview"
+          ? t("appForm.reviewStep.underInterview.heading")
+          : draft.submittedAt
+            ? t("appForm.submitted.awaitingReviewTitle")
+            : t("appForm.reviewStep.heading");
+  const statusDescription = draft.isBanned
+    ? draft.banReason || t("appForm.submitted.bannedDescription")
+    : draft.admissionStatus === "verified"
+      ? t("appForm.submitted.verifiedDescription")
+      : draft.admissionStatus === "fake"
+        ? t("appForm.submitted.flaggedDescription")
+        : draft.admissionStatus === "under_interview"
+          ? t("appForm.reviewStep.underInterview.description")
+          : draft.submittedAt
+            ? t("appForm.submitted.awaitingReviewDescription")
+            : t("appForm.reviewStep.description");
+
   return (
     <div className="">
       <div className="mb-5">
-        <h3 className="font-heading text-xl sm:text-2xl">{t("appForm.reviewStep.heading")}</h3>
-        <p className="text-sm text-muted-foreground mt-1">{t("appForm.reviewStep.description")}</p>
+        <h3 className="font-heading text-xl sm:text-2xl">{statusHeading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{statusDescription}</p>
       </div>
-      <div
-        className={`mb-5 flex items-start gap-3 rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`}
-      >
-        <Info size={18} className={`mt-0.5 shrink-0 ${STATUS_WARNING.text}`} />
-        <p className={`text-sm ${STATUS_WARNING.text}`}>{t("appForm.reviewStep.fieldsChangedNotice")}</p>
-      </div>
+
+      {draft.submittedAt && (
+        <div className="mb-5 rounded-xl border overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b bg-muted/40">
+            <div>
+              <h4 className="text-sm font-medium text-foreground">
+                {t("appForm.reviewStep.admissionReview")}
+              </h4>
+            </div>
+            <div className="flex items-center gap-2">
+              {draft.isBanned ? (
+                <Badge variant="destructive" className="text-xs px-2.5 py-0.5">
+                  {t("appForm.reviewStep.badge.banned")}
+                </Badge>
+              ) : draft.admissionStatus === "verified" ? (
+                <Badge
+                  variant="default"
+                  className={`${STATUS_SUCCESS.badgeBg} ${STATUS_SUCCESS.badgeHover} text-xs px-2.5 py-0.5`}
+                >
+                  {t("appForm.reviewStep.badge.verified")}
+                </Badge>
+              ) : draft.admissionStatus === "fake" ? (
+                <Badge variant="destructive" className="text-xs px-2.5 py-0.5">
+                  {t("appForm.reviewStep.badge.flagged")}
+                </Badge>
+              ) : draft.admissionStatus === "under_interview" ? (
+                <Badge variant="secondary" className="text-xs px-2.5 py-0.5">
+                  {t("appForm.reviewStep.badge.underInterview")}
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs px-2.5 py-0.5">
+                  {t("appForm.reviewStep.badge.pendingReview")}
+                </Badge>
+              )}
+            </div>
+          </div>
+          <div className="grid gap-3 p-4">
+            {draft.isBanned && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="flex items-center gap-2 font-semibold mb-1">
+                  <ShieldX size={15} /> {t("appForm.reviewStep.banned.heading")}
+                </div>
+                <p>{draft.banReason || t("appForm.reviewStep.banned.noReason")}</p>
+              </div>
+            )}
+
+            {draft.admissionStatus === "verified" && (
+              <div
+                className={`rounded-lg border ${STATUS_SUCCESS.borderStrong} ${STATUS_SUCCESS.bgSoft} p-3 text-sm ${STATUS_SUCCESS.textStrong}`}
+              >
+                <div className="flex items-center gap-2 font-semibold">
+                  <Check size={15} /> {t("appForm.reviewStep.verified.heading")}
+                </div>
+              </div>
+            )}
+
+            {draft.admissionStatus === "fake" && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                <div className="flex items-center gap-2 font-semibold">
+                  <TriangleAlert size={15} /> {t("appForm.reviewStep.flagged.heading")}
+                </div>
+              </div>
+            )}
+
+            {draft.admissionStatus === "under_interview" && (
+              <div
+                className={`rounded-lg border ${STATUS_INFO.border} ${STATUS_INFO.bg} p-3 text-sm ${STATUS_INFO.text}`}
+              >
+                <div className="flex items-center gap-2 font-semibold">
+                  <FileSearch size={15} /> {t("appForm.reviewStep.underInterviewCallout.heading")}
+                </div>
+              </div>
+            )}
+
+            {draft.flags && draft.flags.length > 0 && (
+              <div className="grid gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                <span className="text-xs font-semibold text-destructive uppercase tracking-wider">
+                  {t("appForm.reviewStep.observations", { count: draft.flags.length })}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {draft.flags.map((f, i) => (
+                    <Badge key={i} variant="destructive" className="text-xs font-medium">
+                      {f.label || f.key}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {draft.interviewNotes && (
+              <div className="grid gap-1 rounded-lg border border-border bg-card p-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t("appForm.reviewStep.adminNotes")}
+                </span>
+                <p className="text-sm whitespace-pre-wrap text-foreground">
+                  {draft.interviewNotes}
+                </p>
+              </div>
+            )}
+
+            {draft.interviewEdits && draft.interviewEdits.length > 0 && (
+              <div className="grid gap-2 rounded-lg border-2 border-amber-300 bg-amber-50/60 p-3">
+                <span className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Pencil size={12} /> {t("appForm.reviewStep.changesByAdmin", { count: draft.interviewEdits.length })}
+                </span>
+                <div className="grid gap-1.5 max-h-64 overflow-y-auto">
+                  {draft.interviewEdits.map((edit, i) => (
+                    <div
+                      key={i}
+                      className="flex flex-wrap items-center gap-2 text-xs rounded-md bg-white/70 border border-amber-200 px-2.5 py-1.5"
+                    >
+                      <strong className="text-foreground">{edit.label}:</strong>
+                      <span className="line-through text-muted-foreground">
+                        {edit.previousValue || t("appForm.reviewStep.emptyValue")}
+                      </span>
+                      <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
+                      <span className="font-semibold text-amber-800">
+                        {edit.newValue || t("appForm.reviewStep.emptyValue")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!draft.submittedAt && (
+        <div
+          className={`mb-5 flex items-start gap-3 rounded-xl border-2 ${STATUS_WARNING.borderSolid} ${STATUS_WARNING.bgSoft} p-4`}
+        >
+          <Info size={18} className={`mt-0.5 shrink-0 ${STATUS_WARNING.text}`} />
+          <p className={`text-sm ${STATUS_WARNING.text}`}>{t("appForm.reviewStep.fieldsChangedNotice")}</p>
+        </div>
+      )}
+
       <TooltipProvider>
         <div className="grid sm:grid-cols-2 gap-4 items-start">
           {groupedSections.map((section) => (
@@ -1973,121 +2132,6 @@ function ReviewStep({
         )}
       </div>
 
-      {draft.submittedAt && (
-        <>
-          <div className="mt-6 rounded-xl border overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b bg-muted/40">
-              <div>
-                <h4 className="text-sm font-medium text-foreground">
-                  {t("appForm.reviewStep.admissionReview")}
-                </h4>
-              </div>
-              <div className="flex items-center gap-2">
-                {draft.isBanned ? (
-                  <Badge variant="destructive" className="text-xs px-2.5 py-0.5">
-                    {t("appForm.reviewStep.badge.banned")}
-                  </Badge>
-                ) : draft.admissionStatus === "verified" ? (
-                  <Badge
-                    variant="default"
-                    className={`${STATUS_SUCCESS.badgeBg} ${STATUS_SUCCESS.badgeHover} text-xs px-2.5 py-0.5`}
-                  >
-                    {t("appForm.reviewStep.badge.verified")}
-                  </Badge>
-                ) : draft.admissionStatus === "fake" ? (
-                  <Badge variant="destructive" className="text-xs px-2.5 py-0.5">
-                    {t("appForm.reviewStep.badge.flagged")}
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs px-2.5 py-0.5">
-                    {t("appForm.reviewStep.badge.pendingReview")}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <div className="grid gap-3 p-4">
-              {draft.isBanned && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                  <div className="flex items-center gap-2 font-semibold mb-1">
-                    <ShieldX size={15} /> {t("appForm.reviewStep.banned.heading")}
-                  </div>
-                  <p>{draft.banReason || t("appForm.reviewStep.banned.noReason")}</p>
-                </div>
-              )}
-
-              {draft.admissionStatus === "verified" && (
-                <div
-                  className={`rounded-lg border ${STATUS_SUCCESS.borderStrong} ${STATUS_SUCCESS.bgSoft} p-3 text-sm ${STATUS_SUCCESS.textStrong}`}
-                >
-                  <div className="flex items-center gap-2 font-semibold">
-                    <Check size={15} /> {t("appForm.reviewStep.verified.heading")}
-                  </div>
-                </div>
-              )}
-
-              {draft.admissionStatus === "fake" && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                  <div className="flex items-center gap-2 font-semibold">
-                    <TriangleAlert size={15} /> {t("appForm.reviewStep.flagged.heading")}
-                  </div>
-                </div>
-              )}
-
-              {draft.flags && draft.flags.length > 0 && (
-                <div className="grid gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
-                  <span className="text-xs font-semibold text-destructive uppercase tracking-wider">
-                    {t("appForm.reviewStep.observations", { count: draft.flags.length })}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {draft.flags.map((f, i) => (
-                      <Badge key={i} variant="destructive" className="text-xs font-medium">
-                        {f.label || f.key}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {draft.interviewNotes && (
-                <div className="grid gap-1 rounded-lg border border-border bg-card p-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("appForm.reviewStep.adminNotes")}
-                  </span>
-                  <p className="text-sm whitespace-pre-wrap text-foreground">
-                    {draft.interviewNotes}
-                  </p>
-                </div>
-              )}
-
-              {draft.interviewEdits && draft.interviewEdits.length > 0 && (
-                <div className="grid gap-2 rounded-lg border border-border bg-card p-3">
-                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                    {t("appForm.reviewStep.changesByAdmin", { count: draft.interviewEdits.length })}
-                  </span>
-                  <div className="grid gap-1.5 max-h-48 overflow-y-auto">
-                    {draft.interviewEdits.map((edit, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-wrap items-center gap-2 text-xs border-b border-border/40 pb-1 last:border-b-0 last:pb-0"
-                      >
-                        <strong className="text-foreground">{edit.label}:</strong>
-                        <span className="line-through text-muted-foreground">
-                          {edit.previousValue || t("appForm.reviewStep.emptyValue")}
-                        </span>
-                        <ArrowRight size={10} className="shrink-0 text-muted-foreground" />
-                        <span className="font-semibold text-foreground">
-                          {edit.newValue || t("appForm.reviewStep.emptyValue")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-        </>
-      )}
     </div>
   );
 }
