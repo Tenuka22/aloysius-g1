@@ -425,7 +425,7 @@ function CategoryScoreBar({ total }: { total: number }) {
 
 function LocationSummary({ label, value }: { label: string; value?: LocationDraft }) {
   const sourceLabels: Record<string, string> = { device: "Device GPS", network: "Network (IP)", map: "Map selection", manual: "Manual entry", "": "Not recorded" };
-  return <div className="border rounded-xl p-4"><div className="flex items-center gap-2 text-primary mb-1"><MapPin size={16} /><strong>{label}</strong></div><Value label="Label" value={value?.label} /><Value label="Address" value={value?.address} /><Value label="Coordinates" value={value?.latitude != null && value?.longitude != null ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}` : "Not captured"} /><Value label="Source" value={sourceLabels[value?.source ?? ""] ?? (value?.source || "Not recorded")} /></div>;
+  return <div className="border rounded-xl p-4"><div className="flex items-center gap-2 text-primary mb-1"><MapPin size={16} /><strong>{label}</strong></div><Value label="Label" value={value?.label} /><Value label="Address" value={value?.address} /><Value label="Coordinates" value={value?.latitude != null && value?.longitude != null ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}` : "Not captured"} /><Value label="Source" value={sourceLabels[value?.source ?? ""] ?? (value?.source || "Not recorded")} />{value?.latitude != null && value?.longitude != null && <a href={`https://earth.google.com/web/search/${value.latitude},${value.longitude}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-[0.72rem] text-blue-600 hover:underline">Open in Google Earth ↗</a>}</div>;
 }
 
 const AdminLocationMapComponent = lazy(() => import("./admin-application-editor-map"));
@@ -448,6 +448,7 @@ function AdminLocationMap({ browser, selected, history = [], editable = false, o
     </div>
   );
 }
+
 
 export function AdminApplicationView({ id }: { id: string }) {
   const detail = useQuery(orpc.admin.application.get.queryOptions({ input: { id } }));
@@ -851,6 +852,16 @@ function AdminLocationHistory({ title, history }: { title: string; history: Loca
               <span className="ml-auto shrink-0 font-mono text-[0.72rem] text-muted-foreground">
                 {entry.latitude?.toFixed(5) ?? "?"}, {entry.longitude?.toFixed(5) ?? "?"}
               </span>
+              {entry.latitude != null && entry.longitude != null && (
+                <a
+                  href={`https://earth.google.com/web/search/${entry.latitude},${entry.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 text-[0.7rem] text-blue-600 hover:underline"
+                >
+                  Open in Google Earth ↗
+                </a>
+              )}
             </li>
           ))}
         </ol>
