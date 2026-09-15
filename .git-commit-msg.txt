@@ -1,0 +1,20 @@
+Add Open in Google Earth links to forgot-key/removal request tables
+
+Both admin and sub-admin request tables (removal-requests, forgot-requests)
+only ever showed the applicant's name/birth certificate/status - reviewing
+a request required opening the application separately to check the
+submitted home location. Add a "Location" column with a link to
+https://earth.google.com/web/search/<lat>,<lng> for a quick satellite-view
+sanity check directly from the request list.
+
+- ApplicationData gains selectedLocation alongside the existing location
+  field, matching the shape already used elsewhere (selectedLocation is
+  the applicant's actual chosen pin; location is the fallback).
+- paginateRequests batch-fetches the current page's applications by their
+  applicationId and attaches each request's effective coordinates
+  (selectedLocation, falling back to location) - a second, bounded query
+  per page rather than joining the whole filtered set.
+- Wire latitude/longitude through all four request tables: admin and
+  sub-admin, removal and forgot-key, each getting the same "Location"
+  column and link, with a "Not captured" fallback when the applicant
+  never set a location.

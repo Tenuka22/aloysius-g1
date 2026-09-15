@@ -9,7 +9,7 @@ import {
   g1Applications,
 } from "@aloysius-admissions/db";
 import { env } from "@aloysius-admissions/env/server";
-import { and, eq, isNotNull, ne } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import {
   accessRequestIssues,
@@ -174,7 +174,28 @@ const paginateRequests = async (
       })
     : all;
   const start = (page - 1) * pageSize;
-  return { total: filtered.length, page, pageSize, items: filtered.slice(start, start + pageSize) };
+  const pageItems = filtered.slice(start, start + pageSize);
+  // Attach each request's applicant coordinates (for the "Open in Google Earth"
+  // link) - only for the current page, not the whole filtered set, since this
+  // is a second query per call.
+  const applicationIds = [...new Set(pageItems.map((r) => r.applicationId))];
+  const coordsById = new Map<string, { latitude: number; longitude: number }>();
+  if (applicationIds.length > 0) {
+    const apps = await db
+      .select({ id: g1Applications.id, data: g1Applications.data })
+      .from(g1Applications)
+      .where(inArray(g1Applications.id, applicationIds))
+      .all();
+    for (const app of apps) {
+      const data = app.data as ApplicationData | null | undefined;
+      const pin = data?.selectedLocation?.latitude != null ? data.selectedLocation : data?.location;
+      if (pin?.latitude != null && pin?.longitude != null) {
+        coordsById.set(app.id, { latitude: pin.latitude, longitude: pin.longitude });
+      }
+    }
+  }
+  const items = pageItems.map((r) => ({ ...r, ...coordsById.get(r.applicationId) }));
+  return { total: filtered.length, page, pageSize, items };
 };
 const applicationEvents = new EventPublisher<{ "application-count": { count: number } }>();
 const applicationCount = async (intakeYear?: string) => {

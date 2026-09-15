@@ -65,6 +65,7 @@ export type ApplicationData = {
   };
   guardian?: { email?: string; nic?: string };
   location?: { latitude?: number | null; longitude?: number | null };
+  selectedLocation?: { latitude?: number | null; longitude?: number | null };
 };
 
 export const applicationValidationErrors = (data: ApplicationData | null | undefined): string[] => {

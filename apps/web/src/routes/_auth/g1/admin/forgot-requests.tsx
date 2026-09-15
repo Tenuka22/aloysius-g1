@@ -44,6 +44,8 @@ type ForgotRequestRow = {
   contactPhone?: string | null;
   status: string;
   createdAt: Date;
+  latitude?: number;
+  longitude?: number;
 };
 
 function ActionsMenu({ item, onKeyGenerated, onDismissed }: { item: ForgotRequestRow; onKeyGenerated: (key: string) => void; onDismissed: () => void }) {
@@ -140,6 +142,20 @@ function AdminForgotRequestsPage() {
       accessorKey: "createdAt",
       header: ({ column }: { column: { getCanSort: () => boolean; toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" } }) => <DataTableColumnHeader column={column} title="Requested" />,
       cell: ({ row }: { row: { original: ForgotRequestRow } }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
+    },
+    {
+      id: "location",
+      header: "Location",
+      cell: ({ row }: { row: { original: ForgotRequestRow } }) => row.original.latitude != null && row.original.longitude != null ? (
+        <a
+          href={`https://earth.google.com/web/search/${row.original.latitude},${row.original.longitude}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+        >
+          Open in Google Earth ↗
+        </a>
+      ) : <span className="text-xs text-muted-foreground">Not captured</span>,
     },
     {
       accessorKey: "status",

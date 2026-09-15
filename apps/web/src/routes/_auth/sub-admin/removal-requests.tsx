@@ -45,6 +45,8 @@ type RemovalRequestRow = {
   birthCertificateNumber: string;
   status: string;
   createdAt: Date;
+  latitude?: number;
+  longitude?: number;
 };
 
 function ActionsMenu({ item, onAction, isOpen }: { item: RemovalRequestRow; onAction: () => void; isOpen: boolean }) {
@@ -175,6 +177,20 @@ function SubAdminRemovalRequestsPage() {
                 accessorKey: "createdAt",
                 header: ({ column }) => <DataTableColumnHeader column={column} title={t("subAdminRemoval.column.requested")} />,
                 cell: ({ row }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.original.createdAt).toLocaleDateString()}</span>,
+              },
+              {
+                id: "location",
+                header: t("subAdminRemoval.column.location"),
+                cell: ({ row }) => row.original.latitude != null && row.original.longitude != null ? (
+                  <a
+                    href={`https://earth.google.com/web/search/${row.original.latitude},${row.original.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+                  >
+                    {t("subAdminRemoval.openInGoogleEarth")}
+                  </a>
+                ) : <span className="text-xs text-muted-foreground">{t("subAdminRemoval.noLocation")}</span>,
               },
               {
                 id: "actions",
