@@ -24,6 +24,7 @@ import {
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { intakeYearSearchSchema } from "@/lib/g1/intake-year";
+import { formatDms } from "@/lib/g1/school-utils";
 
 export const Route = createFileRoute("/_auth/g1/admin/removal-requests")({
   validateSearch: intakeYearSearchSchema,
@@ -181,14 +182,17 @@ function AdminRemovalRequestsPage() {
       id: "location",
       header: "Location",
       cell: ({ row }: { row: { original: RemovalRequestRow } }) => row.original.latitude != null && row.original.longitude != null ? (
-        <a
-          href={`https://earth.google.com/web/search/${row.original.latitude},${row.original.longitude}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-blue-600 hover:underline whitespace-nowrap"
-        >
-          Open in Google Earth ↗
-        </a>
+        <div className="grid gap-0.5">
+          <span className="text-[0.68rem] font-mono text-muted-foreground whitespace-nowrap">{formatDms(row.original.latitude, row.original.longitude)}</span>
+          <a
+            href={`https://earth.google.com/web/search/${row.original.latitude},${row.original.longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+          >
+            Open in Google Earth ↗
+          </a>
+        </div>
       ) : <span className="text-xs text-muted-foreground">Not captured</span>,
     },
     {

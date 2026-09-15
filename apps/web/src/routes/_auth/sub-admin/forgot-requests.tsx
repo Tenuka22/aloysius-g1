@@ -24,6 +24,7 @@ import {
 import { client, orpc } from "@/utils/orpc";
 import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/g1/application/access-key-qr";
+import { formatDms } from "@/lib/g1/school-utils";
 import { useTranslation } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_auth/sub-admin/forgot-requests")({
@@ -135,14 +136,17 @@ function SubAdminForgotRequestsPage() {
       id: "location",
       header: t("subAdminForgot.column.location"),
       cell: ({ row }: { row: { original: ForgotRequestRow } }) => row.original.latitude != null && row.original.longitude != null ? (
-        <a
-          href={`https://earth.google.com/web/search/${row.original.latitude},${row.original.longitude}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-blue-600 hover:underline whitespace-nowrap"
-        >
-          {t("subAdminForgot.openInGoogleEarth")}
-        </a>
+        <div className="grid gap-0.5">
+          <span className="text-[0.68rem] font-mono text-muted-foreground whitespace-nowrap">{formatDms(row.original.latitude, row.original.longitude)}</span>
+          <a
+            href={`https://earth.google.com/web/search/${row.original.latitude},${row.original.longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+          >
+            {t("subAdminForgot.openInGoogleEarth")}
+          </a>
+        </div>
       ) : <span className="text-xs text-muted-foreground">{t("subAdminForgot.noLocation")}</span>,
     },
     {

@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { AccessKeyQrDialog } from "@/components/g1/application/access-key-qr";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { intakeYearSearchSchema } from "@/lib/g1/intake-year";
+import { formatDms } from "@/lib/g1/school-utils";
 
 export const Route = createFileRoute("/_auth/g1/admin/forgot-requests")({
   validateSearch: intakeYearSearchSchema,
@@ -147,14 +148,17 @@ function AdminForgotRequestsPage() {
       id: "location",
       header: "Location",
       cell: ({ row }: { row: { original: ForgotRequestRow } }) => row.original.latitude != null && row.original.longitude != null ? (
-        <a
-          href={`https://earth.google.com/web/search/${row.original.latitude},${row.original.longitude}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-blue-600 hover:underline whitespace-nowrap"
-        >
-          Open in Google Earth ↗
-        </a>
+        <div className="grid gap-0.5">
+          <span className="text-[0.68rem] font-mono text-muted-foreground whitespace-nowrap">{formatDms(row.original.latitude, row.original.longitude)}</span>
+          <a
+            href={`https://earth.google.com/web/search/${row.original.latitude},${row.original.longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+          >
+            Open in Google Earth ↗
+          </a>
+        </div>
       ) : <span className="text-xs text-muted-foreground">Not captured</span>,
     },
     {

@@ -23,6 +23,24 @@ export function haversineDistanceKm(lat1: number, lng1: number, lat2: number, ln
   return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** One coordinate axis (latitude or longitude) as degrees°minutes'seconds", e.g. "6°03'31.23"N". */
+function toDmsComponent(value: number, positiveSuffix: string, negativeSuffix: string): string {
+  const suffix = value >= 0 ? positiveSuffix : negativeSuffix;
+  const abs = Math.abs(value);
+  const degrees = Math.floor(abs);
+  const minutesFull = (abs - degrees) * 60;
+  const minutes = Math.floor(minutesFull);
+  const seconds = (minutesFull - minutes) * 60;
+  return `${degrees}\u00b0${String(minutes).padStart(2, "0")}'${seconds.toFixed(2)}"${suffix}`;
+}
+
+/** Full DMS pair for a lat/lng, e.g. `6°03'31.23"N 80°12'34.68"E` - the
+ *  conventional format for cross-checking a pin in Google Earth/Maps, shown
+ *  alongside the plain decimal-degree coordinates rather than replacing them. */
+export function formatDms(latitude: number, longitude: number): string {
+  return `${toDmsComponent(latitude, "N", "S")} ${toDmsComponent(longitude, "E", "W")}`;
+}
+
 export function getSchoolsWithinRadius(centerLat: number, centerLng: number, radiusKm: number): Array<LocatedSchool & { distanceKm: number }> {
   return getSchools()
     .filter(hasCoordinates)

@@ -8,7 +8,7 @@ import { client, orpc } from "@/utils/orpc";
 import { normalizeDraft, type ApplicationDraft, type InterviewEdit, type LocationDraft, type ScoringInputs } from "@/lib/g1/application-store";
 import { scoreCategory } from "@/lib/g1/scoring";
 import { CATEGORY_MAX_MARKS } from "@/lib/g1/marking-scheme";
-import { findSchoolById, haversineDistanceKm } from "@/lib/g1/school-utils";
+import { findSchoolById, formatDms, haversineDistanceKm } from "@/lib/g1/school-utils";
 import { HOME_SCHOOL_ID, getHomeSchoolDisplayName } from "@/lib/g1/school-config";
 import { FIELD_ICON_COLORS } from "@/lib/color-classes";
 import { toast } from "sonner";
@@ -480,6 +480,7 @@ function ApplicantLocationReview({ draft, flaggedLocations, onToggleLocationFlag
             </span>
             <span className="block truncate text-xs text-muted-foreground mt-0.5">{point.address}</span>
             <span className="mt-0.5 block font-mono text-[0.65rem] text-muted-foreground/70">{point.source} · {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}</span>
+            <span className="block font-mono text-[0.65rem] text-muted-foreground/70">{formatDms(point.latitude, point.longitude)}</span>
             <a
               href={`https://earth.google.com/web/search/${point.latitude},${point.longitude}`}
               target="_blank"

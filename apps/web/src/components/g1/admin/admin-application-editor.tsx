@@ -8,7 +8,7 @@ import { client, orpc } from "@/utils/orpc";
 import { emptyDraft, normalizeDraft, prependLocationHistory, createCategory, CATEGORY_TYPES, type ApplicationDraft, type CategoryApplication, type CategoryType, type LocationDraft, type ScoringInputs } from "@/lib/g1/application-store";
 import { scoreCategory } from "@/lib/g1/scoring";
 import { CATEGORY_MAX_MARKS } from "@/lib/g1/marking-scheme";
-import { findSchoolById } from "@/lib/g1/school-utils";
+import { findSchoolById, formatDms } from "@/lib/g1/school-utils";
 import { toast } from "sonner";
 import { useAdminPreferences, isFieldVisible, type AdminFieldVisibility } from "@/lib/g1/admin-preferences";
 import { FIELD_ICON_COLORS, BAR_COLORS } from "@/lib/color-classes";
@@ -425,7 +425,7 @@ function CategoryScoreBar({ total }: { total: number }) {
 
 function LocationSummary({ label, value }: { label: string; value?: LocationDraft }) {
   const sourceLabels: Record<string, string> = { device: "Device GPS", network: "Network (IP)", map: "Map selection", manual: "Manual entry", "": "Not recorded" };
-  return <div className="border rounded-xl p-4"><div className="flex items-center gap-2 text-primary mb-1"><MapPin size={16} /><strong>{label}</strong></div><Value label="Label" value={value?.label} /><Value label="Address" value={value?.address} /><Value label="Coordinates" value={value?.latitude != null && value?.longitude != null ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}` : "Not captured"} /><Value label="Source" value={sourceLabels[value?.source ?? ""] ?? (value?.source || "Not recorded")} />{value?.latitude != null && value?.longitude != null && <a href={`https://earth.google.com/web/search/${value.latitude},${value.longitude}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-[0.72rem] text-blue-600 hover:underline">Open in Google Earth ↗</a>}</div>;
+  return <div className="border rounded-xl p-4"><div className="flex items-center gap-2 text-primary mb-1"><MapPin size={16} /><strong>{label}</strong></div><Value label="Label" value={value?.label} /><Value label="Address" value={value?.address} /><Value label="Coordinates" value={value?.latitude != null && value?.longitude != null ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}` : "Not captured"} /><Value label="Coordinates (DMS)" value={value?.latitude != null && value?.longitude != null ? formatDms(value.latitude, value.longitude) : "Not captured"} /><Value label="Source" value={sourceLabels[value?.source ?? ""] ?? (value?.source || "Not recorded")} />{value?.latitude != null && value?.longitude != null && <a href={`https://earth.google.com/web/search/${value.latitude},${value.longitude}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-[0.72rem] text-blue-600 hover:underline">Open in Google Earth ↗</a>}</div>;
 }
 
 const AdminLocationMapComponent = lazy(() => import("./admin-application-editor-map"));
@@ -845,22 +845,25 @@ function AdminLocationHistory({ title, history }: { title: string; history: Loca
       ) : (
         <ol className="grid gap-1">
           {history.map((entry, index) => (
-            <li key={`${entry.latitude}-${entry.longitude}-${index}`} className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-[0.82rem]">
-              <MapPin size={13} className="shrink-0 text-muted-foreground" />
-              <span className="truncate flex-1">{entry.address || entry.label || "Unnamed point"}</span>
-              {entry.source && <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[0.65rem] text-muted-foreground">{sourceLabels[entry.source] ?? entry.source}</span>}
-              <span className="ml-auto shrink-0 font-mono text-[0.72rem] text-muted-foreground">
-                {entry.latitude?.toFixed(5) ?? "?"}, {entry.longitude?.toFixed(5) ?? "?"}
-              </span>
+            <li key={`${entry.latitude}-${entry.longitude}-${index}`} className="grid gap-1 rounded-md border px-2 py-1.5 text-[0.82rem]">
+              <div className="flex items-center gap-2">
+                <MapPin size={13} className="shrink-0 text-muted-foreground" />
+                <span className="truncate flex-1">{entry.address || entry.label || "Unnamed point"}</span>
+                {entry.source && <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[0.65rem] text-muted-foreground">{sourceLabels[entry.source] ?? entry.source}</span>}
+              </div>
               {entry.latitude != null && entry.longitude != null && (
-                <a
-                  href={`https://earth.google.com/web/search/${entry.latitude},${entry.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 text-[0.7rem] text-blue-600 hover:underline"
-                >
-                  Open in Google Earth ↗
-                </a>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pl-5 text-[0.7rem] text-muted-foreground">
+                  <span className="font-mono">{entry.latitude.toFixed(5)}, {entry.longitude.toFixed(5)}</span>
+                  <span className="font-mono">{formatDms(entry.latitude, entry.longitude)}</span>
+                  <a
+                    href={`https://earth.google.com/web/search/${entry.latitude},${entry.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Open in Google Earth ↗
+                  </a>
+                </div>
               )}
             </li>
           ))}
