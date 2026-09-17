@@ -41,36 +41,29 @@ const YOUTUBE_VIDEO_ID = "LlxeQo4F30Q";
 const HELP_PHONE_DISPLAY = "+94 77 936 8304";
 const HELP_WHATSAPP_NUMBER = "94779368304";
 
-// Interview timetable, kept live in a shared Google Sheet rather than a
-// hand-copied schedule in this file, so a change on the sheet (a slot
-// reassigned, a category added) shows up here without a deploy. The
-// `/htmlembed/sheet` route (the same one Google Sites uses to embed a
-// sheet) renders just the grid - no toolbar, formula bar, or Sheets' own
-// bottom tab bar - so the day picker built below is the only way to switch
-// days, instead of competing with a second, redundant tab strip inside the
-// iframe. Works because the sheet is shared "Anyone with the link can
-// view", not because it's been separately "published to the web".
-const INTERVIEW_SHEET_ID = "1-Aa7F2yEJ2P6Ewwvf5onO2p9XTXAycixVhSqPF7Wzp8";
-
-// One tab per interview day in the shared sheet - `gid` is that tab's own
-// sheet id (stable even if the tab is renamed or reordered), captured by
-// opening the sheet and reading the `?gid=` each tab's URL updates to.
-// `date` gates visibility: a day drops off the picker once it's over, so
-// this list only ever needs a new entry appended for a future interview
-// day, never manual pruning of past ones.
-const INTERVIEW_SHEET_DATES: Array<{ date: string; gid: string; label: string }> = [
-  { date: "2026-09-15", gid: "0", label: "Sep 15" },
-  { date: "2026-09-16", gid: "1746423011", label: "Sep 16" },
-  { date: "2026-09-18", gid: "1200947531", label: "Sep 18" },
-  { date: "2026-09-21", gid: "1195790196", label: "Sep 21" },
-  { date: "2026-09-22", gid: "1592839584", label: "Sep 22" },
-];
-
-function interviewSheetLinkUrl(gid: string) {
-  return `https://docs.google.com/spreadsheets/d/${INTERVIEW_SHEET_ID}/edit?usp=sharing&gid=${gid}`;
-}
-function interviewSheetEmbedUrl(gid: string) {
-  return `https://docs.google.com/spreadsheets/d/${INTERVIEW_SHEET_ID}/htmlembed/sheet?gid=${gid}`;
+// The interview timetable lives in a shared Google Sheet (one tab per
+// interview day, named `MM/DD`) and is read live through the public
+// `interviewSchedule.days` oRPC endpoint (see
+// packages/api/src/interview-schedule.ts), which parses that sheet's tab
+// list server-side with a short cache. Adding an interview day means adding
+// a tab to the sheet - no code change, no deploy. Each day carries the
+// tab's `gid` (stable even if the tab is renamed or reordered) plus its
+// ready-made embed/link URLs: the `/htmlembed/sheet` route (the same one
+// Google Sites uses to embed a sheet) renders just the grid - no toolbar,
+// formula bar, or Sheets' own bottom tab bar - so the day picker built
+// below is the only way to switch days, instead of competing with a
+// second, redundant tab strip inside the iframe.
+function useInterviewScheduleDays() {
+  // Error toasts suppressed: a transient Google-side hiccup already falls
+  // back to the server's last cached day list, and when even that is
+  // missing the dialog shows the "no upcoming dates" message below - an
+  // empty picker is an acceptable degradation, not an alert-worthy failure.
+  return useQuery({
+    ...orpc.interviewSchedule.days.queryOptions(),
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+    meta: { skipErrorToast: true },
+  });
 }
 
 // Reference page for applicants: demo walkthrough, live interview schedule and a
@@ -80,6 +73,7 @@ function interviewSheetEmbedUrl(gid: string) {
 export function AdmissionsInfoPage() {
   const { t, locale } = useTranslation();
   const admissionsWindowText = useAdmissionsWindowText(locale);
+  const interviewDaysQuery = useInterviewScheduleDays();
   const [interviewOpen, setInterviewOpen] = useState(false);
   const [selectedInterviewGid, setSelectedInterviewGid] = useState<string | null>(null);
   const [isEmergency, setIsEmergency] = useState(false);
@@ -89,13 +83,16 @@ export function AdmissionsInfoPage() {
 
   // Only today-or-later interview days ever show - a day that's already
   // passed drops out of the picker on its own the next time this renders,
-  // no cleanup needed on the sheet or in this list.
+  // no cleanup needed on the sheet or in this list. Filtered with the
+  // visitor's own clock, not the server's - the two can be in different
+  // timezones, and "has the interview day started" is a local question.
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const upcomingInterviewDates = INTERVIEW_SHEET_DATES.filter(
+  const upcomingInterviewDates = (interviewDaysQuery.data?.days ?? []).filter(
     (entry) => new Date(`${entry.date}T00:00:00`) >= todayStart,
   );
   const activeInterviewGid = selectedInterviewGid ?? upcomingInterviewDates[0]?.gid ?? null;
+  const activeInterviewDay = interviewDaysQuery.data?.days.find((day) => day.gid === activeInterviewGid) ?? null;
 
   return (
     <div className="flex min-h-svh flex-col bg-primary text-primary-foreground" data-surface="admissions-info">
@@ -232,13 +229,13 @@ export function AdmissionsInfoPage() {
               <DialogTitle>{t("admissionsInfo.interviewSchedule.dialogTitle")}</DialogTitle>
               <DialogDescription>{t("admissionsInfo.interviewSchedule.dialogDescription")}</DialogDescription>
             </div>
-            {activeInterviewGid && (
+            {activeInterviewDay && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="shrink-0 gap-1.5"
-                render={<a href={interviewSheetLinkUrl(activeInterviewGid)} target="_blank" rel="noopener noreferrer" />}
+                render={<a href={activeInterviewDay.sheetUrl} target="_blank" rel="noopener noreferrer" />}
               nativeButton={false}
             >
               <SquareArrowOutUpRight size={14} />
@@ -266,14 +263,18 @@ export function AdmissionsInfoPage() {
             </div>
             )}
           <div className="min-h-0 flex-1 w-full bg-white">
-            {interviewOpen && activeInterviewGid ? (
+            {interviewOpen && activeInterviewDay ? (
               <iframe
                 className="h-full w-full"
-                key={activeInterviewGid}
-                src={interviewSheetEmbedUrl(activeInterviewGid)}
+                key={activeInterviewDay.gid}
+                src={activeInterviewDay.embedUrl}
                 title={t("admissionsInfo.interviewSchedule.dialogTitle")}
                 referrerPolicy="strict-origin-when-cross-origin"
               />
+            ) : interviewOpen && interviewDaysQuery.isPending ? (
+              <p className="grid h-full place-items-center bg-background p-6 text-sm text-muted-foreground">
+                {t("admissionsInfo.interviewSchedule.loading")}
+              </p>
             ) : interviewOpen ? (
               <p className="grid h-full place-items-center bg-background p-6 text-sm text-muted-foreground">
                 {t("admissionsInfo.interviewSchedule.noUpcoming")}

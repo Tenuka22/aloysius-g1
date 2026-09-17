@@ -29,6 +29,7 @@ import {
   withoutSchoolPreferences,
 } from "../g1-logic";
 import type { ApplicationData } from "../g1-logic";
+import { getInterviewScheduleDays } from "../interview-schedule";
 import { adminOrSubAdminProcedure, adminProcedure, publicProcedure, subAdminProcedure } from "../index";
 
 const uniqueSessionCode = async () => {
@@ -289,6 +290,18 @@ const ensureAdmissionsAccess = async (earlyAccess: boolean, intakeYear?: string)
 };
 
 export const g1Router = {
+  interviewSchedule: {
+    // Public: this powers the landing page's interview-schedule dialog, so it
+    // must work for an anonymous visitor. The day list is derived live from
+    // the shared Google Sheet's tab names (see interview-schedule.ts) - the
+    // school maintains the schedule there, and new tabs show up here without
+    // a deploy. Days are returned unfiltered; the client drops past days so a
+    // visitor's own clock decides "today" (the server timezone isn't the
+    // applicants').
+    days: publicProcedure.handler(async () => {
+      return { days: await getInterviewScheduleDays() };
+    }),
+  },
   application: {
     create: publicProcedure
       .input(z.object({ data: draftSchema.default({}), intakeYear: z.string().default("2027") }))

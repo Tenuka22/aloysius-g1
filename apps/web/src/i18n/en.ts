@@ -42,6 +42,7 @@ const en = {
   "admissionsInfo.interviewSchedule.dialogTitle": "Interview schedule",
   "admissionsInfo.interviewSchedule.dialogDescription": "Live interview timetable - find your name and time slot below.",
   "admissionsInfo.interviewSchedule.openInSheets": "Open in Google Sheets",
+  "admissionsInfo.interviewSchedule.loading": "Loading the interview schedule...",
   "admissionsInfo.interviewSchedule.noUpcoming": "No upcoming interview dates are scheduled right now.",
   "admissionsInfo.help.heading": "Need help or have a question?",
   "admissionsInfo.openAdmissions": "Open admissions",

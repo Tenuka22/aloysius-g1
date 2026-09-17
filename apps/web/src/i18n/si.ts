@@ -42,6 +42,7 @@ const si = {
   "admissionsInfo.interviewSchedule.dialogTitle": "සම්මුඛ පරීක්ෂණ කාල සටහන",
   "admissionsInfo.interviewSchedule.dialogDescription": "සජීවී සම්මුඛ පරීක්ෂණ කාල සටහන - ඔබේ නම සහ වේලාව පහතින් සොයන්න.",
   "admissionsInfo.interviewSchedule.openInSheets": "Google Sheets හි විවෘත කරන්න",
+  "admissionsInfo.interviewSchedule.loading": "සම්මුඛ පරීක්ෂණ කාල සටහන පූරණය වෙමින්...",
   "admissionsInfo.interviewSchedule.noUpcoming": "දැනට නියමිත සම්මුඛ පරීක්ෂණ දින නොමැත.",
   "admissionsInfo.help.heading": "උදව් අවශ්‍යද?",
   "admissionsInfo.openAdmissions": "ඇතුළත් කිරීම් විවෘත කරන්න",
