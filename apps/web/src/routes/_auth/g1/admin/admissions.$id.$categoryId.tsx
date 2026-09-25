@@ -854,7 +854,7 @@ function CategoryScoringCard({ applicationId, category, draft, flaggedInputs, on
       case "6.1": return <Category61Fields forceSelectable category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
       case "6.2": return <Category62Fields category={editedCategory} onChange={handleInputPatch} {...flagProps} interviewChanges={currentSessionChanges} />;
       case "6.3": return <Category63Fields forceSelectable category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
-      case "6.4": return <Category64Fields category={editedCategory} onChange={handleInputPatch} {...flagProps} interviewChanges={currentSessionChanges} />;
+      case "6.4": return <Category64Fields category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
       case "6.5": return <Category65Fields forceSelectable category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
       case "6.6": return <Category66Fields forceSelectable category={editedCategory} onChange={handleInputPatch} {...locProps} {...flagProps} interviewChanges={currentSessionChanges} />;
       default: return (

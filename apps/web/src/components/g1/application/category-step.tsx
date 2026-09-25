@@ -86,7 +86,7 @@ import {
   YEARS_EDUCATED_MAX,
 } from "@/lib/g1/marking-scheme";
 import { HOME_SCHOOL_ID, getHomeSchoolDisplayName } from "@/lib/g1/school-config";
-import { compatibleSchoolsWithinRadius } from "@/lib/g1/school-utils";
+import { compatibleSchoolsWithinRadius, findSchoolById } from "@/lib/g1/school-utils";
 import {
   AL_CEILINGS,
   DEGREE_MARKS,
@@ -2564,16 +2564,28 @@ function DifficultServiceBreakdown({
 export function Category64Fields({
   category,
   onChange,
+  centerLat,
+  centerLng,
   flaggedInputs,
   onToggleInputFlag,
   interviewChanges,
 }: {
   category: CategoryApplication;
   onChange: (patch: Partial<ScoringInputs>) => void;
+  centerLat?: number;
+  centerLng?: number;
 } & FlagProps) {
   const { t } = useTranslation();
   const inputs = category.scoringInputs;
   const id = category.id;
+
+  const homeSchool = findSchoolById(HOME_SCHOOL_ID);
+  const schoolMapsUrl =
+    homeSchool?.lat != null && homeSchool?.lng != null
+      ? centerLat != null && centerLng != null
+        ? `https://www.google.com/maps/dir/?api=1&origin=${centerLat},${centerLng}&destination=${homeSchool.lat},${homeSchool.lng}&travelmode=driving`
+        : `https://www.google.com/maps/search/?api=1&query=${homeSchool.lat},${homeSchool.lng}`
+      : undefined;
 
   // 7.5.1 gates the rest of category 6.4: the circular gives marks for
   // every section that follows "only to applicants who have earned marks"
@@ -2918,6 +2930,16 @@ export function Category64Fields({
           onChange={(residenceToSchoolKm) => onChange({ residenceToSchoolKm })}
         />
         <InputChangeRow changes={interviewChanges} fieldKey="residenceToSchoolKm" />
+        {schoolMapsUrl && (
+          <a
+            href={schoolMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-fit items-center gap-1 text-xs text-blue-600 hover:underline"
+          >
+            <MapPin size={12} /> Open with Google Maps ↗
+          </a>
+        )}
       </div>
       <div className="grid gap-1.5">
         <div className="flex items-center gap-2">
@@ -2941,6 +2963,16 @@ export function Category64Fields({
           onChange={(workplaceToSchoolKm) => onChange({ workplaceToSchoolKm })}
         />
         <InputChangeRow changes={interviewChanges} fieldKey="workplaceToSchoolKm" />
+        {schoolMapsUrl && (
+          <a
+            href={schoolMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-fit items-center gap-1 text-xs text-blue-600 hover:underline"
+          >
+            <MapPin size={12} /> Open with Google Maps ↗
+          </a>
+        )}
       </div>
     </div>
   );

@@ -706,8 +706,8 @@
     "id": "woodland-k-v-galle",
     "en": "Woodland K.V.",
     "si": "",
-    "lat": 6.1534552,
-    "lng": 80.1352562,
+    "lat": 6.0721248,
+    "lng": 80.211903,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -719,7 +719,7 @@
       "zone": "Ambalangoda",
       "division": "Ambalangoda"
     },
-    "mapUrl": "https://www.google.com/maps/place/Woodland+School/@6.1609731,80.121816,13.95z/data=!4m6!3m5!1s0x3ae1782ef08ba4e3:0xb086503c5b58b236!8m2!3d6.1534552!4d80.1352562!16s%2Fg%2F11c1v14xy4!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDkxMy4wIKXMDSoASAFQAw%3D%3D"
+    "mapUrl": "https://www.google.com/maps/place/WOODLAND+PRE+SCHOOL/data=!4m7!3m6!1s0x3ae17167aede7ddf:0x994556c9a47b4fff!8m2!3d6.0721248!4d80.211903!16s%2Fg%2F11c59s8n9t!19sChIJ333ermdx4ToR_097pMlWRZk?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
   },
   {
     "id": "halpathota-k-v-galle",
@@ -7033,8 +7033,8 @@
     "id": "malalgodapitiya-siri-seevali-primary-school-galle",
     "en": "Malalgodapitiya Siri Seevali Primary School",
     "si": "",
-    "lat": 6.0372284,
-    "lng": 80.2350635,
+    "lat": 6.0241327,
+    "lng": 80.3763146,
     "genderType": "mixed",
     "schoolType": "provincial",
     "districtId": "galle",
@@ -7046,7 +7046,7 @@
       "zone": "Galle",
       "division": "Habaraduwa"
     },
-    "mapUrl": "https://www.google.com/maps/place/SIRISEEVALI+PRIMARY+SCHOOL/data=!4m7!3m6!1s0x3ae1724c63ae42fb:0xc0fa183a849bdb0a!8m2!3d6.0372284!4d80.2350635!16s%2Fg%2F11btxcr5bv!19sChIJ-0KuY0xy4ToRCtubhDoY-sA?authuser=0&hl=en&g_ep=EgoyMDI2MDgzMS4wIJJjKgBIAVAD&rclk=1"
+    "mapUrl": "https://www.google.com/maps/place/Maalalgoda+Siri+Seevali+Kanishta+Vidyalaya/@6.0241327,80.3763146,17z/data=!3m1!4b1!4m6!3m5!1s0x3ae16b781a8057c7:0xabc170f699377f49!8m2!3d6.0241327!4d80.3763146!16s%2Fg%2F11cryf9qwh?entry=ttu"
   },
   {
     "id": "meegahagoda-kanishta-vidyalaya-galle",
